@@ -1,0 +1,11 @@
+pandas
+numpy
+scikit-learn
+joblib
+streamlit
+matplotlib
+plotly
+pytest
+opencv-contrib-python
+scikit-image
+segment-anything

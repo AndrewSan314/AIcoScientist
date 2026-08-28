@@ -1,0 +1,4 @@
+rank,si_content,mxene_content,alginate_content,carbon_content,drying_temp,mixing_time,pressing_pressure,predicted_retention,predicted_retention_mean,predicted_retention_std,acquisition_score,chemistry_score,volume_expansion_risk,final_score,confidence,reason
+1,50,30,17,3,120,60,5.0,77.75,77.75,4.94,82.69,0.53,0.12,83.48,low,Exploratory recipe with higher GP uncertainty. Lower Si (50%) reduces capacity but improves cycling stability. Balanced MXene network and alginate binder level. Strong conductive network (MXene+C=33%).
+2,50,30,17,3,110,60,5.0,77.9,77.9,4.76,82.66,0.53,0.12,83.45,medium,Lower Si (50%) reduces capacity but improves cycling stability. Balanced MXene network and alginate binder level. Strong conductive network (MXene+C=33%).
+3,50,30,17,3,100,60,5.0,77.97,77.97,4.64,82.6,0.53,0.12,83.39,medium,Lower Si (50%) reduces capacity but improves cycling stability. Balanced MXene network and alginate binder level. Strong conductive network (MXene+C=33%).
