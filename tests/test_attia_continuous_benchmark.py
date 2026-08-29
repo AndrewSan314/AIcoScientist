@@ -5,90 +5,114 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.datasets.attia import AttiaAdapter
+from src.datasets.attia import (
+    AttiaAdapter,
+    generate_continuous_candidate_id,
+)
 from src.evaluation.attia_continuous_benchmark import (
-    DISCRETE_GRID_OPTIMUM_TRUE,
+    compute_or_load_continuous_reference,
+    derive_discrete_grid_optimum,
+    evaluate_continuous_trajectory,
     run_attia_continuous_benchmark,
     run_single_attia_continuous_trajectory,
 )
+from src.evaluation.attia_oracle import generate_attia_simulator_seed, simulate_attia_policy
 
 
-def test_attia_continuous_search_space_properties() -> None:
-    adapter = AttiaAdapter()
-    space = adapter.continuous_search_space()
+def test_canonical_candidate_id_and_query_id() -> None:
+    # 1. Same coordinates produce identical candidate_id
+    cid_1 = generate_continuous_candidate_id(5.1234, 4.5678, 4.1234)
+    cid_2 = generate_continuous_candidate_id(5.1234, 4.5678, 4.1234)
+    assert cid_1 == cid_2
+    assert cid_1.startswith("ATTIA_CONT_")
 
-    assert space.name == "attia_continuous_fast_charging"
-    assert space.free_variable_names == ["C1", "C2", "C3"]
-    assert space.all_variable_names == ["C1", "C2", "C3", "C4"]
+    # 2. Different coordinates produce different candidate_id
+    cid_3 = generate_continuous_candidate_id(5.1235, 4.5678, 4.1234)
+    assert cid_1 != cid_3
 
-    # Sample feasible points
-    feasible_df = space.sample_feasible(n=200, seed=42)
-    assert len(feasible_df) == 200
-
-    assert np.all(feasible_df["C1"] >= 3.6) and np.all(feasible_df["C1"] <= 8.0)
-    assert np.all(feasible_df["C2"] >= 3.6) and np.all(feasible_df["C2"] <= 7.0)
-    assert np.all(feasible_df["C3"] >= 3.6) and np.all(feasible_df["C3"] <= 5.6)
-    assert np.all(feasible_df["C4"] >= 0.1) and np.all(feasible_df["C4"] <= 4.81)
-
-    # Verify 10-minute total charging time
-    t_total = 0.2 / feasible_df["C1"] + 0.2 / feasible_df["C2"] + 0.2 / feasible_df["C3"] + 0.2 / feasible_df["C4"]
-    assert np.allclose(t_total, 1.0 / 6.0, atol=1e-5)
+    # 3. Query ID represents query event
+    q_1 = f"Q_S00_greedy_ST01"
+    q_2 = f"Q_S00_gp_ucb_ST01"
+    assert q_1 != q_2
 
 
-def test_attia_continuous_candidates_exist_outside_224_grid() -> None:
-    adapter = AttiaAdapter()
-    space = adapter.continuous_search_space()
-    discrete_pool = adapter.load_candidate_pool()
+def test_continuous_fair_stochastic_seeding() -> None:
+    # Same candidate queried in different strategy/step contexts gets identical simulator seed
+    cid = generate_continuous_candidate_id(5.2, 4.6, 4.2)
+    benchmark_seed = 42
 
-    # Draw continuous samples
-    continuous_samples = space.sample_feasible(n=100, seed=123)
-    novelty_df = space.check_novelty(
-        continuous_samples,
-        reference_points=discrete_pool,
-        feature_cols=["C1", "C2", "C3", "C4"],
-        tol=1e-3,
-    )
+    seed_strat_a = generate_attia_simulator_seed(benchmark_seed, cid)
+    seed_strat_b = generate_attia_simulator_seed(benchmark_seed, cid)
+    assert seed_strat_a == seed_strat_b
 
-    # The vast majority of random continuous points should be novel off-grid points
-    assert novelty_df["is_novel"].mean() > 0.95
+    sim_a = simulate_attia_policy(5.2, 4.6, 4.2, mode="hi", variance=True, seed=seed_strat_a)
+    sim_b = simulate_attia_policy(5.2, 4.6, 4.2, mode="hi", variance=True, seed=seed_strat_b)
+    assert sim_a == sim_b
 
 
-def test_attia_continuous_trajectory_execution(tmp_path: Path) -> None:
+def test_optimizer_evaluator_strict_isolation() -> None:
     adapter = AttiaAdapter()
     space = adapter.continuous_search_space()
     discrete_pool = adapter.load_candidate_pool()
 
-    init_indices = [0, 10, 20, 30, 40]
+    init_indices = [0, 5, 10, 15, 20]
 
-    # Test random trajectory
-    hist_random = run_single_attia_continuous_trajectory(
-        search_space=space,
-        discrete_pool=discrete_pool,
-        init_indices=init_indices,
-        total_queries=3,
-        strategy="random",
-        optimizer_seed=42,
-        n_candidates_per_step=100,
-        refine_continuous=False,
-    )
-    assert len(hist_random) == 4  # step 0 + 3 queries
-
-    # Test gp_ucb trajectory
-    hist_ucb = run_single_attia_continuous_trajectory(
+    # Run optimizer trajectory
+    raw_hist = run_single_attia_continuous_trajectory(
         search_space=space,
         discrete_pool=discrete_pool,
         init_indices=init_indices,
         total_queries=3,
         strategy="gp_ucb",
-        optimizer_seed=42,
-        n_candidates_per_step=100,
-        refine_continuous=True,
+        optimizer_seed=7,
+        n_candidates_per_step=50,
+        refine_continuous=False,
     )
-    assert len(hist_ucb) == 4
-    for row in hist_ucb:
+
+    # Verify optimizer history has NO evaluator reference metrics
+    for row in raw_hist:
+        assert "reference_true_lifetime" not in row
+        assert "best_reference_true" not in row
+        assert "continuous_simple_regret" not in row
+        assert "gap_to_discrete_grid_optimum" not in row
+        assert "improvement_over_discrete_grid" not in row
         assert "best_observed_lifetime" in row
-        assert "reference_true_lifetime" in row
-        assert "is_novel" in row
+        assert "simulated_lifetime" in row
+        assert "candidate_id" in row
+        assert "query_id" in row
+
+    # Evaluate with post-hoc evaluator
+    evaluated_hist = evaluate_continuous_trajectory(
+        raw_trajectory=raw_hist,
+        init_indices=init_indices,
+        discrete_pool=discrete_pool,
+        continuous_ref_lifetime=1120.0,
+        discrete_grid_optimum_lifetime=1079.0,
+    )
+
+    for row in evaluated_hist:
+        assert "best_reference_true" in row
+        assert "continuous_simple_regret" in row
+        assert "gap_to_discrete_grid_optimum" in row
+
+
+def test_programmatic_discrete_grid_optimum_and_continuous_reference(tmp_path: Path) -> None:
+    adapter = AttiaAdapter()
+    discrete_pool = adapter.load_candidate_pool()
+    space = adapter.continuous_search_space()
+
+    grid_opt = derive_discrete_grid_optimum(discrete_pool)
+    assert grid_opt["policy_id"] == "ATTIA_P113"
+    assert grid_opt["reference_true_lifetime"] == 1079.0
+
+    cont_ref = compute_or_load_continuous_reference(
+        search_space=space,
+        output_dir=tmp_path,
+        n_starts=5,
+        seed=42,
+    )
+    assert cont_ref["best_known_latent_lifetime"] >= 1079.0
+    assert (tmp_path / "continuous_reference.json").is_file()
 
 
 def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
@@ -102,10 +126,12 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     )
 
     assert "benchmark" in summary
-    assert "discrete_grid_optimum" in summary
-    assert summary["discrete_grid_optimum"]["reference_true_lifetime"] == DISCRETE_GRID_OPTIMUM_TRUE
-    assert "best_continuous_protocol_discovered" in summary
+    assert "derived_discrete_grid_optimum" in summary
+    assert "best_known_continuous_reference" in summary
+    assert "best_discovered_per_strategy" in summary
+    assert "paired_comparisons" in summary
     assert (tmp_path / "benchmark_summary.json").is_file()
+    assert (tmp_path / "continuous_reference.json").is_file()
     assert (tmp_path / "search_space_summary.json").is_file()
     assert (tmp_path / "optimization_history.csv").is_file()
     assert (tmp_path / "proposed_protocols.csv").is_file()

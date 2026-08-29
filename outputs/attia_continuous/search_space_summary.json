@@ -44,7 +44,27 @@
       "description": "Exclude baseline protocol (4.8, 4.8, 4.8, 4.8)"
     }
   ],
+  "search_space_provenance": "continuous relaxation/interpolation of the parameter ranges used to construct the authors' discrete 224-policy space",
+  "scientific_disclaimer": "The continuous search space is evaluated strictly under the author numerical PDE/Arrhenius degradation simulator. Off-grid policies have NOT been physically validated on battery hardware.",
   "discrete_reference_grid_size": 224,
-  "discrete_grid_optimum_true": 1079.0,
-  "notes": "Continuous optimization allows off-grid charging rates C1, C2, C3 with automatic C4 derivation."
+  "derived_discrete_grid_optimum": {
+    "policy_id": "ATTIA_P113",
+    "C1": 6.0,
+    "C2": 4.8,
+    "C3": 4.0,
+    "C4": 4.8,
+    "reference_true_lifetime": 1079.0
+  },
+  "best_known_continuous_reference": {
+    "best_known_C1": 6.0,
+    "best_known_C2": 4.8,
+    "best_known_C3": 4.0,
+    "best_known_C4": 4.8,
+    "best_known_latent_lifetime": 1079.0,
+    "candidate_id": "ATTIA_CONT_f65b45d60d8b",
+    "number_of_reference_starts_evaluated": 51,
+    "reference_search_method": "multi_start_lbfgs_on_latent_pde",
+    "reference_seed": 42,
+    "description": "Best-known continuous simulator reference determined via deterministic multi-start optimization on latent simulator (variance=False). Not proven global optimum."
+  }
 }

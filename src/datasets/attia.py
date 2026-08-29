@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -39,6 +40,29 @@ def compute_expected_c4(c1: float | np.ndarray, c2: float | np.ndarray, c3: floa
     if denom <= 0:
         return float("nan")
     return 0.2 / denom
+
+
+def generate_continuous_candidate_id(
+    c1: float,
+    c2: float,
+    c3: float,
+    c4: float | None = None,
+    precision: int = 4,
+) -> str:
+    """Generates a canonical, coordinate-based candidate ID for an off-grid continuous design point.
+
+    The ID is strictly deterministic based on canonical float formatting (precision=4 decimal places):
+    ATTIA_CONT_<sha256_prefix>
+    """
+    if c4 is None or not np.isfinite(c4):
+        c4_val = float(compute_expected_c4(float(c1), float(c2), float(c3)))
+    else:
+        c4_val = float(c4)
+
+    coord_key = f"C1={float(c1):.{precision}f},C2={float(c2):.{precision}f},C3={float(c3):.{precision}f},C4={c4_val:.{precision}f}"
+    h = hashlib.sha256(coord_key.encode("utf-8")).hexdigest()[:12]
+    return f"ATTIA_CONT_{h}"
+
 
 
 def load_raw_attia_policies(

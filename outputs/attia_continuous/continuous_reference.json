@@ -1,0 +1,12 @@
+{
+  "best_known_C1": 6.0,
+  "best_known_C2": 4.8,
+  "best_known_C3": 4.0,
+  "best_known_C4": 4.8,
+  "best_known_latent_lifetime": 1079.0,
+  "candidate_id": "ATTIA_CONT_f65b45d60d8b",
+  "number_of_reference_starts_evaluated": 51,
+  "reference_search_method": "multi_start_lbfgs_on_latent_pde",
+  "reference_seed": 42,
+  "description": "Best-known continuous simulator reference determined via deterministic multi-start optimization on latent simulator (variance=False). Not proven global optimum."
+}

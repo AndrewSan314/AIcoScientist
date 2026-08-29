@@ -13,7 +13,11 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.preprocessing import StandardScaler
 
-from src.datasets.attia import AttiaAdapter, compute_expected_c4
+from src.datasets.attia import (
+    AttiaAdapter,
+    compute_expected_c4,
+    generate_continuous_candidate_id,
+)
 from src.evaluation.attia_benchmark import compute_bootstrap_mean_ci
 from src.evaluation.attia_oracle import (
     generate_attia_simulator_seed,
@@ -23,7 +27,124 @@ from src.optimization.search_space import SearchSpace
 
 logger = logging.getLogger(__name__)
 
-DISCRETE_GRID_OPTIMUM_TRUE: float = 1079.0  # Latent true lifetime of best 224-grid policy (ATTIA_P113)
+
+def derive_discrete_grid_optimum(discrete_pool: pd.DataFrame) -> dict[str, Any]:
+    """Programmatically derives the latent optimum on the discrete 224-policy grid under variance=False."""
+    best_record: dict[str, Any] = {
+        "policy_id": None,
+        "C1": None,
+        "C2": None,
+        "C3": None,
+        "C4": None,
+        "reference_true_lifetime": -1.0,
+    }
+
+    for _, row in discrete_pool.iterrows():
+        pid = str(row["policy_id"])
+        c1, c2, c3, c4 = float(row["C1"]), float(row["C2"]), float(row["C3"]), float(row["C4"])
+        latent_val = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=False, seed=0))
+        if latent_val > best_record["reference_true_lifetime"]:
+            best_record = {
+                "policy_id": pid,
+                "C1": c1,
+                "C2": c2,
+                "C3": c3,
+                "C4": c4,
+                "reference_true_lifetime": latent_val,
+            }
+
+    return best_record
+
+
+def compute_or_load_continuous_reference(
+    search_space: SearchSpace,
+    output_dir: Path,
+    discrete_pool: pd.DataFrame | None = None,
+    n_starts: int = 50,
+    seed: int = 42,
+    force_recompute: bool = False,
+) -> dict[str, Any]:
+    """Evaluator-only procedure to estimate the best-known continuous simulator reference.
+
+    Uses deterministic multi-start local optimization on the latent simulator (variance=False).
+    This function is strictly isolated from the optimizer loop.
+    """
+    ref_path = output_dir / "continuous_reference.json"
+    if not force_recompute and ref_path.is_file():
+        try:
+            with open(ref_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if "best_known_latent_lifetime" in data:
+                    return data
+        except Exception:
+            pass
+
+    # Draw deterministic feasible starts across continuous domain
+    init_starts_df = search_space.sample_feasible(n=n_starts, seed=seed)
+    start_points = [
+        np.array([float(r["C1"]), float(r["C2"]), float(r["C3"])])
+        for _, r in init_starts_df.iterrows()
+    ]
+
+    # Include discrete grid optimum to guarantee baseline coverage
+    if discrete_pool is None:
+        try:
+            discrete_pool = AttiaAdapter().load_candidate_pool()
+        except Exception:
+            discrete_pool = None
+
+    if discrete_pool is not None:
+        grid_opt = derive_discrete_grid_optimum(discrete_pool)
+        if grid_opt["C1"] is not None:
+            start_points.append(np.array([float(grid_opt["C1"]), float(grid_opt["C2"]), float(grid_opt["C3"])]))
+
+    best_cand: dict[str, Any] = {
+        "best_known_C1": None,
+        "best_known_C2": None,
+        "best_known_C3": None,
+        "best_known_C4": None,
+        "best_known_latent_lifetime": -1.0,
+        "candidate_id": None,
+
+        "number_of_reference_starts_evaluated": len(start_points),
+        "reference_search_method": "multi_start_lbfgs_on_latent_pde",
+        "reference_seed": seed,
+        "description": "Best-known continuous simulator reference determined via deterministic multi-start optimization on latent simulator (variance=False). Not proven global optimum.",
+    }
+
+    bounds = [(3.6, 8.0), (3.6, 7.0), (3.6, 5.6)]
+
+    def _obj(x: np.ndarray) -> float:
+        c1, c2, c3 = float(x[0]), float(x[1]), float(x[2])
+        c4 = float(compute_expected_c4(c1, c2, c3))
+        cand = {"C1": c1, "C2": c2, "C3": c3, "C4": c4}
+        if not search_space.is_feasible(cand):
+            return 1e6
+        val = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=False, seed=0))
+        return -val
+
+    for x0 in start_points:
+        res = minimize(_obj, x0=x0, bounds=bounds, method="L-BFGS-B", options={"maxiter": 30, "ftol": 1e-4})
+        if res.success:
+            c1_opt, c2_opt, c3_opt = float(res.x[0]), float(res.x[1]), float(res.x[2])
+            c4_opt = float(compute_expected_c4(c1_opt, c2_opt, c3_opt))
+            cand = {"C1": round(c1_opt, 4), "C2": round(c2_opt, 4), "C3": round(c3_opt, 4), "C4": round(c4_opt, 4)}
+            if search_space.is_feasible(cand):
+                latent_val = float(simulate_attia_policy(c1_opt, c2_opt, c3_opt, mode="hi", variance=False, seed=0))
+                if latent_val > best_cand["best_known_latent_lifetime"]:
+                    cand_id = generate_continuous_candidate_id(cand["C1"], cand["C2"], cand["C3"], cand["C4"])
+                    best_cand["best_known_C1"] = cand["C1"]
+                    best_cand["best_known_C2"] = cand["C2"]
+                    best_cand["best_known_C3"] = cand["C3"]
+                    best_cand["best_known_C4"] = cand["C4"]
+                    best_cand["best_known_latent_lifetime"] = latent_val
+                    best_cand["candidate_id"] = cand_id
+
+    with open(ref_path, "w", encoding="utf-8") as f:
+        json.dump(best_cand, f, indent=2)
+
+    return best_cand
+
 
 
 def run_single_attia_continuous_trajectory(
@@ -36,50 +157,47 @@ def run_single_attia_continuous_trajectory(
     beta: float = 1.0,
     n_candidates_per_step: int = 5000,
     refine_continuous: bool = True,
+    duplicate_tol: float = 1e-3,
 ) -> list[dict[str, Any]]:
     """Runs a single continuous closed-loop Bayesian Optimization trajectory.
 
-    Workflow:
-    - Starts with 5 initial discrete warmup protocols (identical across strategies for fairness).
-    - At each step:
-      1. Generates 5000 feasible continuous candidate proposals.
-      2. Predicts with GP surrogate.
-      3. Selects optimal proposal via acquisition function + continuous local refinement.
-      4. Queries simulator oracle with fair stochastic seed.
+    Optimizer Firewall:
+    - This function contains ONLY observables available during physical execution.
+    - Zero access to latent reference values (variance=False) or regret metrics.
     """
     feature_cols = ["C1", "C2", "C3", "C4"]
-    free_cols = ["C1", "C2", "C3"]
 
-    # Initial warm-up observations (from canonical discrete pool for reproducible fairness)
+    # Initial observations from discrete warmup pool
     observed_records: list[dict[str, Any]] = []
 
-    for idx in init_indices:
+    for w_idx, idx in enumerate(init_indices):
         cand_row = discrete_pool.iloc[idx]
-        pid = str(cand_row["policy_id"])
         c1, c2, c3, c4 = float(cand_row["C1"]), float(cand_row["C2"]), float(cand_row["C3"]), float(cand_row["C4"])
+        cand_id = str(cand_row["policy_id"])
+        query_id = f"Q_S{optimizer_seed:02d}_{strategy}_ST00_INIT{w_idx:02d}"
 
-        sim_seed = generate_attia_simulator_seed(benchmark_seed=optimizer_seed, policy_id=pid)
-        sim_life = simulate_attia_policy(c1, c2, c3, mode="hi", variance=True, seed=sim_seed)
-        true_life = simulate_attia_policy(c1, c2, c3, mode="hi", variance=False, seed=0)
+        sim_seed = generate_attia_simulator_seed(benchmark_seed=optimizer_seed, policy_id=cand_id)
+        sim_life = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=True, seed=sim_seed))
 
         observed_records.append(
             {
-                "policy_id": pid,
+                "query_id": query_id,
+                "candidate_id": cand_id,
                 "C1": c1,
                 "C2": c2,
                 "C3": c3,
                 "C4": c4,
                 "simulator_seed": sim_seed,
-                "simulated_lifetime": float(sim_life),
-                "reference_true_lifetime": float(true_life),
-                "is_novel": False,
-                "min_dist_to_discrete": 0.0,
+                "simulated_lifetime": sim_life,
+                "is_off_grid": False,
+                "min_distance_to_grid": 0.0,
+                "is_new_vs_observed": True,
+                "min_distance_to_observed": 0.0,
             }
         )
 
     history: list[dict[str, Any]] = []
     current_best_sim = max(r["simulated_lifetime"] for r in observed_records)
-    current_best_true = max(r["reference_true_lifetime"] for r in observed_records)
 
     # Initial state (Step 0 summary)
     history.append(
@@ -87,7 +205,8 @@ def run_single_attia_continuous_trajectory(
             "benchmark_seed": optimizer_seed,
             "strategy": strategy,
             "step": 0,
-            "policy_id": None,
+            "query_id": None,
+            "candidate_id": None,
             "C1": None,
             "C2": None,
             "C3": None,
@@ -95,12 +214,11 @@ def run_single_attia_continuous_trajectory(
             "simulator_seed": None,
             "simulated_lifetime": None,
             "best_observed_lifetime": current_best_sim,
-            "reference_true_lifetime": None,
-            "best_reference_true": current_best_true,
-            "simple_regret": max(0.0, DISCRETE_GRID_OPTIMUM_TRUE - current_best_true),
-            "improvement_over_grid": max(0.0, current_best_true - DISCRETE_GRID_OPTIMUM_TRUE),
-            "is_novel": False,
-            "min_dist_to_discrete": 0.0,
+            "is_off_grid": False,
+            "min_distance_to_grid": 0.0,
+            "is_new_vs_observed": False,
+            "min_distance_to_observed": 0.0,
+            "duplicate_rejections_at_step": 0,
         }
     )
 
@@ -112,7 +230,7 @@ def run_single_attia_continuous_trajectory(
             seed=optimizer_seed * 1000 + step * 100 + 7,
         )
 
-        # 2. Fit GP surrogate on observed data
+        # 2. Fit GP surrogate on observed simulated observations
         X_train = np.array([[r[c] for c in feature_cols] for r in observed_records], dtype=float)
         y_train = np.array([r["simulated_lifetime"] for r in observed_records], dtype=float)
 
@@ -130,13 +248,28 @@ def run_single_attia_continuous_trajectory(
         )
         gp.fit(X_train_scaled, y_train)
 
-        # 3. Predict across feasible candidate batch
+        # 3. Predict acquisition across feasible candidates
         X_cand = cand_batch[feature_cols].to_numpy(dtype=float)
         X_cand_scaled = scaler.transform(X_cand)
 
+        observed_df = pd.DataFrame(observed_records)
+        novelty_vs_observed = search_space.check_novelty(
+            cand_batch,
+            reference_points=observed_df,
+            feature_cols=feature_cols,
+            tol=duplicate_tol,
+        )
+
+        step_duplicate_rejections = 0
+
         if strategy == "random":
+            # Filter non-duplicates
+            non_dup_indices = np.where(novelty_vs_observed["min_distance"].to_numpy() >= duplicate_tol)[0]
             rng_step = np.random.default_rng(optimizer_seed + step * 1000)
-            selected_idx = int(rng_step.integers(0, len(cand_batch)))
+            if len(non_dup_indices) > 0:
+                selected_idx = int(rng_step.choice(non_dup_indices))
+            else:
+                selected_idx = int(rng_step.integers(0, len(cand_batch)))
             best_cand_dict = cand_batch.iloc[selected_idx].to_dict()
 
         elif strategy in {"greedy", "gp_ucb"}:
@@ -146,23 +279,37 @@ def run_single_attia_continuous_trajectory(
                 pred_mean, pred_std = gp.predict(X_cand_scaled, return_std=True)
                 scores = pred_mean + beta * pred_std
 
-            top_idx = int(np.argmax(scores))
-            init_c1 = float(cand_batch.iloc[top_idx]["C1"])
-            init_c2 = float(cand_batch.iloc[top_idx]["C2"])
-            init_c3 = float(cand_batch.iloc[top_idx]["C3"])
+            # Sort candidate batch descending by acquisition score
+            sorted_indices = np.argsort(scores)[::-1]
 
-            best_cand_dict = cand_batch.iloc[top_idx].to_dict()
+            # Find top candidate satisfying duplicate tolerance
+            selected_cand = None
+            for cand_i in sorted_indices:
+                if novelty_vs_observed["min_distance"].iloc[cand_i] >= duplicate_tol:
+                    selected_cand = cand_batch.iloc[cand_i].to_dict()
+                    break
+                else:
+                    step_duplicate_rejections += 1
+
+            if selected_cand is None:
+                selected_cand = cand_batch.iloc[sorted_indices[0]].to_dict()
+
+            best_cand_dict = selected_cand
 
             # Optional local continuous refinement via Scipy optimize
             if refine_continuous:
-                def _obj(x: np.ndarray) -> float:
-                    c1_val, c2_val, c3_val = float(x[0]), float(x[1]), float(x[2])
-                    c4_val = float(compute_expected_c4(c1_val, c2_val, c3_val))
-                    cand_test = {"C1": c1_val, "C2": c2_val, "C3": c3_val, "C4": c4_val}
-                    if not search_space.is_feasible(cand_test):
-                        return 1e6  # Constraint penalty
+                init_c1 = float(best_cand_dict["C1"])
+                init_c2 = float(best_cand_dict["C2"])
+                init_c3 = float(best_cand_dict["C3"])
 
-                    x_feat = np.array([[c1_val, c2_val, c3_val, c4_val]])
+                def _obj(x: np.ndarray) -> float:
+                    c1_v, c2_v, c3_v = float(x[0]), float(x[1]), float(x[2])
+                    c4_v = float(compute_expected_c4(c1_v, c2_v, c3_v))
+                    cand_t = {"C1": c1_v, "C2": c2_v, "C3": c3_v, "C4": c4_v}
+                    if not search_space.is_feasible(cand_t):
+                        return 1e6
+
+                    x_feat = np.array([[c1_v, c2_v, c3_v, c4_v]])
                     x_sc = scaler.transform(x_feat)
                     if strategy == "greedy":
                         return -float(gp.predict(x_sc)[0])
@@ -182,77 +329,150 @@ def run_single_attia_continuous_trajectory(
                 if opt_res.success:
                     ref_c1, ref_c2, ref_c3 = float(opt_res.x[0]), float(opt_res.x[1]), float(opt_res.x[2])
                     ref_c4 = float(compute_expected_c4(ref_c1, ref_c2, ref_c3))
-                    ref_cand = {"C1": round(ref_c1, 3), "C2": round(ref_c2, 3), "C3": round(ref_c3, 3), "C4": round(ref_c4, 3)}
+                    ref_cand = {"C1": round(ref_c1, 4), "C2": round(ref_c2, 4), "C3": round(ref_c3, 4), "C4": round(ref_c4, 4)}
                     if search_space.is_feasible(ref_cand):
-                        best_cand_dict = ref_cand
+                        # Verify refined point is not a duplicate of observed points
+                        ref_df = pd.DataFrame([ref_cand])
+                        ref_nov = search_space.check_novelty(ref_df, reference_points=observed_df, feature_cols=feature_cols, tol=duplicate_tol)
+                        if ref_nov["min_distance"].iloc[0] >= duplicate_tol:
+                            best_cand_dict = ref_cand
+                        else:
+                            step_duplicate_rejections += 1
 
         else:
             raise ValueError(f"Unknown optimization strategy: {strategy!r}")
 
-        # 4. Check novelty against discrete 224-policy grid
         c1 = float(best_cand_dict["C1"])
         c2 = float(best_cand_dict["C2"])
         c3 = float(best_cand_dict["C3"])
         c4 = float(compute_expected_c4(c1, c2, c3))
 
+        # Check novelty vs discrete grid
         single_cand_df = pd.DataFrame([{"C1": c1, "C2": c2, "C3": c3, "C4": c4}])
-        novelty_df = search_space.check_novelty(
+        novelty_grid = search_space.check_novelty(
             single_cand_df,
             reference_points=discrete_pool,
             feature_cols=feature_cols,
-            tol=1e-3,
+            tol=duplicate_tol,
         )
-        is_novel = bool(novelty_df["is_novel"].iloc[0])
-        min_dist = float(novelty_df["min_distance"].iloc[0])
+        is_off_grid = bool(novelty_grid["is_novel"].iloc[0])
+        dist_to_grid = float(novelty_grid["min_distance"].iloc[0])
 
-        pid = f"ATTIA_CONT_S{optimizer_seed:02d}_ST{step:02d}"
+        # Check novelty vs observed
+        novelty_obs = search_space.check_novelty(
+            single_cand_df,
+            reference_points=pd.DataFrame(observed_records),
+            feature_cols=feature_cols,
+            tol=duplicate_tol,
+        )
+        is_new_obs = bool(novelty_obs["is_novel"].iloc[0])
+        dist_to_obs = float(novelty_obs["min_distance"].iloc[0])
 
-        # 5. Evaluate simulator with fair stochastic seed
-        sim_seed = generate_attia_simulator_seed(benchmark_seed=optimizer_seed, policy_id=pid)
-        sim_life = simulate_attia_policy(c1, c2, c3, mode="hi", variance=True, seed=sim_seed)
-        true_life = simulate_attia_policy(c1, c2, c3, mode="hi", variance=False, seed=0)
+        # Deterministic IDs
+        cand_id = generate_continuous_candidate_id(c1, c2, c3, c4)
+        query_id = f"Q_S{optimizer_seed:02d}_{strategy}_ST{step:02d}"
+
+        # 4. Query simulator oracle with fair stochastic seed
+        sim_seed = generate_attia_simulator_seed(benchmark_seed=optimizer_seed, policy_id=cand_id)
+        sim_life = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=True, seed=sim_seed))
 
         observed_records.append(
             {
-                "policy_id": pid,
+                "query_id": query_id,
+                "candidate_id": cand_id,
                 "C1": c1,
                 "C2": c2,
                 "C3": c3,
                 "C4": c4,
                 "simulator_seed": sim_seed,
-                "simulated_lifetime": float(sim_life),
-                "reference_true_lifetime": float(true_life),
-                "is_novel": is_novel,
-                "min_dist_to_discrete": min_dist,
+                "simulated_lifetime": sim_life,
+                "is_off_grid": is_off_grid,
+                "min_distance_to_grid": dist_to_grid,
+                "is_new_vs_observed": is_new_obs,
+                "min_distance_to_observed": dist_to_obs,
             }
         )
 
-        current_best_sim = max(current_best_sim, float(sim_life))
-        current_best_true = max(current_best_true, float(true_life))
+        current_best_sim = max(current_best_sim, sim_life)
 
         history.append(
             {
                 "benchmark_seed": optimizer_seed,
                 "strategy": strategy,
                 "step": step,
-                "policy_id": pid,
+                "query_id": query_id,
+                "candidate_id": cand_id,
                 "C1": c1,
                 "C2": c2,
                 "C3": c3,
                 "C4": c4,
                 "simulator_seed": sim_seed,
-                "simulated_lifetime": float(sim_life),
+                "simulated_lifetime": sim_life,
                 "best_observed_lifetime": current_best_sim,
-                "reference_true_lifetime": float(true_life),
-                "best_reference_true": current_best_true,
-                "simple_regret": max(0.0, DISCRETE_GRID_OPTIMUM_TRUE - current_best_true),
-                "improvement_over_grid": max(0.0, current_best_true - DISCRETE_GRID_OPTIMUM_TRUE),
-                "is_novel": is_novel,
-                "min_dist_to_discrete": min_dist,
+                "is_off_grid": is_off_grid,
+                "min_distance_to_grid": dist_to_grid,
+                "is_new_vs_observed": is_new_obs,
+                "min_distance_to_observed": dist_to_obs,
+                "duplicate_rejections_at_step": step_duplicate_rejections,
             }
         )
 
     return history
+
+
+def evaluate_continuous_trajectory(
+    raw_trajectory: list[dict[str, Any]],
+    init_indices: list[int],
+    discrete_pool: pd.DataFrame,
+    continuous_ref_lifetime: float,
+    discrete_grid_optimum_lifetime: float,
+) -> list[dict[str, Any]]:
+    """Evaluator-only function to join raw optimizer history with latent simulator evaluations.
+
+    Computes:
+    - reference_true_lifetime: latent deterministic lifetime (variance=False)
+    - best_reference_true: cumulative max latent lifetime
+    - continuous_simple_regret: continuous_ref_lifetime - best_reference_true
+    - gap_to_discrete_grid_optimum: max(0, discrete_grid_optimum_lifetime - best_reference_true)
+    - improvement_over_discrete_grid: max(0, best_reference_true - discrete_grid_optimum_lifetime)
+    - beats_discrete_grid: bool(best_reference_true > discrete_grid_optimum_lifetime)
+    """
+    # Evaluate initial warmup latent true values
+    init_true_lifetimes = []
+    for idx in init_indices:
+        r = discrete_pool.iloc[idx]
+        tl = float(simulate_attia_policy(float(r["C1"]), float(r["C2"]), float(r["C3"]), mode="hi", variance=False, seed=0))
+        init_true_lifetimes.append(tl)
+
+    current_best_true = max(init_true_lifetimes)
+
+    evaluated_history: list[dict[str, Any]] = []
+
+    for row in raw_trajectory:
+        evaluated_row = dict(row)
+
+        if row["step"] == 0:
+            evaluated_row["reference_true_lifetime"] = None
+            evaluated_row["best_reference_true"] = current_best_true
+            evaluated_row["continuous_simple_regret"] = max(0.0, continuous_ref_lifetime - current_best_true)
+            evaluated_row["gap_to_discrete_grid_optimum"] = max(0.0, discrete_grid_optimum_lifetime - current_best_true)
+            evaluated_row["improvement_over_discrete_grid"] = max(0.0, current_best_true - discrete_grid_optimum_lifetime)
+            evaluated_row["beats_discrete_grid"] = bool(current_best_true > discrete_grid_optimum_lifetime)
+        else:
+            c1, c2, c3 = float(row["C1"]), float(row["C2"]), float(row["C3"])
+            true_life = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=False, seed=0))
+            current_best_true = max(current_best_true, true_life)
+
+            evaluated_row["reference_true_lifetime"] = true_life
+            evaluated_row["best_reference_true"] = current_best_true
+            evaluated_row["continuous_simple_regret"] = max(0.0, continuous_ref_lifetime - current_best_true)
+            evaluated_row["gap_to_discrete_grid_optimum"] = max(0.0, discrete_grid_optimum_lifetime - current_best_true)
+            evaluated_row["improvement_over_discrete_grid"] = max(0.0, current_best_true - discrete_grid_optimum_lifetime)
+            evaluated_row["beats_discrete_grid"] = bool(current_best_true > discrete_grid_optimum_lifetime)
+
+        evaluated_history.append(evaluated_row)
+
+    return evaluated_history
 
 
 def run_attia_continuous_benchmark(
@@ -261,9 +481,10 @@ def run_attia_continuous_benchmark(
     initial_policies: int = 5,
     n_seeds: int = 30,
     beta: float = 1.0,
+    n_candidates_per_step: int = 5000,
     output_dir: Path | str | None = None,
 ) -> dict[str, Any]:
-    """Runs the continuous Bayesian Optimization benchmark across multiple budgets and paired seeds."""
+    """Runs the hardened continuous Bayesian Optimization benchmark across multiple budgets and paired seeds."""
     if adapter is None:
         adapter = AttiaAdapter()
 
@@ -277,12 +498,28 @@ def run_attia_continuous_benchmark(
     discrete_pool = adapter.load_candidate_pool()
     search_space: SearchSpace = adapter.continuous_search_space()
 
-    # Save search space summary
+    # 1. Programmatically derive discrete grid optimum
+    discrete_grid_optimum = derive_discrete_grid_optimum(discrete_pool)
+    discrete_opt_true = float(discrete_grid_optimum["reference_true_lifetime"])
+
+    # 2. Compute or load evaluator-only best-known continuous reference
+    cont_ref_meta = compute_or_load_continuous_reference(
+        search_space=search_space,
+        output_dir=output_dir,
+        discrete_pool=discrete_pool,
+        n_starts=50,
+        seed=42,
+    )
+    cont_ref_opt_true = float(cont_ref_meta["best_known_latent_lifetime"])
+
+    # 3. Save search space provenance summary
     search_space_meta = {
         **search_space.to_dict(),
+        "search_space_provenance": "continuous relaxation/interpolation of the parameter ranges used to construct the authors' discrete 224-policy space",
+        "scientific_disclaimer": "The continuous search space is evaluated strictly under the author numerical PDE/Arrhenius degradation simulator. Off-grid policies have NOT been physically validated on battery hardware.",
         "discrete_reference_grid_size": len(discrete_pool),
-        "discrete_grid_optimum_true": DISCRETE_GRID_OPTIMUM_TRUE,
-        "notes": "Continuous optimization allows off-grid charging rates C1, C2, C3 with automatic C4 derivation.",
+        "derived_discrete_grid_optimum": discrete_grid_optimum,
+        "best_known_continuous_reference": cont_ref_meta,
     }
     with open(output_dir / "search_space_summary.json", "w", encoding="utf-8") as f:
         json.dump(search_space_meta, f, indent=2)
@@ -291,12 +528,12 @@ def run_attia_continuous_benchmark(
     max_budget = max(budgets)
     max_queries = max_budget - initial_policies
 
-    full_trajectories_by_seed: dict[int, dict[str, list[dict[str, Any]]]] = {}
+    full_evaluated_trajectories: dict[int, dict[str, list[dict[str, Any]]]] = {}
     all_proposed_protocols: list[dict[str, Any]] = []
     all_history_records: list[dict[str, Any]] = []
 
     logger.info(
-        "Running Continuous Bayesian Optimization benchmark across %d seeds and budgets %s...",
+        "Running hardened Continuous BO benchmark across %d seeds and budgets %s...",
         n_seeds,
         budgets,
     )
@@ -305,9 +542,11 @@ def run_attia_continuous_benchmark(
         seed_rng = np.random.default_rng(seed_idx * 7919 + 42)
         init_indices = seed_rng.choice(len(discrete_pool), size=initial_policies, replace=False).tolist()
 
-        full_trajectories_by_seed[seed_idx] = {}
+        full_evaluated_trajectories[seed_idx] = {}
+
         for strat in strategies:
-            hist = run_single_attia_continuous_trajectory(
+            # Run pure optimizer (NO reference truth inside)
+            raw_hist = run_single_attia_continuous_trajectory(
                 search_space=search_space,
                 discrete_pool=discrete_pool,
                 init_indices=init_indices,
@@ -315,43 +554,60 @@ def run_attia_continuous_benchmark(
                 strategy=strat,
                 optimizer_seed=seed_idx,
                 beta=beta,
+                n_candidates_per_step=n_candidates_per_step,
             )
-            full_trajectories_by_seed[seed_idx][strat] = hist
 
-            for row in hist:
+
+            # Post-hoc evaluator joins latent true values
+            eval_hist = evaluate_continuous_trajectory(
+                raw_trajectory=raw_hist,
+                init_indices=init_indices,
+                discrete_pool=discrete_pool,
+                continuous_ref_lifetime=cont_ref_opt_true,
+                discrete_grid_optimum_lifetime=discrete_opt_true,
+            )
+            full_evaluated_trajectories[seed_idx][strat] = eval_hist
+
+            for row in eval_hist:
                 if row["step"] > 0:
                     all_proposed_protocols.append(
                         {
                             "benchmark_seed": seed_idx,
                             "strategy": strat,
                             "step": row["step"],
-                            "policy_id": row["policy_id"],
+                            "query_id": row["query_id"],
+                            "candidate_id": row["candidate_id"],
                             "C1": row["C1"],
                             "C2": row["C2"],
                             "C3": row["C3"],
                             "C4": row["C4"],
+                            "simulator_seed": row["simulator_seed"],
                             "simulated_lifetime": row["simulated_lifetime"],
                             "reference_true_lifetime": row["reference_true_lifetime"],
-                            "is_novel": row["is_novel"],
-                            "min_dist_to_discrete": row["min_dist_to_discrete"],
+                            "is_off_grid": row["is_off_grid"],
+                            "min_distance_to_grid": row["min_distance_to_grid"],
+                            "is_new_vs_observed": row["is_new_vs_observed"],
+                            "min_distance_to_observed": row["min_distance_to_observed"],
                         }
                     )
 
     # Compute metrics for each budget
     budget_sweep_results: list[dict[str, Any]] = []
-    overall_best_continuous_protocol: dict[str, Any] = {
-        "reference_true_lifetime": -1.0,
-        "policy_id": None,
-        "C1": None,
-        "C2": None,
-        "C3": None,
-        "C4": None,
-        "strategy": None,
-        "seed": None,
-        "step": None,
-        "is_novel": False,
-        "min_dist_to_discrete": None,
-        "improvement_over_grid": 0.0,
+    best_discovered_per_strategy: dict[str, dict[str, Any]] = {
+        s: {
+            "reference_true_lifetime": -1.0,
+            "candidate_id": None,
+            "C1": None,
+            "C2": None,
+            "C3": None,
+            "C4": None,
+            "seed": None,
+            "step": None,
+            "is_off_grid": False,
+            "min_distance_to_grid": None,
+            "improvement_over_discrete_grid": 0.0,
+        }
+        for s in strategies
     }
 
     for budget in budgets:
@@ -359,49 +615,58 @@ def run_attia_continuous_benchmark(
         strategy_metrics: dict[str, dict[str, Any]] = {}
 
         strat_bests: dict[str, list[float]] = {s: [] for s in strategies}
-        strat_regrets: dict[str, list[float]] = {s: [] for s in strategies}
-        strat_aucs: dict[str, list[float]] = {s: [] for s in strategies}
-        strat_novel_rates: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_cont_regrets: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_grid_gaps: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_grid_gap_aucs: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_off_grid_rates: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_beats_grid: dict[str, list[bool]] = {s: [] for s in strategies}
         strat_improvements: dict[str, list[float]] = {s: [] for s in strategies}
+        strat_dup_rejections: dict[str, list[int]] = {s: [] for s in strategies}
 
         for seed_idx in range(n_seeds):
             for strat in strategies:
-                hist = full_trajectories_by_seed[seed_idx][strat]
+                hist = full_evaluated_trajectories[seed_idx][strat]
                 sliced = [h for h in hist if h["step"] <= n_queries]
 
                 final_row = sliced[-1]
                 best_val = float(final_row["best_reference_true"])
-                regret_val = float(final_row["simple_regret"])
-                imp_val = float(final_row["improvement_over_grid"])
+                cont_regret = float(final_row["continuous_simple_regret"])
+                grid_gap = float(final_row["gap_to_discrete_grid_optimum"])
+                imp_val = float(final_row["improvement_over_discrete_grid"])
+                beats_grid = bool(final_row["beats_discrete_grid"])
 
                 strat_bests[strat].append(best_val)
-                strat_regrets[strat].append(regret_val)
+                strat_cont_regrets[strat].append(cont_regret)
+                strat_grid_gaps[strat].append(grid_gap)
+                strat_beats_grid[strat].append(beats_grid)
                 strat_improvements[strat].append(imp_val)
 
-                regret_series = [h["simple_regret"] for h in sliced]
-                strat_aucs[strat].append(float(np.mean(regret_series)))
+                grid_gap_series = [h["gap_to_discrete_grid_optimum"] for h in sliced]
+                strat_grid_gap_aucs[strat].append(float(np.mean(grid_gap_series)))
 
-                novel_count = sum(1 for h in sliced if h["step"] > 0 and h["is_novel"])
+                off_grid_count = sum(1 for h in sliced if h["step"] > 0 and h["is_off_grid"])
                 query_count = sum(1 for h in sliced if h["step"] > 0)
-                novel_rate = (novel_count / query_count) if query_count > 0 else 0.0
-                strat_novel_rates[strat].append(novel_rate)
+                off_grid_rate = (off_grid_count / query_count) if query_count > 0 else 0.0
+                strat_off_grid_rates[strat].append(off_grid_rate)
 
-                # Track global best
+                tot_dup_rej = sum(h["duplicate_rejections_at_step"] for h in sliced)
+                strat_dup_rejections[strat].append(tot_dup_rej)
+
+                # Track best per strategy
                 for h in sliced:
-                    if h["step"] > 0 and float(h["reference_true_lifetime"]) > overall_best_continuous_protocol["reference_true_lifetime"]:
-                        overall_best_continuous_protocol = {
+                    if h["step"] > 0 and float(h["reference_true_lifetime"]) > best_discovered_per_strategy[strat]["reference_true_lifetime"]:
+                        best_discovered_per_strategy[strat] = {
                             "reference_true_lifetime": float(h["reference_true_lifetime"]),
-                            "policy_id": h["policy_id"],
+                            "candidate_id": h["candidate_id"],
                             "C1": h["C1"],
                             "C2": h["C2"],
                             "C3": h["C3"],
                             "C4": h["C4"],
-                            "strategy": strat,
                             "seed": seed_idx,
                             "step": h["step"],
-                            "is_novel": bool(h["is_novel"]),
-                            "min_dist_to_discrete": float(h["min_dist_to_discrete"]),
-                            "improvement_over_grid": max(0.0, float(h["reference_true_lifetime"]) - DISCRETE_GRID_OPTIMUM_TRUE),
+                            "is_off_grid": bool(h["is_off_grid"]),
+                            "min_distance_to_grid": float(h["min_distance_to_grid"]),
+                            "improvement_over_discrete_grid": max(0.0, float(h["reference_true_lifetime"]) - discrete_opt_true),
                         }
 
                 if budget == max_budget:
@@ -410,34 +675,39 @@ def run_attia_continuous_benchmark(
 
         for strat in strategies:
             bests = np.array(strat_bests[strat], dtype=float)
-            regs = np.array(strat_regrets[strat], dtype=float)
-            aucs = np.array(strat_aucs[strat], dtype=float)
-            novs = np.array(strat_novel_rates[strat], dtype=float)
+            cont_regs = np.array(strat_cont_regrets[strat], dtype=float)
+            grid_gaps = np.array(strat_grid_gaps[strat], dtype=float)
+            grid_aucs = np.array(strat_grid_gap_aucs[strat], dtype=float)
+            off_grids = np.array(strat_off_grid_rates[strat], dtype=float)
+            beats = np.array(strat_beats_grid[strat], dtype=bool)
             imps = np.array(strat_improvements[strat], dtype=float)
+            dup_rejs = np.array(strat_dup_rejections[strat], dtype=int)
 
-            reg_emp_low, reg_emp_high = np.percentile(regs, [2.5, 97.5])
-            reg_ci_low, reg_ci_high = compute_bootstrap_mean_ci(regs, n_bootstraps=2000, seed=42 + budget)
             best_ci_low, best_ci_high = compute_bootstrap_mean_ci(bests, n_bootstraps=2000, seed=1042 + budget)
+            reg_ci_low, reg_ci_high = compute_bootstrap_mean_ci(cont_regs, n_bootstraps=2000, seed=2042 + budget)
+            gap_ci_low, gap_ci_high = compute_bootstrap_mean_ci(grid_gaps, n_bootstraps=2000, seed=3042 + budget)
+
+            cond_imps = imps[beats]
+            mean_cond_imp = float(np.mean(cond_imps)) if len(cond_imps) > 0 else 0.0
 
             strategy_metrics[strat] = {
                 "mean_best_seen": float(np.mean(bests)),
                 "std_best_seen": float(np.std(bests, ddof=1)) if len(bests) > 1 else 0.0,
                 "median_best_seen": float(np.median(bests)),
                 "mean_best_seen_95_ci": [float(best_ci_low), float(best_ci_high)],
-                "mean_simple_regret": float(np.mean(regs)),
-                "std_simple_regret": float(np.std(regs, ddof=1)) if len(regs) > 1 else 0.0,
-                "median_simple_regret": float(np.median(regs)),
-                "mean_simple_regret_95_ci": [float(reg_ci_low), float(reg_ci_high)],
-                "simple_regret_95_empirical_interval": [float(reg_emp_low), float(reg_emp_high)],
-                "mean_regret_auc": float(np.mean(aucs)),
-                "mean_novel_proposal_rate": float(np.mean(novs)),
-                "mean_improvement_over_grid": float(np.mean(imps)),
+                "mean_continuous_simple_regret": float(np.mean(cont_regs)),
+                "std_continuous_simple_regret": float(np.std(cont_regs, ddof=1)) if len(cont_regs) > 1 else 0.0,
+                "median_continuous_simple_regret": float(np.median(cont_regs)),
+                "mean_continuous_simple_regret_95_ci": [float(reg_ci_low), float(reg_ci_high)],
+                "mean_gap_to_discrete_grid": float(np.mean(grid_gaps)),
+                "mean_gap_to_discrete_grid_95_ci": [float(gap_ci_low), float(gap_ci_high)],
+                "mean_grid_gap_auc": float(np.mean(grid_aucs)),
+                "pct_seeds_beating_discrete_grid": float(np.mean(beats) * 100.0),
+                "mean_improvement_conditional_on_beating_grid": mean_cond_imp,
                 "max_improvement_over_grid": float(np.max(imps)),
+                "mean_off_grid_proposal_rate": float(np.mean(off_grids)),
+                "total_duplicate_rejections": int(np.sum(dup_rejs)),
             }
-
-        # Paired Wilcoxon test (UCB vs Greedy)
-        diff_regrets = np.array(strat_regrets["gp_ucb"]) - np.array(strat_regrets["greedy"])
-        diff_aucs = np.array(strat_aucs["gp_ucb"]) - np.array(strat_aucs["greedy"])
 
         def _safe_wilcoxon(d: np.ndarray) -> float:
             if np.all(d == 0):
@@ -448,27 +718,37 @@ def run_attia_continuous_benchmark(
             except Exception:
                 return 1.0
 
+        paired_comparisons = {}
+        pair_tuples = [
+            ("ucb_vs_greedy", "gp_ucb", "greedy"),
+            ("ucb_vs_random", "gp_ucb", "random"),
+            ("greedy_vs_random", "greedy", "random"),
+        ]
+        for pair_name, strat_a, strat_b in pair_tuples:
+            d_best = np.array(strat_bests[strat_a]) - np.array(strat_bests[strat_b])
+            d_reg = np.array(strat_cont_regrets[strat_a]) - np.array(strat_cont_regrets[strat_b])
+            paired_comparisons[pair_name] = {
+                "best_diff": {
+                    "mean": float(np.mean(d_best)),
+                    "median": float(np.median(d_best)),
+                    "std": float(np.std(d_best, ddof=1)) if len(d_best) > 1 else 0.0,
+                    "p_value": _safe_wilcoxon(d_best),
+                },
+                "regret_diff": {
+                    "mean": float(np.mean(d_reg)),
+                    "median": float(np.median(d_reg)),
+                    "std": float(np.std(d_reg, ddof=1)) if len(d_reg) > 1 else 0.0,
+                    "p_value": _safe_wilcoxon(d_reg),
+                },
+            }
+
         budget_sweep_results.append(
             {
                 "budget": budget,
                 "initial_policies": initial_policies,
                 "queries": n_queries,
                 "strategies": strategy_metrics,
-                "paired_comparison_ucb_vs_greedy": {
-                    "n_paired_seeds": n_seeds,
-                    "regret_diff_ucb_minus_greedy": {
-                        "mean": float(np.mean(diff_regrets)),
-                        "median": float(np.median(diff_regrets)),
-                        "std": float(np.std(diff_regrets, ddof=1)) if len(diff_regrets) > 1 else 0.0,
-                        "p_value": _safe_wilcoxon(diff_regrets),
-                    },
-                    "auc_diff_ucb_minus_greedy": {
-                        "mean": float(np.mean(diff_aucs)),
-                        "median": float(np.median(diff_aucs)),
-                        "std": float(np.std(diff_aucs, ddof=1)) if len(diff_aucs) > 1 else 0.0,
-                        "p_value": _safe_wilcoxon(diff_aucs),
-                    },
-                },
+                "paired_comparisons": paired_comparisons,
             }
         )
 
@@ -477,31 +757,28 @@ def run_attia_continuous_benchmark(
     pd.DataFrame(all_proposed_protocols).to_csv(output_dir / "proposed_protocols.csv", index=False)
 
     final_budget_entry = budget_sweep_results[-1]
+    overall_best_continuous = max(best_discovered_per_strategy.values(), key=lambda x: x["reference_true_lifetime"])
+
     benchmark_summary = {
-        "benchmark": "Attia et al. 2020 Continuous Fast-Charging Bayesian Optimization Benchmark",
+        "benchmark": "Attia et al. 2020 Hardened Continuous Fast-Charging Bayesian Optimization Benchmark",
         "benchmark_nature": "simulator != experimental dataset",
-        "discrete_grid_optimum": {
-            "policy_id": "ATTIA_P113",
-            "C1": 6.0,
-            "C2": 4.8,
-            "C3": 4.0,
-            "C4": 4.8,
-            "reference_true_lifetime": DISCRETE_GRID_OPTIMUM_TRUE,
-        },
-        "best_continuous_protocol_discovered": overall_best_continuous_protocol,
-        "continuous_improvement_found": bool(overall_best_continuous_protocol["improvement_over_grid"] > 0),
-        "continuous_improvement_cycles": overall_best_continuous_protocol["improvement_over_grid"],
+        "scientific_disclaimer": "The continuous search space is a numerical relaxation of the parameter bounds used in Attia et al. (Nature 2020). Performance is evaluated strictly under the author PDE thermal/Arrhenius degradation simulator. No physical experimental discovery is claimed.",
+        "derived_discrete_grid_optimum": discrete_grid_optimum,
+        "best_known_continuous_reference": cont_ref_meta,
+        "overall_best_continuous_discovered": overall_best_continuous,
+        "best_discovered_per_strategy": best_discovered_per_strategy,
         "optimization_parameters": {
             "initial_policies": initial_policies,
             "total_budget": max_budget,
             "total_queries": max_queries,
             "n_seeds": n_seeds,
             "beta": beta,
-            "candidates_evaluated_per_step": 5000,
+            "candidates_evaluated_per_step": n_candidates_per_step,
             "bootstrap_replicates": 2000,
+            "duplicate_tolerance": 1e-3,
         },
         "strategy_comparison": final_budget_entry["strategies"],
-        "paired_comparison_ucb_vs_greedy": final_budget_entry["paired_comparison_ucb_vs_greedy"],
+        "paired_comparisons": final_budget_entry["paired_comparisons"],
         "budget_sweep": budget_sweep_results,
     }
 
