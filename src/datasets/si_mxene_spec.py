@@ -52,4 +52,7 @@ SI_MXENE_SPEC = DatasetSpec(
     objective="maximize",
     candidate_columns=CANDIDATE_COLUMNS,
     optional_columns=["capacity_fade", "impurity_score"],
+    entity_id_column="sample_id",
+    source_dataset="si_mxene",
+    source_version="1.0",
 )

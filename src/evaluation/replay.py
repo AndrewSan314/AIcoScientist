@@ -46,14 +46,15 @@ def replay(
                 raise RuntimeError("Replay recommender returned no candidate")
             candidate = recommendations.iloc[0].to_dict()
             response = oracle.query(candidate)
+            new_row = adapter.build_observed_row(candidate, response, step)
             observed = pd.concat(
-                [observed, pd.DataFrame([response["row"]])], ignore_index=True
+                [observed, pd.DataFrame([new_row])], ignore_index=True
             )
             history.append(
                 {
                     "step": step,
                     **{column: candidate[column] for column in adapter.spec.candidate_columns},
-                    adapter.spec.target_column: response["target"],
+                    adapter.spec.target_column: response.target,
                 }
             )
     return {"observed": observed, "history": pd.DataFrame(history)}

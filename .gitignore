@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest_tmp/
 .venv/
 data/experiments.db
 models/*.pth
@@ -9,3 +10,4 @@ models/*.pt
 .gitnexus/
 *.backup*
 *.backup-*.pptx
+outputs/*/

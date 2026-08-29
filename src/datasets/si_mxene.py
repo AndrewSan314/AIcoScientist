@@ -74,9 +74,18 @@ class SiMxeneAdapter(DatasetAdapter):
         self,
         candidates: pd.DataFrame,
         observed: pd.DataFrame,
-        fill_values: Mapping[str, Any],
+        fill_values: Mapping[str, Any] | None = None,
     ) -> pd.DataFrame:
-        result = super().build_candidate_features(candidates, observed, fill_values)
+        if fill_values is None:
+            fill_values = observed[self.spec.feature_columns].median(numeric_only=True).to_dict()
+        result = pd.DataFrame(index=candidates.index)
+        for feature in self.spec.feature_columns:
+            if feature in candidates:
+                result[feature] = candidates[feature]
+            elif feature in fill_values:
+                result[feature] = fill_values[feature]
+            else:
+                raise ValueError(f"Missing candidate feature value for {feature!r}")
         result["pressing_pressure"] = float(observed["pressing_pressure"].median())
         result["si_mxene_ratio"] = result["si_content"] / result["mxene_content"]
         result["si_ti_ratio"] = result["si_percent"] / result["ti_percent"]

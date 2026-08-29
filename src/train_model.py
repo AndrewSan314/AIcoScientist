@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -8,7 +10,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from src.build_dataset import build_dataset
@@ -16,18 +18,25 @@ from src.datasets.base import DatasetAdapter, DatasetSpec
 from src.datasets.registry import get_dataset_adapter
 from src.utils import (
     IMPORTANCE_FILE,
+    MASTER_FILE,
     METRICS_FILE,
     MODEL_FILE,
     OUTPUT_DIR,
-    MASTER_FILE,
 )
 
 
 def _regression_metrics(y_true, pred, rows, target):
+    if len(y_true) < 2:
+        r2 = None
+    else:
+        try:
+            r2 = float(r2_score(y_true, pred))
+        except Exception:
+            r2 = None
     return {
         "mae": float(mean_absolute_error(y_true, pred)),
         "rmse": float(np.sqrt(mean_squared_error(y_true, pred))),
-        "r2": float(r2_score(y_true, pred)),
+        "r2": r2,
         "rows": int(rows),
         "target": target,
     }
@@ -44,6 +53,59 @@ def _gp_model():
         n_restarts_optimizer=2,
         random_state=42,
     )
+
+
+def make_train_test_split(
+    df: pd.DataFrame,
+    spec: DatasetSpec,
+    test_size: float = 0.25,
+    random_state: int = 42,
+) -> tuple[np.ndarray, np.ndarray]:
+    n_rows = len(df)
+    if n_rows < 4:
+        raise ValueError("At least 4 rows are required for a train/test split")
+
+    if not spec.split_group_columns:
+        test_count = max(2, int(round(n_rows * test_size)))
+        if n_rows - test_count < 2:
+            test_count = n_rows - 2
+        train_idx, test_idx = train_test_split(
+            np.arange(n_rows), test_size=test_count, random_state=random_state
+        )
+        if len(train_idx) < 2 or len(test_idx) < 2:
+            raise ValueError(
+                f"Train/test split produced insufficient rows: train={len(train_idx)}, test={len(test_idx)}"
+            )
+        return train_idx, test_idx
+
+    missing = sorted(set(spec.split_group_columns) - set(df.columns))
+    if missing:
+        raise ValueError(f"Dataset is missing split_group_columns: {missing}")
+
+    groups = df[spec.split_group_columns].astype(str).agg("||".join, axis=1)
+    unique_groups = groups.unique()
+    if len(unique_groups) < 2:
+        raise ValueError(
+            f"At least 2 unique groups are required for grouped split, found {len(unique_groups)}"
+        )
+
+    splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+    splits = list(splitter.split(df, groups=groups))
+    if not splits:
+        raise ValueError("Could not generate grouped split")
+    train_idx, test_idx = splits[0]
+
+    train_groups = set(groups.iloc[train_idx])
+    test_groups = set(groups.iloc[test_idx])
+    if train_groups & test_groups:
+        raise RuntimeError("Grouped split leaked groups across train and test partitions")
+
+    if len(train_idx) < 2 or len(test_idx) < 2:
+        raise ValueError(
+            f"Grouped train/test split resulted in fewer than 2 samples (train={len(train_idx)}, test={len(test_idx)})"
+        )
+
+    return train_idx, test_idx
 
 
 def train_model(
@@ -84,7 +146,10 @@ def train_model(
     if np.ptp(y.to_numpy(dtype=float)) == 0:
         raise ValueError("Target must not be constant")
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+    train_idx, test_idx = make_train_test_split(df, spec)
+    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+
     rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
     rf_model.fit(X_train, y_train)
 
