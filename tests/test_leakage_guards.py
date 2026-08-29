@@ -179,6 +179,7 @@ def test_6_replicate_aggregation_mean():
     assert response.target == 12.0
     assert response.metadata["n_replicates"] == 2
     assert response.metadata["target_std"] == pytest.approx(2.8284, rel=1e-3)
+    assert response.observations == {}
 
 
 def test_7_ambiguous_replicate_with_error_policy():
@@ -257,7 +258,7 @@ def test_9_replay_leakage_prevention(tmp_path):
 
 
 def test_10_minimum_split_sanity_and_group_checks():
-    """11. MINIMUM EVALUATION SPLIT SANITY: Fail fast on invalid sizes and group counts."""
+    """10. MINIMUM EVALUATION SPLIT SANITY: Fail fast on invalid sizes and group counts."""
     spec_grouped = DatasetSpec(
         name="test_group_min",
         id_column="id",
@@ -313,6 +314,198 @@ def test_dataset_spec_extended_validation():
     # Duplicate in observation_columns
     with pytest.raises(ValueError, match="observation_columns"):
         DatasetSpec("d", "id", ["x"], "y", "maximize", ["x"], observation_columns=["obs", "obs"])
+
+
+def test_observation_and_candidate_oracle_overlap_rejected():
+    """Verify observation_columns and candidate_columns cannot overlap oracle_columns."""
+    with pytest.raises(ValueError, match="observation_columns and oracle_columns must not overlap"):
+        DatasetSpec(
+            name="test_obs_oracle",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            observation_columns=["secret_diag"],
+            oracle_columns=["secret_diag"],
+        )
+
+    with pytest.raises(ValueError, match="candidate_columns and oracle_columns must not overlap"):
+        DatasetSpec(
+            name="test_cand_oracle",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["secret_param"],
+            oracle_columns=["secret_param"],
+        )
+
+
+def test_target_in_observation_columns_rejected():
+    """Verify target_column cannot be placed inside observation_columns."""
+    with pytest.raises(ValueError, match="target_column .* cannot be in observation_columns"):
+        DatasetSpec(
+            name="test_target_obs",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            observation_columns=["target"],
+        )
+
+
+def test_invalid_entity_and_candidate_ids_rejected():
+    """Verify empty or non-string entity_id_column and candidate_id_column are rejected."""
+    with pytest.raises(ValueError, match="entity_id_column must be a non-empty string"):
+        DatasetSpec(
+            name="test_bad_entity",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            entity_id_column="",
+        )
+
+    with pytest.raises(ValueError, match="entity_id_column must be a non-empty string"):
+        DatasetSpec(
+            name="test_bad_entity_spaces",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            entity_id_column="   ",
+        )
+
+    with pytest.raises(ValueError, match="candidate_id_column must be a non-empty string"):
+        DatasetSpec(
+            name="test_bad_candidate_id",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            candidate_id_column="",
+        )
+
+
+def test_invalid_feature_horizon_rejected():
+    """Verify feature_horizon must be a positive integer when provided."""
+    # Negative integer
+    with pytest.raises(ValueError, match="feature_horizon must be a positive integer"):
+        DatasetSpec(
+            name="test_bad_horizon",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            feature_horizon=-5,
+        )
+
+    # Zero
+    with pytest.raises(ValueError, match="feature_horizon must be a positive integer"):
+        DatasetSpec(
+            name="test_zero_horizon",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            feature_horizon=0,
+        )
+
+    # Boolean
+    with pytest.raises(ValueError, match="feature_horizon must be a positive integer"):
+        DatasetSpec(
+            name="test_bool_horizon",
+            id_column="id",
+            feature_columns=["x1"],
+            target_column="target",
+            objective="maximize",
+            candidate_columns=["x1"],
+            feature_horizon=True,  # type: ignore
+        )
+
+    # Positive integer works
+    spec = DatasetSpec(
+        name="test_valid_horizon",
+        id_column="id",
+        feature_columns=["x1"],
+        target_column="target",
+        objective="maximize",
+        candidate_columns=["x1"],
+        feature_horizon=100,
+    )
+    assert spec.feature_horizon == 100
+
+
+def test_replicated_oracle_with_observation_columns_raises():
+    """Verify querying replicated candidates with observation_columns raises ValueError."""
+    df = pd.DataFrame([
+        {"sample_id": "r1", "protocol": "P17", "early_diag": 0.12, "target": 10.0},
+        {"sample_id": "r2", "protocol": "P17", "early_diag": 0.18, "target": 14.0},
+    ])
+    spec = DatasetSpec(
+        name="test_replicate_obs_error",
+        id_column="sample_id",
+        candidate_id_column="protocol",
+        feature_columns=["protocol"],
+        target_column="target",
+        objective="maximize",
+        candidate_columns=["protocol"],
+        observation_columns=["early_diag"],
+    )
+    oracle = OfflineOracle(df, spec, replicate_policy="mean")
+
+    with pytest.raises(ValueError, match="observation aggregation for replicated candidates must be explicitly defined"):
+        oracle.query({"protocol": "P17"})
+
+
+def test_single_replicate_with_observation_columns_succeeds():
+    """Verify single-replicate query returns allowed observation_columns normally."""
+    df = pd.DataFrame([
+        {"sample_id": "s1", "x1": 5.0, "obs_val": 42.0, "target": 100.0, "secret_diag": 999.0}
+    ])
+    spec = DatasetSpec(
+        name="test_single_obs",
+        id_column="sample_id",
+        feature_columns=["x1"],
+        target_column="target",
+        objective="maximize",
+        candidate_columns=["x1"],
+        observation_columns=["obs_val"],
+        oracle_columns=["secret_diag"],
+    )
+    oracle = OfflineOracle(df, spec)
+    response = oracle.query({"x1": 5.0})
+
+    assert response.target == 100.0
+    assert response.observations == {"obs_val": 42.0}
+    assert "secret_diag" not in response.observations
+
+
+def test_candidate_id_column_in_oracle_metadata():
+    """Verify candidate_id_column is preserved in OracleResponse metadata when present."""
+    df = pd.DataFrame([
+        {"sample_id": "s1", "protocol_code": "PROTO_99", "x1": 5.0, "target": 100.0}
+    ])
+    spec = DatasetSpec(
+        name="test_cand_id_meta",
+        id_column="sample_id",
+        candidate_id_column="protocol_code",
+        feature_columns=["x1"],
+        target_column="target",
+        objective="maximize",
+        candidate_columns=["x1"],
+    )
+    oracle = OfflineOracle(df, spec)
+    response = oracle.query({"x1": 5.0})
+
+    assert response.metadata.get("candidate_id") == "PROTO_99"
 
 
 def test_dataset_bundle():

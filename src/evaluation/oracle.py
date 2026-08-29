@@ -69,24 +69,28 @@ class OfflineOracle:
             if self.replicate_policy == "error":
                 raise ValueError("Ground-truth candidate identity is ambiguous")
             elif self.replicate_policy == "mean":
+                if self.spec.observation_columns:
+                    raise ValueError(
+                        "Cannot query replicated candidate with observation_columns: "
+                        "observation aggregation for replicated candidates must be explicitly defined."
+                    )
                 targets = matches[self.spec.target_column].to_numpy(dtype=float)
                 n_replicates = int(len(matches))
                 target_mean = float(np.mean(targets))
                 target_std = float(np.std(targets, ddof=1)) if n_replicates > 1 else 0.0
 
-                obs_dict = {}
-                if self.spec.observation_columns:
-                    for col in self.spec.observation_columns:
-                        if col in matches.columns:
-                            obs_dict[col] = matches[col].iloc[0]
-
                 metadata = {
                     "n_replicates": n_replicates,
                     "target_std": target_std,
                 }
+                if self.spec.candidate_id_column and self.spec.candidate_id_column in matches.columns:
+                    metadata["candidate_id"] = matches[self.spec.candidate_id_column].iloc[0]
+                elif self.spec.candidate_id_column and self.spec.candidate_id_column in values:
+                    metadata["candidate_id"] = values[self.spec.candidate_id_column]
+
                 return OracleResponse(
                     candidate=candidate_dict,
-                    observations=obs_dict,
+                    observations={},
                     target=target_mean,
                     metadata=metadata,
                 )
@@ -99,6 +103,11 @@ class OfflineOracle:
             if col in row
         }
         metadata = {"n_replicates": 1, "target_std": 0.0} if self.replicate_policy == "mean" else {}
+        if self.spec.candidate_id_column and self.spec.candidate_id_column in row:
+            metadata["candidate_id"] = row[self.spec.candidate_id_column]
+        elif self.spec.candidate_id_column and self.spec.candidate_id_column in values:
+            metadata["candidate_id"] = values[self.spec.candidate_id_column]
+
         return OracleResponse(
             candidate=candidate_dict,
             observations=obs_dict,

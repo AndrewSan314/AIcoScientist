@@ -10,6 +10,20 @@ import pandas as pd
 
 @dataclass(frozen=True)
 class DatasetSpec:
+    """Dataset specification encoding schema, visibility boundaries, and provenance.
+
+    Concepts:
+    - entity_id_column: Identifies the physical experimental entity (e.g., a specific battery cell
+      or sample). Multiple cycles/measurements can belong to the same physical entity.
+    - candidate_id_column: Identifies the candidate protocol or formulation (e.g., protocol ID or recipe ID).
+    - candidate_columns: Design coordinates/parameters that define the search space and input features.
+    - split_group_columns: Columns defining groups that must never cross train/test splits.
+    - oracle_columns: Hidden ground truth/diagnostic columns strictly forbidden from model training.
+    - observation_columns: Revealed post-query observations (experimental feedback).
+    - feature_horizon: Maximum time or cycle cutoff index for early-prediction features.
+    - source_dataset / source_version: Provenance metadata for reproducibility.
+    """
+
     name: str
     id_column: str
     feature_columns: list[str]
@@ -41,6 +55,21 @@ class DatasetSpec:
         if not self.candidate_columns:
             raise ValueError("candidate_columns must not be empty")
 
+        if self.entity_id_column is not None:
+            if not isinstance(self.entity_id_column, str) or not self.entity_id_column.strip():
+                raise ValueError("entity_id_column must be a non-empty string when provided")
+        if self.candidate_id_column is not None:
+            if not isinstance(self.candidate_id_column, str) or not self.candidate_id_column.strip():
+                raise ValueError("candidate_id_column must be a non-empty string when provided")
+
+        if self.feature_horizon is not None:
+            if (
+                isinstance(self.feature_horizon, bool)
+                or not isinstance(self.feature_horizon, int)
+                or self.feature_horizon <= 0
+            ):
+                raise ValueError("feature_horizon must be a positive integer when provided")
+
         if len(set(self.feature_columns)) != len(self.feature_columns):
             raise ValueError("feature_columns must not contain duplicates")
         if len(set(self.candidate_columns)) != len(self.candidate_columns):
@@ -64,10 +93,26 @@ class DatasetSpec:
 
         if self.target_column in self.feature_columns:
             raise ValueError(f"target_column {self.target_column!r} cannot be in feature_columns")
+        if self.target_column in self.observation_columns:
+            raise ValueError(f"target_column {self.target_column!r} cannot be in observation_columns")
 
-        overlap = set(self.feature_columns) & set(self.oracle_columns)
-        if overlap:
-            raise ValueError(f"feature_columns and oracle_columns must not overlap: {sorted(overlap)}")
+        feature_oracle_overlap = set(self.feature_columns) & set(self.oracle_columns)
+        if feature_oracle_overlap:
+            raise ValueError(
+                f"feature_columns and oracle_columns must not overlap: {sorted(feature_oracle_overlap)}"
+            )
+
+        candidate_oracle_overlap = set(self.candidate_columns) & set(self.oracle_columns)
+        if candidate_oracle_overlap:
+            raise ValueError(
+                f"candidate_columns and oracle_columns must not overlap: {sorted(candidate_oracle_overlap)}"
+            )
+
+        obs_oracle_overlap = set(self.observation_columns) & set(self.oracle_columns)
+        if obs_oracle_overlap:
+            raise ValueError(
+                f"observation_columns and oracle_columns must not overlap: {sorted(obs_oracle_overlap)}"
+            )
 
 
 @dataclass
@@ -129,7 +174,9 @@ class DatasetAdapter(ABC):
         response: Any,
         step: int,
     ) -> dict[str, Any]:
-        observations = response.observations if hasattr(response, "observations") else response.get("observations", {})
+        observations = (
+            response.observations if hasattr(response, "observations") else response.get("observations", {})
+        )
         target = response.target if hasattr(response, "target") else response.get("target")
         row = {
             self.spec.id_column: f"replay_step_{step}",
