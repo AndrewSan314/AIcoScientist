@@ -9,3 +9,6 @@ pytest
 opencv-contrib-python
 scikit-image
 segment-anything
+h5py
+scipy
+

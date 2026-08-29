@@ -11,3 +11,17 @@ models/*.pt
 *.backup*
 *.backup-*.pptx
 outputs/*/
+
+# External raw datasets and large archives
+data/external/**/raw/
+data/external/**/paper_code/
+data/external/**/*.mat
+data/external/**/*.zip
+data/external/**/*.pkl
+data/external/aging_matrix_2025/
+*.mat
+*.zip
+*.crdownload
+.DS_Store
+
+

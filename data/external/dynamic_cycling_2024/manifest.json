@@ -1,0 +1,107 @@
+{
+  "dataset": "dynamic_cycling_2024",
+  "source": "https://purl.stanford.edu/td676xr4322",
+  "source_version": "nat_energy_2024",
+  "files": [
+    {
+      "path": "paper_code/data/.DS_Store",
+      "size_bytes": 8196,
+      "sha256": "f991d8e248f2d491394ae3c1895f24417fd95699fe171df075721cfb7c54345f"
+    },
+    {
+      "path": "paper_code/data/all_cells_QLi.mat",
+      "size_bytes": 34736,
+      "sha256": "0bee65378cca8819b7480e6bbd0b4f8c1441529278a6f42b153880fae828af23"
+    },
+    {
+      "path": "paper_code/data/all_cells_SOH.mat",
+      "size_bytes": 34064,
+      "sha256": "c5e30be5250298f4bf405eb6f485a5ab6df5b885eb60351b94678e8b8c4b46b2"
+    },
+    {
+      "path": "paper_code/data/diagnostic_features_all.pkl",
+      "size_bytes": 41149,
+      "sha256": "906e54db95cf9a3f294b8fa0ba29d43b5850a7f1a228cdd9e37cd2bcdfe1bc79"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.9.pkl",
+      "size_bytes": 15803,
+      "sha256": "04a7427f563a1f6be5ec7b13193ad1c9812a9a0fad6e4fbba691378e30859f48"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.91.pkl",
+      "size_bytes": 15803,
+      "sha256": "741eed82792c1d1a8a6b334de35a3de78322c7c22eff4ad9c4acc52528641b9f"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.92.pkl",
+      "size_bytes": 15803,
+      "sha256": "d4498bfe5471e103afad03637c44a7a59aaa4bedf7acbcce00e6728a034dc147"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.93.pkl",
+      "size_bytes": 15803,
+      "sha256": "34f91b132475d2fc243f9d9948ff55b0df1b0cb5b2bc0922f9b85580b7223404"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.94.pkl",
+      "size_bytes": 15803,
+      "sha256": "1c12fcb85d440a33b43ccc43cc263c3944d527c8ed656d0a9170bbfa93d76aa7"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.95.pkl",
+      "size_bytes": 15803,
+      "sha256": "aa606165c886da40c4abfb292c473d40535cfea9b3f06211d6489de98cc5e862"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.96.pkl",
+      "size_bytes": 15803,
+      "sha256": "75141312b298992d9af627fdb3e39b028b6b48032326ba22ce36a5902e51b69e"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.97.pkl",
+      "size_bytes": 15803,
+      "sha256": "d7112ef662415b3a1cc6b3f8732dc78c635a26c64636c61acad8874a0deaa364"
+    },
+    {
+      "path": "paper_code/data/eol_metrics_soh0.98.pkl",
+      "size_bytes": 15803,
+      "sha256": "92448bfc67f4195f9705993562abc12af365e64a4d1ee7c023d05d49af650a58"
+    },
+    {
+      "path": "paper_code/data/metadata.pkl",
+      "size_bytes": 5131,
+      "sha256": "7579f48cf3767552154fba3ad9acb048c3166088c2a46fadb06b2a221b3a1e1f"
+    },
+    {
+      "path": "paper_code/data/protocol_features.csv",
+      "size_bytes": 14253,
+      "sha256": "8c2e9f8de39d05920c48c8b7ddf92c4efd5fe5033b2bc5a326aa68f50c10618c"
+    },
+    {
+      "path": "paper_code/data/protocol_features.pkl",
+      "size_bytes": 8090,
+      "sha256": "9b0b6ea324c492b50a06aebbaf19123e43d4db7160dba9d7dcf69dcdc00e8b01"
+    },
+    {
+      "path": "paper_code/data/shap_features_fig4.pkl",
+      "size_bytes": 7868,
+      "sha256": "a90336b6c3d573362d21fd0401625726561f3649a181afe98d28143cd3c6923e"
+    },
+    {
+      "path": "paper_code/data/soh90.csv",
+      "size_bytes": 13133,
+      "sha256": "3be2e8c7e1dbfd70801b1e484d1fb88a448f255355bc48646b96fee6087941ff"
+    },
+    {
+      "path": "paper_code/data/test_set.json",
+      "size_bytes": 120,
+      "sha256": "ae183d65865609aace287d5f6e9fae3c20287fa2d06da5fa9257c222780090fc"
+    },
+    {
+      "path": "paper_code/data/training_set.json",
+      "size_bytes": 924,
+      "sha256": "84f59ff499b22b95d62b5236fe0cec4ae107168f86325adf0c46337b759bf51b"
+    }
+  ]
+}
