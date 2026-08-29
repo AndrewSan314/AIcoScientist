@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import joblib
 import numpy as np
@@ -10,15 +11,15 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from src.build_dataset import build_master_dataset
+from src.build_dataset import build_dataset
+from src.datasets.base import DatasetAdapter, DatasetSpec
+from src.datasets.registry import get_dataset_adapter
 from src.utils import (
     IMPORTANCE_FILE,
-    MASTER_FILE,
     METRICS_FILE,
-    MODEL_FEATURES,
     MODEL_FILE,
     OUTPUT_DIR,
-    TARGET,
+    MASTER_FILE,
 )
 
 
@@ -45,20 +46,50 @@ def _gp_model():
     )
 
 
-def train_model():
-    if not MASTER_FILE.exists():
-        build_master_dataset()
+def train_model(
+    df: pd.DataFrame | None = None,
+    spec: DatasetSpec | None = None,
+    *,
+    adapter: DatasetAdapter | None = None,
+    output_path: Path | None = None,
+):
+    legacy_defaults = adapter is None and df is None and spec is None and output_path is None
+    if adapter is None:
+        adapter = get_dataset_adapter("si_mxene")
+    if spec is None:
+        spec = adapter.spec
+    if df is None:
+        if legacy_defaults and MASTER_FILE.exists():
+            df = pd.read_csv(MASTER_FILE)
+        else:
+            df = build_dataset(adapter)
+            if legacy_defaults:
+                MASTER_FILE.parent.mkdir(parents=True, exist_ok=True)
+                df.to_csv(MASTER_FILE, index=False)
 
-    df = pd.read_csv(MASTER_FILE)
-    X = df[MODEL_FEATURES]
-    y = df[TARGET]
+    if len(set(spec.feature_columns)) != len(spec.feature_columns):
+        raise ValueError("feature_columns must not contain duplicates")
+    if len(df) == 0:
+        raise ValueError("Cannot train on a zero-row dataset")
+    if len(df) < 4:
+        raise ValueError("At least 4 rows are required for a train/test split")
+
+    try:
+        X = df[spec.feature_columns].apply(pd.to_numeric, errors="raise")
+        y = pd.to_numeric(df[spec.target_column], errors="raise")
+    except (TypeError, ValueError, KeyError) as error:
+        raise ValueError("Model features and target must be numeric and present") from error
+    if not np.isfinite(X.to_numpy(dtype=float)).all() or not np.isfinite(y.to_numpy(dtype=float)).all():
+        raise ValueError("Model features and target must be finite and non-null")
+    if np.ptp(y.to_numpy(dtype=float)) == 0:
+        raise ValueError("Target must not be constant")
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
     rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
     rf_model.fit(X_train, y_train)
 
     rf_pred = rf_model.predict(X_test)
-    rf_metrics = _regression_metrics(y_test, rf_pred, len(df), TARGET)
+    rf_metrics = _regression_metrics(y_test, rf_pred, len(df), spec.target_column)
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
@@ -66,7 +97,7 @@ def train_model():
     gp_model = _gp_model()
     gp_model.fit(X_train_scaled, y_train)
     gp_pred = gp_model.predict(X_test_scaled)
-    gp_metrics = _regression_metrics(y_test, gp_pred, len(df), TARGET)
+    gp_metrics = _regression_metrics(y_test, gp_pred, len(df), spec.target_column)
 
     final_rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
     final_rf_model.fit(X, y)
@@ -75,12 +106,20 @@ def train_model():
     final_gp_model = _gp_model()
     final_gp_model.fit(X_scaled, y)
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    if output_path is None:
+        output_path = MODEL_FILE if legacy_defaults else OUTPUT_DIR / spec.name / "trained_model.pkl"
+    output_path = Path(output_path)
+    legacy_output = output_path.resolve() == MODEL_FILE.resolve()
+    metrics_path = METRICS_FILE if legacy_output else output_path.with_name("model_metrics.json")
+    importance_path = IMPORTANCE_FILE if legacy_output else output_path.with_name("feature_importance.csv")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(
         {
+            "dataset": spec.name,
+            "features": spec.feature_columns,
+            "target": spec.target_column,
+            "objective": spec.objective,
             "model": final_rf_model,
-            "features": MODEL_FEATURES,
-            "target": TARGET,
             "fill_values": X.median(numeric_only=True).to_dict(),
             "gp_model": final_gp_model,
             "scaler": final_scaler,
@@ -92,15 +131,15 @@ def train_model():
                 "acquisition": "UCB beta=1.0",
             },
         },
-        MODEL_FILE,
+        output_path,
     )
     metrics = {**rf_metrics, "rf_metrics": rf_metrics, "gp_metrics": gp_metrics}
-    METRICS_FILE.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+    metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     importance = pd.DataFrame(
-        {"feature": MODEL_FEATURES, "importance": final_rf_model.feature_importances_}
+        {"feature": spec.feature_columns, "importance": final_rf_model.feature_importances_}
     ).sort_values("importance", ascending=False)
-    importance.to_csv(IMPORTANCE_FILE, index=False)
+    importance.to_csv(importance_path, index=False)
     return metrics
 
 

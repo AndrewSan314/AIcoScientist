@@ -1,33 +1,43 @@
-from src.edx_features import add_edx_features
-from src.experiment_store import ingest_csvs, load_source_tables
-from src.utils import (
-    MASTER_FILE,
-    MODEL_FEATURES,
-    PROCESSED_DIR,
-    TARGET,
-    ensure_sample_data,
-)
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from src.datasets.base import DatasetAdapter, DatasetSpec
+from src.datasets.registry import get_dataset_adapter
+from src.utils import MASTER_FILE, PROCESSED_DIR
 
 
-def build_master_dataset():
-    ensure_sample_data()
-    ingest_csvs()
-    sources = load_source_tables()
-    process = sources["process_data"]
-    sem = sources["sem_features"]
-    edx = sources["edx_data"]
-    electrochem = sources["electrochem_data"]
+def validate_dataset(df: pd.DataFrame, spec: DatasetSpec) -> pd.DataFrame:
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("adapter.load() must return a pandas DataFrame")
+    required = [spec.id_column, *spec.feature_columns, spec.target_column]
+    missing = sorted(set(required) - set(df.columns))
+    if missing:
+        raise ValueError(f"Dataset is missing required columns: {missing}")
+    if df[spec.id_column].isna().any():
+        raise ValueError(f"Dataset contains null {spec.id_column} values")
+    if df[spec.id_column].astype(str).str.strip().eq("").any():
+        raise ValueError(f"Dataset contains empty {spec.id_column} values")
 
-    df = process.merge(sem, on="sample_id", validate="one_to_one")
-    df = df.merge(edx, on="sample_id", validate="one_to_one")
-    df = df.merge(electrochem, on="sample_id", validate="one_to_one")
+    result = df.copy()
+    numeric = [*spec.feature_columns, spec.target_column]
+    try:
+        result[numeric] = result[numeric].apply(pd.to_numeric, errors="raise")
+    except (TypeError, ValueError) as error:
+        raise ValueError("Dataset model features and target must be numeric") from error
+    values = result[numeric].to_numpy(dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError("Dataset model features and target must be finite and non-null")
+    return result
 
-    df["si_mxene_ratio"] = df["si_content"] / df["mxene_content"]
-    df = add_edx_features(df)
-    df["capacity_fade"] = df["initial_capacity"] - df["capacity_100"]
-    if df[[*MODEL_FEATURES, TARGET]].isna().any().any():
-        raise ValueError("Master dataset contains missing model values")
 
+def build_dataset(adapter: DatasetAdapter) -> pd.DataFrame:
+    return validate_dataset(adapter.build_features(adapter.load()), adapter.spec)
+
+
+def build_master_dataset() -> pd.DataFrame:
+    df = build_dataset(get_dataset_adapter("si_mxene"))
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     df.to_csv(MASTER_FILE, index=False)
     return df

@@ -27,35 +27,29 @@ METRICS_FILE = OUTPUT_DIR / "model_metrics.json"
 IMPORTANCE_FILE = OUTPUT_DIR / "feature_importance.csv"
 RECOMMENDATIONS_FILE = OUTPUT_DIR / "recommendations.csv"
 
-PROCESS_FEATURES = [
-    "si_content",
-    "mxene_content",
-    "alginate_content",
-    "carbon_content",
-    "mixing_time",
-    "drying_temp",
-    "pressing_pressure",
-]
+_LEGACY_DATASET_ATTRIBUTES = {
+    "PROCESS_FEATURES",
+    "SEM_FEATURES",
+    "EDX_FEATURES",
+    "ENGINEERED_FEATURES",
+    "MODEL_FEATURES",
+    "TARGET",
+}
 
-SEM_FEATURES = [
-    "particle_size_mean",
-    "porosity_score",
-    "agglomeration_index",
-    "crack_density",
-    "surface_uniformity",
-]
 
-EDX_FEATURES = [
-    "si_percent",
-    "ti_percent",
-    "c_percent",
-    "o_percent",
-    "impurity_percent",
-]
+def __getattr__(name):
+    if name in _LEGACY_DATASET_ATTRIBUTES:
+        from src.datasets.si_mxene_spec import (
+            EDX_FEATURES,
+            ENGINEERED_FEATURES,
+            MODEL_FEATURES,
+            PROCESS_FEATURES,
+            SEM_FEATURES,
+            TARGET,
+        )
 
-ENGINEERED_FEATURES = ["si_mxene_ratio", "si_ti_ratio", "c_o_ratio"]
-MODEL_FEATURES = PROCESS_FEATURES + SEM_FEATURES + EDX_FEATURES + ENGINEERED_FEATURES
-TARGET = "retention_100"
+        return locals()[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def ensure_dirs():
