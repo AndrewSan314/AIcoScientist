@@ -150,7 +150,7 @@ def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCycli
 
 
 def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
-    """Verifies dynamic cycling benchmark runs end-to-end and saves all metrics."""
+    """Verifies dynamic cycling benchmark runs end-to-end and saves all metrics and replicate differences."""
     summary = run_dynamic_cycling_benchmark(
         output_dir=tmp_path,
         initial_protocols=4,
@@ -169,6 +169,7 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     assert (tmp_path / "model_metrics.json").exists()
     assert (tmp_path / "optimization_history.csv").exists()
     assert (tmp_path / "benchmark_summary.json").exists()
+    assert (tmp_path / "replicate_feature_differences.csv").exists()
 
 
 def test_dynamic_cycling_production_invariants(dynamic_adapter: DynamicCyclingAdapter):
@@ -184,7 +185,7 @@ def test_dynamic_cycling_production_invariants(dynamic_adapter: DynamicCyclingAd
 
 
 def test_dynamic_cycling_surrogate_evaluation_protocol_and_cell_level(dynamic_adapter: DynamicCyclingAdapter):
-    """Verifies surrogate evaluation computes both cell-level split and protocol-level Repeated K-Fold CV."""
+    """Verifies surrogate evaluation computes both cell-level split and protocol-level Repeated K-Fold CV with OOF metrics."""
     surr = evaluate_surrogate_prediction(dynamic_adapter, random_state=42)
 
     # Cell-level metrics
@@ -199,10 +200,19 @@ def test_dynamic_cycling_surrogate_evaluation_protocol_and_cell_level(dynamic_ad
     assert "protocol_level" in surr
     proto_surr = surr["protocol_level"]
     assert proto_surr["n_protocols"] == 47
+    assert proto_surr["random_state"] == 42
+    assert "random_state=42" in proto_surr["cv_method"]
     for model_name in ["random_forest", "gaussian_process"]:
         assert model_name in proto_surr
         for stat in ["mean_mae", "std_mae", "mean_rmse", "std_rmse", "mean_r2", "std_r2"]:
             assert stat in proto_surr[model_name]
             assert isinstance(proto_surr[model_name][stat], float)
+        assert "per_repeat" in proto_surr[model_name]
+        assert len(proto_surr[model_name]["per_repeat"]) == 10
+        for rep_metric in proto_surr[model_name]["per_repeat"]:
+            assert "mae" in rep_metric
+            assert "rmse" in rep_metric
+            assert "r2" in rep_metric
+
 
 

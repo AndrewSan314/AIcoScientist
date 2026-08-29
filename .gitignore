@@ -22,6 +22,8 @@ data/external/**/*.mat
 data/external/**/*.zip
 data/external/**/*.pkl
 data/external/aging_matrix_2025/
+data/external/attia_2020/*
+!data/external/attia_2020/manifest.json
 *.mat
 *.zip
 *.crdownload

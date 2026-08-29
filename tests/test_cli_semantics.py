@@ -41,3 +41,20 @@ def test_dynamic_cycling_cli_full_redirects_to_benchmark(monkeypatch):
     monkeypatch.setattr("src.evaluation.dynamic_cycling_benchmark.run_dynamic_cycling_benchmark", mock_benchmark)
     main(dataset="dynamic_cycling", mode="full")
     assert "dynamic_cycling_benchmark" in called
+
+
+def test_attia_cli_recommend_rejected():
+    with pytest.raises(ValueError, match="offline protocol optimization benchmark.*running recommendation on the full candidate space without prior observations is forbidden"):
+        main(dataset="attia", mode="recommend")
+
+
+def test_attia_cli_full_redirects_to_benchmark(monkeypatch):
+    called = []
+
+    def mock_benchmark(adapter):
+        called.append("attia_benchmark")
+
+    monkeypatch.setattr("src.evaluation.attia_benchmark.run_attia_benchmark", mock_benchmark)
+    main(dataset="attia", mode="full")
+    assert "attia_benchmark" in called
+

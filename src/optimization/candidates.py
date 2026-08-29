@@ -49,10 +49,10 @@ def normalize_candidate_schema(
         cand_cols = list(spec_or_columns.candidate_columns)
         for cand_id, grp in candidates.groupby(id_col):
             if len(grp) > 1:
-                first_vec = grp.iloc[0][cand_cols].to_numpy()
+                first_vec = grp.iloc[0][cand_cols].to_numpy(dtype=float)
                 for idx in range(1, len(grp)):
-                    other_vec = grp.iloc[idx][cand_cols].to_numpy()
-                    if not np.array_equal(first_vec, other_vec):
+                    other_vec = grp.iloc[idx][cand_cols].to_numpy(dtype=float)
+                    if not np.allclose(first_vec, other_vec, rtol=1e-5, atol=1e-8, equal_nan=False):
                         raise ValueError(
                             f"Candidate ID {cand_id!r} has conflicting design feature vectors across duplicate rows"
                         )

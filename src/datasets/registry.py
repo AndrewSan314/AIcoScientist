@@ -1,5 +1,6 @@
 from types import MappingProxyType
 
+from .attia import AttiaAdapter
 from .base import DatasetAdapter
 from .dynamic_cycling import DynamicCyclingAdapter
 from .severson import SeversonAdapter
@@ -10,6 +11,7 @@ DATASET_ADAPTERS = MappingProxyType(
         "si_mxene": SiMxeneAdapter,
         "severson": SeversonAdapter,
         "dynamic_cycling": DynamicCyclingAdapter,
+        "attia": AttiaAdapter,
     }
 )
 

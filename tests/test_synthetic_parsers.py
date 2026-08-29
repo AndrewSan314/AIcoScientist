@@ -78,7 +78,68 @@ def test_synthetic_severson_h5py_structure(tmp_path: Path):
 
 
 def test_synthetic_dynamic_cycling_replicate_validation(tmp_path: Path):
-    """Tests strict replicate design vector validation including tolerances and failures."""
+    """Tests realized feature preservation in cells_df, mean aggregation in protocols_df, and explicit tolerance checking."""
+    metadata = pd.DataFrame(
+        {
+            "cell_name": ["cell_01", "cell_02"],
+            "protocol_type": ["Fast", "Fast"],
+            "protocol_variant": ["v1", "v1"],
+            "protocol_name": ["P1", "P1"],
+        }
+    )
+    metadata.to_pickle(tmp_path / "metadata.pkl")
+
+    base_proto = {
+        "cell_name": ["cell_01", "cell_02"],
+        "Average Current": [1.0, 1.02],
+        "Normalized Current Variance": [0.1, 0.1],
+        "Maximum Discharge Current": [1.5, 1.5],
+        "Relative Charge Fraction": [0.5, 0.5],
+        "Rest Fraction at High SOC": [0.2, 0.2],
+        "Rest SOC": [0.8, 0.8],
+        "Peak Frequency 1": [0.001, 0.001],
+        "Peak Frequency 2": [0.005, 0.005],
+    }
+
+    soh90 = pd.DataFrame(
+        {
+            "cell_name": ["cell_01", "cell_02"],
+            "EFCs (with Diagnostic)": [800.0, 820.0],
+            "Cycles": [850.0, 870.0],
+        }
+    )
+    soh90.to_csv(tmp_path / "soh90.csv", index=False)
+
+    # 1. Realized per-cell measurements are preserved in cells_df, and averaged in protocols_df
+    proto_df = pd.DataFrame(base_proto)
+    proto_df.to_pickle(tmp_path / "protocol_features.pkl")
+    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
+    assert len(cells) == 2 and len(protos) == 1
+    # Cells maintain realized individual measurements
+    assert np.isclose(cells.loc[cells["cell_id"] == "cell_01", "average_current"].iloc[0], 1.0)
+    assert np.isclose(cells.loc[cells["cell_id"] == "cell_02", "average_current"].iloc[0], 1.02)
+    # Protocol candidate space aggregates via arithmetic mean
+    assert np.isclose(protos.loc[0, "average_current"], 1.01)
+
+    # 2. Replicate difference computation returns correct pairwise summary
+    from src.datasets.dynamic_cycling import compute_replicate_feature_differences
+    diff_df = compute_replicate_feature_differences(cells, output_path=tmp_path / "test_diffs.csv")
+    cur_row = diff_df[diff_df["feature"] == "average_current"].iloc[0]
+    assert np.isclose(cur_row["max_abs_difference"], 0.02)
+    assert (tmp_path / "test_diffs.csv").exists()
+
+    # 3. Explicit tolerance checking when supplied by caller
+    with pytest.raises(ValueError, match="replicate conflict on feature 'average_current'"):
+        load_raw_dynamic_cycling_data(
+            tmp_path,
+            expected_records=2,
+            expected_protocols=1,
+            feature_tolerances={"average_current": 1e-4},
+        )
+
+
+def test_synthetic_dynamic_cycling_numeric_integrity(tmp_path: Path):
+    """Tests strict rejection of NaN, Inf in features and non-positive / NaN / Inf in targets."""
     metadata = pd.DataFrame(
         {
             "cell_name": ["cell_01", "cell_02"],
@@ -101,57 +162,40 @@ def test_synthetic_dynamic_cycling_replicate_validation(tmp_path: Path):
         "Peak Frequency 2": [0.005, 0.005],
     }
 
-    soh90 = pd.DataFrame(
-        {
-            "cell_name": ["cell_01", "cell_02"],
-            "EFCs (with Diagnostic)": [800.0, 820.0],
-            "Cycles": [850.0, 870.0],
-        }
-    )
-    soh90.to_csv(tmp_path / "soh90.csv", index=False)
+    base_soh90 = {
+        "cell_name": ["cell_01", "cell_02"],
+        "EFCs (with Diagnostic)": [800.0, 820.0],
+        "Cycles": [850.0, 870.0],
+    }
 
-    # 1. Exact replicate vector passes
-    proto_df = pd.DataFrame(base_proto)
-    proto_df.to_pickle(tmp_path / "protocol_features.pkl")
-    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
-    assert len(cells) == 2 and len(protos) == 1
+    # 1. NaN in design feature raises ValueError with cell ID
+    nan_proto = dict(base_proto)
+    nan_proto["Average Current"] = [1.0, np.nan]
+    pd.DataFrame(nan_proto).to_pickle(tmp_path / "protocol_features.pkl")
+    pd.DataFrame(base_soh90).to_csv(tmp_path / "soh90.csv", index=False)
+    with pytest.raises(ValueError, match="Non-finite values detected in design feature 'average_current'"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
-    # 2. Tiny numerical serialization noise passes
-    noisy_proto = dict(base_proto)
-    noisy_proto["Average Current"] = [1.0, 1.0 + 1e-6]
-    pd.DataFrame(noisy_proto).to_pickle(tmp_path / "protocol_features.pkl")
-    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
-    assert len(cells) == 2
+    # 2. Inf in design feature raises ValueError with cell ID
+    inf_proto = dict(base_proto)
+    inf_proto["Peak Frequency 2"] = [np.inf, 0.005]
+    pd.DataFrame(inf_proto).to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="Non-finite values detected in design feature 'peak_frequency_2'"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
-    # 3. Average current mismatch of 1e-3 fails when above justified tolerance
-    mismatch_current = dict(base_proto)
-    mismatch_current["Average Current"] = [1.0, 1.0 + 1e-3]
-    pd.DataFrame(mismatch_current).to_pickle(tmp_path / "protocol_features.pkl")
-    with pytest.raises(ValueError, match="replicate conflict on feature 'average_current'"):
-        load_raw_dynamic_cycling_data(
-            tmp_path,
-            expected_records=2,
-            expected_protocols=1,
-            feature_tolerances={"average_current": 1e-4},
-        )
+    # 3. Non-positive (<= 0) target raises ValueError with cell ID
+    pd.DataFrame(base_proto).to_pickle(tmp_path / "protocol_features.pkl")
+    neg_soh90 = dict(base_soh90)
+    neg_soh90["EFCs (with Diagnostic)"] = [800.0, -10.0]
+    pd.DataFrame(neg_soh90).to_csv(tmp_path / "soh90.csv", index=False)
+    with pytest.raises(ValueError, match="Invalid target values detected in 'efc_lifetime'"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
-    # 4. Peak frequency mismatch at 1e-4 scale fails when above tolerance
-    mismatch_freq = dict(base_proto)
-    mismatch_freq["Peak Frequency 1"] = [0.00005, 0.00050]  # Diff = 4.5e-4
-    pd.DataFrame(mismatch_freq).to_pickle(tmp_path / "protocol_features.pkl")
-    with pytest.raises(ValueError, match="replicate conflict on feature 'peak_frequency_1'"):
-        load_raw_dynamic_cycling_data(
-            tmp_path,
-            expected_records=2,
-            expected_protocols=1,
-            feature_tolerances={"peak_frequency_1": 1e-4},
-        )
-
-    # 5. One mismatched feature causes the whole protocol to fail
-    mismatch_single = dict(base_proto)
-    mismatch_single["Maximum Discharge Current"] = [1.5, 3.0]
-    pd.DataFrame(mismatch_single).to_pickle(tmp_path / "protocol_features.pkl")
-    with pytest.raises(ValueError, match="replicate conflict on feature 'maximum_discharge_current'"):
+    # 4. Zero target raises ValueError
+    zero_soh90 = dict(base_soh90)
+    zero_soh90["Cycles"] = [0.0, 870.0]
+    pd.DataFrame(zero_soh90).to_csv(tmp_path / "soh90.csv", index=False)
+    with pytest.raises(ValueError, match="Invalid target values detected in 'cycles_90'"):
         load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
 

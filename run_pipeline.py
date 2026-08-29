@@ -36,6 +36,12 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
             run_dynamic_cycling_benchmark(adapter)
             print(f"Benchmark completed. Artifacts saved to: outputs/dynamic_cycling/")
             return
+        elif dataset == "attia":
+            print(f"Running benchmark suite for dataset: {dataset}...")
+            from src.evaluation.attia_benchmark import run_attia_benchmark
+            run_attia_benchmark(adapter)
+            print(f"Benchmark completed. Artifacts saved to: outputs/attia/")
+            return
         elif mode == "benchmark":
             print(f"Dataset {dataset!r} does not have a separate standalone benchmark runner. Running full pipeline.")
             main(dataset=dataset, mode="full")
@@ -50,6 +56,13 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
                 "Dynamic Cycling is an offline protocol optimization benchmark. "
                 "Recommendation requires a partial observed subset or replay state; "
                 "running recommendation on the full ground-truth dataset is forbidden to prevent data leakage. "
+                "Use --mode benchmark instead."
+            )
+        if dataset == "attia":
+            raise ValueError(
+                "Attia is an offline protocol optimization benchmark. "
+                "Recommendation requires a partial observed subset or replay state; "
+                "running recommendation on the full candidate space without prior observations is forbidden. "
                 "Use --mode benchmark instead."
             )
 
@@ -106,7 +119,7 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the dataset pipeline")
-    parser.add_argument("--dataset", choices=("si_mxene", "severson", "dynamic_cycling"), default="si_mxene")
+    parser.add_argument("--dataset", choices=("si_mxene", "severson", "dynamic_cycling", "attia"), default="si_mxene")
     parser.add_argument("--mode", choices=("train", "recommend", "full", "benchmark"), default="full")
     return parser.parse_args()
 

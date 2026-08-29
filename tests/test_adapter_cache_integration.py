@@ -107,7 +107,8 @@ def test_dynamic_adapter_schema_version_bump_invalidates_cache(tmp_path: Path):
     _ = adapter.load_cells(force_recompute=True)
     manifest_file = processed_dir / "processed_manifest.json"
     manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
-    assert manifest_data["adapter_schema_version"] == "3.0.0"
+    from src.datasets.dynamic_cycling import ADAPTER_SCHEMA_VERSION
+    assert manifest_data["adapter_schema_version"] == ADAPTER_SCHEMA_VERSION
 
     # Plant version 2.0.0 in manifest and plant stale data
     manifest_data["adapter_schema_version"] = "2.0.0"
@@ -122,10 +123,10 @@ def test_dynamic_adapter_schema_version_bump_invalidates_cache(tmp_path: Path):
     manifest_data["processed_files"]["cells.csv"] = compute_file_sha256(processed_dir / "cells.csv")
     manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
 
-    # Loading cells with adapter (schema 3.0.0) MUST reject the v2.0.0 manifest and recompute!
+    # Loading cells with adapter MUST reject the v2.0.0 manifest and recompute!
     fresh_cells = adapter.load_cells()
     assert fresh_cells["efc_lifetime"].max() < 1000.0
 
-    # Verify that the manifest was updated to 3.0.0
+    # Verify that the manifest was updated to ADAPTER_SCHEMA_VERSION
     updated_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-    assert updated_manifest["adapter_schema_version"] == "3.0.0"
+    assert updated_manifest["adapter_schema_version"] == ADAPTER_SCHEMA_VERSION

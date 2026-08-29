@@ -1,0 +1,55 @@
+{
+  "dataset": "attia_2020",
+  "paper_title": "Closed-loop optimization of fast-charging protocols for batteries with machine learning",
+  "authors": "Peter M. Attia, Aditya Grover, Norman Jin, Kristen A. Severson, Todor M. Markov, Yang-Hung Liao, Michael H. Chen, Bryan Cheong, Nicholas Perkins, Zi Yang, Patrick K. Herring, Muratahan Aykol, Stephen J. Harris, Richard D. Braatz, Stefano Ermon, William C. Chueh",
+  "journal": "Nature",
+  "year": 2020,
+  "paper_doi": "10.1038/s41586-020-1994-5",
+  "official_repository_url": "https://github.com/chueh-ermon/battery-fast-charging-optimization",
+  "source_commit_sha": "0068fd0136bcd65884f5cd94b2b967c1ba73a668",
+  "source_version": "nature_2020",
+  "nature_of_benchmark": "simulator != experimental dataset",
+  "notes": "The benchmark uses the author 4-step policy parameter space and stochastic PDE/Arrhenius thermal-degradation simulator (sim_with_seed.py). Simulator outputs represent simulated lifetimes with stochastic cell-to-cell variation and are not measured physical battery experiment ground truth.",
+  "files": [
+    {
+      "path": "README.md",
+      "size_bytes": 2661,
+      "sha256": "ae0c107c5ae911a9341a5e0fe63a1d460222cf96de692155c8436c5b63da2f88"
+    },
+    {
+      "path": "SOURCE_COMMIT_SHA.txt",
+      "size_bytes": 41,
+      "sha256": "a8c214e1b180a5bbfcd9909a08f9a5956a1627847abab670f4ec3b1a837a6e0e"
+    },
+    {
+      "path": "policies.py",
+      "size_bytes": 1846,
+      "sha256": "d4e7549e03ed153d9e88ae88a0d0e67658d6813c4ae71c76601c94626419abb6"
+    },
+    {
+      "path": "sim_with_seed.py",
+      "size_bytes": 7001,
+      "sha256": "d8890c92352d2f190a8f83ea5e8dcbc594283115916c5f9e2698df9d10fb8348"
+    },
+    {
+      "path": "surface_points.py",
+      "size_bytes": 2976,
+      "sha256": "b6e0c7feaafc443784b6d7591743fa36649c0b891fc9ded0c12ba357f5480a16"
+    },
+    {
+      "path": "closed_loop_oed.py",
+      "size_bytes": 10593,
+      "sha256": "e77b162669a11ff604068f5e73f922b42a48b5b79af1111137c08a6ad23095b1"
+    },
+    {
+      "path": "data/policies_all.csv",
+      "size_bytes": 5376,
+      "sha256": "b2ecf3955bc08d6982f830dfee4f8f092560e4aa249d117c9eff427373414109"
+    },
+    {
+      "path": "data/log.csv",
+      "size_bytes": 11,
+      "sha256": "6d878cbe7e07a4d84ebe2769ec01728904bd5e2383bf5196ee66598778e68134"
+    }
+  ]
+}

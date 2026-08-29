@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from src.datasets.dynamic_cycling import (
     DYNAMIC_CYCLING_FEATURE_COLUMNS,
     DynamicCyclingAdapter,
+    compute_replicate_feature_differences,
 )
 from src.evaluation.oracle import OfflineOracle
 
@@ -92,49 +93,81 @@ def evaluate_surrogate_prediction(
         "gaussian_process": _get_metrics(y_test_cell, gp_pred_cell),
     }
 
-    # 2. Protocol-Level Evaluation (Repeated 5-Fold CV with 10 repeats)
+    # 2. Protocol-Level Evaluation (Repeated 5-Fold CV with 10 repeats, Out-Of-Fold metrics per repeat)
     X_proto = protocols_df[feature_cols].to_numpy(dtype=float)
     y_proto = protocols_df["target_mean"].to_numpy(dtype=float)
     n_protocols = len(protocols_df)
+    n_splits = 5
+    n_repeats = 10
 
-    rkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=random_state)
-    rf_maes, rf_rmses, rf_r2s = [], [], []
-    gp_maes, gp_rmses, gp_r2s = [], [], []
+    rkf = RepeatedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=random_state)
+    splits = list(rkf.split(X_proto))
 
-    for fold_train_idx, fold_test_idx in rkf.split(X_proto):
-        X_p_tr, y_p_tr = X_proto[fold_train_idx], y_proto[fold_train_idx]
-        X_p_te, y_p_te = X_proto[fold_test_idx], y_proto[fold_test_idx]
+    rf_repeats: list[dict[str, float]] = []
+    gp_repeats: list[dict[str, float]] = []
 
-        # Protocol RF
-        rf_fold = RandomForestRegressor(n_estimators=100, min_samples_leaf=2, random_state=random_state)
-        rf_fold.fit(X_p_tr, y_p_tr)
-        rf_p_pred = rf_fold.predict(X_p_te)
-        rf_maes.append(mean_absolute_error(y_p_te, rf_p_pred))
-        rf_rmses.append(np.sqrt(mean_squared_error(y_p_te, rf_p_pred)))
-        rf_r2s.append(r2_score(y_p_te, rf_p_pred))
+    for rep_idx in range(n_repeats):
+        oof_rf_pred = np.full(n_protocols, np.nan)
+        oof_gp_pred = np.full(n_protocols, np.nan)
+        rep_splits = splits[rep_idx * n_splits : (rep_idx + 1) * n_splits]
 
-        # Protocol GP
-        sc_p = StandardScaler()
-        X_p_tr_sc = sc_p.fit_transform(X_p_tr)
-        X_p_te_sc = sc_p.transform(X_p_te)
-        kernel_proto = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
-            noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
+        for fold_train_idx, fold_test_idx in rep_splits:
+            X_p_tr, y_p_tr = X_proto[fold_train_idx], y_proto[fold_train_idx]
+            X_p_te, y_p_te = X_proto[fold_test_idx], y_proto[fold_test_idx]
+
+            # Protocol RF
+            rf_fold = RandomForestRegressor(n_estimators=100, min_samples_leaf=2, random_state=random_state + rep_idx)
+            rf_fold.fit(X_p_tr, y_p_tr)
+            oof_rf_pred[fold_test_idx] = rf_fold.predict(X_p_te)
+
+            # Protocol GP
+            sc_p = StandardScaler()
+            X_p_tr_sc = sc_p.fit_transform(X_p_tr)
+            X_p_te_sc = sc_p.transform(X_p_te)
+            kernel_proto = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
+                noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
+            )
+            gp_fold = GaussianProcessRegressor(
+                kernel=kernel_proto,
+                normalize_y=True,
+                n_restarts_optimizer=2,
+                random_state=random_state + rep_idx,
+            )
+            gp_fold.fit(X_p_tr_sc, y_p_tr)
+            oof_gp_pred[fold_test_idx] = gp_fold.predict(X_p_te_sc)
+
+        if np.isnan(oof_rf_pred).any() or np.isnan(oof_gp_pred).any():
+            raise RuntimeError(f"OOF prediction in repeat {rep_idx} contains unpredicted protocols")
+
+        rf_repeats.append(
+            {
+                "mae": float(mean_absolute_error(y_proto, oof_rf_pred)),
+                "rmse": float(np.sqrt(mean_squared_error(y_proto, oof_rf_pred))),
+                "r2": float(r2_score(y_proto, oof_rf_pred)),
+            }
         )
-        gp_fold = GaussianProcessRegressor(
-            kernel=kernel_proto,
-            normalize_y=True,
-            n_restarts_optimizer=2,
-            random_state=random_state,
+        gp_repeats.append(
+            {
+                "mae": float(mean_absolute_error(y_proto, oof_gp_pred)),
+                "rmse": float(np.sqrt(mean_squared_error(y_proto, oof_gp_pred))),
+                "r2": float(r2_score(y_proto, oof_gp_pred)),
+            }
         )
-        gp_fold.fit(X_p_tr_sc, y_p_tr)
-        gp_p_pred = gp_fold.predict(X_p_te_sc)
-        gp_maes.append(mean_absolute_error(y_p_te, gp_p_pred))
-        gp_rmses.append(np.sqrt(mean_squared_error(y_p_te, gp_p_pred)))
-        gp_r2s.append(r2_score(y_p_te, gp_p_pred))
+
+    rf_maes = [r["mae"] for r in rf_repeats]
+    rf_rmses = [r["rmse"] for r in rf_repeats]
+    rf_r2s = [r["r2"] for r in rf_repeats]
+
+    gp_maes = [r["mae"] for r in gp_repeats]
+    gp_rmses = [r["rmse"] for r in gp_repeats]
+    gp_r2s = [r["r2"] for r in gp_repeats]
 
     protocol_level_results = {
         "n_protocols": n_protocols,
-        "cv_method": "RepeatedKFold(n_splits=5, n_repeats=10, random_state=42)",
+        "cv_method": f"RepeatedKFold(n_splits={n_splits}, n_repeats={n_repeats}, random_state={random_state})",
+        "random_state": random_state,
+        "n_splits": n_splits,
+        "n_repeats": n_repeats,
         "random_forest": {
             "mean_mae": float(np.mean(rf_maes)),
             "std_mae": float(np.std(rf_maes)),
@@ -142,6 +175,7 @@ def evaluate_surrogate_prediction(
             "std_rmse": float(np.std(rf_rmses)),
             "mean_r2": float(np.mean(rf_r2s)),
             "std_r2": float(np.std(rf_r2s)),
+            "per_repeat": rf_repeats,
         },
         "gaussian_process": {
             "mean_mae": float(np.mean(gp_maes)),
@@ -150,6 +184,7 @@ def evaluate_surrogate_prediction(
             "std_rmse": float(np.std(gp_rmses)),
             "mean_r2": float(np.mean(gp_r2s)),
             "std_r2": float(np.std(gp_r2s)),
+            "per_repeat": gp_repeats,
         },
     }
 
@@ -604,6 +639,9 @@ def run_dynamic_cycling_benchmark(
     }
 
     # Save outputs
+    compute_replicate_feature_differences(
+        hidden_oracle_df, output_path=output_dir / "replicate_feature_differences.csv"
+    )
     (output_dir / "model_metrics.json").write_text(json.dumps(surrogate_metrics, indent=2), encoding="utf-8")
     (output_dir / "benchmark_summary.json").write_text(
         json.dumps(benchmark_summary, indent=2), encoding="utf-8"

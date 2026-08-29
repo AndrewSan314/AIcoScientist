@@ -80,10 +80,11 @@ class OfflineOracle:
                     try:
                         q_float = float(query_val)
                         s_floats = stored_vals.astype(float)
-                        if not np.all(np.isclose(s_floats, q_float, atol=1e-4, rtol=1e-4)):
+                        s_mean = float(np.mean(s_floats))
+                        if not np.isclose(s_mean, q_float, atol=1e-4, rtol=1e-4):
                             raise ValueError(
                                 f"Candidate design coordinate {col!r}={query_val} conflicts with ground truth for "
-                                f"{cand_id_col}={cand_id_val!r} (expected {stored_vals[0]})."
+                                f"{cand_id_col}={cand_id_val!r} (expected {s_mean})."
                             )
                     except (ValueError, TypeError):
                         if not np.all(stored_vals == query_val):

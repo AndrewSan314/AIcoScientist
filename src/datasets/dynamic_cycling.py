@@ -34,7 +34,7 @@ RAW_FEATURE_COLUMN_MAP: dict[str, str] = {
     "Peak Frequency 2": "peak_frequency_2",
 }
 
-ADAPTER_SCHEMA_VERSION = "3.0.0"
+ADAPTER_SCHEMA_VERSION = "3.1.0"
 
 DYNAMIC_CYCLING_ORACLE_COLUMNS: list[str] = [
     "efc_lifetime",
@@ -44,16 +44,64 @@ DYNAMIC_CYCLING_ORACLE_COLUMNS: list[str] = [
     "cycles_90",
 ]
 
-DEFAULT_REPLICATE_FEATURE_TOLERANCES: dict[str, float] = {
-    "average_current": 0.015,
-    "normalized_current_variance": 0.015,
-    "maximum_discharge_current": 0.002,
-    "relative_charge_fraction": 0.005,
-    "rest_fraction_at_high_soc": 0.005,
-    "rest_soc": 0.180,
-    "peak_frequency_1": 0.006,
-    "peak_frequency_2": 0.030,
-}
+
+def compute_replicate_feature_differences(
+    cells_df: pd.DataFrame,
+    output_path: Path | None = None,
+) -> pd.DataFrame:
+    """Computes empirical pairwise replicate differences across the dataset and returns a summary DataFrame.
+
+    Realized waveform features from cycler logs show slight experimental replicate variation.
+    This function reports max, median, 95th percentile, and mean absolute pairwise replicate difference per feature.
+    """
+    from itertools import combinations
+
+    feature_cols = [c for c in DYNAMIC_CYCLING_FEATURE_COLUMNS if c in cells_df.columns]
+    diff_rows: list[dict[str, Any]] = []
+
+    for proto_id, grp in cells_df.groupby("protocol_id"):
+        if len(grp) < 2:
+            continue
+        c_ids = grp["cell_id"].tolist()
+        for c1, c2 in combinations(c_ids, 2):
+            row1 = grp[grp["cell_id"] == c1].iloc[0]
+            row2 = grp[grp["cell_id"] == c2].iloc[0]
+            entry = {"protocol_id": proto_id, "cell_1": c1, "cell_2": c2}
+            for f in feature_cols:
+                entry[f] = abs(float(row1[f]) - float(row2[f]))
+            diff_rows.append(entry)
+
+    diff_df = pd.DataFrame(diff_rows)
+    summary_rows: list[dict[str, Any]] = []
+
+    for f in feature_cols:
+        if not diff_df.empty and f in diff_df.columns:
+            vals = diff_df[f].to_numpy(dtype=float)
+            summary_rows.append(
+                {
+                    "feature": f,
+                    "max_abs_difference": float(np.max(vals)),
+                    "median_abs_difference": float(np.median(vals)),
+                    "p95_abs_difference": float(np.percentile(vals, 95)),
+                    "mean_abs_difference": float(np.mean(vals)),
+                }
+            )
+        else:
+            summary_rows.append(
+                {
+                    "feature": f,
+                    "max_abs_difference": 0.0,
+                    "median_abs_difference": 0.0,
+                    "p95_abs_difference": 0.0,
+                    "mean_abs_difference": 0.0,
+                }
+            )
+
+    summary_df = pd.DataFrame(summary_rows)
+    if output_path is not None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_df.to_csv(output_path, index=False)
+    return summary_df
 
 
 def load_raw_dynamic_cycling_data(
@@ -64,11 +112,18 @@ def load_raw_dynamic_cycling_data(
     rtol: float | None = None,
     atol: float | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Loads raw Dynamic Cycling 2024 data with deterministic ID alignment and strict replicate validation.
+    """Loads raw Dynamic Cycling 2024 data with deterministic ID alignment and strict numeric integrity.
 
-    - 92 physical cells across 47 discharge protocols.
-    - Pre-experiment design features: 8 waveform descriptors.
-    - Target: EFC lifetime to 90% SOH.
+    Scientific Feature Semantics:
+    - The 8 waveform features extracted in `protocol_features.pkl` are *realized per-cell measurements*
+      derived from each physical battery cell's actual cycler current/voltage time-series.
+    - Cell-level data (`cells_df`) retains each cell's realized features to preserve empirical within-protocol variance.
+    - Protocol-level data (`protocols_df`) aggregates realized features across replicates of that protocol using arithmetic mean.
+
+    Numeric Integrity Contracts:
+    - All 8 design features must be finite (no NaN, Inf).
+    - `efc_lifetime` and `cycles_90` must be finite and strictly > 0.
+    - Deterministic ID set equality across metadata, features, and targets is enforced before merge.
     """
     metadata_path = raw_dir / "metadata.pkl"
     protocol_features_pkl = raw_dir / "protocol_features.pkl"
@@ -193,34 +248,61 @@ def load_raw_dynamic_cycling_data(
     # Determine replicate IDs (A, B, ...)
     cells_df["replicate_id"] = cells_df.groupby("protocol_id").cumcount().apply(lambda x: chr(ord("A") + x))
 
-    # 6. Validate complete replicate design vector across replicates of each protocol
-    for proto_id, group in cells_df.groupby("protocol_id"):
-        if len(group) <= 1:
-            continue
-        canon_row = group.iloc[0]
-        for rep_idx in range(1, len(group)):
-            cand_row = group.iloc[rep_idx]
-            for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
-                c_val = float(canon_row[feat])
-                cand_val = float(cand_row[feat])
-                abs_diff = abs(cand_val - c_val)
+    # 6. Numeric Integrity Validation
+    for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
+        if feat not in cells_df.columns:
+            raise ValueError(f"Missing required design feature column {feat!r}")
+        feat_vals = pd.to_numeric(cells_df[feat], errors="coerce").to_numpy(dtype=float)
+        non_finite = ~np.isfinite(feat_vals)
+        if non_finite.any():
+            bad_cells = cells_df.loc[non_finite, "cell_id"].tolist()
+            bad_vals = cells_df.loc[non_finite, feat].tolist()
+            raise ValueError(
+                f"Non-finite values detected in design feature {feat!r} for cell IDs {bad_cells}: {bad_vals}"
+            )
+        cells_df[feat] = feat_vals
 
-                if rtol is not None or atol is not None:
-                    eff_atol = atol if atol is not None else 1e-8
-                    eff_rtol = rtol if rtol is not None else 1e-5
-                    is_close = np.isclose(cand_val, c_val, rtol=eff_rtol, atol=eff_atol, equal_nan=False)
-                else:
-                    tols = feature_tolerances if feature_tolerances is not None else DEFAULT_REPLICATE_FEATURE_TOLERANCES
-                    feat_tol = tols.get(feat, 1e-6)
-                    is_close = abs_diff <= feat_tol
+    for tgt_col in ["efc_lifetime", "cycles_90"]:
+        if tgt_col not in cells_df.columns:
+            raise ValueError(f"Missing required target column {tgt_col!r}")
+        tgt_vals = pd.to_numeric(cells_df[tgt_col], errors="coerce").to_numpy(dtype=float)
+        invalid = (~np.isfinite(tgt_vals)) | (tgt_vals <= 0)
+        if invalid.any():
+            bad_cells = cells_df.loc[invalid, "cell_id"].tolist()
+            bad_vals = cells_df.loc[invalid, tgt_col].tolist()
+            raise ValueError(
+                f"Invalid target values detected in {tgt_col!r} (must be finite and > 0) for cell IDs {bad_cells}: {bad_vals}"
+            )
+        cells_df[tgt_col] = tgt_vals
 
-                if not is_close:
-                    raise ValueError(
-                        f"Protocol {proto_id!r} replicate conflict on feature {feat!r}: "
-                        f"canonical={c_val}, conflicting={cand_val}, abs_diff={abs_diff:.6e}"
-                    )
+    # Optional explicit tolerance check if user passes custom feature_tolerances
+    if feature_tolerances is not None or rtol is not None or atol is not None:
+        for proto_id, group in cells_df.groupby("protocol_id"):
+            if len(group) <= 1:
+                continue
+            canon_row = group.iloc[0]
+            for rep_idx in range(1, len(group)):
+                cand_row = group.iloc[rep_idx]
+                for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
+                    c_val = float(canon_row[feat])
+                    cand_val = float(cand_row[feat])
+                    abs_diff = abs(cand_val - c_val)
 
-    # 7. Build protocol-level data (Canonical design coordinates from first replicate + aggregated target)
+                    if rtol is not None or atol is not None:
+                        eff_atol = atol if atol is not None else 1e-8
+                        eff_rtol = rtol if rtol is not None else 1e-5
+                        is_close = np.isclose(cand_val, c_val, rtol=eff_rtol, atol=eff_atol, equal_nan=False)
+                    else:
+                        feat_tol = feature_tolerances.get(feat, 1e-6) if feature_tolerances else 1e-6
+                        is_close = abs_diff <= feat_tol
+
+                    if not is_close:
+                        raise ValueError(
+                            f"Protocol {proto_id!r} replicate conflict on feature {feat!r}: "
+                            f"canonical={c_val}, conflicting={cand_val}, abs_diff={abs_diff:.6e}"
+                        )
+
+    # 7. Build protocol-level data (Design coordinates aggregated as mean across realized replicates)
     proto_rows: list[dict[str, Any]] = []
     for proto_id, group in cells_df.groupby("protocol_id", sort=False):
         first_row = group.iloc[0]
@@ -240,16 +322,11 @@ def load_raw_dynamic_cycling_data(
             "cycles_90": float(group["cycles_90"].mean()),
         }
         for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
-            prow[feat] = float(first_row[feat])
+            prow[feat] = float(group[feat].mean())
 
         proto_rows.append(prow)
 
     protocols_df = pd.DataFrame(proto_rows).sort_values("protocol_id").reset_index(drop=True)
-
-    # Unify cell-level nominal design coordinates with protocol canonical design vector
-    canonical_lookup = protocols_df[["protocol_id", *DYNAMIC_CYCLING_FEATURE_COLUMNS]].set_index("protocol_id")
-    for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
-        cells_df[feat] = cells_df["protocol_id"].map(canonical_lookup[feat]).values.astype(float)
 
     cell_cols = [
         "cell_id",
