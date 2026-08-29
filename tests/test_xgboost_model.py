@@ -6,7 +6,11 @@ import pandas as pd
 import pytest
 
 from src.datasets.si_mxene_spec import SI_MXENE_SPEC
-from src.train_model import _xgb_model, train_model
+from src.train_model import (
+    _xgb_model,
+    compute_uncertainty_calibration,
+    train_model,
+)
 
 
 def test_xgboost_model_hyperparameters() -> None:
@@ -21,6 +25,27 @@ def test_xgboost_model_hyperparameters() -> None:
     assert np.isclose(params["reg_alpha"], 0.1)
     assert np.isclose(params["reg_lambda"], 1.0)
     assert params["random_state"] == 42
+
+
+def test_compute_uncertainty_calibration_metrics() -> None:
+    y_true = np.array([10.0, 12.0, 9.0, 11.0, 10.5])
+    pred_mean = np.array([10.1, 11.8, 9.2, 10.9, 10.4])
+    pred_std = np.array([0.5, 0.5, 0.5, 0.5, 0.5])
+
+    cal = compute_uncertainty_calibration(y_true, pred_mean, pred_std)
+
+    assert "coverage_50_pct" in cal
+    assert "coverage_80_pct" in cal
+    assert "coverage_90_pct" in cal
+    assert "coverage_95_pct" in cal
+    assert "mean_gaussian_nll" in cal
+    assert "standardized_residuals_mean" in cal
+    assert "standardized_residuals_std" in cal
+
+    assert 0.0 <= cal["coverage_50_pct"] <= 1.0
+    assert 0.0 <= cal["coverage_95_pct"] <= 1.0
+    assert np.isfinite(cal["mean_gaussian_nll"])
+    assert np.isfinite(cal["standardized_residuals_mean"])
 
 
 def test_train_model_xgboost_metrics_and_persistence(tmp_path: Path) -> None:
@@ -38,6 +63,7 @@ def test_train_model_xgboost_metrics_and_persistence(tmp_path: Path) -> None:
     assert "rf_metrics" in metrics
     assert "xgb_metrics" in metrics
     assert "gp_metrics" in metrics
+    assert "gp_uncertainty_calibration" in metrics
 
     for model_key in ["rf_metrics", "xgb_metrics", "gp_metrics"]:
         m = metrics[model_key]

@@ -2,78 +2,141 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 
 from src.optimization.acquisition import (
     compute_acquisition,
+    compute_true_mc_nei,
+    denoised_expected_improvement_acquisition,
     expected_improvement_acquisition,
-    mc_noisy_expected_improvement,
-    noisy_expected_improvement_acquisition,
+    safe_cholesky,
 )
 
 
-def test_nei_numerical_stability_and_finite_outputs() -> None:
-    mean = np.array([100.0, 110.0, 90.0, 120.0])
-    std = np.array([0.0, 1e-12, 5.0, 10.0])
-    obs_means = np.array([95.0, 105.0, 100.0])
+@pytest.fixture
+def fitted_gp() -> tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(42)
+    X_obs = rng.uniform(0.0, 1.0, size=(12, 3))
+    # Latent true function f(x) = sin(3*x0) + cos(2*x1)
+    y_latent = np.sin(3.0 * X_obs[:, 0]) + np.cos(2.0 * X_obs[:, 1])
+    y_noisy = y_latent + rng.normal(0.0, 0.1, size=len(X_obs))
 
-    scores = noisy_expected_improvement_acquisition(
-        mean=mean,
-        std=std,
-        observed_posterior_means=obs_means,
-        xi=0.01,
-        objective="maximize",
+    kernel = ConstantKernel(1.0) * Matern(length_scale=0.5, nu=2.5) + WhiteKernel(noise_level=0.01)
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42, n_restarts_optimizer=1)
+    gp.fit(X_obs, y_noisy)
+
+    X_cand = rng.uniform(0.0, 1.0, size=(25, 3))
+    return gp, X_obs, X_cand
+
+
+def test_safe_cholesky_escalation_and_properties() -> None:
+    # 1. Standard positive definite
+    A = np.array([[4.0, 1.0], [1.0, 3.0]])
+    L = safe_cholesky(A)
+    assert np.allclose(L @ L.T, A, atol=1e-5)
+
+    # 2. Singular matrix with identical rows
+    B = np.array([[1.0, 1.0], [1.0, 1.0]])
+    L_b = safe_cholesky(B)
+    assert np.all(np.isfinite(L_b))
+    assert L_b.shape == (2, 2)
+
+
+def test_true_mc_nei_determinism_and_finiteness(
+    fitted_gp: tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]
+) -> None:
+    gp, X_obs, X_cand = fitted_gp
+
+    scores_1 = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=128, seed=123)
+    scores_2 = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=128, seed=123)
+    scores_diff_seed = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=128, seed=456)
+
+    assert len(scores_1) == len(X_cand)
+    assert np.all(np.isfinite(scores_1))
+    assert np.all(scores_1 >= 0.0)
+    # Determinism with same seed
+    assert np.allclose(scores_1, scores_2)
+    # Different seed produces slightly different MC estimates with high correlation
+    assert not np.allclose(scores_1, scores_diff_seed)
+    assert np.corrcoef(scores_1, scores_diff_seed)[0, 1] > 0.95
+
+
+def test_true_mc_nei_near_zero_noise_approaches_ei() -> None:
+    rng = np.random.default_rng(42)
+    X_obs = rng.uniform(0.0, 1.0, size=(10, 2))
+    y_obs = np.sin(X_obs[:, 0]) + 10.0
+
+    # GP with zero noise kernel (deterministic interpolation)
+    kernel = ConstantKernel(1.0) * Matern(length_scale=0.5, nu=2.5) + WhiteKernel(
+        noise_level=1e-6, noise_level_bounds=(1e-7, 1e-5)
+    )
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42, alpha=1e-8)
+    gp.fit(X_obs, y_obs)
+
+    X_cand = rng.uniform(0.0, 1.0, size=(15, 2))
+    true_nei_scores = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=1000, seed=42)
+
+    # Analytic EI with exact incumbent max(y_obs)
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+    exact_ei = expected_improvement_acquisition(cand_mean, cand_std, best_observed=float(np.max(y_obs)))
+
+    # Under near-zero noise, True NEI converges to analytic EI
+    assert np.allclose(true_nei_scores, exact_ei, atol=0.08)
+
+
+def test_true_mc_nei_vs_noisy_spike_outlier() -> None:
+    X_obs = np.array([[0.1], [0.2], [0.3], [0.4], [0.5]])
+    # A single noisy measurement spiked to 25.0, others are around 10.0
+    y_obs = np.array([10.0, 10.2, 25.0, 10.1, 10.3])
+
+    kernel = ConstantKernel(5.0, (0.1, 20.0)) * Matern(length_scale=0.5, length_scale_bounds=(0.1, 2.0), nu=2.5) + WhiteKernel(noise_level=1.0, noise_level_bounds=(0.1, 5.0))
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42)
+    gp.fit(X_obs, y_obs)
+
+    X_cand = np.array([[0.25], [0.35]])
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+
+    # Standard EI using raw noisy max (25.0) yields near zero because cand_mean ~ 10-12
+    raw_ei = expected_improvement_acquisition(cand_mean, cand_std, best_observed=25.0)
+    assert np.all(raw_ei < 0.005)
+
+    # True NEI integrates over the posterior distribution of latent incumbent
+    true_nei = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=256, seed=42)
+    assert np.all(np.isfinite(true_nei))
+    assert np.all(true_nei >= 0.0)
+
+
+def test_true_mc_nei_minimization_semantics(
+    fitted_gp: tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]
+) -> None:
+    gp, X_obs, X_cand = fitted_gp
+
+    max_scores = compute_true_mc_nei(gp, X_obs, X_cand, objective="maximize", seed=42)
+    min_scores = compute_true_mc_nei(gp, X_obs, X_cand, objective="minimize", seed=42)
+
+    assert np.all(np.isfinite(max_scores))
+    assert np.all(np.isfinite(min_scores))
+    # Maximization and minimization rankings should generally be inverted
+    assert np.corrcoef(max_scores, min_scores)[0, 1] < 0.0
+
+
+def test_compute_acquisition_dispatch_routes_true_nei(
+    fitted_gp: tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]
+) -> None:
+    gp, X_obs, X_cand = fitted_gp
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+
+    score_model = compute_acquisition(
+        method="true_nei",
+        mean=cand_mean,
+        std=cand_std,
+        best_observed=10.0,
+        gp=gp,
+        X_observed_scaled=X_obs,
+        X_candidates_scaled=X_cand,
+        seed=42,
     )
 
-    assert len(scores) == 4
-    assert np.all(np.isfinite(scores))
-    assert np.all(scores >= 0.0)
-
-    # For zero variance below incumbent (105.0), improvement is 0.0
-    assert scores[0] == 0.0
-    # For zero variance above incumbent (110.0 > 105.0), improvement is 110 - 105 - 0.01 = 4.99
-    assert np.isclose(scores[1], 4.99, atol=1e-2)
-
-
-def test_nei_vs_standard_ei_incumbent_handling() -> None:
-    mean = np.array([108.0, 102.0])
-    std = np.array([3.0, 4.0])
-
-    # Noisy observed data has a spurious spike at 150.0, but denoised posterior mean is 105.0
-    noisy_spike_obs = 150.0
-    denoised_obs_means = np.array([100.0, 102.0, 105.0])
-
-    # Standard EI with raw noisy spike produces 0 or tiny score
-    ei_score = expected_improvement_acquisition(mean, std, best_observed=noisy_spike_obs)
-    assert np.all(ei_score < 1e-4)
-
-    # NEI with denoised incumbent (105.0) recognizes candidate at 108.0 as high-value improvement
-    nei_score = noisy_expected_improvement_acquisition(
-        mean=mean,
-        std=std,
-        observed_posterior_means=denoised_obs_means,
-    )
-    assert nei_score[0] > 1.0
-
-
-def test_mc_nei_consistency() -> None:
-    mean = np.array([110.0, 95.0])
-    std = np.array([5.0, 5.0])
-    obs_means = np.array([100.0, 105.0])
-
-    analytic_nei = noisy_expected_improvement_acquisition(mean, std, observed_posterior_means=obs_means)
-    mc_nei = mc_noisy_expected_improvement(mean, std, observed_means=obs_means, n_mc_samples=5000, seed=42)
-
-    # MC NEI and analytic NEI should be close
-    assert np.allclose(analytic_nei, mc_nei, atol=0.2)
-
-
-def test_compute_acquisition_dispatch_nei() -> None:
-    mean = np.array([10.0, 20.0])
-    std = np.array([1.0, 2.0])
-
-    score1 = compute_acquisition("nei", mean, std, best_observed=15.0)
-    score2 = compute_acquisition("noisy_expected_improvement", mean, std, best_observed=15.0)
-    score3 = compute_acquisition("turbo_nei", mean, std, best_observed=15.0)
-
-    assert np.allclose(score1, score2)
-    assert np.allclose(score1, score3)
+    direct_score = compute_true_mc_nei(gp, X_obs, X_cand, seed=42)
+    assert np.allclose(score_model, direct_score)

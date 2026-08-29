@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any, Sequence
 
 import joblib
 import numpy as np
@@ -40,6 +41,54 @@ def _regression_metrics(y_true, pred, rows, target):
         "r2": r2,
         "rows": int(rows),
         "target": target,
+    }
+
+
+def compute_uncertainty_calibration(
+    y_true: np.ndarray | Sequence[float],
+    pred_mean: np.ndarray | Sequence[float],
+    pred_std: np.ndarray | Sequence[float],
+) -> dict[str, Any]:
+    """Computes Gaussian uncertainty calibration metrics on held-out test data.
+
+    Evaluates:
+    - Empirical coverage of 50%, 80%, 90%, 95% predictive intervals
+    - Gaussian Negative Log-Likelihood (NLL)
+    - Standardized residual statistics: z = (y_true - pred_mean) / pred_std
+    """
+    y = np.asarray(y_true, dtype=float)
+    mu = np.asarray(pred_mean, dtype=float)
+    sigma = np.maximum(np.asarray(pred_std, dtype=float), 1e-6)
+
+    # Standard normal quantiles for symmetric intervals
+    z_50 = 0.6744897501960817
+    z_80 = 1.2815515655446004
+    z_90 = 1.6448536269514722
+    z_95 = 1.959963984540054
+
+    coverage_50 = float(np.mean(np.abs(y - mu) <= z_50 * sigma))
+    coverage_80 = float(np.mean(np.abs(y - mu) <= z_80 * sigma))
+    coverage_90 = float(np.mean(np.abs(y - mu) <= z_90 * sigma))
+    coverage_95 = float(np.mean(np.abs(y - mu) <= z_95 * sigma))
+
+    # Gaussian negative log predictive density
+    nll_per_sample = 0.5 * np.log(2.0 * np.pi * (sigma ** 2)) + 0.5 * (((y - mu) / sigma) ** 2)
+    mean_nll = float(np.mean(nll_per_sample))
+
+    # Standardized residuals: z = (y - mu) / sigma
+    z_residuals = (y - mu) / sigma
+    z_mean = float(np.mean(z_residuals))
+    z_std = float(np.std(z_residuals, ddof=1)) if len(z_residuals) > 1 else 0.0
+
+    return {
+        "coverage_50_pct": coverage_50,
+        "coverage_80_pct": coverage_80,
+        "coverage_90_pct": coverage_90,
+        "coverage_95_pct": coverage_95,
+        "mean_gaussian_nll": mean_nll,
+        "standardized_residuals_mean": z_mean,
+        "standardized_residuals_std": z_std,
+        "test_samples_count": len(y),
     }
 
 
@@ -180,8 +229,10 @@ def train_model(
     X_test_scaled = scaler.transform(X_test)
     gp_model = _gp_model()
     gp_model.fit(X_train_scaled, y_train)
-    gp_pred = gp_model.predict(X_test_scaled)
+    gp_pred, gp_std = gp_model.predict(X_test_scaled, return_std=True)
     gp_metrics = _regression_metrics(y_test, gp_pred, len(df), spec.target_column)
+    gp_calibration = compute_uncertainty_calibration(y_test, gp_pred, gp_std)
+    gp_metrics["uncertainty_calibration"] = gp_calibration
 
     final_rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
     final_rf_model.fit(X, y)
@@ -213,16 +264,23 @@ def train_model(
             "rf_metrics": rf_metrics,
             "xgb_metrics": xgb_metrics,
             "gp_metrics": gp_metrics,
+            "gp_uncertainty_calibration": gp_calibration,
             "model_versions": {
                 "baseline": "RandomForestRegressor",
                 "challenger": "XGBRegressor",
                 "surrogate": "GaussianProcessRegressor",
-                "acquisition": "UCB beta=1.0",
+                "acquisition": "UCB beta=1.0 / True NEI",
             },
         },
         output_path,
     )
-    metrics = {**rf_metrics, "rf_metrics": rf_metrics, "xgb_metrics": xgb_metrics, "gp_metrics": gp_metrics}
+    metrics = {
+        **rf_metrics,
+        "rf_metrics": rf_metrics,
+        "xgb_metrics": xgb_metrics,
+        "gp_metrics": gp_metrics,
+        "gp_uncertainty_calibration": gp_calibration,
+    }
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     importance = pd.DataFrame(
@@ -245,6 +303,8 @@ def main():
     print(f"Metrics (RF):  MAE={metrics['rf_metrics']['mae']:.2f}, RMSE={metrics['rf_metrics']['rmse']:.2f}, R2={metrics['rf_metrics']['r2']}")
     print(f"Metrics (XGB): MAE={metrics['xgb_metrics']['mae']:.2f}, RMSE={metrics['xgb_metrics']['rmse']:.2f}, R2={metrics['xgb_metrics']['r2']}")
     print(f"Metrics (GP):  MAE={metrics['gp_metrics']['mae']:.2f}, RMSE={metrics['gp_metrics']['rmse']:.2f}, R2={metrics['gp_metrics']['r2']}")
+    cal = metrics.get("gp_uncertainty_calibration", {})
+    print(f"GP Calibration: 50% cov={cal.get('coverage_50_pct', 0):.2f}, 95% cov={cal.get('coverage_95_pct', 0):.2f}, NLL={cal.get('mean_gaussian_nll', 0):.2f}")
 
 
 if __name__ == "__main__":

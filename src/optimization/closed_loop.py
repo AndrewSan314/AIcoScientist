@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+import json
 import logging
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -13,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 
 from src.optimization.acquisition import compute_acquisition
 from src.optimization.search_space import SearchSpace
-from src.optimization.trust_region import TuRBOTrustRegion
+from src.optimization.trust_region import TrustRegionState, TuRBOTrustRegion
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +33,8 @@ class ExperimentProposal:
     trust_region_center: dict[str, Any] | None
     trust_region_radius: float | None
     recommendation_reason: str
+    reason_code: str
+    distance_to_nearest_observed: float
     step: int
 
     def to_dict(self) -> dict[str, Any]:
@@ -43,6 +48,8 @@ class ExperimentProposal:
             "trust_region_center": self.trust_region_center,
             "trust_region_radius": float(self.trust_region_radius) if self.trust_region_radius is not None else None,
             "recommendation_reason": self.recommendation_reason,
+            "reason_code": self.reason_code,
+            "distance_to_nearest_observed": float(self.distance_to_nearest_observed),
             "step": int(self.step),
         }
 
@@ -81,12 +88,24 @@ class OptimizerState:
     scaler: StandardScaler | None = None
     history: list[dict[str, Any]] = field(default_factory=list)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "observed_records": self.observed_records,
+            "feature_cols": self.feature_cols,
+            "target_col": self.target_col,
+            "objective": self.objective,
+            "step": int(self.step),
+            "current_best": float(self.current_best),
+            "trust_region_state": self.trust_region.state.to_dict() if self.trust_region and self.trust_region.state else None,
+            "history": self.history,
+        }
+
 
 class ClosedLoopOptimizer:
     """Universal domain-agnostic closed-loop materials optimizer.
 
     Maintains strict optimizer/evaluator separation. Supports TuRBO trust region,
-    Noisy Expected Improvement (NEI), GP-UCB, Greedy, and standard EI.
+    True Noisy Expected Improvement (NEI), GP-UCB, Greedy, and standard EI.
     """
 
     def __init__(
@@ -173,25 +192,30 @@ class ClosedLoopOptimizer:
         state.gp_model = gp
 
     def propose(self, state: OptimizerState) -> ExperimentProposal:
-        """Proposes the next experiment using active strategy and search space."""
+        """Proposes the next experiment using active strategy, surrogate model, and search space."""
         state.step += 1
         step_seed = self.random_state * 1000 + state.step * 100 + 7
 
-        # 1. Generate candidate pool (either inside trust region or globally across search space)
+        is_global_escape = False
         if state.trust_region is not None and "turbo" in self.strategy:
+            if state.trust_region.should_global_escape(state.step):
+                is_global_escape = True
+
+        # 1. Generate candidate pool
+        if state.trust_region is not None and "turbo" in self.strategy and not is_global_escape:
             cand_batch = state.trust_region.sample_candidates(
                 n=self.n_candidates_per_step,
                 seed=step_seed,
             )
             tr_center = state.trust_region.state.center if state.trust_region.state else None
-            tr_radius = state.trust_region.state.radius if state.trust_region.state else None
+            tr_radius = state.trust_region.state.length if state.trust_region.state else None
         else:
             cand_batch = self.search_space.sample_feasible(
                 n=self.n_candidates_per_step,
                 seed=step_seed,
             )
-            tr_center = None
-            tr_radius = None
+            tr_center = state.trust_region.state.center if (state.trust_region and state.trust_region.state) else None
+            tr_radius = state.trust_region.state.length if (state.trust_region and state.trust_region.state) else None
 
         # 2. Fit/ensure surrogate
         if state.gp_model is None or state.scaler is None:
@@ -202,7 +226,7 @@ class ClosedLoopOptimizer:
         X_cand_scaled = state.scaler.transform(X_cand)
         pred_mean, pred_std = state.gp_model.predict(X_cand_scaled, return_std=True)
 
-        # Denoised posterior means at observed points
+        # Denoised posterior means and design at observed points
         X_obs = np.array([[r[c] for c in self.feature_cols] for r in state.observed_records], dtype=float)
         X_obs_scaled = state.scaler.transform(X_obs)
         obs_posterior_means = state.gp_model.predict(X_obs_scaled)
@@ -228,6 +252,7 @@ class ClosedLoopOptimizer:
 
             selected_cand = cand_batch.iloc[selected_idx].to_dict()
             acq_score = 0.0
+            reason_code = "SPACE_FILLING_RANDOM"
             reason = "Recommended by exploratory uniform space-filling quasi-random sampling."
         else:
             scores = compute_acquisition(
@@ -239,6 +264,10 @@ class ClosedLoopOptimizer:
                 xi=self.xi,
                 objective=self.objective,
                 observed_posterior_means=obs_posterior_means,
+                gp=state.gp_model,
+                X_observed_scaled=X_obs_scaled,
+                X_candidates_scaled=X_cand_scaled,
+                seed=step_seed,
             )
 
             sorted_indices = np.argsort(scores)[::-1]
@@ -258,36 +287,47 @@ class ClosedLoopOptimizer:
             m_val = float(pred_mean[selected_idx])
             s_val = float(pred_std[selected_idx])
 
-            if "turbo" in self.strategy:
+            if is_global_escape:
+                reason_code = "GLOBAL_ESCAPE"
+                reason = (
+                    f"Recommended via periodic global escape exploration outside local trust region "
+                    f"(score={acq_score:.3f}, pred_mean={m_val:.2f}, std={s_val:.2f})."
+                )
+            elif "turbo" in self.strategy:
+                reason_code = "TURBO_EXPLOITATION_NEI"
                 reason = (
                     f"Recommended because candidate lies inside the active trust region "
                     f"(radius={tr_radius:.3f}) with high Noisy Expected Improvement (score={acq_score:.3f}, "
                     f"pred_mean={m_val:.2f}, std={s_val:.2f})."
                 )
             elif "nei" in self.strategy:
+                reason_code = "GLOBAL_EXPLORATION_NEI"
                 reason = (
-                    f"Recommended for maximal Noisy Expected Improvement (score={acq_score:.3f}, "
+                    f"Recommended for maximal Joint-Posterior Noisy Expected Improvement (score={acq_score:.3f}, "
                     f"pred_mean={m_val:.2f}, std={s_val:.2f}) under noisy experimental observations."
                 )
             elif self.strategy in {"gp_ucb", "ucb"}:
+                reason_code = "UCB_HIGH_UNCERTAINTY"
                 reason = (
                     f"Recommended for Upper Confidence Bound exploration-exploitation balance "
                     f"(score={acq_score:.3f}, pred_mean={m_val:.2f}, std={s_val:.2f}, beta={self.beta:.2f})."
                 )
             elif self.strategy in {"expected_improvement", "ei"}:
+                reason_code = "EXPECTED_IMPROVEMENT"
                 reason = (
                     f"Recommended for Expected Improvement (score={acq_score:.3f}, pred_mean={m_val:.2f}, std={s_val:.2f})."
                 )
             else:
+                reason_code = "GREEDY_POSTERIOR_MEAN"
                 reason = f"Recommended by {self.strategy} (score={acq_score:.3f}, pred_mean={m_val:.2f}, std={s_val:.2f})."
 
         cand_id = selected_cand.get("candidate_id") or selected_cand.get("policy_id")
         if not cand_id:
-            # Deterministic candidate hash
             coords = "_".join(f"{k}={float(selected_cand[k]):.4f}" for k in sorted(self.feature_cols) if k in selected_cand)
             cand_id = f"EXP_{hash(coords) % 1000000:06d}"
 
         design_vars = {k: selected_cand[k] for k in self.feature_cols if k in selected_cand}
+        min_dist = float(novelty_vs_observed["min_distance"].iloc[selected_idx])
 
         proposal = ExperimentProposal(
             candidate_id=str(cand_id),
@@ -299,6 +339,8 @@ class ClosedLoopOptimizer:
             trust_region_center=tr_center,
             trust_region_radius=tr_radius,
             recommendation_reason=reason,
+            reason_code=reason_code,
+            distance_to_nearest_observed=min_dist,
             step=state.step,
         )
         return proposal
@@ -349,10 +391,44 @@ class ClosedLoopOptimizer:
             "target_value": val,
             "best_observed": state.current_best,
             "is_improvement": is_improvement,
-            "trust_region_radius": tr_info.get("radius") if tr_info else None,
+            "reason_code": proposal.reason_code,
+            "distance_to_nearest_observed": proposal.distance_to_nearest_observed,
+            "trust_region_radius": tr_info.get("length", tr_info.get("radius")) if tr_info else None,
             "restarted": tr_info.get("restarted") if tr_info else False,
             "expanded": tr_info.get("expanded") if tr_info else False,
             "contracted": tr_info.get("contracted") if tr_info else False,
         }
         state.history.append(step_record)
+        return state
+
+    def save_state(self, state: OptimizerState, filepath: Path | str) -> None:
+        """Serializes optimizer state to disk for persistent resumption."""
+        p = Path(filepath)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        data = state.to_dict()
+        p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+    def load_state(self, filepath: Path | str) -> OptimizerState:
+        """Loads and reconstructs optimizer state from disk."""
+        p = Path(filepath)
+        data = json.loads(p.read_text(encoding="utf-8"))
+
+        tr: TuRBOTrustRegion | None = None
+        if data.get("trust_region_state") is not None and "turbo" in self.strategy:
+            tr = TuRBOTrustRegion(search_space=self.search_space)
+            tr.state = TrustRegionState.from_dict(data["trust_region_state"])
+
+        state = OptimizerState(
+            observed_records=data["observed_records"],
+            feature_cols=data["feature_cols"],
+            target_col=data["target_col"],
+            objective=data["objective"],
+            step=int(data["step"]),
+            current_best=float(data["current_best"]),
+            trust_region=tr,
+            gp_model=None,
+            scaler=None,
+            history=data.get("history", []),
+        )
+        self._fit_surrogate(state)
         return state

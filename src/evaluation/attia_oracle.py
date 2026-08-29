@@ -35,6 +35,9 @@ def generate_attia_simulator_seed(benchmark_seed: int, policy_id: str) -> int:
     return int(h[:8], 16) % (2**31 - 1)
 
 
+_SIMULATOR_CACHE: dict[tuple[float, float, float, str, bool, int], int] = {}
+
+
 def simulate_attia_policy(
     c1: float,
     c2: float,
@@ -55,6 +58,10 @@ def simulate_attia_policy(
 
     NOTE: Outputs are simulated lifetimes from a numerical model with stochastic noise, NOT physical experiments.
     """
+    cache_key = (round(float(c1), 5), round(float(c2), 5), round(float(c3), 5), str(mode), bool(variance), int(seed))
+    if cache_key in _SIMULATOR_CACHE:
+        return _SIMULATOR_CACHE[cache_key]
+
     # Deterministic RNG state given seed and policy coordinates
     rng_seed = int((seed * 1000 + c1 * 10 + c2 * 20 + c3 * 30) % (2**31 - 1))
     sim_rng = random.Random(rng_seed)
@@ -162,6 +169,7 @@ def simulate_attia_policy(
     if lifetime_meas < 1:
         lifetime_meas = 1
 
+    _SIMULATOR_CACHE[cache_key] = lifetime_meas
     return lifetime_meas
 
 

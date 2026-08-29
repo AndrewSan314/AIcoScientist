@@ -123,3 +123,32 @@ def test_trust_region_sampling_within_bounds_and_constraints(simple_search_space
         assert box["x2"][0] <= row["x2"] <= box["x2"][1]
         # Check feasible
         assert simple_search_space.is_feasible(row)
+
+
+def test_trust_region_global_escape_trigger(simple_search_space: SearchSpace) -> None:
+    turbo = TuRBOTrustRegion(search_space=simple_search_space, global_escape_frequency=4)
+    turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
+
+    assert not turbo.should_global_escape(step=0)
+    assert not turbo.should_global_escape(step=1)
+    assert not turbo.should_global_escape(step=2)
+    assert not turbo.should_global_escape(step=3)
+    assert turbo.should_global_escape(step=4)
+    assert not turbo.should_global_escape(step=5)
+    assert turbo.should_global_escape(step=8)
+
+
+def test_trust_region_serialization_and_restore(simple_search_space: SearchSpace) -> None:
+    from src.optimization.trust_region import TrustRegionState
+
+    turbo = TuRBOTrustRegion(search_space=simple_search_space, init_length=0.6)
+    state = turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
+    turbo.update({"x1": 6.0, "x2": 1.0}, observed_value=105.0)
+
+    state_dict = state.to_dict()
+    restored_state = TrustRegionState.from_dict(state_dict)
+
+    assert restored_state.step == state.step
+    assert restored_state.best_value == state.best_value
+    assert restored_state.length == state.length
+    assert restored_state.center == state.center

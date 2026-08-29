@@ -166,11 +166,28 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     assert "turbo_nei" in summary["best_discovered_per_strategy"]
     assert "nei" in summary["best_discovered_per_strategy"]
     assert "paired_comparisons" in summary
+    assert "sample_efficiency_to_threshold" in summary
+    assert "threshold_a_discrete_opt_1079" in summary["sample_efficiency_to_threshold"]
+
     assert (tmp_path / "benchmark_summary.json").is_file()
     assert (tmp_path / "continuous_reference.json").is_file()
     assert (tmp_path / "continuous_reference_manifest.json").is_file()
+    assert (tmp_path / "run_manifest.json").is_file()
     assert (tmp_path / "search_space_summary.json").is_file()
     assert (tmp_path / "optimization_history.csv").is_file()
     assert (tmp_path / "proposed_protocols.csv").is_file()
     assert (tmp_path / "adaptive_decision_trace.csv").is_file()
     assert (tmp_path / "turbo_state_history.csv").is_file()
+
+    turbo_df = pd.read_csv(tmp_path / "turbo_state_history.csv")
+    assert "benchmark_seed" in turbo_df.columns
+    assert "strategy" in turbo_df.columns
+    assert "step" in turbo_df.columns
+    assert "candidate_id" in turbo_df.columns
+    assert "trust_region_length" in turbo_df.columns
+    assert "success_counter" in turbo_df.columns
+    assert "failure_counter" in turbo_df.columns
+    assert "expanded" in turbo_df.columns
+    assert "contracted" in turbo_df.columns
+    assert "restarted" in turbo_df.columns
+

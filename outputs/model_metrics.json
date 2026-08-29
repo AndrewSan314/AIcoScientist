@@ -23,6 +23,26 @@
     "rmse": 5.368634145490939,
     "r2": 0.53962292456818,
     "rows": 50,
-    "target": "retention_100"
+    "target": "retention_100",
+    "uncertainty_calibration": {
+      "coverage_50_pct": 0.16666666666666666,
+      "coverage_80_pct": 0.5,
+      "coverage_90_pct": 0.6666666666666666,
+      "coverage_95_pct": 0.6666666666666666,
+      "mean_gaussian_nll": 3.35111695645884,
+      "standardized_residuals_mean": 0.14887203278434993,
+      "standardized_residuals_std": 1.6278310887197738,
+      "test_samples_count": 12
+    }
+  },
+  "gp_uncertainty_calibration": {
+    "coverage_50_pct": 0.16666666666666666,
+    "coverage_80_pct": 0.5,
+    "coverage_90_pct": 0.6666666666666666,
+    "coverage_95_pct": 0.6666666666666666,
+    "mean_gaussian_nll": 3.35111695645884,
+    "standardized_residuals_mean": 0.14887203278434993,
+    "standardized_residuals_std": 1.6278310887197738,
+    "test_samples_count": 12
   }
 }

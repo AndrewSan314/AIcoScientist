@@ -1,0 +1,24 @@
+{
+  "dataset": "attia_continuous",
+  "baseline_commit": "1bef60ed68178dfa039d34c811547768facbbe4f",
+  "simulator_version": "1.0.0",
+  "attia_source_commit": "0068fd0136bcd65884f5cd94b2b967c1ba73a668",
+  "n_seeds": 30,
+  "budgets": [
+    10,
+    15,
+    20,
+    30
+  ],
+  "strategies": [
+    "random",
+    "greedy",
+    "gp_ucb",
+    "expected_improvement",
+    "nei",
+    "turbo_nei",
+    "adaptive"
+  ],
+  "timestamp": "2026-08-29T20:03:56.590546+00:00",
+  "reference_underestimated": false
+}

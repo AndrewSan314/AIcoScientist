@@ -116,3 +116,62 @@ def test_closed_loop_firewall_no_latent_oracle_leakage() -> None:
     assert "latent_lifetime" not in proposal_dict
     assert "oracle" not in proposal_dict
     assert "reference_true_lifetime" not in proposal_dict
+    assert "reason_code" in proposal_dict
+    assert "distance_to_nearest_observed" in proposal_dict
+
+
+def test_closed_loop_state_save_and_load(tmp_path: Path) -> None:
+    from pathlib import Path
+
+    space = SearchSpace(
+        variables=[
+            ContinuousVariable("x1", lower=0.0, upper=10.0),
+            ContinuousVariable("x2", lower=0.0, upper=10.0),
+        ],
+        name="quadratic_space",
+    )
+
+    init_df = pd.DataFrame([
+        {"x1": 1.0, "x2": 1.0, "performance": 80.0, "candidate_id": "INIT_0"},
+        {"x1": 2.0, "x2": 5.0, "performance": 95.0, "candidate_id": "INIT_1"},
+    ])
+
+    optimizer = ClosedLoopOptimizer(
+        search_space=space,
+        feature_cols=["x1", "x2"],
+        target_col="performance",
+        strategy="turbo_nei",
+        n_candidates_per_step=50,
+        random_state=42,
+    )
+
+    state = optimizer.initialize(init_df)
+    proposal = optimizer.propose(state)
+    oracle = MockSimulatedOracle(noise_std=0.1, seed=42)
+    result = oracle.evaluate(proposal)
+    state = optimizer.observe(state, proposal, result)
+
+    save_path = tmp_path / "optimizer_checkpoint.json"
+    optimizer.save_state(state, save_path)
+    assert save_path.is_file()
+
+    # Load into fresh optimizer instance
+    restored_optimizer = ClosedLoopOptimizer(
+        search_space=space,
+        feature_cols=["x1", "x2"],
+        target_col="performance",
+        strategy="turbo_nei",
+        n_candidates_per_step=50,
+        random_state=42,
+    )
+    restored_state = restored_optimizer.load_state(save_path)
+
+    assert restored_state.step == state.step
+    assert restored_state.current_best == state.current_best
+    assert len(restored_state.observed_records) == len(state.observed_records)
+    assert len(restored_state.history) == len(state.history)
+
+    # Next proposal from restored state should function identically
+    next_proposal = restored_optimizer.propose(restored_state)
+    assert next_proposal.step == state.step + 1
+

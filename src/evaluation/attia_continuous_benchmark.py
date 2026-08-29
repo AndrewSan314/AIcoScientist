@@ -407,6 +407,10 @@ def run_single_attia_continuous_trajectory(
                 beta=current_beta,
                 xi=current_xi,
                 observed_posterior_means=obs_posterior_means,
+                gp=gp,
+                X_observed_scaled=X_train_scaled,
+                X_candidates_scaled=X_cand_scaled,
+                seed=optimizer_seed * 1000 + step * 100 + 7,
             )
 
             sorted_indices = np.argsort(scores)[::-1]
@@ -783,16 +787,23 @@ def run_attia_continuous_benchmark(
                         all_turbo_state_records.append(
                             {
                                 "benchmark_seed": seed_idx,
+                                "strategy": strat,
                                 "step": row["step"],
-                                "trust_region_center": row.get("trust_region_center"),
-                                "trust_region_radius": row.get("trust_region_radius"),
+                                "query_id": row["query_id"],
+                                "candidate_id": row["candidate_id"],
+                                "C1": row["C1"],
+                                "C2": row["C2"],
+                                "C3": row["C3"],
+                                "C4": row["C4"],
+                                "trust_region_length": row.get("trust_region_radius"),
                                 "success_counter": row.get("success_counter", 0),
                                 "failure_counter": row.get("failure_counter", 0),
                                 "expanded": bool(row.get("expanded", False)),
                                 "contracted": bool(row.get("contracted", False)),
                                 "restarted": bool(row.get("restarted", False)),
-                                "candidate_id": row["candidate_id"],
-                                "acquisition_score": row.get("acquisition_score"),
+                                "global_escape": bool(row.get("global_escape", False)),
+                                "best_observed_lifetime": row.get("best_observed_lifetime"),
+                                "simulated_lifetime": row.get("simulated_lifetime"),
                             }
                         )
 
@@ -1003,6 +1014,34 @@ def run_attia_continuous_benchmark(
             }
         )
 
+    # Compute Sample Efficiency to Target Thresholds across full maximum budget
+    thresholds_spec = {
+        "threshold_a_discrete_opt_1079": 1079.0,
+        "threshold_b_95pct_ref_1070_65": 1070.65,
+        "threshold_c_97_5pct_ref_1098_83": 1098.83,
+    }
+    sample_efficiency_table: dict[str, dict[str, Any]] = {}
+
+    for t_key, t_val in thresholds_spec.items():
+        sample_efficiency_table[t_key] = {"target_lifetime": t_val, "strategies": {}}
+        for strat in strategies:
+            reach_steps = []
+            for seed_idx in range(n_seeds):
+                hist = full_evaluated_trajectories[seed_idx][strat]
+                step_hit = next((h["step"] for h in hist if h["step"] > 0 and float(h["reference_true_lifetime"]) >= t_val), None)
+                if step_hit is not None:
+                    reach_steps.append(step_hit)
+
+            n_hit = len(reach_steps)
+            sample_efficiency_table[t_key]["strategies"][strat] = {
+                "fraction_reaching": float(n_hit / n_seeds) if n_seeds > 0 else 0.0,
+                "pct_reaching": float((n_hit / n_seeds) * 100.0) if n_seeds > 0 else 0.0,
+                "mean_queries_successful": float(np.mean(reach_steps)) if n_hit > 0 else None,
+                "median_queries_successful": float(np.median(reach_steps)) if n_hit > 0 else None,
+                "std_queries_successful": float(np.std(reach_steps, ddof=1)) if n_hit > 1 else 0.0,
+                "censored_runs_count": int(n_seeds - n_hit),
+            }
+
     # Save output artifacts
     pd.DataFrame(all_history_records).to_csv(output_dir / "optimization_history.csv", index=False)
     pd.DataFrame(all_proposed_protocols).to_csv(output_dir / "proposed_protocols.csv", index=False)
@@ -1031,6 +1070,7 @@ def run_attia_continuous_benchmark(
             "bootstrap_replicates": 2000,
             "duplicate_tolerance": 1e-3,
         },
+        "sample_efficiency_to_threshold": sample_efficiency_table,
         "strategy_comparison": final_budget_entry["strategies"],
         "paired_comparisons": final_budget_entry["paired_comparisons"],
         "budget_sweep": budget_sweep_results,
@@ -1038,5 +1078,20 @@ def run_attia_continuous_benchmark(
 
     with open(output_dir / "benchmark_summary.json", "w", encoding="utf-8") as f:
         json.dump(benchmark_summary, f, indent=2)
+
+    import datetime
+    run_manifest = {
+        "dataset": "attia_continuous",
+        "baseline_commit": "1bef60ed68178dfa039d34c811547768facbbe4f",
+        "simulator_version": SIMULATOR_VERSION,
+        "attia_source_commit": ATTIA_SOURCE_COMMIT,
+        "n_seeds": n_seeds,
+        "budgets": budgets,
+        "strategies": strategies,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "reference_underestimated": any_ref_underestimated,
+    }
+    with open(output_dir / "run_manifest.json", "w", encoding="utf-8") as fm:
+        json.dump(run_manifest, fm, indent=2)
 
     return benchmark_summary

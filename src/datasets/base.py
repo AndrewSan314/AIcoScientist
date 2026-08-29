@@ -185,6 +185,46 @@ class DatasetSpec:
                 f"pre_experiment_features and oracle_columns must not overlap: {sorted(pre_oracle_overlap)}"
             )
 
+    def optimizer_visible_features(self, stage: str = "pre_experiment") -> list[str]:
+        """Returns the list of features strictly visible to the optimizer at the given decision stage.
+
+        At 'pre_experiment', only pre-experiment controllable variables are accessible.
+        At 'post_observation', observed characterization measurements become visible for learning.
+        """
+        if stage == "pre_experiment":
+            return list(self.candidate_variables or self.candidate_columns or self.pre_experiment_features)
+        elif stage == "post_observation":
+            return list(self.feature_columns)
+        else:
+            raise ValueError(f"Unknown workflow stage: {stage!r}. Supported stages: 'pre_experiment', 'post_observation'.")
+
+    def learning_features(self, stage: str = "post_observation") -> list[str]:
+        """Returns features available for supervised modeling after physical characterization."""
+        if stage == "post_observation":
+            return list(self.feature_columns)
+        elif stage == "pre_experiment":
+            return list(self.pre_experiment_features)
+        else:
+            raise ValueError(f"Unknown workflow stage: {stage!r}")
+
+
+@dataclass(frozen=True)
+class TwoStageModelSpec:
+    """Specification for two-stage scientific models:
+
+    Stage A (Process -> Structure/Characterization):
+        Inputs: pre_experiment_features (e.g. synthesis temp, precursor ratios)
+        Outputs: post_experiment_characterization (e.g. porosity, grain size, morphology)
+
+    Stage B (Structure/Characterization + Process -> Property/Performance):
+        Inputs: pre_experiment_features + post_experiment_characterization
+        Outputs: targets (e.g. capacity retention, cycle life)
+    """
+    dataset_name: str
+    process_features: list[str]
+    characterization_targets: list[str]
+    performance_targets: list[str]
+
 
 @dataclass
 class DatasetBundle:
