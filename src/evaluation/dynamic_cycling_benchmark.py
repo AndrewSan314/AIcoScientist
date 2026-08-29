@@ -221,6 +221,7 @@ def run_single_optimization_trajectory(
 
 
 def compute_bootstrap_ci(data: np.ndarray, n_bootstraps: int = 2000, ci: float = 0.95, random_state: int = 42) -> tuple[float, float]:
+
     """Computes percentile bootstrap confidence interval for the mean."""
     if len(data) == 0:
         return 0.0, 0.0
@@ -236,19 +237,95 @@ def compute_bootstrap_ci(data: np.ndarray, n_bootstraps: int = 2000, ci: float =
     return low, high
 
 
+def compute_paired_comparison(
+
+    traj_df: pd.DataFrame,
+    total_queries: int,
+) -> dict[str, Any]:
+    """Computes paired seed-by-seed comparison between Greedy and GP-UCB."""
+    greedy_traj = traj_df[traj_df["strategy"] == "greedy"]
+    ucb_traj = traj_df[traj_df["strategy"] == "gp_ucb"]
+
+    seeds = sorted(traj_df["seed"].unique())
+    diff_regret: list[float] = []
+    diff_auc: list[float] = []
+    diff_top5_queries: list[float] = []
+
+    for seed in seeds:
+        g_seed = greedy_traj[greedy_traj["seed"] == seed].sort_values("step")
+        u_seed = ucb_traj[ucb_traj["seed"] == seed].sort_values("step")
+
+        # Final simple regret difference (UCB - Greedy; negative means UCB has lower regret)
+        g_final_regret = float(g_seed[g_seed["step"] == total_queries]["simple_regret"].iloc[0])
+        u_final_regret = float(u_seed[u_seed["step"] == total_queries]["simple_regret"].iloc[0])
+        diff_regret.append(u_final_regret - g_final_regret)
+
+        # Regret AUC difference (mean regret across steps 0..total_queries)
+        g_auc = float(g_seed["simple_regret"].mean())
+        u_auc = float(u_seed["simple_regret"].mean())
+        diff_auc.append(u_auc - g_auc)
+
+        # Queries to top 5%
+        g_hit = g_seed[g_seed["hit_top_5_pct"] == 1]["step"]
+        g_q = int(g_hit.min()) if not g_hit.empty else total_queries + 1
+
+        u_hit = u_seed[u_seed["hit_top_5_pct"] == 1]["step"]
+        u_q = int(u_hit.min()) if not u_hit.empty else total_queries + 1
+
+        diff_top5_queries.append(float(u_q - g_q))
+
+    diff_regret_arr = np.array(diff_regret)
+    diff_auc_arr = np.array(diff_auc)
+    diff_top5_arr = np.array(diff_top5_queries)
+
+    def _safe_wilcoxon(diffs: np.ndarray) -> float | None:
+        if np.all(diffs == 0):
+            return 1.0
+        try:
+            from scipy import stats
+            res = stats.wilcoxon(diffs, zero_method="pratt")
+            return float(res.pvalue)
+        except Exception:
+            return None
+
+    return {
+        "n_paired_seeds": len(seeds),
+        "regret_diff_ucb_minus_greedy": {
+            "mean": float(np.mean(diff_regret_arr)),
+            "median": float(np.median(diff_regret_arr)),
+            "std": float(np.std(diff_regret_arr)),
+            "p_value": _safe_wilcoxon(diff_regret_arr),
+        },
+        "auc_diff_ucb_minus_greedy": {
+            "mean": float(np.mean(diff_auc_arr)),
+            "median": float(np.median(diff_auc_arr)),
+            "std": float(np.std(diff_auc_arr)),
+            "p_value": _safe_wilcoxon(diff_auc_arr),
+        },
+        "queries_to_top5_diff_ucb_minus_greedy": {
+            "mean": float(np.mean(diff_top5_arr)),
+            "median": float(np.median(diff_top5_arr)),
+            "std": float(np.std(diff_top5_arr)),
+            "p_value": _safe_wilcoxon(diff_top5_arr),
+        },
+    }
+
+
 def run_dynamic_cycling_benchmark(
     adapter: DynamicCyclingAdapter | None = None,
     output_dir: Path | None = None,
     initial_protocols: int = 5,
     total_budget: int = 20,
     n_seeds: int = 50,
+    budgets_to_sweep: list[int] | None = None,
 ) -> dict[str, Any]:
     """Runs surrogate evaluation and closed-loop BO comparison with paired seeds and bootstrap statistics.
 
     Budget parameters:
     - initial_protocols: Number of randomly selected protocols before closed-loop BO (default: 5)
-    - total_budget: Total number of evaluated protocols (default: 20)
+    - total_budget: Total number of evaluated protocols for primary benchmark (default: 20)
     - total_queries = total_budget - initial_protocols (default: 15 additional queries)
+    - budgets_to_sweep: Optional list of total budgets to sweep (default: [8, 10, 12, 15, 20])
     """
     if adapter is None:
         adapter = DynamicCyclingAdapter()
@@ -258,27 +335,25 @@ def run_dynamic_cycling_benchmark(
         output_dir = project_root / "outputs" / "dynamic_cycling"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if budgets_to_sweep is None:
+        budgets_to_sweep = [8, 10, 12, 15, 20]
+
     # 1. Surrogate prediction benchmark
     surrogate_metrics = evaluate_surrogate_prediction(adapter)
 
-    # 2. Setup candidate pool and hidden oracle
+    # 2. Setup candidate pool (47 protocol rows) and hidden cell-level oracle (92 rows)
     candidate_pool = adapter.load_candidate_pool()
     hidden_oracle_df = adapter.load_hidden_oracle()
     oracle = OfflineOracle(hidden_oracle_df, adapter.spec, replicate_policy="mean")
     feature_cols = list(adapter.spec.feature_columns)
+    protocols_df = adapter.load_protocols()
 
     n_candidates = len(candidate_pool)
     if initial_protocols <= 0:
         raise ValueError("initial_protocols must be a positive integer")
-    if total_budget < initial_protocols:
-        raise ValueError(f"total_budget ({total_budget}) must be >= initial_protocols ({initial_protocols})")
-    if total_budget > n_candidates:
-        raise ValueError(f"total_budget ({total_budget}) cannot exceed total candidate protocols ({n_candidates})")
 
-    total_queries = total_budget - initial_protocols
-
-    # Evaluator metrics computed from hidden oracle
-    ground_truth_targets = hidden_oracle_df["target_mean"].to_numpy(dtype=float)
+    # Evaluator metrics computed from protocol ground truth
+    ground_truth_targets = protocols_df["target_mean"].to_numpy(dtype=float)
     global_max = float(np.max(ground_truth_targets))
     sorted_targets = np.sort(ground_truth_targets)[::-1]
     top_10_pct_val = float(sorted_targets[max(0, int(np.ceil(0.10 * n_candidates)) - 1)])
@@ -291,78 +366,150 @@ def run_dynamic_cycling_benchmark(
     }
 
     strategies = ["random", "greedy", "gp_ucb"]
-    all_trajectories: list[dict[str, Any]] = []
 
-    # Run paired trajectories across seeds
-    for seed in range(n_seeds):
-        seed_rng = np.random.default_rng(seed + 1000)
-        # Generate paired initial indices shared identically across all strategies for this seed
-        init_indices = list(seed_rng.choice(len(candidate_pool), size=initial_protocols, replace=False))
+    # Run budget sweep
+    sweep_summary_list: list[dict[str, Any]] = []
+    sweep_seed_rows: list[dict[str, Any]] = []
 
+    # Keep track of primary benchmark trajectories (for total_budget)
+    primary_trajectories: list[dict[str, Any]] = []
+
+    for budget in budgets_to_sweep:
+        if budget < initial_protocols:
+            continue
+        queries = budget - initial_protocols
+        budget_trajectories: list[dict[str, Any]] = []
+
+        for seed in range(n_seeds):
+            seed_rng = np.random.default_rng(seed + 1000)
+            init_indices = list(seed_rng.choice(len(candidate_pool), size=initial_protocols, replace=False))
+
+            for strat in strategies:
+                strat_rng = np.random.default_rng(seed + 2000 + strategies.index(strat))
+                traj = run_single_optimization_trajectory(
+                    candidate_pool=candidate_pool,
+                    oracle=oracle,
+                    feature_cols=feature_cols,
+                    strategy=strat,
+                    init_indices=init_indices,
+                    total_queries=queries,
+                    evaluator_meta=evaluator_meta,
+                    rng=strat_rng,
+                    beta=1.0,
+                )
+                # Compute seed-level summary metrics
+                steps_regret = [p["simple_regret"] for p in traj]
+                auc_val = float(np.mean(steps_regret))
+                final_regret = float(traj[-1]["simple_regret"])
+                final_best = float(traj[-1]["best_seen"])
+                hit_10 = int(traj[-1]["hit_top_10_pct"])
+                hit_5 = int(traj[-1]["hit_top_5_pct"])
+
+                hit_10_steps = [p["step"] for p in traj if p["hit_top_10_pct"] == 1]
+                q_10 = int(min(hit_10_steps)) if hit_10_steps else queries + 1
+
+                hit_5_steps = [p["step"] for p in traj if p["hit_top_5_pct"] == 1]
+                q_5 = int(min(hit_5_steps)) if hit_5_steps else queries + 1
+
+                sweep_seed_rows.append(
+                    {
+                        "budget": budget,
+                        "initial_protocols": initial_protocols,
+                        "queries": queries,
+                        "seed": seed,
+                        "strategy": strat,
+                        "final_best_seen": final_best,
+                        "final_simple_regret": final_regret,
+                        "regret_auc": auc_val,
+                        "hit_top_10_pct": hit_10,
+                        "hit_top_5_pct": hit_5,
+                        "queries_to_top_10_pct": q_10,
+                        "queries_to_top_5_pct": q_5,
+                    }
+                )
+
+                for point in traj:
+                    point["seed"] = seed
+                    point["budget"] = budget
+                    budget_trajectories.append(point)
+
+        budget_traj_df = pd.DataFrame(budget_trajectories)
+        if budget == total_budget:
+            primary_trajectories = budget_trajectories
+
+        # Summarize this budget
+        budget_strat_summary: dict[str, Any] = {}
         for strat in strategies:
-            strat_rng = np.random.default_rng(seed + 2000 + strategies.index(strat))
-            traj = run_single_optimization_trajectory(
-                candidate_pool=candidate_pool,
-                oracle=oracle,
-                feature_cols=feature_cols,
-                strategy=strat,
-                init_indices=init_indices,
-                total_queries=total_queries,
-                evaluator_meta=evaluator_meta,
-                rng=strat_rng,
-            )
-            for point in traj:
-                point["seed"] = seed
-                all_trajectories.append(point)
+            strat_pts = [r for r in sweep_seed_rows if r["budget"] == budget and r["strategy"] == strat]
+            regrets = np.array([r["final_simple_regret"] for r in strat_pts])
+            aucs = np.array([r["regret_auc"] for r in strat_pts])
+            best_seens = np.array([r["final_best_seen"] for r in strat_pts])
+            hit10s = np.array([r["hit_top_10_pct"] for r in strat_pts])
+            hit5s = np.array([r["hit_top_5_pct"] for r in strat_pts])
+            q10s = np.array([r["queries_to_top_10_pct"] for r in strat_pts])
+            q5s = np.array([r["queries_to_top_5_pct"] for r in strat_pts])
 
-    history_df = pd.DataFrame(all_trajectories)
+            ci_low, ci_high = compute_bootstrap_ci(regrets, n_bootstraps=2000, ci=0.95)
+
+            budget_strat_summary[strat] = {
+                "mean_best_seen": float(np.mean(best_seens)),
+                "std_best_seen": float(np.std(best_seens)),
+                "median_best_seen": float(np.median(best_seens)),
+                "mean_simple_regret": float(np.mean(regrets)),
+                "std_simple_regret": float(np.std(regrets)),
+                "median_simple_regret": float(np.median(regrets)),
+                "simple_regret_95_ci": [ci_low, ci_high],
+                "mean_regret_auc": float(np.mean(aucs)),
+                "median_regret_auc": float(np.median(aucs)),
+                "top_10_pct_hit_rate": float(np.mean(hit10s)),
+                "top_5_pct_hit_rate": float(np.mean(hit5s)),
+                "mean_queries_to_top_10_pct": float(np.mean(q10s)),
+                "median_queries_to_top_10_pct": float(np.median(q10s)),
+                "mean_queries_to_top_5_pct": float(np.mean(q5s)),
+                "median_queries_to_top_5_pct": float(np.median(q5s)),
+            }
+
+        paired_comp = compute_paired_comparison(budget_traj_df, total_queries=queries)
+
+        sweep_summary_list.append(
+            {
+                "budget": budget,
+                "initial_protocols": initial_protocols,
+                "queries": queries,
+                "strategies": budget_strat_summary,
+                "paired_comparison_ucb_vs_greedy": paired_comp,
+            }
+        )
+
+    # Save budget sweep artifacts
+    sweep_df = pd.DataFrame(sweep_seed_rows)
+    sweep_df.to_csv(output_dir / "budget_sweep.csv", index=False)
+
+    budget_sweep_summary = {
+        "benchmark": "Dynamic Cycling Low-Budget Optimization Sweep",
+        "universe_protocols": n_candidates,
+        "n_seeds": n_seeds,
+        "budgets_evaluated": budgets_to_sweep,
+        "results_by_budget": sweep_summary_list,
+    }
+    (output_dir / "budget_sweep_summary.json").write_text(
+        json.dumps(budget_sweep_summary, indent=2), encoding="utf-8"
+    )
+
+    # Primary trajectory history
+    history_df = pd.DataFrame(primary_trajectories)
     history_df.to_csv(output_dir / "optimization_history.csv", index=False)
 
-    # Compute trajectory-level statistics and final-step metrics
-    summary_by_strat: dict[str, Any] = {}
-
-    for strat in strategies:
-        strat_traj = history_df[history_df["strategy"] == strat]
-        final_step = strat_traj[strat_traj["step"] == total_queries]
-
-        best_seen_vals = final_step["best_seen"].to_numpy(dtype=float)
-        regret_vals = final_step["simple_regret"].to_numpy(dtype=float)
-        hit_10_vals = final_step["hit_top_10_pct"].to_numpy(dtype=float)
-        hit_5_vals = final_step["hit_top_5_pct"].to_numpy(dtype=float)
-
-        # Calculate experiments to top 10% and top 5%
-        steps_to_10: list[int] = []
-        steps_to_5: list[int] = []
-
-        for seed, group in strat_traj.groupby("seed"):
-            hit_10_steps = group[group["hit_top_10_pct"] == 1]["step"]
-            steps_to_10.append(int(hit_10_steps.min()) if not hit_10_steps.empty else total_queries + 1)
-
-            hit_5_steps = group[group["hit_top_5_pct"] == 1]["step"]
-            steps_to_5.append(int(hit_5_steps.min()) if not hit_5_steps.empty else total_queries + 1)
-
-        ci_low, ci_high = compute_bootstrap_ci(regret_vals, n_bootstraps=2000, ci=0.95)
-
-        summary_by_strat[strat] = {
-            "mean_best_seen": float(np.mean(best_seen_vals)),
-            "std_best_seen": float(np.std(best_seen_vals)),
-            "median_best_seen": float(np.median(best_seen_vals)),
-            "mean_simple_regret": float(np.mean(regret_vals)),
-            "std_simple_regret": float(np.std(regret_vals)),
-            "median_simple_regret": float(np.median(regret_vals)),
-            "simple_regret_95_ci": [ci_low, ci_high],
-            "top_10_pct_hit_rate": float(np.mean(hit_10_vals)),
-            "top_5_pct_hit_rate": float(np.mean(hit_5_vals)),
-            "mean_queries_to_top_10_pct": float(np.mean(steps_to_10)),
-            "median_queries_to_top_10_pct": float(np.median(steps_to_10)),
-            "mean_queries_to_top_5_pct": float(np.mean(steps_to_5)),
-            "median_queries_to_top_5_pct": float(np.median(steps_to_5)),
-        }
+    # Primary budget summary
+    primary_budget_summary = next(
+        (s for s in sweep_summary_list if s["budget"] == total_budget),
+        sweep_summary_list[-1],
+    )
 
     benchmark_summary = {
         "benchmark": "Dynamic Cycling 2024 Protocol Optimization Benchmark",
         "universe_protocols": n_candidates,
-        "total_cells": len(adapter.load_cells()),
+        "total_cells": len(hidden_oracle_df),
         "design_features": feature_cols,
         "evaluator_thresholds": {
             "global_max": global_max,
@@ -373,10 +520,12 @@ def run_dynamic_cycling_benchmark(
         "optimization_parameters": {
             "initial_protocols": initial_protocols,
             "total_budget": total_budget,
-            "total_queries": total_queries,
+            "total_queries": total_budget - initial_protocols,
             "n_seeds": n_seeds,
         },
-        "strategy_comparison": summary_by_strat,
+        "strategy_comparison": primary_budget_summary["strategies"],
+        "paired_comparison_ucb_vs_greedy": primary_budget_summary["paired_comparison_ucb_vs_greedy"],
+        "budget_sweep": sweep_summary_list,
     }
 
     # Save outputs
@@ -390,16 +539,16 @@ def run_dynamic_cycling_benchmark(
 
 def main() -> None:
     summary = run_dynamic_cycling_benchmark()
-    print("=" * 75)
+    print("=" * 80)
     print("DYNAMIC CYCLING 2024 BENCHMARK RESULTS")
-    print("=" * 75)
+    print("=" * 80)
     surr = summary["surrogate_evaluation"]
     params = summary["optimization_parameters"]
     print(f"Protocols Universe: {summary['universe_protocols']} protocols ({summary['total_cells']} replicate cells)")
-    print(f"Budget: {params['initial_protocols']} initial + {params['total_queries']} queries = {params['total_budget']} total experiments ({params['n_seeds']} paired seeds)")
+    print(f"Primary Budget: {params['initial_protocols']} initial + {params['total_queries']} queries = {params['total_budget']} total experiments ({params['n_seeds']} paired seeds)")
     print(f"Surrogate RF  -> Test MAE: {surr['random_forest']['mae']:.2f}, RMSE: {surr['random_forest']['rmse']:.2f}, R2: {surr['random_forest']['r2']:.3f}")
     print(f"Surrogate GP  -> Test MAE: {surr['gaussian_process']['mae']:.2f}, RMSE: {surr['gaussian_process']['rmse']:.2f}, R2: {surr['gaussian_process']['r2']:.3f}")
-    print("\nOffline Closed-Loop BO Comparison (Paired Seeds, 95% Bootstrap CI):")
+    print("\nPrimary Budget (20) Strategy Comparison (Paired Seeds, 95% Bootstrap CI):")
     print(f"{'Strategy':<10} {'Mean Best':<12} {'Med Best':<10} {'Mean Regret':<14} {'95% CI':<18} {'Top 10%':<10} {'Top 5%'}")
     print("-" * 88)
     for strat, res in summary["strategy_comparison"].items():
@@ -409,9 +558,22 @@ def main() -> None:
             f"{res['mean_simple_regret']:<14.2f} {ci_str:<18} "
             f"{res['top_10_pct_hit_rate']*100:<9.1f}% {res['top_5_pct_hit_rate']*100:.1f}%"
         )
-    print("=" * 75)
+
+    print("\nBudget Sweep Summary (Budgets 8, 10, 12, 15, 20):")
+    print(f"{'Budget':<8} {'Strategy':<10} {'Mean Regret':<14} {'Regret AUC':<14} {'Top 10% Hit':<14} {'Top 5% Hit'}")
+    print("-" * 75)
+    for b_item in summary["budget_sweep"]:
+        b = b_item["budget"]
+        for s_name, s_res in b_item["strategies"].items():
+            print(
+                f"{b:<8} {s_name.upper():<10} {s_res['mean_simple_regret']:<14.2f} "
+                f"{s_res['mean_regret_auc']:<14.2f} {s_res['top_10_pct_hit_rate']*100:<13.1f}% "
+                f"{s_res['top_5_pct_hit_rate']*100:.1f}%"
+            )
+    print("=" * 80)
 
 
 if __name__ == "__main__":
     main()
+
 

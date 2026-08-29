@@ -158,3 +158,94 @@ def test_synthetic_dynamic_cycling_missing_cells_raises(tmp_path: Path):
     with pytest.raises(ValueError, match="Expected exactly 2 aligned cell records"):
         load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
+
+def test_severson_malformed_batch_group_raises(tmp_path: Path):
+    """Tests that a MAT file without 'batch' group fails loudly."""
+    mat_path = tmp_path / "empty.mat"
+    with h5py.File(mat_path, "w") as f:
+        f.create_group("wrong_group")
+
+    with pytest.raises(ValueError, match="does not contain required 'batch' group"):
+        load_raw_batch_hdf5(mat_path)
+
+
+def test_severson_missing_structural_dataset_raises(tmp_path: Path):
+    """Tests that missing required datasets in batch group raise ValueError."""
+    mat_path = tmp_path / "missing_datasets.mat"
+    with h5py.File(mat_path, "w") as f:
+        batch = f.create_group("batch")
+        batch.create_dataset("cycle_life", data=np.array([[100.0]]))
+        # Missing policy_readable, summary, cycles, Vdlin
+
+    with pytest.raises(ValueError, match="batch group is malformed.*missing datasets"):
+        load_raw_batch_hdf5(mat_path)
+
+
+def test_severson_missing_qdlin_in_cycles_raises(tmp_path: Path):
+    """Tests that a cell missing Qdlin in cycles group fails with ValueError."""
+    mat_path = tmp_path / "missing_qdlin.mat"
+    ref_type = h5py.special_dtype(ref=h5py.Reference)
+    with h5py.File(mat_path, "w") as f:
+        batch = f.create_group("batch")
+        cl = f.create_dataset("cl", data=np.array([[500.0]]))
+        pol = f.create_dataset("pol", data=np.array([ord("c")], dtype=np.uint8))
+        vd = f.create_dataset("vd", data=np.linspace(2.0, 3.6, 10))
+        sum_grp = f.create_group("sum_grp")
+        cyc_grp = f.create_group("cyc_grp")  # No Qdlin!
+
+        batch.create_dataset("cycle_life", shape=(1, 1), dtype=ref_type)
+        batch["cycle_life"][0, 0] = cl.ref
+        batch.create_dataset("policy_readable", shape=(1, 1), dtype=ref_type)
+        batch["policy_readable"][0, 0] = pol.ref
+        batch.create_dataset("Vdlin", shape=(1, 1), dtype=ref_type)
+        batch["Vdlin"][0, 0] = vd.ref
+        batch.create_dataset("summary", shape=(1, 1), dtype=ref_type)
+        batch["summary"][0, 0] = sum_grp.ref
+        batch.create_dataset("cycles", shape=(1, 1), dtype=ref_type)
+        batch["cycles"][0, 0] = cyc_grp.ref
+
+    with pytest.raises(ValueError, match="is missing 'Qdlin' in cycles group"):
+        load_raw_batch_hdf5(mat_path)
+
+
+def test_dynamic_cycling_shuffled_features_rejected(tmp_path: Path):
+    """Tests that unindexed shuffled features with invariant violation are rejected."""
+    metadata = pd.DataFrame(
+        {
+            "cell_name": ["cell_01", "cell_02"],
+            "protocol_type": ["Fast", "Slow"],
+            "protocol_variant": ["v1", "v2"],
+            "protocol_name": ["P1", "P2"],
+            "avg_crate_exp": [3.0, 1.0],
+        }
+    )
+    metadata.to_pickle(tmp_path / "metadata.pkl")
+
+    # Shuffled without cell_name index (Average Current: 1.0, 3.0 vs avg_crate_exp: 3.0, 1.0)
+    proto_feat = pd.DataFrame(
+        {
+            "Average Current": [1.0, 3.0],
+            "Normalized Current Variance": [0.1, 0.2],
+            "Maximum Discharge Current": [1.5, 3.5],
+            "Relative Charge Fraction": [0.5, 0.6],
+            "Rest Fraction at High SOC": [0.2, 0.3],
+            "Rest SOC": [0.8, 0.9],
+            "Peak Frequency 1": [10.0, 20.0],
+            "Peak Frequency 2": [5.0, 8.0],
+        }
+    )
+    proto_feat.to_pickle(tmp_path / "protocol_features.pkl")
+
+    soh90 = pd.DataFrame(
+        {
+            "cell_name": ["cell_01", "cell_02"],
+            "EFCs (with Diagnostic)": [800.0, 600.0],
+            "Cycles": [850.0, 650.0],
+        }
+    )
+    soh90.to_csv(tmp_path / "soh90.csv", index=False)
+
+    with pytest.raises(ValueError, match="does not align with metadata"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
+

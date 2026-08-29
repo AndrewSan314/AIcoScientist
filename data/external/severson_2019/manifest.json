@@ -1,6 +1,6 @@
 {
   "dataset": "severson_2019",
-  "source": "https://data.matr.io/1/projects/5c488730b7d30d0001550c60",
+  "official_dataset_source": "https://data.matr.io/1/projects/5c488730b7d30d0001550c60",
   "source_version": "nature_energy_2019",
   "files": [
     {

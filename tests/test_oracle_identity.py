@@ -95,4 +95,37 @@ def test_oracle_replicate_policy_handling(sample_spec):
     resp = oracle_mean.query({"protocol_id": "P1"})
     assert resp.target == 500.0
     assert resp.metadata["n_replicates"] == 2
-    assert resp.metadata["target_std"] > 0
+    assert abs(resp.metadata["target_std"] - 141.421356) < 1e-3
+
+
+def test_candidate_identity_preserves_distinct_protocols_with_identical_features(sample_spec):
+    from src.optimization.candidates import normalize_candidate_schema, remove_observed
+
+    # P17 and P23 have identical design features
+    candidates = pd.DataFrame(
+        {
+            "protocol_id": ["P17", "P23", "P30"],
+            "rate": [1.5, 1.5, 3.0],
+            "temp": [30.0, 30.0, 45.0],
+        }
+    )
+
+    norm_cands = normalize_candidate_schema(candidates, sample_spec)
+    assert len(norm_cands) == 3
+    assert set(norm_cands["protocol_id"]) == {"P17", "P23", "P30"}
+
+    # Observing P17 removes only P17, P23 remains available
+    observed = pd.DataFrame(
+        {
+            "protocol_id": ["P17"],
+            "rate": [1.5],
+            "temp": [30.0],
+            "target": [550.0],
+        }
+    )
+    remaining = remove_observed(candidates, observed, sample_spec)
+    assert len(remaining) == 2
+    assert "P17" not in remaining["protocol_id"].values
+    assert "P23" in remaining["protocol_id"].values
+    assert "P30" in remaining["protocol_id"].values
+

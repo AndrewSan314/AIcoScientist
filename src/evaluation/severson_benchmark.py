@@ -48,7 +48,10 @@ def run_severson_benchmark(
 
     df = adapter.load()
     spec = adapter.spec
-    feature_horizon = spec.feature_horizon or 100
+    if spec.feature_horizon is None:
+        raise ValueError(f"DatasetSpec for {spec.name!r} must explicitly define feature_horizon")
+    feature_horizon = spec.feature_horizon
+
 
     feature_cols = list(spec.feature_columns)
     target_col = spec.target_column

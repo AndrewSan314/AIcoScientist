@@ -6,7 +6,10 @@ __pycache__/
 data/experiments.db
 models/*.pth
 models/*.pt
+outputs/**/trained_model.pkl
+outputs/trained_model.pkl
 *.log
+
 .gitnexus/
 *.backup*
 *.backup-*.pptx

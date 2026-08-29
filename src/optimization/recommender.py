@@ -53,10 +53,11 @@ def recommend(
         raise ValueError("Model artifact must contain gp_model and scaler") from error
 
     candidates = normalize_candidate_schema(
-        adapter.candidate_space(observed), adapter.spec.candidate_columns
+        adapter.candidate_space(observed), adapter.spec
     )
-    candidates = remove_observed(candidates, observed, adapter.spec.candidate_columns)
+    candidates = remove_observed(candidates, observed, adapter.spec)
     candidates = apply_constraints(candidates, adapter)
+
     if candidates.empty:
         raise RuntimeError("No valid unseen candidates are available")
 

@@ -1,6 +1,8 @@
 {
   "dataset": "dynamic_cycling_2024",
-  "source": "https://purl.stanford.edu/td676xr4322",
+  "official_dataset_source": "https://purl.stanford.edu/td676xr4322",
+  "paper_code_repository": "https://github.com/geslina/dynamic_cycling_Nature_Energy_2024.git",
+  "paper_code_commit_sha": "5b2f7f04d05072fe1f9bd8af664f23eadbde6317",
   "source_version": "nat_energy_2024",
   "files": [
     {

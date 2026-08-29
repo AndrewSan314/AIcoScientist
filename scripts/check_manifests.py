@@ -10,10 +10,12 @@ from pathlib import Path
 def generate_manifest(
     dataset_name: str,
     dataset_dir: Path,
-    source: str,
+    official_dataset_source: str,
     source_version: str,
     output_path: Path,
     include_subdirs: list[str] | None = None,
+    paper_code_repository: str | None = None,
+    paper_code_commit_sha: str | None = None,
 ) -> dict:
     files = []
     dataset_dir = dataset_dir.resolve()
@@ -46,10 +48,15 @@ def generate_manifest(
     files.sort(key=lambda x: x["path"])
     manifest = {
         "dataset": dataset_name,
-        "source": source,
-        "source_version": source_version,
-        "files": files,
+        "official_dataset_source": official_dataset_source,
     }
+    if paper_code_repository:
+        manifest["paper_code_repository"] = paper_code_repository
+    if paper_code_commit_sha:
+        manifest["paper_code_commit_sha"] = paper_code_commit_sha
+    manifest["source_version"] = source_version
+    manifest["files"] = files
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
@@ -108,7 +115,7 @@ def main() -> None:
         "severson": {
             "name": "severson_2019",
             "dir": project_root / "data" / "external" / "severson_2019",
-            "source": "https://data.matr.io/1/projects/5c488730b7d30d0001550c60",
+            "official_dataset_source": "https://data.matr.io/1/projects/5c488730b7d30d0001550c60",
             "version": "nature_energy_2019",
             "manifest": project_root / "data" / "external" / "severson_2019" / "manifest.json",
             "subdirs": ["raw"],
@@ -116,8 +123,9 @@ def main() -> None:
         "dynamic_cycling": {
             "name": "dynamic_cycling_2024",
             "dir": project_root / "data" / "external" / "dynamic_cycling_2024",
-            "source": "https://purl.stanford.edu/td676xr4322",
-            "code_repository": "https://github.com/chueh-ermon-group/dynamic-cycling",
+            "official_dataset_source": "https://purl.stanford.edu/td676xr4322",
+            "paper_code_repository": "https://github.com/geslina/dynamic_cycling_Nature_Energy_2024.git",
+            "paper_code_commit_sha": "5b2f7f04d05072fe1f9bd8af664f23eadbde6317",
             "version": "nat_energy_2024",
             "manifest": project_root / "data" / "external" / "dynamic_cycling_2024" / "manifest.json",
             "subdirs": ["paper_code/data"],
@@ -133,7 +141,9 @@ def main() -> None:
             generate_manifest(
                 dataset_name=cfg["name"],
                 dataset_dir=cfg["dir"],
-                source=cfg["source"],
+                official_dataset_source=cfg["official_dataset_source"],
+                paper_code_repository=cfg.get("paper_code_repository"),
+                paper_code_commit_sha=cfg.get("paper_code_commit_sha"),
                 source_version=cfg["version"],
                 output_path=cfg["manifest"],
                 include_subdirs=cfg.get("subdirs"),
@@ -150,6 +160,6 @@ def main() -> None:
                     print(f"  - {err}")
 
 
-
 if __name__ == "__main__":
     main()
+

@@ -119,11 +119,13 @@ def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCycli
     oracle = OfflineOracle(hidden_oracle, dynamic_adapter.spec, replicate_policy="mean")
     feature_cols = list(dynamic_adapter.spec.feature_columns)
 
+    protocols_df = dynamic_adapter.load_protocols()
     evaluator_meta = {
-        "global_max": float(hidden_oracle["target_mean"].max()),
-        "top_10_pct_val": float(hidden_oracle["target_mean"].quantile(0.9)),
-        "top_5_pct_val": float(hidden_oracle["target_mean"].quantile(0.95)),
+        "global_max": float(protocols_df["target_mean"].max()),
+        "top_10_pct_val": float(protocols_df["target_mean"].quantile(0.9)),
+        "top_5_pct_val": float(protocols_df["target_mean"].quantile(0.95)),
     }
+
 
     init_indices = [0, 1, 2, 3, 4]
     total_queries = 10

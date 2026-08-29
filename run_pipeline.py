@@ -22,24 +22,38 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
     adapter = get_dataset_adapter(dataset)
     legacy = dataset == "si_mxene"
 
-    if mode == "benchmark":
-        print(f"Running benchmark suite for dataset: {dataset}...")
+    # 1. Benchmark mode handling
+    if mode == "benchmark" or (not legacy and mode == "full"):
         if dataset == "severson":
+            print(f"Running benchmark suite for dataset: {dataset}...")
             from src.evaluation.severson_benchmark import run_severson_benchmark
             run_severson_benchmark(adapter)
             print(f"Benchmark completed. Artifacts saved to: outputs/severson/")
+            return
         elif dataset == "dynamic_cycling":
+            print(f"Running benchmark suite for dataset: {dataset}...")
             from src.evaluation.dynamic_cycling_benchmark import run_dynamic_cycling_benchmark
             run_dynamic_cycling_benchmark(adapter)
             print(f"Benchmark completed. Artifacts saved to: outputs/dynamic_cycling/")
-        else:
-            print(f"Dataset {dataset!r} does not have a dedicated standalone benchmark runner. Running full pipeline.")
+            return
+        elif mode == "benchmark":
+            print(f"Dataset {dataset!r} does not have a separate standalone benchmark runner. Running full pipeline.")
             main(dataset=dataset, mode="full")
-        return
+            return
 
-    if mode == "recommend" and not adapter.spec.supports_optimization:
-        raise ValueError(f"Dataset {dataset!r} is a prediction-only benchmark and does not support recommendation mode.")
+    # 2. Recommendation mode validation
+    if mode == "recommend":
+        if not adapter.spec.supports_optimization:
+            raise ValueError(f"Dataset {dataset!r} is a prediction-only benchmark and does not support recommendation mode.")
+        if dataset == "dynamic_cycling":
+            raise ValueError(
+                "Dynamic Cycling is an offline protocol optimization benchmark. "
+                "Recommendation requires a partial observed subset or replay state; "
+                "running recommendation on the full ground-truth dataset is forbidden to prevent data leakage. "
+                "Use --mode benchmark instead."
+            )
 
+    # 3. Training and Legacy Execution
     if legacy:
         model_path = MODEL_FILE
         if mode in {"full", "train"} or not MASTER_FILE.exists():
@@ -87,6 +101,7 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
         print(f"Saved: data/processed/sem_features_extracted.csv ({len(sem_df)} rows)")
     if mode == "full":
         print("\nPipeline completed successfully.")
+
 
 
 def _parse_args() -> argparse.Namespace:

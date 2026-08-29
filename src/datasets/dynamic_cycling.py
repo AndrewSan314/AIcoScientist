@@ -48,9 +48,10 @@ DYNAMIC_CYCLING_ORACLE_COLUMNS: list[str] = [
 def load_raw_dynamic_cycling_data(
     raw_dir: Path,
     replicate_design_tolerance: float = 0.20,
-    expected_records: int | None = 92,
-    expected_protocols: int | None = 47,
+    expected_records: int | None = None,
+    expected_protocols: int | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
+
     """Loads raw Dynamic Cycling 2024 data with explicit ID alignment and replicate validation.
 
     - 92 physical cells across 47 discharge protocols.
@@ -77,20 +78,31 @@ def load_raw_dynamic_cycling_data(
     # 2. Load protocol features with explicit cell_name key
     if protocol_features_pkl.exists():
         proto_feat_raw = pd.read_pickle(protocol_features_pkl)
-        if "cell_name" not in proto_feat_raw.columns:
-            if proto_feat_raw.index.name == "cell_name" or set(metadata["cell_name"]).issubset(set(proto_feat_raw.index)):
-                proto_feat_raw = proto_feat_raw.reset_index()
-                if "index" in proto_feat_raw.columns:
-                    proto_feat_raw = proto_feat_raw.rename(columns={"index": "cell_name"})
+        if "cell_name" in proto_feat_raw.columns:
+            proto_feat = proto_feat_raw.rename(columns=RAW_FEATURE_COLUMN_MAP)
+        elif proto_feat_raw.index.name == "cell_name" or (
+            len(proto_feat_raw.index) > 0
+            and isinstance(proto_feat_raw.index[0], str)
+            and proto_feat_raw.index[0].startswith("cell_")
+        ):
+            proto_feat = proto_feat_raw.reset_index().rename(columns={"index": "cell_name", **RAW_FEATURE_COLUMN_MAP})
+        else:
+            # If no explicit cell identifier column or index, validate invariant correspondence
+            if "Average Current" in proto_feat_raw.columns and "avg_crate_exp" in metadata.columns:
+                diff = np.max(np.abs(metadata["avg_crate_exp"].to_numpy() - proto_feat_raw["Average Current"].to_numpy()))
+                if diff > 1e-4:
+                    raise ValueError(
+                        f"protocol_features.pkl does not align with metadata.pkl (avg current max diff: {diff})"
+                    )
+                proto_feat = proto_feat_raw.rename(columns=RAW_FEATURE_COLUMN_MAP).copy()
+                proto_feat["cell_name"] = metadata["cell_name"].values
             else:
-                proto_feat_raw = proto_feat_raw.copy()
-                proto_feat_raw["cell_name"] = metadata["cell_name"].values
-        proto_feat = proto_feat_raw.rename(columns=RAW_FEATURE_COLUMN_MAP)
+                raise ValueError("protocol_features.pkl is missing deterministic cell_name index or columns")
     else:
         proto_feat_df = pd.read_csv(protocol_features_csv)
         if "cell_name" in proto_feat_df.columns:
             proto_feat = proto_feat_df.rename(columns=RAW_FEATURE_COLUMN_MAP)
-        elif "Unnamed: 0" in proto_feat_df.columns and proto_feat_df["Unnamed: 0"].iloc[0].startswith("cell_"):
+        elif "Unnamed: 0" in proto_feat_df.columns and str(proto_feat_df["Unnamed: 0"].iloc[0]).startswith("cell_"):
             proto_feat = proto_feat_df.rename(columns={"Unnamed: 0": "cell_name", **RAW_FEATURE_COLUMN_MAP})
         else:
             # Validate invariant correspondence with metadata before assigning cell_name
@@ -98,16 +110,18 @@ def load_raw_dynamic_cycling_data(
                 diff = np.max(np.abs(metadata["avg_crate_exp"].to_numpy() - proto_feat_df["Average Current"].to_numpy()))
                 if diff > 1e-4:
                     raise ValueError(f"protocol_features.csv does not align with metadata.pkl (avg current max diff: {diff})")
-            proto_feat = proto_feat_df.rename(columns=RAW_FEATURE_COLUMN_MAP).copy()
-            proto_feat["cell_name"] = metadata["cell_name"].values
+                proto_feat = proto_feat_df.rename(columns=RAW_FEATURE_COLUMN_MAP).copy()
+                proto_feat["cell_name"] = metadata["cell_name"].values
+            else:
+                raise ValueError("protocol_features.csv is missing deterministic cell_name identifier")
 
     # 3. Load SOH90 targets
     soh90 = pd.read_csv(soh90_path)
     if "cell_name" not in soh90.columns:
-        if "Unnamed: 0" in soh90.columns:
+        if "Unnamed: 0" in soh90.columns and str(soh90["Unnamed: 0"].iloc[0]).startswith("cell_"):
             soh90 = soh90.rename(columns={"Unnamed: 0": "cell_name"})
         else:
-            raise ValueError("soh90.csv must contain 'cell_name' or cell identifier column")
+            raise ValueError("soh90.csv must contain 'cell_name' identifier column")
 
     # 4. Explicit Join on cell_name
     cells_df = metadata[["cell_name", "protocol_type", "protocol_variant", "protocol_name"]].copy()
@@ -133,7 +147,6 @@ def load_raw_dynamic_cycling_data(
     n_protocols = cells_df["protocol_id"].nunique()
     if expected_protocols is not None and n_protocols != expected_protocols:
         raise ValueError(f"Expected exactly {expected_protocols} unique protocol IDs, got {n_protocols}")
-
 
     # Determine replicate IDs (A, B, ...)
     cells_df["replicate_id"] = cells_df.groupby("protocol_id").cumcount().apply(lambda x: chr(ord("A") + x))
@@ -260,7 +273,8 @@ class DynamicCyclingAdapter(DatasetAdapter):
     def spec(self) -> DatasetSpec:
         return self._spec
 
-    def load(self, force_recompute: bool = False) -> pd.DataFrame:
+    def _ensure_processed(self, force_recompute: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Canonical internal method ensuring cache metadata validity before returning processed data."""
         from src.datasets.cache import validate_processed_cache, write_processed_manifest
 
         cells_file = self.processed_dir / "cells.csv"
@@ -275,9 +289,7 @@ class DynamicCyclingAdapter(DatasetAdapter):
         )
 
         if is_cache_valid and not force_recompute:
-            if self.level == "protocol":
-                return pd.read_csv(protocols_file)
-            return pd.read_csv(cells_file)
+            return pd.read_csv(cells_file), pd.read_csv(protocols_file)
 
         cells_df, protocols_df = load_raw_dynamic_cycling_data(self.raw_dir)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
@@ -293,9 +305,20 @@ class DynamicCyclingAdapter(DatasetAdapter):
             feature_horizon=None,
             processed_files=[cells_file, protocols_file],
         )
+        return cells_df, protocols_df
 
+    def load(self, force_recompute: bool = False) -> pd.DataFrame:
+        cells_df, protocols_df = self._ensure_processed(force_recompute=force_recompute)
         if self.level == "protocol":
             return protocols_df
+        return cells_df
+
+    def load_protocols(self, force_recompute: bool = False) -> pd.DataFrame:
+        _, protocols_df = self._ensure_processed(force_recompute=force_recompute)
+        return protocols_df
+
+    def load_cells(self, force_recompute: bool = False) -> pd.DataFrame:
+        cells_df, _ = self._ensure_processed(force_recompute=force_recompute)
         return cells_df
 
     def candidate_space(self, observed: pd.DataFrame) -> pd.DataFrame:
@@ -315,33 +338,15 @@ class DynamicCyclingAdapter(DatasetAdapter):
         unseen = protocols_df[~protocols_df["protocol_id"].astype(str).isin(observed_protocols)].copy()
         return unseen[cand_cols].drop_duplicates().reset_index(drop=True)
 
-    def load_protocols(self) -> pd.DataFrame:
-        protocols_file = self.processed_dir / "protocols.csv"
-        if protocols_file.exists():
-            return pd.read_csv(protocols_file)
-        _, protocols_df = load_raw_dynamic_cycling_data(self.raw_dir)
-        self.processed_dir.mkdir(parents=True, exist_ok=True)
-        protocols_df.to_csv(protocols_file, index=False)
-        return protocols_df
-
-    def load_cells(self) -> pd.DataFrame:
-        cells_file = self.processed_dir / "cells.csv"
-        if cells_file.exists():
-            return pd.read_csv(cells_file)
-        cells_df, _ = load_raw_dynamic_cycling_data(self.raw_dir)
-        self.processed_dir.mkdir(parents=True, exist_ok=True)
-        cells_df.to_csv(cells_file, index=False)
-        return cells_df
-
-    def load_candidate_pool(self) -> pd.DataFrame:
+    def load_candidate_pool(self, force_recompute: bool = False) -> pd.DataFrame:
         """Returns the full candidate pool containing ONLY protocol_id and design features (zero oracle data)."""
-        protocols_df = self.load_protocols()
+        protocols_df = self.load_protocols(force_recompute=force_recompute)
         cand_cols = ["protocol_id", *self.spec.candidate_columns]
         return protocols_df[cand_cols].copy().reset_index(drop=True)
 
-    def load_hidden_oracle(self) -> pd.DataFrame:
-        """Returns the hidden oracle dataset with protocol targets and replicate metrics."""
-        return self.load_protocols()
+    def load_hidden_oracle(self, force_recompute: bool = False) -> pd.DataFrame:
+        """Returns the hidden cell-level oracle dataset (92 replicate cell rows) for replicate-aware querying."""
+        return self.load_cells(force_recompute=force_recompute)
 
     def build_candidate_features(
         self,
@@ -375,4 +380,5 @@ class DynamicCyclingAdapter(DatasetAdapter):
             self.spec.target_column: target,
         }
         return row
+
 

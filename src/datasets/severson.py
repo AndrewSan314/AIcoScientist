@@ -62,20 +62,41 @@ def _read_hdf5_str(f: h5py.File, ref: Any) -> str:
 
 
 def load_raw_batch_hdf5(mat_path: Path, max_cycle_extract: int = 105) -> dict[str, dict[str, Any]]:
-    """Loads a single Severson MATLAB 7.3 HDF5 batch file."""
+    """Loads a single Severson MATLAB 7.3 HDF5 batch file with strict structural validation."""
     cells: dict[str, dict[str, Any]] = {}
     with h5py.File(mat_path, "r") as f:
         if "batch" not in f:
-            raise ValueError(f"MAT file {mat_path} does not contain 'batch' group")
+            raise ValueError(f"MAT file {mat_path} does not contain required 'batch' group")
         batch = f["batch"]
+        required_keys = ["cycle_life", "policy_readable", "summary", "cycles", "Vdlin"]
+        missing_keys = [k for k in required_keys if k not in batch]
+        if missing_keys:
+            raise ValueError(f"MAT file {mat_path} batch group is malformed (missing datasets: {missing_keys})")
+
         num_cells = batch["cycle_life"].shape[0]
 
         vdlin_ref = batch["Vdlin"][0, 0] if batch["Vdlin"].ndim == 2 else batch["Vdlin"][0]
-        vdlin = f[vdlin_ref][()].flatten()
+        if isinstance(vdlin_ref, h5py.Reference):
+            if not bool(vdlin_ref):
+                raise ValueError(f"MAT file {mat_path} contains null Vdlin HDF5 reference")
+            try:
+                vdlin = f[vdlin_ref][()].flatten()
+            except Exception as exc:
+                raise ValueError(f"MAT file {mat_path} contains invalid Vdlin HDF5 reference: {exc}") from exc
+        else:
+            vdlin = np.asarray(vdlin_ref).flatten()
 
         for i in range(num_cells):
             cl_ref = batch["cycle_life"][i, 0] if batch["cycle_life"].ndim == 2 else batch["cycle_life"][i]
-            cl = float(f[cl_ref][0, 0]) if isinstance(cl_ref, h5py.Reference) else float(cl_ref)
+            if isinstance(cl_ref, h5py.Reference):
+                if not bool(cl_ref):
+                    raise ValueError(f"Cell {i} in {mat_path} contains null cycle_life HDF5 reference")
+                try:
+                    cl = float(f[cl_ref][0, 0])
+                except Exception as exc:
+                    raise ValueError(f"Cell {i} in {mat_path} contains invalid cycle_life HDF5 reference: {exc}") from exc
+            else:
+                cl = float(cl_ref)
 
             pref = batch["policy_readable"][i, 0] if batch["policy_readable"].ndim == 2 else batch["policy_readable"][i]
             policy = _read_hdf5_str(f, pref)
@@ -83,20 +104,43 @@ def load_raw_batch_hdf5(mat_path: Path, max_cycle_extract: int = 105) -> dict[st
             summary: dict[str, np.ndarray] = {}
             sref = batch["summary"][i, 0] if batch["summary"].ndim == 2 else batch["summary"][i]
             if isinstance(sref, h5py.Reference):
-                s_grp = f[sref]
+                if not bool(sref):
+                    raise ValueError(f"Cell {i} in {mat_path} contains null summary HDF5 reference")
+                try:
+                    s_grp = f[sref]
+                except Exception as exc:
+                    raise ValueError(f"Cell {i} in {mat_path} contains invalid summary HDF5 reference: {exc}") from exc
                 for k in s_grp.keys():
                     summary[k] = s_grp[k][()].flatten()
+            else:
+                raise ValueError(f"Cell {i} in {mat_path} summary is not an HDF5 group reference")
 
             cycref = batch["cycles"][i, 0] if batch["cycles"].ndim == 2 else batch["cycles"][i]
             qdlin_list: list[np.ndarray] = []
             if isinstance(cycref, h5py.Reference):
-                cyc_grp = f[cycref]
-                if "Qdlin" in cyc_grp:
-                    qdlin_ds = cyc_grp["Qdlin"]
-                    num_cyc = qdlin_ds.shape[0]
-                    for c_idx in range(min(num_cyc, max_cycle_extract)):
-                        qref = qdlin_ds[c_idx, 0] if qdlin_ds.ndim == 2 else qdlin_ds[c_idx]
-                        qdlin_list.append(f[qref][()].flatten())
+                if not bool(cycref):
+                    raise ValueError(f"Cell {i} in {mat_path} contains null cycles HDF5 reference")
+                try:
+                    cyc_grp = f[cycref]
+                except Exception as exc:
+                    raise ValueError(f"Cell {i} in {mat_path} contains invalid cycles HDF5 reference: {exc}") from exc
+                if "Qdlin" not in cyc_grp:
+                    raise ValueError(f"Cell {i} in {mat_path} is missing 'Qdlin' in cycles group")
+                qdlin_ds = cyc_grp["Qdlin"]
+                num_cyc = qdlin_ds.shape[0]
+                for c_idx in range(min(num_cyc, max_cycle_extract)):
+                    qref = qdlin_ds[c_idx, 0] if qdlin_ds.ndim == 2 else qdlin_ds[c_idx]
+                    if isinstance(qref, h5py.Reference):
+                        if not bool(qref):
+                            raise ValueError(f"Cell {i} cycle {c_idx} contains null Qdlin reference")
+                        try:
+                            qdlin_list.append(f[qref][()].flatten())
+                        except Exception as exc:
+                            raise ValueError(f"Cell {i} cycle {c_idx} contains invalid Qdlin reference: {exc}") from exc
+                    else:
+                        qdlin_list.append(np.asarray(qref).flatten())
+            else:
+                raise ValueError(f"Cell {i} in {mat_path} cycles is not an HDF5 group reference")
 
             cell_key = f"c{i}"
             cells[cell_key] = {
@@ -107,6 +151,8 @@ def load_raw_batch_hdf5(mat_path: Path, max_cycle_extract: int = 105) -> dict[st
                 "vdlin": vdlin,
             }
     return cells
+
+
 
 
 def reconstruct_severson_cells(
