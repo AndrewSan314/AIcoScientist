@@ -1,0 +1,89 @@
+{
+  "dataset": "severson_2019",
+  "feature_horizon_cycles": 100,
+  "features": [
+    "delta_q_var",
+    "delta_q_min",
+    "delta_q_mean",
+    "delta_q_skew",
+    "delta_q_kurt",
+    "q_discharge_2",
+    "q_discharge_100",
+    "q_diff_100_2",
+    "q_max_diff",
+    "q_slope",
+    "q_intercept",
+    "ir_2",
+    "ir_100",
+    "ir_diff_100_2",
+    "ir_mean",
+    "t_avg_mean",
+    "t_max_max",
+    "t_min_min",
+    "charge_time_mean",
+    "charge_time_diff_100_2"
+  ],
+  "n_train": 41,
+  "n_primary_test": 43,
+  "n_secondary_test": 40,
+  "random_forest": {
+    "train": {
+      "mae": 49.88858804361851,
+      "rmse": 118.87736181470285,
+      "r2": 0.8646539729690604,
+      "mape_percent": 6.691834567861707,
+      "n_samples": 41
+    },
+    "primary_test": {
+      "mae": 100.5905889627169,
+      "rmse": 177.9964199307154,
+      "r2": 0.7929483086963599,
+      "mape_percent": 15.830139408128963,
+      "n_samples": 43
+    },
+    "secondary_test": {
+      "mae": 130.4976392195766,
+      "rmse": 192.028209276207,
+      "r2": 0.6028650585061655,
+      "mape_percent": 11.336423666792909,
+      "n_samples": 40
+    },
+    "overall_test": {
+      "mae": 115.00362523108305,
+      "rmse": 184.89171442282614,
+      "r2": 0.7721395793173327,
+      "mape_percent": 13.664493267726046,
+      "n_samples": 83
+    }
+  },
+  "gaussian_process": {
+    "train": {
+      "mae": 21.602207904345075,
+      "rmse": 28.489285268197523,
+      "r2": 0.9922266127642989,
+      "mape_percent": 3.251722591781635,
+      "n_samples": 41
+    },
+    "primary_test": {
+      "mae": 113.04427153107714,
+      "rmse": 261.24709832080583,
+      "r2": 0.5539750034727736,
+      "mape_percent": 17.984868143896488,
+      "n_samples": 43
+    },
+    "secondary_test": {
+      "mae": 205.36133924004307,
+      "rmse": 291.496676905322,
+      "r2": 0.08488588959064858,
+      "mape_percent": 17.10595721456866,
+      "n_samples": 40
+    },
+    "overall_test": {
+      "mae": 157.53442464383184,
+      "rmse": 276.23903784080153,
+      "r2": 0.4913675065283707,
+      "mape_percent": 17.56129661169032,
+      "n_samples": 83
+    }
+  }
+}

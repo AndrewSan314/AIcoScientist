@@ -1,0 +1,39 @@
+{
+  "benchmark": "Severson 2019 Early-Life Cycle Life Prediction",
+  "horizon_cycles": 100,
+  "feature_note": "Includes paper-inspired Delta Q_100-10(V) curve features alongside early discharge, IR, and temperature statistics.",
+  "splits": {
+    "train": "41 physical cells",
+    "primary_test": "43 physical cells",
+    "secondary_test": "40 physical cells",
+    "total": "124 physical cells"
+  },
+  "rf_overall_test_mae": 115.00362523108305,
+  "rf_overall_test_rmse": 184.89171442282614,
+  "rf_overall_test_r2": 0.7721395793173327,
+  "gp_overall_test_mae": 157.53442464383184,
+  "gp_overall_test_rmse": 276.23903784080153,
+  "gp_overall_test_r2": 0.4913675065283707,
+  "top_features": [
+    {
+      "feature": "delta_q_var",
+      "importance": 0.24096975963839634
+    },
+    {
+      "feature": "delta_q_min",
+      "importance": 0.21742067429529918
+    },
+    {
+      "feature": "delta_q_mean",
+      "importance": 0.2093262505529607
+    },
+    {
+      "feature": "ir_2",
+      "importance": 0.11085777220628064
+    },
+    {
+      "feature": "charge_time_mean",
+      "importance": 0.0593360522608748
+    }
+  ]
+}

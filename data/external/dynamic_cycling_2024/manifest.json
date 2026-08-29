@@ -4,11 +4,6 @@
   "source_version": "nat_energy_2024",
   "files": [
     {
-      "path": "paper_code/data/.DS_Store",
-      "size_bytes": 8196,
-      "sha256": "f991d8e248f2d491394ae3c1895f24417fd95699fe171df075721cfb7c54345f"
-    },
-    {
       "path": "paper_code/data/all_cells_QLi.mat",
       "size_bytes": 34736,
       "sha256": "0bee65378cca8819b7480e6bbd0b4f8c1441529278a6f42b153880fae828af23"

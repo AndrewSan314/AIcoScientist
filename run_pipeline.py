@@ -22,6 +22,24 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
     adapter = get_dataset_adapter(dataset)
     legacy = dataset == "si_mxene"
 
+    if mode == "benchmark":
+        print(f"Running benchmark suite for dataset: {dataset}...")
+        if dataset == "severson":
+            from src.evaluation.severson_benchmark import run_severson_benchmark
+            run_severson_benchmark(adapter)
+            print(f"Benchmark completed. Artifacts saved to: outputs/severson/")
+        elif dataset == "dynamic_cycling":
+            from src.evaluation.dynamic_cycling_benchmark import run_dynamic_cycling_benchmark
+            run_dynamic_cycling_benchmark(adapter)
+            print(f"Benchmark completed. Artifacts saved to: outputs/dynamic_cycling/")
+        else:
+            print(f"Dataset {dataset!r} does not have a dedicated standalone benchmark runner. Running full pipeline.")
+            main(dataset=dataset, mode="full")
+        return
+
+    if mode == "recommend" and not adapter.spec.supports_optimization:
+        raise ValueError(f"Dataset {dataset!r} is a prediction-only benchmark and does not support recommendation mode.")
+
     if legacy:
         model_path = MODEL_FILE
         if mode in {"full", "train"} or not MASTER_FILE.exists():
@@ -49,8 +67,8 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
             print(f"Saved: {OUTPUT_DIR / dataset / 'feature_importance.csv'}")
 
     if mode in {"full", "recommend"}:
-        if dataset == "severson":
-            print("\n[3/3] Note: Severson 2019 is an early-life prediction benchmark (no recommendation loop).")
+        if not adapter.spec.supports_optimization:
+            print(f"\n[3/3] Note: Dataset {dataset!r} is a prediction-only benchmark (skipping recommendation).")
         else:
             if not model_path.is_file():
                 train_model(df, adapter=adapter, output_path=model_path)
@@ -74,11 +92,12 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the dataset pipeline")
     parser.add_argument("--dataset", choices=("si_mxene", "severson", "dynamic_cycling"), default="si_mxene")
-    parser.add_argument("--mode", choices=("train", "recommend", "full"), default="full")
+    parser.add_argument("--mode", choices=("train", "recommend", "full", "benchmark"), default="full")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _parse_args()
     main(dataset=args.dataset, mode=args.mode)
+
 

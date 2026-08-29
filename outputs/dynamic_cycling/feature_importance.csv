@@ -1,0 +1,9 @@
+feature,importance
+average_current,0.5043942902587818
+maximum_discharge_current,0.23538047075089846
+rest_fraction_at_high_soc,0.06465603188728757
+rest_soc,0.06306927100210358
+relative_charge_fraction,0.0625813494642321
+normalized_current_variance,0.032897213984132576
+peak_frequency_2,0.020254670380060066
+peak_frequency_1,0.01676670227250396

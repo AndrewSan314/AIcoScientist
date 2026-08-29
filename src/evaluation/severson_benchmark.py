@@ -48,6 +48,7 @@ def run_severson_benchmark(
 
     df = adapter.load()
     spec = adapter.spec
+    feature_horizon = spec.feature_horizon or 100
 
     feature_cols = list(spec.feature_columns)
     target_col = spec.target_column
@@ -63,6 +64,16 @@ def run_severson_benchmark(
     sec_test_df = df[sec_test_mask].copy()
     test_df = df[test_mask].copy()
 
+    # Split count and data sanity assertions
+    if len(train_df) != 41:
+        raise ValueError(f"Expected 41 official train cells, got {len(train_df)}")
+    if len(prim_test_df) != 43:
+        raise ValueError(f"Expected 43 official primary test cells, got {len(prim_test_df)}")
+    if len(sec_test_df) != 40:
+        raise ValueError(f"Expected 40 official secondary test cells, got {len(sec_test_df)}")
+    if len(df) != 124:
+        raise ValueError(f"Expected 124 total physical cells, got {len(df)}")
+
     X_train = train_df[feature_cols].to_numpy(dtype=float)
     y_train = train_df[target_col].to_numpy(dtype=float)
 
@@ -77,6 +88,11 @@ def run_severson_benchmark(
 
     X_all = df[feature_cols].to_numpy(dtype=float)
     y_all = df[target_col].to_numpy(dtype=float)
+
+    if not np.all(np.isfinite(X_all)):
+        raise ValueError("Processed Severson features contain non-finite values (NaN or Inf)")
+    if not np.all(np.isfinite(y_all) & (y_all > 0)):
+        raise ValueError("Processed Severson cycle_life targets contain non-finite or non-positive values")
 
     # 1. Random Forest Regressor
     rf_model = RandomForestRegressor(n_estimators=300, min_samples_leaf=2, random_state=random_state)
@@ -117,7 +133,7 @@ def run_severson_benchmark(
     # Calculate metrics
     metrics = {
         "dataset": "severson_2019",
-        "feature_horizon_cycles": 100,
+        "feature_horizon_cycles": feature_horizon,
         "features": feature_cols,
         "n_train": len(train_df),
         "n_primary_test": len(prim_test_df),
@@ -160,7 +176,8 @@ def run_severson_benchmark(
     # Summary JSON
     summary = {
         "benchmark": "Severson 2019 Early-Life Cycle Life Prediction",
-        "horizon_cycles": 100,
+        "horizon_cycles": feature_horizon,
+        "feature_note": "Includes paper-inspired Delta Q_100-10(V) curve features alongside early discharge, IR, and temperature statistics.",
         "splits": {
             "train": f"{len(train_df)} physical cells",
             "primary_test": f"{len(prim_test_df)} physical cells",
@@ -181,6 +198,7 @@ def run_severson_benchmark(
     (output_dir / "benchmark_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     predictions_df.to_csv(output_dir / "predictions.csv", index=False)
     importance_df.to_csv(output_dir / "feature_importance.csv", index=False)
+
 
     # Save trained models
     joblib.dump(

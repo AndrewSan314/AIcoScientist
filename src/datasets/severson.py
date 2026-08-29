@@ -356,13 +356,54 @@ def extract_features(truncated_cell: dict[str, Any]) -> dict[str, float]:
     }
 
 
+ADAPTER_SCHEMA_VERSION = "2.0.0"
+
+# Feature Categorization
+FEATURE_TAXONOMY: dict[str, str] = {
+    # Paper-inspired Delta Q_100-10(V) variance model (Severson et al., Nature Energy 2019)
+    "delta_q_var": "paper_inspired_delta_q_variance",
+    "delta_q_min": "paper_inspired_delta_q_min",
+    "delta_q_mean": "paper_inspired_delta_q_mean",
+    "delta_q_skew": "paper_inspired_delta_q_skew",
+    "delta_q_kurt": "paper_inspired_delta_q_kurtosis",
+    # Early discharge capacity trajectory
+    "q_discharge_2": "discharge_capacity_cycle_2",
+    "q_discharge_100": "discharge_capacity_cycle_100",
+    "q_diff_100_2": "discharge_capacity_diff_100_2",
+    "q_max_diff": "discharge_capacity_max_diff_100_2",
+    "q_slope": "discharge_capacity_linear_slope",
+    "q_intercept": "discharge_capacity_linear_intercept",
+    # Internal resistance trajectory
+    "ir_2": "internal_resistance_cycle_2",
+    "ir_100": "internal_resistance_cycle_100",
+    "ir_diff_100_2": "internal_resistance_diff_100_2",
+    "ir_mean": "internal_resistance_mean_100",
+    # Thermal statistics
+    "t_avg_mean": "temperature_average_mean_100",
+    "t_max_max": "temperature_max_peak_100",
+    "t_min_min": "temperature_min_valley_100",
+    # Charging time statistics
+    "charge_time_mean": "charge_time_mean_100",
+    "charge_time_diff_100_2": "charge_time_diff_100_2",
+}
+
+
 class SeversonAdapter(DatasetAdapter):
-    """Adapter for Severson 2019 early-life battery cycle life prediction benchmark."""
+    """Adapter for Severson 2019 early-life battery cycle life prediction benchmark.
+
+    Prediction-only benchmark:
+    - Entity identity: physical battery cell (124 physical cells).
+    - Design optimization: Not applicable (closed historical early-prediction benchmark).
+    - Feature horizon: strictly 100 cycles.
+    """
+
+    ADAPTER_SCHEMA_VERSION = ADAPTER_SCHEMA_VERSION
 
     def __init__(
         self,
         raw_dir: Path | None = None,
         processed_dir: Path | None = None,
+        raw_manifest_path: Path | None = None,
         horizon: int = 100,
     ) -> None:
         project_root = Path(__file__).resolve().parent.parent.parent
@@ -370,16 +411,22 @@ class SeversonAdapter(DatasetAdapter):
         self.processed_dir = (
             processed_dir or project_root / "data" / "external" / "severson_2019" / "processed"
         )
+        self.raw_manifest_path = (
+            raw_manifest_path or project_root / "data" / "external" / "severson_2019" / "manifest.json"
+        )
         self.horizon = horizon
 
         self._spec = DatasetSpec(
             name="severson",
             id_column="physical_cell_id",
             entity_id_column="physical_cell_id",
+            candidate_id_column=None,
             feature_columns=list(SEVERSON_FEATURE_COLUMNS),
             target_column="cycle_life",
             objective="maximize",
-            candidate_columns=["physical_cell_id"],
+            candidate_columns=[],
+            supports_prediction=True,
+            supports_optimization=False,
             split_group_columns=["physical_cell_id"],
             oracle_columns=list(SEVERSON_ORACLE_COLUMNS),
             feature_horizon=horizon,
@@ -392,10 +439,19 @@ class SeversonAdapter(DatasetAdapter):
         return self._spec
 
     def load(self, force_recompute: bool = False) -> pd.DataFrame:
+        from src.datasets.cache import validate_processed_cache, write_processed_manifest
+
         processed_file = self.processed_dir / "cells.csv"
-        if processed_file.exists() and not force_recompute:
-            df = pd.read_csv(processed_file)
-            return df
+        is_cache_valid = validate_processed_cache(
+            processed_dir=self.processed_dir,
+            raw_manifest_path=self.raw_manifest_path,
+            adapter_schema_version=self.ADAPTER_SCHEMA_VERSION,
+            feature_horizon=self.horizon,
+            expected_files=["cells.csv"],
+        )
+
+        if is_cache_valid and not force_recompute:
+            return pd.read_csv(processed_file)
 
         reconstructed_cells, split_map = reconstruct_severson_cells(self.raw_dir)
         rows: list[dict[str, Any]] = []
@@ -424,8 +480,15 @@ class SeversonAdapter(DatasetAdapter):
         df = pd.DataFrame(rows)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         df.to_csv(processed_file, index=False)
+
+        write_processed_manifest(
+            processed_dir=self.processed_dir,
+            dataset="severson",
+            source_version="nature_energy_2019",
+            raw_manifest_path=self.raw_manifest_path,
+            adapter_schema_version=self.ADAPTER_SCHEMA_VERSION,
+            feature_horizon=self.horizon,
+            processed_files=[processed_file],
+        )
         return df
 
-    def candidate_space(self, observed: pd.DataFrame) -> pd.DataFrame:
-        df = self.load()
-        return df[["physical_cell_id"]].drop_duplicates().reset_index(drop=True)

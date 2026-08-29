@@ -10,11 +10,11 @@ models/*.pt
 .gitnexus/
 *.backup*
 *.backup-*.pptx
-outputs/*/
 
 # External raw datasets and large archives
 data/external/**/raw/
 data/external/**/paper_code/
+data/external/**/processed/
 data/external/**/*.mat
 data/external/**/*.zip
 data/external/**/*.pkl
@@ -23,5 +23,6 @@ data/external/aging_matrix_2025/
 *.zip
 *.crdownload
 .DS_Store
+
 
 

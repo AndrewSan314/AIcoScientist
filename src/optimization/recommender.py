@@ -28,8 +28,13 @@ def recommend(
     model_path: Path | None = None,
     output_path: Path | None = None,
 ) -> pd.DataFrame:
+    if not adapter.spec.supports_optimization:
+        raise ValueError(
+            f"Dataset {adapter.spec.name!r} is a prediction-only dataset and does not support recommendation."
+        )
     if observed is None:
         observed = build_dataset(adapter)
+
     if model_bundle is None:
         if model_path is None:
             model_path = OUTPUT_DIR / adapter.spec.name / "trained_model.pkl"

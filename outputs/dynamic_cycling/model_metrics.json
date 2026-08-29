@@ -1,0 +1,16 @@
+{
+  "n_train_cells": 68,
+  "n_test_cells": 24,
+  "n_train_protocols": 35,
+  "n_test_protocols": 12,
+  "random_forest": {
+    "mae": 37.73841831833663,
+    "rmse": 44.918708474018295,
+    "r2": 0.7437496514300501
+  },
+  "gaussian_process": {
+    "mae": 42.628884629198716,
+    "rmse": 50.563044520751795,
+    "r2": 0.6753044210434801
+  }
+}

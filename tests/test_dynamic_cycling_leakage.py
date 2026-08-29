@@ -114,19 +114,30 @@ def test_dynamic_cycling_candidate_space_unseen_filter(dynamic_adapter: DynamicC
 
 def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies closed-loop BO execution across Random, Greedy, and GP-UCB."""
-    protocols_df = dynamic_adapter.load_protocols()
-    oracle = OfflineOracle(protocols_df, dynamic_adapter.spec, replicate_policy="mean")
+    candidate_pool = dynamic_adapter.load_candidate_pool()
+    hidden_oracle = dynamic_adapter.load_hidden_oracle()
+    oracle = OfflineOracle(hidden_oracle, dynamic_adapter.spec, replicate_policy="mean")
     feature_cols = list(dynamic_adapter.spec.feature_columns)
+
+    evaluator_meta = {
+        "global_max": float(hidden_oracle["target_mean"].max()),
+        "top_10_pct_val": float(hidden_oracle["target_mean"].quantile(0.9)),
+        "top_5_pct_val": float(hidden_oracle["target_mean"].quantile(0.95)),
+    }
+
+    init_indices = [0, 1, 2, 3, 4]
+    total_queries = 10
 
     for strat in ["random", "greedy", "gp_ucb"]:
         rng = np.random.default_rng(42)
         history = run_single_optimization_trajectory(
-            protocols_df=protocols_df,
+            candidate_pool=candidate_pool,
             oracle=oracle,
             feature_cols=feature_cols,
             strategy=strat,
-            initial_protocols=5,
-            budget=10,
+            init_indices=init_indices,
+            total_queries=total_queries,
+            evaluator_meta=evaluator_meta,
             rng=rng,
         )
         assert len(history) == 11  # step 0 to step 10
@@ -141,7 +152,7 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     summary = run_dynamic_cycling_benchmark(
         output_dir=tmp_path,
         initial_protocols=4,
-        budget=8,
+        total_budget=12,
         n_seeds=3,
     )
 
@@ -154,3 +165,4 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     assert (tmp_path / "model_metrics.json").exists()
     assert (tmp_path / "optimization_history.csv").exists()
     assert (tmp_path / "benchmark_summary.json").exists()
+

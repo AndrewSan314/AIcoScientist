@@ -13,6 +13,8 @@ class DatasetSpec:
     """Dataset specification encoding schema, visibility boundaries, and provenance.
 
     Concepts:
+    - supports_prediction: Whether the dataset supports supervised predictive modeling / regression.
+    - supports_optimization: Whether the dataset supports closed-loop design / candidate optimization.
     - entity_id_column: Identifies the physical experimental entity (e.g., a specific battery cell
       or sample). Multiple cycles/measurements can belong to the same physical entity.
     - candidate_id_column: Identifies the candidate protocol or formulation (e.g., protocol ID or recipe ID).
@@ -28,8 +30,10 @@ class DatasetSpec:
     id_column: str
     feature_columns: list[str]
     target_column: str
-    objective: str
-    candidate_columns: list[str]
+    objective: str = "maximize"
+    candidate_columns: list[str] = field(default_factory=list)
+    supports_prediction: bool = True
+    supports_optimization: bool = True
     optional_columns: list[str] = field(default_factory=list)
     task_type: str = "regression"
     entity_id_column: str | None = None
@@ -52,8 +56,13 @@ class DatasetSpec:
             raise ValueError("target_column is required and cannot be empty")
         if not self.feature_columns:
             raise ValueError("feature_columns must not be empty")
-        if not self.candidate_columns:
-            raise ValueError("candidate_columns must not be empty")
+
+        if self.supports_optimization:
+            if not self.candidate_columns:
+                raise ValueError("candidate_columns must not be empty for optimization-capable datasets")
+        else:
+            if self.candidate_id_column is not None and self.candidate_id_column == self.entity_id_column:
+                pass  # entity identity is separate
 
         if self.entity_id_column is not None:
             if not isinstance(self.entity_id_column, str) or not self.entity_id_column.strip():
@@ -130,14 +139,19 @@ class DatasetAdapter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def load(self) -> pd.DataFrame:
+    def load(self, force_recompute: bool = False) -> pd.DataFrame:
         raise NotImplementedError
 
     def build_features(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     def candidate_space(self, observed: pd.DataFrame) -> pd.DataFrame:
+        if not self.spec.supports_optimization:
+            raise NotImplementedError(
+                f"Dataset {self.spec.name!r} is a prediction-only dataset and does not support candidate_space()."
+            )
         raise NotImplementedError
+
 
     def validate_candidate(self, candidate: Mapping[str, Any]) -> tuple[bool, list[str]]:
         return True, []

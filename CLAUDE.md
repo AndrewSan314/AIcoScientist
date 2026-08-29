@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **GTIP** (494 symbols, 776 relationships, 31 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **AIcoScientist** (983 symbols, 1857 relationships, 64 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -25,10 +25,10 @@ This project is indexed by GitNexus as **GTIP** (494 symbols, 776 relationships,
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/GTIP/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/GTIP/clusters` | All functional areas |
-| `gitnexus://repo/GTIP/processes` | All execution flows |
-| `gitnexus://repo/GTIP/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/AIcoScientist/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/AIcoScientist/clusters` | All functional areas |
+| `gitnexus://repo/AIcoScientist/processes` | All execution flows |
+| `gitnexus://repo/AIcoScientist/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

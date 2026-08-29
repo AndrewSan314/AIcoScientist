@@ -24,6 +24,8 @@ def generate_manifest(
             continue
         for root, _, filenames in os.walk(sdir):
             for fname in sorted(filenames):
+                if fname.startswith(".") or fname == ".DS_Store":
+                    continue
                 if fname.endswith(".json") and "manifest" in fname:
                     continue
                 fpath = Path(root) / fname
@@ -115,6 +117,7 @@ def main() -> None:
             "name": "dynamic_cycling_2024",
             "dir": project_root / "data" / "external" / "dynamic_cycling_2024",
             "source": "https://purl.stanford.edu/td676xr4322",
+            "code_repository": "https://github.com/chueh-ermon-group/dynamic-cycling",
             "version": "nat_energy_2024",
             "manifest": project_root / "data" / "external" / "dynamic_cycling_2024" / "manifest.json",
             "subdirs": ["paper_code/data"],
@@ -145,6 +148,7 @@ def main() -> None:
                 print(f"[FAIL] {cfg['name']} manifest errors:")
                 for err in errors:
                     print(f"  - {err}")
+
 
 
 if __name__ == "__main__":

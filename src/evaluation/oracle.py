@@ -40,7 +40,14 @@ class OfflineOracle:
     ):
         if replicate_policy not in {"error", "mean"}:
             raise ValueError(f"replicate_policy must be 'error' or 'mean', got {replicate_policy!r}")
-        required = [*spec.candidate_columns, spec.target_column]
+
+        # Check required columns
+        required = [spec.target_column]
+        if spec.candidate_id_column and spec.candidate_id_column in df.columns:
+            required.append(spec.candidate_id_column)
+        else:
+            required.extend(spec.candidate_columns)
+
         missing = sorted(set(required) - set(df.columns))
         if missing:
             raise ValueError(f"Oracle dataset is missing required columns: {missing}")
@@ -50,24 +57,72 @@ class OfflineOracle:
 
     def query(self, candidate: Mapping[str, Any] | pd.Series) -> OracleResponse:
         values = candidate.to_dict() if isinstance(candidate, pd.Series) else dict(candidate)
-        missing = sorted(set(self.spec.candidate_columns) - set(values))
-        if missing:
-            raise ValueError(f"Candidate is missing identity columns: {missing}")
 
-        mask = pd.Series(True, index=self.df.index)
-        for column in self.spec.candidate_columns:
-            mask &= self.df[column].eq(values[column])
-        matches = self.df.loc[mask]
+        use_candidate_id = bool(
+            self.spec.candidate_id_column
+            and self.spec.candidate_id_column in values
+            and self.spec.candidate_id_column in self.df.columns
+        )
 
-        if matches.empty:
-            identity = {column: values[column] for column in self.spec.candidate_columns}
-            raise KeyError(f"No exact ground-truth candidate exists: {identity}")
+        if use_candidate_id:
+            cand_id_col = self.spec.candidate_id_column
+            cand_id_val = values[cand_id_col]
+            matches = self.df.loc[self.df[cand_id_col].astype(str) == str(cand_id_val)]
 
-        candidate_dict = {col: values[col] for col in self.spec.candidate_columns}
+            if matches.empty:
+                raise KeyError(f"No exact ground-truth candidate exists with {cand_id_col}={cand_id_val!r}")
 
+            # Validate that if design coordinates are provided in query, they match stored ground truth
+            for col in self.spec.candidate_columns:
+                if col in values and col in matches.columns:
+                    query_val = values[col]
+                    stored_vals = matches[col].values
+                    try:
+                        q_float = float(query_val)
+                        s_floats = stored_vals.astype(float)
+                        if not np.all(np.isclose(s_floats, q_float, atol=1e-4, rtol=1e-4)):
+                            raise ValueError(
+                                f"Candidate design coordinate {col!r}={query_val} conflicts with ground truth for "
+                                f"{cand_id_col}={cand_id_val!r} (expected {stored_vals[0]})."
+                            )
+                    except (ValueError, TypeError):
+                        if not np.all(stored_vals == query_val):
+                            raise ValueError(
+                                f"Candidate design coordinate {col!r}={query_val} conflicts with ground truth for "
+                                f"{cand_id_col}={cand_id_val!r} (expected {stored_vals[0]})."
+                            )
+
+
+            candidate_dict = {
+                col: (values[col] if col in values else matches[col].iloc[0])
+                for col in self.spec.candidate_columns
+                if col in values or col in matches.columns
+            }
+            candidate_dict[cand_id_col] = cand_id_val
+
+        else:
+            # Fallback: match by candidate_columns
+            missing = sorted(set(self.spec.candidate_columns) - set(values))
+            if missing:
+                raise ValueError(f"Candidate is missing identity columns: {missing}")
+
+            mask = pd.Series(True, index=self.df.index)
+            for column in self.spec.candidate_columns:
+                mask &= self.df[column].eq(values[column])
+            matches = self.df.loc[mask]
+
+            if matches.empty:
+                identity = {column: values[column] for column in self.spec.candidate_columns}
+                raise KeyError(f"No exact ground-truth candidate exists: {identity}")
+
+            candidate_dict = {col: values[col] for col in self.spec.candidate_columns}
+
+        # Handle replicates vs single match
         if len(matches) > 1:
             if self.replicate_policy == "error":
-                raise ValueError("Ground-truth candidate identity is ambiguous")
+                raise ValueError(
+                    f"Ground-truth candidate identity is ambiguous ({len(matches)} matching replicate records found in error mode)"
+                )
             elif self.replicate_policy == "mean":
                 if self.spec.observation_columns:
                     raise ValueError(
@@ -114,3 +169,4 @@ class OfflineOracle:
             target=target,
             metadata=metadata,
         )
+
