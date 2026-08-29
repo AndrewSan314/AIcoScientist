@@ -53,10 +53,11 @@ def test_dynamic_adapter_load_cells_and_protocols_cache_invalidation(tmp_path: P
         raw_dir=raw_dir,
         processed_dir=processed_dir,
         raw_manifest_path=raw_manifest_path,
+        expected_records=4,
+        expected_protocols=2,
     )
 
     # 1. Initial load generates cache (4 cells, 2 protocols)
-    # Using load_cells(force_recompute=True) to bypass any expected_records check or pass synthetic
     cells_df = adapter.load_cells(force_recompute=True)
     assert len(cells_df) == 4
     protocols_df = adapter.load_protocols()
@@ -84,3 +85,47 @@ def test_dynamic_adapter_load_cells_and_protocols_cache_invalidation(tmp_path: P
 
     fresh_protocols = adapter.load_protocols()
     assert fresh_protocols["target_mean"].max() < 1000.0  # Proves stale cache was rejected on raw manifest change!
+
+
+def test_dynamic_adapter_schema_version_bump_invalidates_cache(tmp_path: Path):
+    """Proves that a processed manifest built with adapter schema version 2.0.0 is rejected by 3.0.0."""
+    raw_dir = tmp_path / "raw"
+    processed_dir = tmp_path / "processed"
+    raw_manifest_path = tmp_path / "manifest.json"
+
+    _create_synthetic_raw_dataset(raw_dir)
+    raw_manifest_path.write_text(json.dumps({"dataset": "dynamic_cycling_2024", "files": []}), encoding="utf-8")
+
+    adapter = DynamicCyclingAdapter(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        raw_manifest_path=raw_manifest_path,
+        expected_records=4,
+        expected_protocols=2,
+    )
+    # Generate initial cache
+    _ = adapter.load_cells(force_recompute=True)
+    manifest_file = processed_dir / "processed_manifest.json"
+    manifest_data = json.loads(manifest_file.read_text(encoding="utf-8"))
+    assert manifest_data["adapter_schema_version"] == "3.0.0"
+
+    # Plant version 2.0.0 in manifest and plant stale data
+    manifest_data["adapter_schema_version"] = "2.0.0"
+    manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+
+    stale_cells = pd.read_csv(processed_dir / "cells.csv")
+    stale_cells["efc_lifetime"] = 7777.0
+    stale_cells.to_csv(processed_dir / "cells.csv", index=False)
+
+    # Re-computing hash in manifest for the stale cells to simulate a valid v2.0.0 manifest
+    from src.datasets.cache import compute_file_sha256
+    manifest_data["processed_files"]["cells.csv"] = compute_file_sha256(processed_dir / "cells.csv")
+    manifest_file.write_text(json.dumps(manifest_data, indent=2), encoding="utf-8")
+
+    # Loading cells with adapter (schema 3.0.0) MUST reject the v2.0.0 manifest and recompute!
+    fresh_cells = adapter.load_cells()
+    assert fresh_cells["efc_lifetime"].max() < 1000.0
+
+    # Verify that the manifest was updated to 3.0.0
+    updated_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    assert updated_manifest["adapter_schema_version"] == "3.0.0"

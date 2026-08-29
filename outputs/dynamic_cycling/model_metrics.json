@@ -1,4 +1,40 @@
 {
+  "cell_level": {
+    "n_train_cells": 68,
+    "n_test_cells": 24,
+    "n_train_protocols": 35,
+    "n_test_protocols": 12,
+    "random_forest": {
+      "mae": 35.88615166806747,
+      "rmse": 43.31514529586313,
+      "r2": 0.7617189558767792
+    },
+    "gaussian_process": {
+      "mae": 38.48462384869144,
+      "rmse": 46.34676601636714,
+      "r2": 0.7271972059243286
+    }
+  },
+  "protocol_level": {
+    "n_protocols": 47,
+    "cv_method": "RepeatedKFold(n_splits=5, n_repeats=10, random_state=42)",
+    "random_forest": {
+      "mean_mae": 45.68546368268166,
+      "std_mae": 13.857097168360884,
+      "mean_rmse": 58.2795854932002,
+      "std_rmse": 16.099880379272655,
+      "mean_r2": 0.5649427991929299,
+      "std_r2": 0.22015528333153916
+    },
+    "gaussian_process": {
+      "mean_mae": 40.488639923736876,
+      "std_mae": 11.136767470121306,
+      "mean_rmse": 50.09618810965087,
+      "std_rmse": 13.869125671098885,
+      "mean_r2": 0.6472899056647001,
+      "std_r2": 0.25752395567293607
+    }
+  },
   "n_train_cells": 68,
   "n_test_cells": 24,
   "n_train_protocols": 35,

@@ -34,7 +34,7 @@ RAW_FEATURE_COLUMN_MAP: dict[str, str] = {
     "Peak Frequency 2": "peak_frequency_2",
 }
 
-ADAPTER_SCHEMA_VERSION = "2.0.0"
+ADAPTER_SCHEMA_VERSION = "3.0.0"
 
 DYNAMIC_CYCLING_ORACLE_COLUMNS: list[str] = [
     "efc_lifetime",
@@ -44,15 +44,27 @@ DYNAMIC_CYCLING_ORACLE_COLUMNS: list[str] = [
     "cycles_90",
 ]
 
+DEFAULT_REPLICATE_FEATURE_TOLERANCES: dict[str, float] = {
+    "average_current": 0.015,
+    "normalized_current_variance": 0.015,
+    "maximum_discharge_current": 0.002,
+    "relative_charge_fraction": 0.005,
+    "rest_fraction_at_high_soc": 0.005,
+    "rest_soc": 0.180,
+    "peak_frequency_1": 0.006,
+    "peak_frequency_2": 0.030,
+}
+
 
 def load_raw_dynamic_cycling_data(
     raw_dir: Path,
-    replicate_design_tolerance: float = 0.20,
     expected_records: int | None = None,
     expected_protocols: int | None = None,
+    feature_tolerances: Mapping[str, float] | None = None,
+    rtol: float | None = None,
+    atol: float | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-
-    """Loads raw Dynamic Cycling 2024 data with explicit ID alignment and replicate validation.
+    """Loads raw Dynamic Cycling 2024 data with deterministic ID alignment and strict replicate validation.
 
     - 92 physical cells across 47 discharge protocols.
     - Pre-experiment design features: 8 waveform descriptors.
@@ -75,7 +87,14 @@ def load_raw_dynamic_cycling_data(
     if "cell_name" not in metadata.columns or "protocol_name" not in metadata.columns:
         raise ValueError("metadata.pkl is missing required 'cell_name' or 'protocol_name' columns")
 
-    # 2. Load protocol features with explicit cell_name key
+    if metadata["cell_name"].isnull().any() or (metadata["cell_name"] == "").any():
+        raise ValueError("metadata.pkl contains null or empty cell_name entries")
+    if not metadata["cell_name"].is_unique:
+        raise ValueError("metadata.pkl contains duplicate cell_name entries")
+
+    metadata_ids = set(metadata["cell_name"].astype(str))
+
+    # 2. Load protocol features with explicit deterministic cell_name identifier
     if protocol_features_pkl.exists():
         proto_feat_raw = pd.read_pickle(protocol_features_pkl)
         if "cell_name" in proto_feat_raw.columns:
@@ -87,17 +106,10 @@ def load_raw_dynamic_cycling_data(
         ):
             proto_feat = proto_feat_raw.reset_index().rename(columns={"index": "cell_name", **RAW_FEATURE_COLUMN_MAP})
         else:
-            # If no explicit cell identifier column or index, validate invariant correspondence
-            if "Average Current" in proto_feat_raw.columns and "avg_crate_exp" in metadata.columns:
-                diff = np.max(np.abs(metadata["avg_crate_exp"].to_numpy() - proto_feat_raw["Average Current"].to_numpy()))
-                if diff > 1e-4:
-                    raise ValueError(
-                        f"protocol_features.pkl does not align with metadata.pkl (avg current max diff: {diff})"
-                    )
-                proto_feat = proto_feat_raw.rename(columns=RAW_FEATURE_COLUMN_MAP).copy()
-                proto_feat["cell_name"] = metadata["cell_name"].values
-            else:
-                raise ValueError("protocol_features.pkl is missing deterministic cell_name index or columns")
+            raise ValueError(
+                "protocol_features.pkl is missing explicit deterministic 'cell_name' column or index. "
+                "Positional or feature-matching inference is strictly prohibited."
+            )
     else:
         proto_feat_df = pd.read_csv(protocol_features_csv)
         if "cell_name" in proto_feat_df.columns:
@@ -105,25 +117,57 @@ def load_raw_dynamic_cycling_data(
         elif "Unnamed: 0" in proto_feat_df.columns and str(proto_feat_df["Unnamed: 0"].iloc[0]).startswith("cell_"):
             proto_feat = proto_feat_df.rename(columns={"Unnamed: 0": "cell_name", **RAW_FEATURE_COLUMN_MAP})
         else:
-            # Validate invariant correspondence with metadata before assigning cell_name
-            if "Average Current" in proto_feat_df.columns and "avg_crate_exp" in metadata.columns:
-                diff = np.max(np.abs(metadata["avg_crate_exp"].to_numpy() - proto_feat_df["Average Current"].to_numpy()))
-                if diff > 1e-4:
-                    raise ValueError(f"protocol_features.csv does not align with metadata.pkl (avg current max diff: {diff})")
-                proto_feat = proto_feat_df.rename(columns=RAW_FEATURE_COLUMN_MAP).copy()
-                proto_feat["cell_name"] = metadata["cell_name"].values
-            else:
-                raise ValueError("protocol_features.csv is missing deterministic cell_name identifier")
+            raise ValueError(
+                "protocol_features.csv is missing explicit deterministic 'cell_name' identifier column or index. "
+                "Positional or feature-matching inference is strictly prohibited."
+            )
+
+    if proto_feat["cell_name"].isnull().any() or (proto_feat["cell_name"] == "").any():
+        raise ValueError("protocol_features contains null or empty cell_name entries")
+    if not proto_feat["cell_name"].is_unique:
+        raise ValueError("protocol_features contains duplicate cell_name entries")
+
+    feature_ids = set(proto_feat["cell_name"].astype(str))
 
     # 3. Load SOH90 targets
     soh90 = pd.read_csv(soh90_path)
-    if "cell_name" not in soh90.columns:
-        if "Unnamed: 0" in soh90.columns and str(soh90["Unnamed: 0"].iloc[0]).startswith("cell_"):
-            soh90 = soh90.rename(columns={"Unnamed: 0": "cell_name"})
-        else:
-            raise ValueError("soh90.csv must contain 'cell_name' identifier column")
+    if "cell_name" in soh90.columns:
+        soh90_df = soh90.copy()
+    elif "Unnamed: 0" in soh90.columns and str(soh90["Unnamed: 0"].iloc[0]).startswith("cell_"):
+        soh90_df = soh90.rename(columns={"Unnamed: 0": "cell_name"})
+    else:
+        raise ValueError("soh90.csv must contain explicit deterministic 'cell_name' identifier column")
 
-    # 4. Explicit Join on cell_name
+    if soh90_df["cell_name"].isnull().any() or (soh90_df["cell_name"] == "").any():
+        raise ValueError("soh90.csv contains null or empty cell_name entries")
+    if not soh90_df["cell_name"].is_unique:
+        raise ValueError("soh90.csv contains duplicate cell_name entries")
+
+    target_ids = set(soh90_df["cell_name"].astype(str))
+
+    # 4. Strict Set Equality Verification BEFORE Merge (No subset / silent inner join reduction)
+    if metadata_ids != feature_ids:
+        diff_meta = metadata_ids - feature_ids
+        diff_feat = feature_ids - metadata_ids
+        raise ValueError(
+            f"Mismatch between metadata cell IDs and protocol feature cell IDs: "
+            f"metadata only: {diff_meta}, features only: {diff_feat}"
+        )
+
+    if metadata_ids != target_ids:
+        diff_meta = metadata_ids - target_ids
+        diff_tgt = target_ids - metadata_ids
+        raise ValueError(
+            f"Mismatch between metadata cell IDs and SOH90 target cell IDs: "
+            f"metadata only: {diff_meta}, targets only: {diff_tgt}"
+        )
+
+    if expected_records is not None and len(metadata_ids) != expected_records:
+        raise ValueError(
+            f"Expected exactly {expected_records} unique cell records, got {len(metadata_ids)}"
+        )
+
+    # 5. Explicit Join on deterministic cell_name key
     cells_df = metadata[["cell_name", "protocol_type", "protocol_variant", "protocol_name"]].copy()
     cells_df = cells_df.rename(columns={"cell_name": "cell_id", "protocol_name": "protocol_id"})
 
@@ -132,7 +176,7 @@ def load_raw_dynamic_cycling_data(
     cells_df = pd.merge(cells_df, proto_feat_subset, on="cell_id", how="inner")
 
     target_cols_to_merge = ["cell_name", "EFCs (with Diagnostic)", "Cycles"]
-    soh90_subset = soh90[target_cols_to_merge].rename(
+    soh90_subset = soh90_df[target_cols_to_merge].rename(
         columns={
             "cell_name": "cell_id",
             "EFCs (with Diagnostic)": "efc_lifetime",
@@ -141,28 +185,42 @@ def load_raw_dynamic_cycling_data(
     )
     cells_df = pd.merge(cells_df, soh90_subset, on="cell_id", how="inner")
 
-    # Invariant assertions
-    if expected_records is not None and len(cells_df) != expected_records:
-        raise ValueError(f"Expected exactly {expected_records} aligned cell records, got {len(cells_df)}")
-    n_protocols = cells_df["protocol_id"].nunique()
-    if expected_protocols is not None and n_protocols != expected_protocols:
-        raise ValueError(f"Expected exactly {expected_protocols} unique protocol IDs, got {n_protocols}")
+    if len(cells_df) != len(metadata_ids):
+        raise ValueError(
+            f"Merged cell records ({len(cells_df)}) do not match unique metadata ID count ({len(metadata_ids)})"
+        )
 
     # Determine replicate IDs (A, B, ...)
     cells_df["replicate_id"] = cells_df.groupby("protocol_id").cumcount().apply(lambda x: chr(ord("A") + x))
 
-    # 5. Validate replicate design coordinates across replicates
+    # 6. Validate complete replicate design vector across replicates of each protocol
     for proto_id, group in cells_df.groupby("protocol_id"):
-        for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
-            feat_vals = group[feat].to_numpy(dtype=float)
-            spread = float(np.ptp(feat_vals))
-            if spread > replicate_design_tolerance:
-                raise ValueError(
-                    f"Replicate cells for protocol {proto_id!r} have conflicting design coordinates for {feat!r}: "
-                    f"spread={spread:.5f} exceeds tolerance {replicate_design_tolerance}"
-                )
+        if len(group) <= 1:
+            continue
+        canon_row = group.iloc[0]
+        for rep_idx in range(1, len(group)):
+            cand_row = group.iloc[rep_idx]
+            for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
+                c_val = float(canon_row[feat])
+                cand_val = float(cand_row[feat])
+                abs_diff = abs(cand_val - c_val)
 
-    # 6. Build protocol-level data (Canonical design coordinates from first replicate + aggregated target)
+                if rtol is not None or atol is not None:
+                    eff_atol = atol if atol is not None else 1e-8
+                    eff_rtol = rtol if rtol is not None else 1e-5
+                    is_close = np.isclose(cand_val, c_val, rtol=eff_rtol, atol=eff_atol, equal_nan=False)
+                else:
+                    tols = feature_tolerances if feature_tolerances is not None else DEFAULT_REPLICATE_FEATURE_TOLERANCES
+                    feat_tol = tols.get(feat, 1e-6)
+                    is_close = abs_diff <= feat_tol
+
+                if not is_close:
+                    raise ValueError(
+                        f"Protocol {proto_id!r} replicate conflict on feature {feat!r}: "
+                        f"canonical={c_val}, conflicting={cand_val}, abs_diff={abs_diff:.6e}"
+                    )
+
+    # 7. Build protocol-level data (Canonical design coordinates from first replicate + aggregated target)
     proto_rows: list[dict[str, Any]] = []
     for proto_id, group in cells_df.groupby("protocol_id", sort=False):
         first_row = group.iloc[0]
@@ -181,7 +239,6 @@ def load_raw_dynamic_cycling_data(
             "efc_lifetime": t_mean,
             "cycles_90": float(group["cycles_90"].mean()),
         }
-        # Canonical first design vector (NOT averaged across features)
         for feat in DYNAMIC_CYCLING_FEATURE_COLUMNS:
             prow[feat] = float(first_row[feat])
 
@@ -206,6 +263,22 @@ def load_raw_dynamic_cycling_data(
     ]
     cells_df = cells_df[cell_cols].sort_values(["protocol_id", "replicate_id"]).reset_index(drop=True)
 
+    # Hard Invariant assertions on final datasets
+    if expected_records is not None:
+        if len(cells_df) != expected_records:
+            raise ValueError(f"Expected exactly {expected_records} cell records, got {len(cells_df)}")
+        if cells_df["cell_id"].nunique() != expected_records:
+            raise ValueError(f"Expected {expected_records} unique cell IDs, got {cells_df['cell_id'].nunique()}")
+
+    n_protocols = cells_df["protocol_id"].nunique()
+    if expected_protocols is not None:
+        if n_protocols != expected_protocols:
+            raise ValueError(f"Expected exactly {expected_protocols} unique protocol IDs in cells, got {n_protocols}")
+        if len(protocols_df) != expected_protocols:
+            raise ValueError(f"Expected exactly {expected_protocols} rows in protocols_df, got {len(protocols_df)}")
+        if protocols_df["protocol_id"].nunique() != expected_protocols:
+            raise ValueError(f"Expected {expected_protocols} unique protocol IDs in protocols_df, got {protocols_df['protocol_id'].nunique()}")
+
     return cells_df, protocols_df
 
 
@@ -220,6 +293,8 @@ class DynamicCyclingAdapter(DatasetAdapter):
         processed_dir: Path | None = None,
         raw_manifest_path: Path | None = None,
         level: str = "cell",
+        expected_records: int | None = 92,
+        expected_protocols: int | None = 47,
     ) -> None:
         project_root = Path(__file__).resolve().parent.parent.parent
         self.raw_dir = (
@@ -248,6 +323,8 @@ class DynamicCyclingAdapter(DatasetAdapter):
             / "manifest.json"
         )
         self.level = level
+        self.expected_records = expected_records
+        self.expected_protocols = expected_protocols
 
         id_col = "protocol_id" if level == "protocol" else "cell_id"
         target_col = "target_mean" if level == "protocol" else "efc_lifetime"
@@ -289,9 +366,37 @@ class DynamicCyclingAdapter(DatasetAdapter):
         )
 
         if is_cache_valid and not force_recompute:
-            return pd.read_csv(cells_file), pd.read_csv(protocols_file)
+            cells_df = pd.read_csv(cells_file)
+            protocols_df = pd.read_csv(protocols_file)
+            exp_rec = self.expected_records if self.expected_records is not None else 0
+            exp_proto = self.expected_protocols if self.expected_protocols is not None else 0
+            if (exp_rec == 0 or len(cells_df) == exp_rec) and (exp_proto == 0 or len(protocols_df) == exp_proto):
+                return cells_df, protocols_df
 
-        cells_df, protocols_df = load_raw_dynamic_cycling_data(self.raw_dir)
+        cells_df, protocols_df = load_raw_dynamic_cycling_data(
+            self.raw_dir,
+            expected_records=self.expected_records,
+            expected_protocols=self.expected_protocols,
+        )
+        if self.expected_records is not None:
+            if len(cells_df) != self.expected_records or cells_df["cell_id"].nunique() != self.expected_records:
+                raise ValueError(
+                    f"Dynamic cycling adapter invariant violation: expected {self.expected_records} unique cells, "
+                    f"got len={len(cells_df)}, nunique={cells_df['cell_id'].nunique()}"
+                )
+        if self.expected_protocols is not None:
+            if (
+                len(protocols_df) != self.expected_protocols
+                or protocols_df["protocol_id"].nunique() != self.expected_protocols
+                or cells_df["protocol_id"].nunique() != self.expected_protocols
+            ):
+                raise ValueError(
+                    f"Dynamic cycling adapter invariant violation: expected {self.expected_protocols} unique protocols, "
+                    f"got len(protocols_df)={len(protocols_df)}, "
+                    f"nunique(protocols)={protocols_df['protocol_id'].nunique()}, "
+                    f"nunique(cells_protocol)={cells_df['protocol_id'].nunique()}"
+                )
+
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         cells_df.to_csv(cells_file, index=False)
         protocols_df.to_csv(protocols_file, index=False)

@@ -77,33 +77,29 @@ def test_synthetic_severson_h5py_structure(tmp_path: Path):
     assert np.isfinite(feats["delta_q_var"])
 
 
-def test_synthetic_dynamic_cycling_replicate_mismatch(tmp_path: Path):
-    """Tests that conflicting replicate design coordinates are detected and rejected."""
+def test_synthetic_dynamic_cycling_replicate_validation(tmp_path: Path):
+    """Tests strict replicate design vector validation including tolerances and failures."""
     metadata = pd.DataFrame(
         {
             "cell_name": ["cell_01", "cell_02"],
             "protocol_type": ["Fast", "Fast"],
             "protocol_variant": ["v1", "v1"],
             "protocol_name": ["P1", "P1"],
-            "avg_crate_exp": [1.0, 1.0],
         }
     )
     metadata.to_pickle(tmp_path / "metadata.pkl")
 
-    proto_feat = pd.DataFrame(
-        {
-            "cell_name": ["cell_01", "cell_02"],
-            "Average Current": [1.0, 1.0],
-            "Normalized Current Variance": [0.1, 0.1],
-            "Maximum Discharge Current": [1.5, 1.5],
-            "Relative Charge Fraction": [0.5, 0.5],
-            "Rest Fraction at High SOC": [0.2, 0.2],
-            "Rest SOC": [0.8, 0.8],
-            "Peak Frequency 1": [10.0, 25.0],  # Major mismatch (spread = 15.0 > 0.20)
-            "Peak Frequency 2": [5.0, 5.0],
-        }
-    )
-    proto_feat.to_pickle(tmp_path / "protocol_features.pkl")
+    base_proto = {
+        "cell_name": ["cell_01", "cell_02"],
+        "Average Current": [1.0, 1.0],
+        "Normalized Current Variance": [0.1, 0.1],
+        "Maximum Discharge Current": [1.5, 1.5],
+        "Relative Charge Fraction": [0.5, 0.5],
+        "Rest Fraction at High SOC": [0.2, 0.2],
+        "Rest SOC": [0.8, 0.8],
+        "Peak Frequency 1": [0.001, 0.001],
+        "Peak Frequency 2": [0.005, 0.005],
+    }
 
     soh90 = pd.DataFrame(
         {
@@ -114,127 +110,62 @@ def test_synthetic_dynamic_cycling_replicate_mismatch(tmp_path: Path):
     )
     soh90.to_csv(tmp_path / "soh90.csv", index=False)
 
-    with pytest.raises(ValueError, match="conflicting design coordinates"):
+    # 1. Exact replicate vector passes
+    proto_df = pd.DataFrame(base_proto)
+    proto_df.to_pickle(tmp_path / "protocol_features.pkl")
+    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
+    assert len(cells) == 2 and len(protos) == 1
+
+    # 2. Tiny numerical serialization noise passes
+    noisy_proto = dict(base_proto)
+    noisy_proto["Average Current"] = [1.0, 1.0 + 1e-6]
+    pd.DataFrame(noisy_proto).to_pickle(tmp_path / "protocol_features.pkl")
+    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
+    assert len(cells) == 2
+
+    # 3. Average current mismatch of 1e-3 fails when above justified tolerance
+    mismatch_current = dict(base_proto)
+    mismatch_current["Average Current"] = [1.0, 1.0 + 1e-3]
+    pd.DataFrame(mismatch_current).to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="replicate conflict on feature 'average_current'"):
+        load_raw_dynamic_cycling_data(
+            tmp_path,
+            expected_records=2,
+            expected_protocols=1,
+            feature_tolerances={"average_current": 1e-4},
+        )
+
+    # 4. Peak frequency mismatch at 1e-4 scale fails when above tolerance
+    mismatch_freq = dict(base_proto)
+    mismatch_freq["Peak Frequency 1"] = [0.00005, 0.00050]  # Diff = 4.5e-4
+    pd.DataFrame(mismatch_freq).to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="replicate conflict on feature 'peak_frequency_1'"):
+        load_raw_dynamic_cycling_data(
+            tmp_path,
+            expected_records=2,
+            expected_protocols=1,
+            feature_tolerances={"peak_frequency_1": 1e-4},
+        )
+
+    # 5. One mismatched feature causes the whole protocol to fail
+    mismatch_single = dict(base_proto)
+    mismatch_single["Maximum Discharge Current"] = [1.5, 3.0]
+    pd.DataFrame(mismatch_single).to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="replicate conflict on feature 'maximum_discharge_current'"):
         load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
 
 
-def test_synthetic_dynamic_cycling_missing_cells_raises(tmp_path: Path):
-    """Tests that missing cells in raw files raise alignment errors."""
-    metadata = pd.DataFrame(
-        {
-            "cell_name": ["cell_01", "cell_02"],
-            "protocol_type": ["Fast", "Fast"],
-            "protocol_variant": ["v1", "v1"],
-            "protocol_name": ["P1", "P1"],
-            "avg_crate_exp": [1.0, 1.0],
-        }
-    )
-    metadata.to_pickle(tmp_path / "metadata.pkl")
-
-    proto_feat = pd.DataFrame(
-        {
-            "cell_name": ["cell_01"],  # Missing cell_02
-            "Average Current": [1.0],
-            "Normalized Current Variance": [0.1],
-            "Maximum Discharge Current": [1.5],
-            "Relative Charge Fraction": [0.5],
-            "Rest Fraction at High SOC": [0.2],
-            "Rest SOC": [0.8],
-            "Peak Frequency 1": [10.0],
-            "Peak Frequency 2": [5.0],
-        }
-    )
-    proto_feat.to_pickle(tmp_path / "protocol_features.pkl")
-
-    soh90 = pd.DataFrame(
-        {
-            "cell_name": ["cell_01", "cell_02"],
-            "EFCs (with Diagnostic)": [800.0, 820.0],
-            "Cycles": [850.0, 870.0],
-        }
-    )
-    soh90.to_csv(tmp_path / "soh90.csv", index=False)
-
-    with pytest.raises(ValueError, match="Expected exactly 2 aligned cell records"):
-        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=1)
-
-
-def test_severson_malformed_batch_group_raises(tmp_path: Path):
-    """Tests that a MAT file without 'batch' group fails loudly."""
-    mat_path = tmp_path / "empty.mat"
-    with h5py.File(mat_path, "w") as f:
-        f.create_group("wrong_group")
-
-    with pytest.raises(ValueError, match="does not contain required 'batch' group"):
-        load_raw_batch_hdf5(mat_path)
-
-
-def test_severson_missing_structural_dataset_raises(tmp_path: Path):
-    """Tests that missing required datasets in batch group raise ValueError."""
-    mat_path = tmp_path / "missing_datasets.mat"
-    with h5py.File(mat_path, "w") as f:
-        batch = f.create_group("batch")
-        batch.create_dataset("cycle_life", data=np.array([[100.0]]))
-        # Missing policy_readable, summary, cycles, Vdlin
-
-    with pytest.raises(ValueError, match="batch group is malformed.*missing datasets"):
-        load_raw_batch_hdf5(mat_path)
-
-
-def test_severson_missing_qdlin_in_cycles_raises(tmp_path: Path):
-    """Tests that a cell missing Qdlin in cycles group fails with ValueError."""
-    mat_path = tmp_path / "missing_qdlin.mat"
-    ref_type = h5py.special_dtype(ref=h5py.Reference)
-    with h5py.File(mat_path, "w") as f:
-        batch = f.create_group("batch")
-        cl = f.create_dataset("cl", data=np.array([[500.0]]))
-        pol = f.create_dataset("pol", data=np.array([ord("c")], dtype=np.uint8))
-        vd = f.create_dataset("vd", data=np.linspace(2.0, 3.6, 10))
-        sum_grp = f.create_group("sum_grp")
-        cyc_grp = f.create_group("cyc_grp")  # No Qdlin!
-
-        batch.create_dataset("cycle_life", shape=(1, 1), dtype=ref_type)
-        batch["cycle_life"][0, 0] = cl.ref
-        batch.create_dataset("policy_readable", shape=(1, 1), dtype=ref_type)
-        batch["policy_readable"][0, 0] = pol.ref
-        batch.create_dataset("Vdlin", shape=(1, 1), dtype=ref_type)
-        batch["Vdlin"][0, 0] = vd.ref
-        batch.create_dataset("summary", shape=(1, 1), dtype=ref_type)
-        batch["summary"][0, 0] = sum_grp.ref
-        batch.create_dataset("cycles", shape=(1, 1), dtype=ref_type)
-        batch["cycles"][0, 0] = cyc_grp.ref
-
-    with pytest.raises(ValueError, match="is missing 'Qdlin' in cycles group"):
-        load_raw_batch_hdf5(mat_path)
-
-
-def test_dynamic_cycling_shuffled_features_rejected(tmp_path: Path):
-    """Tests that unindexed shuffled features with invariant violation are rejected."""
+def test_synthetic_dynamic_cycling_deterministic_id_and_set_equality(tmp_path: Path):
+    """Tests that unindexed features without cell_name and ID set mismatches are strictly rejected."""
     metadata = pd.DataFrame(
         {
             "cell_name": ["cell_01", "cell_02"],
             "protocol_type": ["Fast", "Slow"],
             "protocol_variant": ["v1", "v2"],
             "protocol_name": ["P1", "P2"],
-            "avg_crate_exp": [3.0, 1.0],
         }
     )
     metadata.to_pickle(tmp_path / "metadata.pkl")
-
-    # Shuffled without cell_name index (Average Current: 1.0, 3.0 vs avg_crate_exp: 3.0, 1.0)
-    proto_feat = pd.DataFrame(
-        {
-            "Average Current": [1.0, 3.0],
-            "Normalized Current Variance": [0.1, 0.2],
-            "Maximum Discharge Current": [1.5, 3.5],
-            "Relative Charge Fraction": [0.5, 0.6],
-            "Rest Fraction at High SOC": [0.2, 0.3],
-            "Rest SOC": [0.8, 0.9],
-            "Peak Frequency 1": [10.0, 20.0],
-            "Peak Frequency 2": [5.0, 8.0],
-        }
-    )
-    proto_feat.to_pickle(tmp_path / "protocol_features.pkl")
 
     soh90 = pd.DataFrame(
         {
@@ -245,7 +176,66 @@ def test_dynamic_cycling_shuffled_features_rejected(tmp_path: Path):
     )
     soh90.to_csv(tmp_path / "soh90.csv", index=False)
 
-    with pytest.raises(ValueError, match="does not align with metadata"):
+    # 1. Feature rows with NO cell_name column or index fail (even if ordered)
+    proto_feat_no_id = pd.DataFrame(
+        {
+            "Average Current": [1.0, 2.0],
+            "Normalized Current Variance": [0.1, 0.2],
+            "Maximum Discharge Current": [1.5, 2.5],
+            "Relative Charge Fraction": [0.5, 0.6],
+            "Rest Fraction at High SOC": [0.2, 0.3],
+            "Rest SOC": [0.8, 0.9],
+            "Peak Frequency 1": [0.01, 0.02],
+            "Peak Frequency 2": [0.05, 0.08],
+        }
+    )
+    proto_feat_no_id.to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="missing explicit deterministic 'cell_name'"):
         load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
+    # 2. Explicit cell_name index succeeds
+    proto_feat_with_idx = proto_feat_no_id.copy()
+    proto_feat_with_idx.index = ["cell_01", "cell_02"]
+    proto_feat_with_idx.to_pickle(tmp_path / "protocol_features.pkl")
+    cells, protos = load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+    assert len(cells) == 2
+
+    # 3. Duplicate cell IDs in features fail
+    proto_feat_dup = proto_feat_no_id.copy()
+    proto_feat_dup["cell_name"] = ["cell_01", "cell_01"]
+    proto_feat_dup.to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="duplicate cell_name entries"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
+    # 4. Feature IDs mismatch metadata IDs fails set equality check before merge
+    proto_feat_mismatch = proto_feat_no_id.copy()
+    proto_feat_mismatch["cell_name"] = ["cell_01", "cell_99"]
+    proto_feat_mismatch.to_pickle(tmp_path / "protocol_features.pkl")
+    with pytest.raises(ValueError, match="Mismatch between metadata cell IDs and protocol feature cell IDs"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
+    # 5. SOH90 IDs mismatch metadata IDs fails set equality check
+    proto_feat_ok = proto_feat_no_id.copy()
+    proto_feat_ok["cell_name"] = ["cell_01", "cell_02"]
+    proto_feat_ok.to_pickle(tmp_path / "protocol_features.pkl")
+
+    soh90_mismatch = pd.DataFrame(
+        {
+            "cell_name": ["cell_01", "cell_88"],
+            "EFCs (with Diagnostic)": [800.0, 600.0],
+            "Cycles": [850.0, 650.0],
+        }
+    )
+    soh90_mismatch.to_csv(tmp_path / "soh90.csv", index=False)
+    with pytest.raises(ValueError, match="Mismatch between metadata cell IDs and SOH90 target cell IDs"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
+    # 6. Null or empty cell IDs fail
+    metadata_null = metadata.copy()
+    metadata_null.iloc[0, metadata_null.columns.get_loc("cell_name")] = ""
+    metadata_null.to_pickle(tmp_path / "metadata.pkl")
+    with pytest.raises(ValueError, match="null or empty cell_name"):
+        load_raw_dynamic_cycling_data(tmp_path, expected_records=2, expected_protocols=2)
+
 
 

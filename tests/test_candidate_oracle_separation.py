@@ -70,3 +70,50 @@ def test_dynamic_hidden_oracle_cell_level_and_replicate_aware():
     with pytest.raises(KeyError, match="not accessible"):
         _ = resp["raw_rows"]
 
+
+def test_candidate_schema_strict_id_and_conflict_handling():
+    from src.optimization.candidates import normalize_candidate_schema, remove_observed
+
+    adapter = DynamicCyclingAdapter()
+    spec = adapter.spec
+
+    # 1. candidate_id spec + missing protocol_id -> fail
+    cand_missing_id = pd.DataFrame({
+        feat: [0.1, 0.2] for feat in spec.candidate_columns
+    })
+    with pytest.raises(ValueError, match="missing required candidate ID column"):
+        normalize_candidate_schema(cand_missing_id, spec)
+
+    # 2. Two distinct IDs with identical design vectors remain distinct
+    cand_identical_vectors = pd.DataFrame({
+        "protocol_id": ["P17", "P23"],
+        **{feat: [0.5, 0.5] for feat in spec.candidate_columns},
+    })
+    normalized = normalize_candidate_schema(cand_identical_vectors, spec)
+    assert len(normalized) == 2
+    assert set(normalized["protocol_id"]) == {"P17", "P23"}
+
+    # 3. Observed P17 removes P17 only; P23 remains
+    observed_p17 = pd.DataFrame({"protocol_id": ["P17"]})
+    remaining = remove_observed(normalized, observed_p17, spec)
+    assert len(remaining) == 1
+    assert remaining.iloc[0]["protocol_id"] == "P23"
+
+    # 4. Duplicate protocol_id rows with identical vectors deduplicate cleanly
+    cand_duplicates = pd.DataFrame({
+        "protocol_id": ["P01", "P01"],
+        **{feat: [0.3, 0.3] for feat in spec.candidate_columns},
+    })
+    deduped = normalize_candidate_schema(cand_duplicates, spec)
+    assert len(deduped) == 1
+    assert deduped.iloc[0]["protocol_id"] == "P01"
+
+    # 5. Conflicting duplicate protocol_id with different feature vectors raises ValueError
+    cand_conflicting = pd.DataFrame({
+        "protocol_id": ["P01", "P01"],
+        **{feat: [0.3, 0.9] for feat in spec.candidate_columns},
+    })
+    with pytest.raises(ValueError, match="conflicting design feature vectors"):
+        normalize_candidate_schema(cand_conflicting, spec)
+
+

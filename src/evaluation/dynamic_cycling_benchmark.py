@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import GroupShuffleSplit
+from sklearn.model_selection import GroupShuffleSplit, RepeatedKFold
 from sklearn.preprocessing import StandardScaler
 
 from src.datasets.dynamic_cycling import (
@@ -26,15 +26,17 @@ def evaluate_surrogate_prediction(
     test_size: float = 0.25,
     random_state: int = 42,
 ) -> dict[str, Any]:
-    """Evaluates surrogate model performance under strict protocol-grouped splitting."""
+    """Evaluates surrogate model performance under strict protocol-grouped splitting and protocol-level CV."""
     cells_df = adapter.load_cells()
+    protocols_df = adapter.load_protocols()
     spec = adapter.spec
 
     feature_cols = list(spec.feature_columns)
-    target_col = "efc_lifetime"
+
+    # 1. Cell-Level Evaluation (Grouped Split)
+    target_col_cell = "efc_lifetime"
     group_col = "protocol_id"
 
-    # Protocol-group-safe split
     groups = cells_df[group_col].astype(str)
     splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
     train_idx, test_idx = next(splitter.split(cells_df, groups=groups))
@@ -47,32 +49,32 @@ def evaluate_surrogate_prediction(
     train_df = cells_df.iloc[train_idx]
     test_df = cells_df.iloc[test_idx]
 
-    X_train = train_df[feature_cols].to_numpy(dtype=float)
-    y_train = train_df[target_col].to_numpy(dtype=float)
-    X_test = test_df[feature_cols].to_numpy(dtype=float)
-    y_test = test_df[target_col].to_numpy(dtype=float)
+    X_train_cell = train_df[feature_cols].to_numpy(dtype=float)
+    y_train_cell = train_df[target_col_cell].to_numpy(dtype=float)
+    X_test_cell = test_df[feature_cols].to_numpy(dtype=float)
+    y_test_cell = test_df[target_col_cell].to_numpy(dtype=float)
 
-    # 1. Random Forest
-    rf = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=random_state)
-    rf.fit(X_train, y_train)
-    rf_pred = rf.predict(X_test)
+    # Cell RF
+    rf_cell = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=random_state)
+    rf_cell.fit(X_train_cell, y_train_cell)
+    rf_pred_cell = rf_cell.predict(X_test_cell)
 
-    # 2. Gaussian Process
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    # Cell GP
+    scaler_cell = StandardScaler()
+    X_train_cell_scaled = scaler_cell.fit_transform(X_train_cell)
+    X_test_cell_scaled = scaler_cell.transform(X_test_cell)
 
-    kernel = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
+    kernel_cell = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
         noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
     )
-    gp = GaussianProcessRegressor(
-        kernel=kernel,
+    gp_cell = GaussianProcessRegressor(
+        kernel=kernel_cell,
         normalize_y=True,
         n_restarts_optimizer=3,
         random_state=random_state,
     )
-    gp.fit(X_train_scaled, y_train)
-    gp_pred = gp.predict(X_test_scaled)
+    gp_cell.fit(X_train_cell_scaled, y_train_cell)
+    gp_pred_cell = gp_cell.predict(X_test_cell_scaled)
 
     def _get_metrics(true: np.ndarray, pred: np.ndarray) -> dict[str, float]:
         return {
@@ -81,13 +83,86 @@ def evaluate_surrogate_prediction(
             "r2": float(r2_score(true, pred)),
         }
 
-    return {
+    cell_level_results = {
         "n_train_cells": len(train_df),
         "n_test_cells": len(test_df),
         "n_train_protocols": len(train_groups),
         "n_test_protocols": len(test_groups),
-        "random_forest": _get_metrics(y_test, rf_pred),
-        "gaussian_process": _get_metrics(y_test, gp_pred),
+        "random_forest": _get_metrics(y_test_cell, rf_pred_cell),
+        "gaussian_process": _get_metrics(y_test_cell, gp_pred_cell),
+    }
+
+    # 2. Protocol-Level Evaluation (Repeated 5-Fold CV with 10 repeats)
+    X_proto = protocols_df[feature_cols].to_numpy(dtype=float)
+    y_proto = protocols_df["target_mean"].to_numpy(dtype=float)
+    n_protocols = len(protocols_df)
+
+    rkf = RepeatedKFold(n_splits=5, n_repeats=10, random_state=random_state)
+    rf_maes, rf_rmses, rf_r2s = [], [], []
+    gp_maes, gp_rmses, gp_r2s = [], [], []
+
+    for fold_train_idx, fold_test_idx in rkf.split(X_proto):
+        X_p_tr, y_p_tr = X_proto[fold_train_idx], y_proto[fold_train_idx]
+        X_p_te, y_p_te = X_proto[fold_test_idx], y_proto[fold_test_idx]
+
+        # Protocol RF
+        rf_fold = RandomForestRegressor(n_estimators=100, min_samples_leaf=2, random_state=random_state)
+        rf_fold.fit(X_p_tr, y_p_tr)
+        rf_p_pred = rf_fold.predict(X_p_te)
+        rf_maes.append(mean_absolute_error(y_p_te, rf_p_pred))
+        rf_rmses.append(np.sqrt(mean_squared_error(y_p_te, rf_p_pred)))
+        rf_r2s.append(r2_score(y_p_te, rf_p_pred))
+
+        # Protocol GP
+        sc_p = StandardScaler()
+        X_p_tr_sc = sc_p.fit_transform(X_p_tr)
+        X_p_te_sc = sc_p.transform(X_p_te)
+        kernel_proto = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
+            noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
+        )
+        gp_fold = GaussianProcessRegressor(
+            kernel=kernel_proto,
+            normalize_y=True,
+            n_restarts_optimizer=2,
+            random_state=random_state,
+        )
+        gp_fold.fit(X_p_tr_sc, y_p_tr)
+        gp_p_pred = gp_fold.predict(X_p_te_sc)
+        gp_maes.append(mean_absolute_error(y_p_te, gp_p_pred))
+        gp_rmses.append(np.sqrt(mean_squared_error(y_p_te, gp_p_pred)))
+        gp_r2s.append(r2_score(y_p_te, gp_p_pred))
+
+    protocol_level_results = {
+        "n_protocols": n_protocols,
+        "cv_method": "RepeatedKFold(n_splits=5, n_repeats=10, random_state=42)",
+        "random_forest": {
+            "mean_mae": float(np.mean(rf_maes)),
+            "std_mae": float(np.std(rf_maes)),
+            "mean_rmse": float(np.mean(rf_rmses)),
+            "std_rmse": float(np.std(rf_rmses)),
+            "mean_r2": float(np.mean(rf_r2s)),
+            "std_r2": float(np.std(rf_r2s)),
+        },
+        "gaussian_process": {
+            "mean_mae": float(np.mean(gp_maes)),
+            "std_mae": float(np.std(gp_maes)),
+            "mean_rmse": float(np.mean(gp_rmses)),
+            "std_rmse": float(np.std(gp_rmses)),
+            "mean_r2": float(np.mean(gp_r2s)),
+            "std_r2": float(np.std(gp_r2s)),
+        },
+    }
+
+    return {
+        "cell_level": cell_level_results,
+        "protocol_level": protocol_level_results,
+        # Top-level backwards compatibility
+        "n_train_cells": cell_level_results["n_train_cells"],
+        "n_test_cells": cell_level_results["n_test_cells"],
+        "n_train_protocols": cell_level_results["n_train_protocols"],
+        "n_test_protocols": cell_level_results["n_test_protocols"],
+        "random_forest": cell_level_results["random_forest"],
+        "gaussian_process": cell_level_results["gaussian_process"],
     }
 
 
@@ -546,8 +621,13 @@ def main() -> None:
     params = summary["optimization_parameters"]
     print(f"Protocols Universe: {summary['universe_protocols']} protocols ({summary['total_cells']} replicate cells)")
     print(f"Primary Budget: {params['initial_protocols']} initial + {params['total_queries']} queries = {params['total_budget']} total experiments ({params['n_seeds']} paired seeds)")
-    print(f"Surrogate RF  -> Test MAE: {surr['random_forest']['mae']:.2f}, RMSE: {surr['random_forest']['rmse']:.2f}, R2: {surr['random_forest']['r2']:.3f}")
-    print(f"Surrogate GP  -> Test MAE: {surr['gaussian_process']['mae']:.2f}, RMSE: {surr['gaussian_process']['rmse']:.2f}, R2: {surr['gaussian_process']['r2']:.3f}")
+    print(f"Surrogate RF (Cell Test)   -> MAE: {surr['cell_level']['random_forest']['mae']:.2f}, RMSE: {surr['cell_level']['random_forest']['rmse']:.2f}, R2: {surr['cell_level']['random_forest']['r2']:.3f}")
+    print(f"Surrogate GP (Cell Test)   -> MAE: {surr['cell_level']['gaussian_process']['mae']:.2f}, RMSE: {surr['cell_level']['gaussian_process']['rmse']:.2f}, R2: {surr['cell_level']['gaussian_process']['r2']:.3f}")
+    if "protocol_level" in surr:
+        rf_p = surr["protocol_level"]["random_forest"]
+        gp_p = surr["protocol_level"]["gaussian_process"]
+        print(f"Surrogate RF (Protocol CV) -> MAE: {rf_p['mean_mae']:.2f} ± {rf_p['std_mae']:.2f}, RMSE: {rf_p['mean_rmse']:.2f} ± {rf_p['std_rmse']:.2f}, R2: {rf_p['mean_r2']:.3f} ± {rf_p['std_r2']:.3f}")
+        print(f"Surrogate GP (Protocol CV) -> MAE: {gp_p['mean_mae']:.2f} ± {gp_p['std_mae']:.2f}, RMSE: {gp_p['mean_rmse']:.2f} ± {gp_p['std_rmse']:.2f}, R2: {gp_p['mean_r2']:.3f} ± {gp_p['std_r2']:.3f}")
     print("\nPrimary Budget (20) Strategy Comparison (Paired Seeds, 95% Bootstrap CI):")
     print(f"{'Strategy':<10} {'Mean Best':<12} {'Med Best':<10} {'Mean Regret':<14} {'95% CI':<18} {'Top 10%':<10} {'Top 5%'}")
     print("-" * 88)

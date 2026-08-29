@@ -159,6 +159,8 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     )
 
     assert "surrogate_evaluation" in summary
+    assert "cell_level" in summary["surrogate_evaluation"]
+    assert "protocol_level" in summary["surrogate_evaluation"]
     assert "strategy_comparison" in summary
     assert "random" in summary["strategy_comparison"]
     assert "greedy" in summary["strategy_comparison"]
@@ -167,4 +169,40 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     assert (tmp_path / "model_metrics.json").exists()
     assert (tmp_path / "optimization_history.csv").exists()
     assert (tmp_path / "benchmark_summary.json").exists()
+
+
+def test_dynamic_cycling_production_invariants(dynamic_adapter: DynamicCyclingAdapter):
+    """Proves production adapter enforces 92 cells, 47 protocols, and rejects corruptions."""
+    cells_df = dynamic_adapter.load_cells()
+    protocols_df = dynamic_adapter.load_protocols()
+
+    assert len(cells_df) == 92
+    assert cells_df["cell_id"].nunique() == 92
+    assert cells_df["protocol_id"].nunique() == 47
+    assert len(protocols_df) == 47
+    assert protocols_df["protocol_id"].nunique() == 47
+
+
+def test_dynamic_cycling_surrogate_evaluation_protocol_and_cell_level(dynamic_adapter: DynamicCyclingAdapter):
+    """Verifies surrogate evaluation computes both cell-level split and protocol-level Repeated K-Fold CV."""
+    surr = evaluate_surrogate_prediction(dynamic_adapter, random_state=42)
+
+    # Cell-level metrics
+    assert "cell_level" in surr
+    for model_name in ["random_forest", "gaussian_process"]:
+        assert model_name in surr["cell_level"]
+        for metric in ["mae", "rmse", "r2"]:
+            assert metric in surr["cell_level"][model_name]
+            assert isinstance(surr["cell_level"][model_name][metric], float)
+
+    # Protocol-level metrics
+    assert "protocol_level" in surr
+    proto_surr = surr["protocol_level"]
+    assert proto_surr["n_protocols"] == 47
+    for model_name in ["random_forest", "gaussian_process"]:
+        assert model_name in proto_surr
+        for stat in ["mean_mae", "std_mae", "mean_rmse", "std_rmse", "mean_r2", "std_r2"]:
+            assert stat in proto_surr[model_name]
+            assert isinstance(proto_surr[model_name][stat], float)
+
 

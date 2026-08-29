@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 from src.datasets.base import DatasetSpec
@@ -23,11 +24,17 @@ def normalize_candidate_schema(
 ) -> pd.DataFrame:
     """Ensures candidate dataframe has required columns and deduplicates based on canonical identity."""
     if isinstance(spec_or_columns, DatasetSpec):
-        id_cols = identity_columns(spec_or_columns)
         required_cols = list(spec_or_columns.candidate_columns)
-        if spec_or_columns.candidate_id_column and spec_or_columns.candidate_id_column in candidates.columns:
+        if spec_or_columns.candidate_id_column:
+            if spec_or_columns.candidate_id_column not in candidates.columns:
+                raise ValueError(
+                    f"Candidate pool is missing required candidate ID column: '{spec_or_columns.candidate_id_column}'"
+                )
             if spec_or_columns.candidate_id_column not in required_cols:
                 required_cols.append(spec_or_columns.candidate_id_column)
+            id_cols = [spec_or_columns.candidate_id_column]
+        else:
+            id_cols = list(spec_or_columns.candidate_columns)
     else:
         id_cols = list(spec_or_columns)
         required_cols = list(spec_or_columns)
@@ -36,9 +43,21 @@ def normalize_candidate_schema(
     if missing:
         raise ValueError(f"Candidate pool is missing required columns: {missing}")
 
-    # Use id_cols that exist in candidates
-    dedup_cols = [col for col in id_cols if col in candidates.columns]
-    return candidates.drop_duplicates(subset=dedup_cols).reset_index(drop=True)
+    # Detect conflicting duplicate candidate IDs
+    if isinstance(spec_or_columns, DatasetSpec) and spec_or_columns.candidate_id_column:
+        id_col = spec_or_columns.candidate_id_column
+        cand_cols = list(spec_or_columns.candidate_columns)
+        for cand_id, grp in candidates.groupby(id_col):
+            if len(grp) > 1:
+                first_vec = grp.iloc[0][cand_cols].to_numpy()
+                for idx in range(1, len(grp)):
+                    other_vec = grp.iloc[idx][cand_cols].to_numpy()
+                    if not np.array_equal(first_vec, other_vec):
+                        raise ValueError(
+                            f"Candidate ID {cand_id!r} has conflicting design feature vectors across duplicate rows"
+                        )
+
+    return candidates.drop_duplicates(subset=id_cols).reset_index(drop=True)
 
 
 def remove_observed(
