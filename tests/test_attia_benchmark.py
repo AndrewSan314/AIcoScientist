@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -17,12 +18,15 @@ from src.datasets.attia import (
 )
 from src.datasets.registry import get_dataset_adapter
 from src.evaluation.attia_benchmark import (
+    compute_bootstrap_mean_ci,
+    evaluate_trajectory_metrics,
     run_attia_optimization_benchmark,
     run_single_attia_optimization_trajectory,
 )
 from src.evaluation.attia_oracle import (
     AttiaSimulatorOracle,
     compute_or_load_reference_landscape,
+    generate_attia_simulator_seed,
     simulate_attia_policy,
 )
 
@@ -45,7 +49,14 @@ def test_attia_candidate_space_schema() -> None:
         assert np.all(np.isfinite(cand_pool[col].to_numpy(dtype=float)))
 
     # Verify zero oracle leakage in candidate space
-    forbidden_cols = ["simulated_lifetime", "lifetime", "target", "reference_mean_lifetime", "cycles"]
+    forbidden_cols = [
+        "simulated_lifetime",
+        "lifetime",
+        "target",
+        "reference_mean_lifetime",
+        "reference_true_lifetime",
+        "cycles",
+    ]
     for col in forbidden_cols:
         assert col not in cand_pool.columns
 
@@ -100,95 +111,189 @@ def test_attia_malformed_policy_rejection() -> None:
             load_raw_attia_policies(bad_csv4, expected_policies=None)
 
 
-def test_attia_simulator_oracle_determinism_and_stochasticity() -> None:
+def test_attia_fair_stochastic_seeding() -> None:
+    benchmark_seed = 42
+    policy_id = "ATTIA_P010"
+
+    # Invariant: Seed depends ONLY on benchmark_seed + policy_id
+    seed1 = generate_attia_simulator_seed(benchmark_seed, policy_id)
+    seed2 = generate_attia_simulator_seed(benchmark_seed, policy_id)
+    assert seed1 == seed2
+
+    # Different policy or different benchmark seed produces different simulator seeds
+    diff_policy_seed = generate_attia_simulator_seed(benchmark_seed, "ATTIA_P011")
+    diff_bench_seed = generate_attia_simulator_seed(43, policy_id)
+    assert seed1 != diff_policy_seed
+    assert seed1 != diff_bench_seed
+
+    # Simulator evaluation with that seed gives identical stochastic lifetime
+    adapter = AttiaAdapter()
+    pool = adapter.load_candidate_pool()
+    oracle = AttiaSimulatorOracle(pool, mode="hi", variance=True)
+    cand = pool[pool["policy_id"] == policy_id].iloc[0]
+
+    out1 = oracle.query(cand, seed=seed1)
+    out2 = oracle.query(cand, seed=seed1)
+    assert out1.target == out2.target
+    assert out1.metadata["simulator_seed"] == seed1
+    assert out1.metadata["simulated"] is True
+
+
+def test_attia_strict_oracle_contract() -> None:
     adapter = AttiaAdapter()
     pool = adapter.load_candidate_pool()
     oracle = AttiaSimulatorOracle(pool, mode="hi", variance=True)
 
-    cand = pool.iloc[0]
+    # 1. Missing policy_id -> reject
+    with pytest.raises(ValueError, match="requires 'policy_id'"):
+        oracle.query({"C1": 3.6, "C2": 4.0, "C3": 4.0, "C4": 4.8})
 
-    # Determinism: same seed produces identical lifetime
-    res1 = oracle.query(cand, seed=42)
-    res2 = oracle.query(cand, seed=42)
-    assert res1.target == res2.target
-    assert res1.metadata["simulated"] is True
-    assert res1.metadata["data_type"] == "simulated_lifetime"
-    assert res1.metadata["simulator_seed"] == 42
+    # 2. Unknown policy_id -> reject
+    with pytest.raises(KeyError, match="Unknown policy_id"):
+        oracle.query({"policy_id": "UNKNOWN_P999"})
 
-    # Stochasticity: different seeds produce different lifetimes
-    draws = [oracle.query(cand, seed=s).target for s in range(20)]
-    assert len(set(draws)) > 1, "Stochastic simulator should produce variation across different seeds"
+    # 3. Conflicting coordinate with canonical definition -> reject
+    valid_cand = pool.iloc[0].to_dict()
+    bad_coord_cand = {**valid_cand, "C1": 9.9}
+    with pytest.raises(ValueError, match="conflicts with canonical policy"):
+        oracle.query(bad_coord_cand)
 
 
-def test_attia_paired_seed_fairness() -> None:
+def test_attia_optimizer_evaluator_separation() -> None:
+    adapter = AttiaAdapter()
+    pool = adapter.load_candidate_pool()
+    oracle = AttiaSimulatorOracle(pool, mode="hi", variance=True)
+    feature_cols = list(adapter.spec.feature_columns)
+
+    # Run optimizer trajectory: accepts NO reference landscape, NO global max, NO thresholds
+    raw_hist = run_single_attia_optimization_trajectory(
+        candidate_pool=pool,
+        oracle=oracle,
+        feature_cols=feature_cols,
+        strategy="greedy",
+        init_indices=[0, 1, 2, 3, 4],
+        total_queries=3,
+        optimizer_seed=42,
+    )
+
+    # Optimizer trajectory must NOT contain evaluator-derived fields
+    evaluator_forbidden = ["simple_regret", "reference_true_lifetime", "reference_mean_lifetime", "hit_top_10_pct", "hit_top_5_pct"]
+    for row in raw_hist:
+        for field in evaluator_forbidden:
+            assert field not in row, f"Optimizer trajectory leaked evaluator field {field!r}"
+
+    # Verify trajectory contains standard experiment columns
+    expected_keys = {
+        "benchmark_seed",
+        "strategy",
+        "step",
+        "policy_id",
+        "C1",
+        "C2",
+        "C3",
+        "C4",
+        "simulator_seed",
+        "simulated_lifetime",
+        "best_observed_lifetime",
+    }
+    assert set(raw_hist[0].keys()) == expected_keys
+
+
+def test_attia_evaluator_stage_metrics() -> None:
     adapter = AttiaAdapter()
     pool = adapter.load_candidate_pool()
     oracle = AttiaSimulatorOracle(pool, mode="hi", variance=True)
     feature_cols = list(adapter.spec.feature_columns)
 
     ref_df, ref_meta = compute_or_load_reference_landscape(adapter)
-    ref_lookup = dict(zip(ref_df["policy_id"].astype(str), ref_df["reference_mean_lifetime"].astype(float)))
-    evaluator_meta = {
-        "global_max": ref_meta["global_max"],
-        "top_10_pct_val": ref_meta["top_10_pct_val"],
-        "top_5_pct_val": ref_meta["top_5_pct_val"],
-        "ref_lookup": ref_lookup,
-    }
+    ref_lookup = dict(zip(ref_df["policy_id"].astype(str), ref_df["reference_true_lifetime"].astype(float)))
 
     init_indices = [0, 1, 2, 3, 4]
-    opt_seed = 123
+    init_pids = [str(pool.iloc[i]["policy_id"]) for i in init_indices]
 
-    # Run Greedy and GP-UCB with same warmup and seed
-    hist_greedy = run_single_attia_optimization_trajectory(
-        candidate_pool=pool,
-        oracle=oracle,
-        feature_cols=feature_cols,
-        strategy="greedy",
-        init_indices=init_indices,
-        total_queries=3,
-        evaluator_meta=evaluator_meta,
-        optimizer_seed=opt_seed,
-    )
-    hist_ucb = run_single_attia_optimization_trajectory(
+    raw_hist = run_single_attia_optimization_trajectory(
         candidate_pool=pool,
         oracle=oracle,
         feature_cols=feature_cols,
         strategy="gp_ucb",
         init_indices=init_indices,
         total_queries=3,
-        evaluator_meta=evaluator_meta,
-        optimizer_seed=opt_seed,
+        optimizer_seed=100,
     )
 
-    # Initial warm-ups must match exactly
-    assert hist_greedy[0]["best_simulated_lifetime"] == hist_ucb[0]["best_simulated_lifetime"]
-    assert hist_greedy[0]["best_reference_mean"] == hist_ucb[0]["best_reference_mean"]
-    assert hist_greedy[0]["simple_regret"] == hist_ucb[0]["simple_regret"]
+    eval_hist = evaluate_trajectory_metrics(
+        raw_history=raw_hist,
+        init_pids=init_pids,
+        ref_lookup=ref_lookup,
+        global_max=ref_meta["global_max"],
+        top_10_pct_val=ref_meta["top_10_pct_val"],
+        top_5_pct_val=ref_meta["top_5_pct_val"],
+    )
+
+    assert len(eval_hist) == len(raw_hist)
+    for row in eval_hist:
+        assert "simple_regret" in row
+        assert row["simple_regret"] >= 0.0
+        assert "hit_top_10_pct" in row
+        assert "hit_top_5_pct" in row
+        assert "best_reference_true" in row
 
 
-def test_attia_reference_landscape_isolation() -> None:
+def test_attia_reference_manifest_and_cache_invalidation() -> None:
     adapter = AttiaAdapter()
-    cand_pool = adapter.load_candidate_pool()
-
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_ref_path = Path(tmpdir) / "ref_test.csv"
-        ref_df, meta = compute_or_load_reference_landscape(
+        tmp_csv = Path(tmpdir) / "reference_landscape.csv"
+        tmp_manifest = Path(tmpdir) / "reference_landscape_manifest.json"
+
+        # First build
+        ref_df1, meta1 = compute_or_load_reference_landscape(
             adapter,
-            eval_seeds=list(range(5)),  # Fast subset for test
-            output_path=tmp_ref_path,
+            eval_seeds=list(range(5)),
+            output_path=tmp_csv,
             force_recompute=True,
         )
+        assert meta1["cache_reused"] is False
+        assert tmp_manifest.exists()
 
-        assert len(ref_df) == 224
-        assert "reference_mean_lifetime" in ref_df.columns
-        assert "reference_true_lifetime" in ref_df.columns
-        assert meta["global_max"] > 0
-        assert meta["top_10_pct_val"] <= meta["global_max"]
-        assert meta["top_5_pct_val"] <= meta["global_max"]
+        # Second load -> should reuse cache
+        ref_df2, meta2 = compute_or_load_reference_landscape(
+            adapter,
+            eval_seeds=list(range(5)),
+            output_path=tmp_csv,
+            force_recompute=False,
+        )
+        assert meta2["cache_reused"] is True
+        assert len(ref_df2) == 224
 
-        # Ensure candidate pool remains uncontaminated
-        for col in ["reference_mean_lifetime", "reference_true_lifetime"]:
-            assert col not in cand_pool.columns
+        # Invalidate manifest (e.g. change simulator_version in manifest)
+        with open(tmp_manifest, "r", encoding="utf-8") as f:
+            mdata = json.load(f)
+        mdata["simulator_version"] = "99.9.9"
+        with open(tmp_manifest, "w", encoding="utf-8") as f:
+            json.dump(mdata, f)
+
+        # Third load -> detects invalid manifest, rebuilds cache
+        ref_df3, meta3 = compute_or_load_reference_landscape(
+            adapter,
+            eval_seeds=list(range(5)),
+            output_path=tmp_csv,
+            force_recompute=False,
+        )
+        assert meta3["cache_reused"] is False
+
+
+def test_attia_deterministic_bootstrap_ci() -> None:
+    data = np.array([10.0, 20.0, 15.0, 30.0, 25.0, 18.0, 22.0, 14.0] * 4, dtype=float)
+    mean_val = float(np.mean(data))
+
+    ci_low1, ci_high1 = compute_bootstrap_mean_ci(data, n_bootstraps=2000, ci=0.95, seed=42)
+    ci_low2, ci_high2 = compute_bootstrap_mean_ci(data, n_bootstraps=2000, ci=0.95, seed=42)
+
+    # Determinism
+    assert ci_low1 == ci_low2
+    assert ci_high1 == ci_high2
+    # Consistency
+    assert ci_low1 <= mean_val <= ci_high1
 
 
 def test_attia_benchmark_end_to_end() -> None:
@@ -207,16 +312,21 @@ def test_attia_benchmark_end_to_end() -> None:
 
         assert summary["benchmark"] == "Attia et al. 2020 Fast-Charging Optimization Benchmark"
         assert summary["benchmark_nature"] == "simulator != experimental dataset"
+        assert summary["reference_objective"] == "reference_true_lifetime"
         assert summary["total_valid_policies"] == 224
         assert (out_dir / "benchmark_summary.json").exists()
         assert (out_dir / "optimization_history.csv").exists()
         assert (out_dir / "budget_sweep.csv").exists()
         assert (out_dir / "budget_sweep_summary.json").exists()
         assert (out_dir / "reference_landscape.csv").exists()
+        assert (out_dir / "reference_landscape_manifest.json").exists()
 
         # Check optimization history structure
         hist_df = pd.read_csv(out_dir / "optimization_history.csv")
         assert "simple_regret" in hist_df.columns
+        assert "simulator_seed" in hist_df.columns
+        assert "simulated_lifetime" in hist_df.columns
+        assert "reference_true_lifetime" in hist_df.columns
         assert "strategy" in hist_df.columns
         assert set(hist_df["strategy"].unique()) == {"random", "greedy", "gp_ucb"}
 

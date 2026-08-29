@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import datetime
+import hashlib
+import json
 import logging
 import math
 import random
@@ -15,6 +18,21 @@ from src.evaluation.oracle import OracleResponse
 logger = logging.getLogger(__name__)
 
 DEFAULT_EVAL_SEEDS: list[int] = list(range(1000, 1050))  # 50 fixed evaluation seeds
+SIMULATOR_VERSION: str = "1.0.0"
+ATTIA_SOURCE_COMMIT_SHA: str = "0068fd0136bcd65884f5cd94b2b967c1ba73a668"
+
+
+def generate_attia_simulator_seed(benchmark_seed: int, policy_id: str) -> int:
+    """Generates a deterministic integer seed for the Attia simulator from benchmark_seed and policy_id.
+
+    Fair Stochastic Seeding Invariant:
+    For a given benchmark_seed, querying a specific policy_id always receives the exact same stochastic
+    noise draw, regardless of strategy, query order, or query step.
+    """
+    key = f"attia_seed:{benchmark_seed}:{policy_id}".encode("utf-8")
+    h = hashlib.sha256(key).hexdigest()
+    # 31-bit positive integer
+    return int(h[:8], 16) % (2**31 - 1)
 
 
 def simulate_attia_policy(
@@ -32,7 +50,7 @@ def simulate_attia_policy(
     - Joule heating from internal resistance: e_gen = (I^2 * R_int) / V.
     - 4 successive 20% SOC charge steps at rates C1, C2, C3, C4.
     - Arrhenius degradation rate accumulation: deg_rates = sum(A * exp(-Ea / (k_B * T(r, t))) * dt).
-    - True lifetime: lifetime_true = int(1 / deg_rates / 2e10) + 500 (for mode 'hi').
+    - True latent lifetime: lifetime_true = int(1 / deg_rates / 2e10) + 500 (for mode 'hi').
     - Measured lifetime with cell-to-cell stochastic variation: lifetime_meas = int(Gauss(lifetime_true, sigma=164)).
 
     NOTE: Outputs are simulated lifetimes from a numerical model with stochastic noise, NOT physical experiments.
@@ -148,7 +166,13 @@ def simulate_attia_policy(
 
 
 class AttiaSimulatorOracle:
-    """Stochastic simulator oracle wrapping Attia et al. 2020 fast-charging PDE simulation."""
+    """Stochastic simulator oracle wrapping Attia et al. 2020 fast-charging PDE simulation.
+
+    Strict Contract:
+    - Accepts ONLY candidates from the canonical 224-policy universe.
+    - Requires 'policy_id'.
+    - Rejects missing, unknown, or coordinate-conflicting queries.
+    """
 
     def __init__(
         self,
@@ -178,39 +202,29 @@ class AttiaSimulatorOracle:
         candidate: Mapping[str, Any] | pd.Series,
         seed: int = 0,
     ) -> OracleResponse:
-        """Queries the simulator oracle for a given candidate policy and stochastic experiment seed."""
+        """Queries the simulator oracle for a canonical candidate policy and stochastic experiment seed."""
         cand_dict = candidate.to_dict() if isinstance(candidate, pd.Series) else dict(candidate)
 
-        pid = None
-        if "policy_id" in cand_dict and str(cand_dict["policy_id"]) in self._policy_lookup:
-            pid = str(cand_dict["policy_id"])
-            stored = self._policy_lookup[pid]
-            # Validate coordinates if provided
-            for col in ["C1", "C2", "C3", "C4"]:
-                if col in cand_dict:
-                    if not np.isclose(float(cand_dict[col]), stored[col], atol=1e-3):
-                        raise ValueError(
-                            f"Query coordinate {col}={cand_dict[col]} conflicts with policy {pid} definition ({stored[col]})"
-                        )
-            c1, c2, c3, c4 = stored["C1"], stored["C2"], stored["C3"], stored["C4"]
-        else:
-            # Match by C1, C2, C3 coordinates
-            if not all(k in cand_dict for k in ["C1", "C2", "C3"]):
-                raise ValueError("Candidate query must provide 'policy_id' or ['C1', 'C2', 'C3']")
-            c1, c2, c3 = float(cand_dict["C1"]), float(cand_dict["C2"]), float(cand_dict["C3"])
-            c4 = float(cand_dict["C4"]) if "C4" in cand_dict else float(compute_expected_c4(c1, c2, c3))
+        if "policy_id" not in cand_dict or cand_dict["policy_id"] is None:
+            raise ValueError("AttiaSimulatorOracle requires 'policy_id' in candidate query.")
 
-            # Reverse lookup policy_id if possible
-            for lookup_pid, lookup_vals in self._policy_lookup.items():
-                if (
-                    np.isclose(c1, lookup_vals["C1"], atol=1e-3)
-                    and np.isclose(c2, lookup_vals["C2"], atol=1e-3)
-                    and np.isclose(c3, lookup_vals["C3"], atol=1e-3)
-                ):
-                    pid = lookup_pid
-                    break
-            if pid is None:
-                pid = "custom_policy"
+        pid = str(cand_dict["policy_id"])
+        if pid not in self._policy_lookup:
+            raise KeyError(
+                f"Unknown policy_id {pid!r}. AttiaSimulatorOracle only accepts canonical policies "
+                f"({len(self._policy_lookup)} valid policies)."
+            )
+
+        stored = self._policy_lookup[pid]
+        # Validate coordinates if provided (suitable for 3-decimal author policy file)
+        for col in ["C1", "C2", "C3", "C4"]:
+            if col in cand_dict and cand_dict[col] is not None:
+                if not np.isclose(float(cand_dict[col]), stored[col], atol=1e-3):
+                    raise ValueError(
+                        f"Candidate coordinate {col}={cand_dict[col]} conflicts with canonical policy {pid} definition ({stored[col]})."
+                    )
+
+        c1, c2, c3, c4 = stored["C1"], stored["C2"], stored["C3"], stored["C4"]
 
         sim_lifetime = simulate_attia_policy(
             c1=c1,
@@ -243,10 +257,15 @@ def compute_or_load_reference_landscape(
     output_path: Path | str | None = None,
     force_recompute: bool = False,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Computes or loads the reference expected performance landscape across all policies for regret computation.
+    """Computes or loads the reference landscape across all policies with manifest validation.
+
+    Benchmark Reference Objective:
+    - Primary Latent Objective: `reference_true_lifetime` = simulator(policy, variance=False)
+      (representing the exact underlying deterministic physical PDE solution).
+    - Diagnostic Metrics: `reference_mean_lifetime` and `reference_std_lifetime` across 50 stochastic seeds.
 
     IMPORTANT: This reference table is strictly evaluator-only and must never be exposed to candidate generation,
-    surrogates, or optimizers.
+    surrogates, or acquisition/optimization loops.
     """
     if eval_seeds is None:
         eval_seeds = DEFAULT_EVAL_SEEDS
@@ -257,19 +276,53 @@ def compute_or_load_reference_landscape(
     else:
         output_path = Path(output_path)
 
-    if output_path.exists() and not force_recompute:
+    manifest_path = output_path.parent / "reference_landscape_manifest.json"
+
+    # Compute hash of raw policies file for manifest verification
+    policies_raw_file = adapter.raw_policies_file
+    policies_file_sha256 = ""
+    if policies_raw_file.exists():
+        policies_file_sha256 = hashlib.sha256(policies_raw_file.read_bytes()).hexdigest()
+
+    # Validate cache against manifest
+    cache_valid = False
+    if output_path.exists() and manifest_path.exists() and not force_recompute:
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest_data = json.load(f)
+
+            if (
+                manifest_data.get("attia_source_commit_sha") == ATTIA_SOURCE_COMMIT_SHA
+                and manifest_data.get("policies_file_sha256") == policies_file_sha256
+                and manifest_data.get("simulator_mode") == mode
+                and manifest_data.get("simulator_version") == SIMULATOR_VERSION
+                and manifest_data.get("evaluation_seed_list") == list(eval_seeds)
+                and manifest_data.get("n_policies") == len(adapter.load_policies())
+                and manifest_data.get("reference_objective") == "reference_true_lifetime"
+            ):
+                cache_valid = True
+        except Exception:
+            cache_valid = False
+
+    if cache_valid:
         ref_df = pd.read_csv(output_path)
-        if len(ref_df) == len(adapter.load_policies()) and "reference_mean_lifetime" in ref_df.columns:
-            global_max = float(ref_df["reference_mean_lifetime"].max())
-            top_10_pct = float(np.percentile(ref_df["reference_mean_lifetime"], 90))
-            top_5_pct = float(np.percentile(ref_df["reference_mean_lifetime"], 95))
+        if (
+            len(ref_df) == len(adapter.load_policies())
+            and "reference_true_lifetime" in ref_df.columns
+            and "reference_mean_lifetime" in ref_df.columns
+        ):
+            global_max = float(ref_df["reference_true_lifetime"].max())
+            top_10_pct = float(np.percentile(ref_df["reference_true_lifetime"], 90))
+            top_5_pct = float(np.percentile(ref_df["reference_true_lifetime"], 95))
             meta = {
                 "global_max": global_max,
                 "top_10_pct_val": top_10_pct,
                 "top_5_pct_val": top_5_pct,
+                "reference_objective": "reference_true_lifetime",
                 "n_eval_seeds": len(eval_seeds),
                 "eval_seeds": list(eval_seeds),
                 "mode": mode,
+                "cache_reused": True,
             }
             return ref_df, meta
 
@@ -285,7 +338,7 @@ def compute_or_load_reference_landscape(
         pid = str(row["policy_id"])
         c1, c2, c3, c4 = float(row["C1"]), float(row["C2"]), float(row["C3"]), float(row["C4"])
 
-        # Compute deterministic true lifetime (sigma=0)
+        # Compute deterministic true latent lifetime (sigma=0)
         true_life = simulate_attia_policy(c1, c2, c3, mode=mode, variance=False, seed=0)
 
         # Compute stochastic draws over fixed evaluation seeds
@@ -304,7 +357,7 @@ def compute_or_load_reference_landscape(
                 "C2": c2,
                 "C3": c3,
                 "C4": c4,
-                "reference_true_lifetime": true_life,
+                "reference_true_lifetime": int(true_life),
                 "reference_mean_lifetime": mean_life,
                 "reference_std_lifetime": std_life,
             }
@@ -314,17 +367,39 @@ def compute_or_load_reference_landscape(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ref_df.to_csv(output_path, index=False)
 
-    global_max = float(ref_df["reference_mean_lifetime"].max())
-    top_10_pct = float(np.percentile(ref_df["reference_mean_lifetime"], 90))
-    top_5_pct = float(np.percentile(ref_df["reference_mean_lifetime"], 95))
+    # Write reference landscape manifest
+    csv_hash = hashlib.sha256(output_path.read_bytes()).hexdigest()
+    manifest_data = {
+        "attia_source_commit_sha": ATTIA_SOURCE_COMMIT_SHA,
+        "policies_file_sha256": policies_file_sha256,
+        "simulator_mode": mode,
+        "simulator_version": SIMULATOR_VERSION,
+        "n_policies": len(ref_df),
+        "evaluation_seed_list": list(eval_seeds),
+        "reference_objective": "reference_true_lifetime",
+        "csv_sha256": csv_hash,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "notes": (
+            "reference_true_lifetime is the deterministic latent PDE thermal-degradation objective (variance=False). "
+            "reference_mean_lifetime is the sample mean across 50 stochastic Gaussian variation draws (sigma=164)."
+        ),
+    }
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest_data, f, indent=2)
+
+    global_max = float(ref_df["reference_true_lifetime"].max())
+    top_10_pct = float(np.percentile(ref_df["reference_true_lifetime"], 90))
+    top_5_pct = float(np.percentile(ref_df["reference_true_lifetime"], 95))
 
     meta = {
         "global_max": global_max,
         "top_10_pct_val": top_10_pct,
         "top_5_pct_val": top_5_pct,
+        "reference_objective": "reference_true_lifetime",
         "n_eval_seeds": len(eval_seeds),
         "eval_seeds": list(eval_seeds),
         "mode": mode,
+        "cache_reused": False,
     }
 
     return ref_df, meta
