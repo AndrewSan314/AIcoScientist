@@ -56,15 +56,16 @@
     "reference_true_lifetime": 1079.0
   },
   "best_known_continuous_reference": {
-    "best_known_C1": 6.0,
-    "best_known_C2": 4.8,
-    "best_known_C3": 4.0,
-    "best_known_C4": 4.8,
-    "best_known_latent_lifetime": 1079.0,
-    "candidate_id": "ATTIA_CONT_f65b45d60d8b",
-    "number_of_reference_starts_evaluated": 51,
-    "reference_search_method": "multi_start_lbfgs_on_latent_pde",
+    "best_known_C1": 5.1477,
+    "best_known_C2": 4.6627,
+    "best_known_C3": 4.6151,
+    "best_known_C4": 4.8095,
+    "best_known_latent_lifetime": 1127.0,
+    "candidate_id": "ATTIA_CONT_363a01b5eaf0",
+    "number_of_sobol_samples_evaluated": 2000,
+    "number_of_local_refinements": 30,
+    "reference_search_method": "derivative_free_sobol_plus_nelder_mead",
     "reference_seed": 42,
-    "description": "Best-known continuous simulator reference determined via deterministic multi-start optimization on latent simulator (variance=False). Not proven global optimum."
+    "description": "Best-known continuous simulator reference determined via derivative-free quasi-random scan and Nelder-Mead local refinement on latent PDE (variance=False). Not mathematically proven global optimum."
   }
 }

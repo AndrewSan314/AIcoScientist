@@ -12,6 +12,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from sklearn.preprocessing import StandardScaler
+import xgboost as xgb
 
 from src.build_dataset import build_dataset
 from src.datasets.base import DatasetAdapter, DatasetSpec
@@ -51,6 +52,19 @@ def _gp_model():
         kernel=kernel,
         normalize_y=True,
         n_restarts_optimizer=2,
+        random_state=42,
+    )
+
+
+def _xgb_model() -> xgb.XGBRegressor:
+    return xgb.XGBRegressor(
+        n_estimators=200,
+        max_depth=2,
+        learning_rate=0.03,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
         random_state=42,
     )
 
@@ -156,6 +170,11 @@ def train_model(
     rf_pred = rf_model.predict(X_test)
     rf_metrics = _regression_metrics(y_test, rf_pred, len(df), spec.target_column)
 
+    xgb_model = _xgb_model()
+    xgb_model.fit(X_train, y_train)
+    xgb_pred = xgb_model.predict(X_test)
+    xgb_metrics = _regression_metrics(y_test, xgb_pred, len(df), spec.target_column)
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
@@ -166,6 +185,8 @@ def train_model(
 
     final_rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
     final_rf_model.fit(X, y)
+    final_xgb_model = _xgb_model()
+    final_xgb_model.fit(X, y)
     final_scaler = StandardScaler()
     X_scaled = final_scaler.fit_transform(X)
     final_gp_model = _gp_model()
@@ -185,24 +206,32 @@ def train_model(
             "target": spec.target_column,
             "objective": spec.objective,
             "model": final_rf_model,
+            "xgb_model": final_xgb_model,
             "fill_values": X.median(numeric_only=True).to_dict(),
             "gp_model": final_gp_model,
             "scaler": final_scaler,
             "rf_metrics": rf_metrics,
+            "xgb_metrics": xgb_metrics,
             "gp_metrics": gp_metrics,
             "model_versions": {
                 "baseline": "RandomForestRegressor",
+                "challenger": "XGBRegressor",
                 "surrogate": "GaussianProcessRegressor",
                 "acquisition": "UCB beta=1.0",
             },
         },
         output_path,
     )
-    metrics = {**rf_metrics, "rf_metrics": rf_metrics, "gp_metrics": gp_metrics}
+    metrics = {**rf_metrics, "rf_metrics": rf_metrics, "xgb_metrics": xgb_metrics, "gp_metrics": gp_metrics}
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     importance = pd.DataFrame(
-        {"feature": spec.feature_columns, "importance": final_rf_model.feature_importances_}
+        {
+            "feature": spec.feature_columns,
+            "importance": final_rf_model.feature_importances_,
+            "rf_importance": final_rf_model.feature_importances_,
+            "xgb_importance": final_xgb_model.feature_importances_,
+        }
     ).sort_values("importance", ascending=False)
     importance.to_csv(importance_path, index=False)
     return metrics
@@ -213,7 +242,9 @@ def main():
     print(f"Saved: {MODEL_FILE}")
     print(f"Saved: {METRICS_FILE}")
     print(f"Saved: {IMPORTANCE_FILE}")
-    print(f"Metrics: MAE={metrics['mae']:.2f}, RMSE={metrics['rmse']:.2f}, R2={metrics['r2']:.2f}")
+    print(f"Metrics (RF):  MAE={metrics['rf_metrics']['mae']:.2f}, RMSE={metrics['rf_metrics']['rmse']:.2f}, R2={metrics['rf_metrics']['r2']}")
+    print(f"Metrics (XGB): MAE={metrics['xgb_metrics']['mae']:.2f}, RMSE={metrics['xgb_metrics']['rmse']:.2f}, R2={metrics['xgb_metrics']['r2']}")
+    print(f"Metrics (GP):  MAE={metrics['gp_metrics']['mae']:.2f}, RMSE={metrics['gp_metrics']['rmse']:.2f}, R2={metrics['gp_metrics']['r2']}")
 
 
 if __name__ == "__main__":

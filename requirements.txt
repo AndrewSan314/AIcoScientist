@@ -11,4 +11,5 @@ scikit-image
 segment-anything
 h5py
 scipy
+xgboost
 

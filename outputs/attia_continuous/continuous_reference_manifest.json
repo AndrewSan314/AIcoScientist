@@ -1,0 +1,18 @@
+{
+  "simulator_version": "1.0.0",
+  "attia_source_commit": "0068fd0136bcd65884f5cd94b2b967c1ba73a668",
+  "search_space_name": "attia_continuous_fast_charging",
+  "search_method": "derivative_free_sobol_plus_nelder_mead",
+  "n_sobol_samples": 2000,
+  "n_local_starts": 30,
+  "evaluator_seed": 42,
+  "variance_mode": false,
+  "best_known_candidate_id": "ATTIA_CONT_363a01b5eaf0",
+  "best_known_latent_lifetime": 1127.0,
+  "coordinates": {
+    "C1": 5.1477,
+    "C2": 4.6627,
+    "C3": 4.6151,
+    "C4": 4.8095
+  }
+}

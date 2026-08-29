@@ -41,6 +41,11 @@ class DatasetSpec:
     split_group_columns: list[str] = field(default_factory=list)
     oracle_columns: list[str] = field(default_factory=list)
     observation_columns: list[str] = field(default_factory=list)
+    pre_experiment_features: list[str] = field(default_factory=list)
+    post_experiment_characterization: list[str] = field(default_factory=list)
+    targets: list[str] = field(default_factory=list)
+    constraints: list[str] = field(default_factory=list)
+    candidate_variables: list[str] = field(default_factory=list)
     feature_horizon: int | None = None
     source_dataset: str | None = None
     source_version: str | None = None
@@ -56,6 +61,18 @@ class DatasetSpec:
             raise ValueError("target_column is required and cannot be empty")
         if not self.feature_columns:
             raise ValueError("feature_columns must not be empty")
+
+        # Initialize defaults for new scientific contract fields if not provided
+        if not self.targets:
+            object.__setattr__(self, "targets", [self.target_column])
+        if not self.candidate_variables:
+            object.__setattr__(self, "candidate_variables", list(self.candidate_columns))
+        if not self.pre_experiment_features:
+            if self.candidate_columns:
+                object.__setattr__(self, "pre_experiment_features", list(self.candidate_columns))
+            else:
+                pre_feats = [c for c in self.feature_columns if c not in self.post_experiment_characterization]
+                object.__setattr__(self, "pre_experiment_features", pre_feats)
 
         if self.supports_optimization:
             if not self.candidate_columns:
@@ -89,6 +106,14 @@ class DatasetSpec:
             raise ValueError("oracle_columns must not contain duplicates")
         if len(set(self.observation_columns)) != len(self.observation_columns):
             raise ValueError("observation_columns must not contain duplicates")
+        if len(set(self.pre_experiment_features)) != len(self.pre_experiment_features):
+            raise ValueError("pre_experiment_features must not contain duplicates")
+        if len(set(self.post_experiment_characterization)) != len(self.post_experiment_characterization):
+            raise ValueError("post_experiment_characterization must not contain duplicates")
+        if len(set(self.targets)) != len(self.targets):
+            raise ValueError("targets must not contain duplicates")
+        if len(set(self.candidate_variables)) != len(self.candidate_variables):
+            raise ValueError("candidate_variables must not contain duplicates")
 
         for col in self.split_group_columns:
             if not isinstance(col, str) or not col.strip():
@@ -99,6 +124,18 @@ class DatasetSpec:
         for col in self.observation_columns:
             if not isinstance(col, str) or not col.strip():
                 raise ValueError("observation_columns must not contain empty column names")
+        for col in self.pre_experiment_features:
+            if not isinstance(col, str) or not col.strip():
+                raise ValueError("pre_experiment_features must not contain empty column names")
+        for col in self.post_experiment_characterization:
+            if not isinstance(col, str) or not col.strip():
+                raise ValueError("post_experiment_characterization must not contain empty column names")
+        for col in self.targets:
+            if not isinstance(col, str) or not col.strip():
+                raise ValueError("targets must not contain empty column names")
+        for col in self.candidate_variables:
+            if not isinstance(col, str) or not col.strip():
+                raise ValueError("candidate_variables must not contain empty column names")
 
         if self.target_column in self.feature_columns:
             raise ValueError(f"target_column {self.target_column!r} cannot be in feature_columns")
@@ -121,6 +158,31 @@ class DatasetSpec:
         if obs_oracle_overlap:
             raise ValueError(
                 f"observation_columns and oracle_columns must not overlap: {sorted(obs_oracle_overlap)}"
+            )
+
+        # Pre/Post experiment characterization leakage checks
+        pre_post_overlap = set(self.pre_experiment_features) & set(self.post_experiment_characterization)
+        if pre_post_overlap:
+            raise ValueError(
+                f"pre_experiment_features and post_experiment_characterization must not overlap: {sorted(pre_post_overlap)}"
+            )
+
+        cand_post_overlap = set(self.candidate_columns) & set(self.post_experiment_characterization)
+        if cand_post_overlap:
+            raise ValueError(
+                f"candidate_columns and post_experiment_characterization must not overlap: {sorted(cand_post_overlap)}"
+            )
+
+        cand_var_post_overlap = set(self.candidate_variables) & set(self.post_experiment_characterization)
+        if cand_var_post_overlap:
+            raise ValueError(
+                f"candidate_variables and post_experiment_characterization must not overlap: {sorted(cand_var_post_overlap)}"
+            )
+
+        pre_oracle_overlap = set(self.pre_experiment_features) & set(self.oracle_columns)
+        if pre_oracle_overlap:
+            raise ValueError(
+                f"pre_experiment_features and oracle_columns must not overlap: {sorted(pre_oracle_overlap)}"
             )
 
 

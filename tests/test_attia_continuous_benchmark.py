@@ -58,12 +58,12 @@ def test_optimizer_evaluator_strict_isolation() -> None:
     init_indices = [0, 5, 10, 15, 20]
 
     # Run optimizer trajectory
-    raw_hist = run_single_attia_continuous_trajectory(
+    raw_hist, decision_trace = run_single_attia_continuous_trajectory(
         search_space=space,
         discrete_pool=discrete_pool,
         init_indices=init_indices,
         total_queries=3,
-        strategy="gp_ucb",
+        strategy="adaptive",
         optimizer_seed=7,
         n_candidates_per_step=50,
         refine_continuous=False,
@@ -80,9 +80,10 @@ def test_optimizer_evaluator_strict_isolation() -> None:
         assert "simulated_lifetime" in row
         assert "candidate_id" in row
         assert "query_id" in row
+        assert "controller_reason" in row
 
     # Evaluate with post-hoc evaluator
-    evaluated_hist = evaluate_continuous_trajectory(
+    evaluated_hist, ref_under = evaluate_continuous_trajectory(
         raw_trajectory=raw_hist,
         init_indices=init_indices,
         discrete_pool=discrete_pool,
@@ -108,11 +109,41 @@ def test_programmatic_discrete_grid_optimum_and_continuous_reference(tmp_path: P
     cont_ref = compute_or_load_continuous_reference(
         search_space=space,
         output_dir=tmp_path,
-        n_starts=5,
+        discrete_pool=discrete_pool,
+        n_sobol_samples=100,
+        n_local_starts=10,
         seed=42,
     )
     assert cont_ref["best_known_latent_lifetime"] >= 1079.0
     assert (tmp_path / "continuous_reference.json").is_file()
+    assert (tmp_path / "continuous_reference_manifest.json").is_file()
+
+
+def test_reference_underestimation_detection() -> None:
+    adapter = AttiaAdapter()
+    space = adapter.continuous_search_space()
+    discrete_pool = adapter.load_candidate_pool()
+
+    init_indices = [0, 1, 2, 3, 4]
+    raw_hist, _ = run_single_attia_continuous_trajectory(
+        search_space=space,
+        discrete_pool=discrete_pool,
+        init_indices=init_indices,
+        total_queries=2,
+        strategy="random",
+        optimizer_seed=42,
+        n_candidates_per_step=20,
+    )
+
+    # Intentionally set an artificially low reference lifetime to trigger detection
+    _, ref_under = evaluate_continuous_trajectory(
+        raw_trajectory=raw_hist,
+        init_indices=init_indices,
+        discrete_pool=discrete_pool,
+        continuous_ref_lifetime=500.0,
+        discrete_grid_optimum_lifetime=1079.0,
+    )
+    assert ref_under is True
 
 
 def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
@@ -122,6 +153,7 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
         budgets=(6, 7),
         initial_policies=5,
         n_seeds=2,
+        n_candidates_per_step=100,
         output_dir=tmp_path,
     )
 
@@ -129,9 +161,16 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     assert "derived_discrete_grid_optimum" in summary
     assert "best_known_continuous_reference" in summary
     assert "best_discovered_per_strategy" in summary
+    assert "adaptive" in summary["best_discovered_per_strategy"]
+    assert "expected_improvement" in summary["best_discovered_per_strategy"]
+    assert "turbo_nei" in summary["best_discovered_per_strategy"]
+    assert "nei" in summary["best_discovered_per_strategy"]
     assert "paired_comparisons" in summary
     assert (tmp_path / "benchmark_summary.json").is_file()
     assert (tmp_path / "continuous_reference.json").is_file()
+    assert (tmp_path / "continuous_reference_manifest.json").is_file()
     assert (tmp_path / "search_space_summary.json").is_file()
     assert (tmp_path / "optimization_history.csv").is_file()
     assert (tmp_path / "proposed_protocols.csv").is_file()
+    assert (tmp_path / "adaptive_decision_trace.csv").is_file()
+    assert (tmp_path / "turbo_state_history.csv").is_file()

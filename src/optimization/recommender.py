@@ -93,6 +93,14 @@ def recommend(
         )
     ]
     candidates[f"predicted_{adapter.spec.target_column}"] = mean
+    candidates["recommendation_reason"] = [
+        f"Recommended for high predicted {adapter.spec.target_column} (mean={m:.2f}) with epistemic uncertainty (std={s:.2f}) and novelty distance ({d:.2f})."
+        for m, s, d in zip(
+            candidates["predicted_mean"],
+            candidates["predicted_std"],
+            candidates["nearest_distance"],
+        )
+    ]
     top = select_top_n(candidates, n)
     result = adapter.format_recommendations(top, observed)
     if output_path is None:
