@@ -23,6 +23,16 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
     legacy = dataset == "si_mxene"
 
     # 1. Benchmark mode handling
+    if mode == "continuous_benchmark":
+        if dataset == "attia":
+            print(f"Running continuous search-space benchmark suite for dataset: {dataset}...")
+            from src.evaluation.attia_continuous_benchmark import run_attia_continuous_benchmark
+            run_attia_continuous_benchmark(adapter)
+            print(f"Continuous benchmark completed. Artifacts saved to: outputs/attia_continuous/")
+            return
+        else:
+            raise ValueError(f"Dataset {dataset!r} does not currently support continuous_benchmark mode.")
+
     if mode == "benchmark" or (not legacy and mode == "full"):
         if dataset == "severson":
             print(f"Running benchmark suite for dataset: {dataset}...")
@@ -120,12 +130,13 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the dataset pipeline")
     parser.add_argument("--dataset", choices=("si_mxene", "severson", "dynamic_cycling", "attia"), default="si_mxene")
-    parser.add_argument("--mode", choices=("train", "recommend", "full", "benchmark"), default="full")
+    parser.add_argument("--mode", choices=("train", "recommend", "full", "benchmark", "continuous_benchmark"), default="full")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = _parse_args()
     main(dataset=args.dataset, mode=args.mode)
+
 
 

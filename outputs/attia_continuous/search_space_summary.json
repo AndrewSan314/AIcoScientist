@@ -1,0 +1,50 @@
+{
+  "search_space_name": "attia_continuous_fast_charging",
+  "free_variables": [
+    {
+      "name": "C1",
+      "type": "continuous",
+      "lower": 3.6,
+      "upper": 8.0
+    },
+    {
+      "name": "C2",
+      "type": "continuous",
+      "lower": 3.6,
+      "upper": 7.0
+    },
+    {
+      "name": "C3",
+      "type": "continuous",
+      "lower": 3.6,
+      "upper": 5.6
+    }
+  ],
+  "derived_variables": [
+    {
+      "name": "C4",
+      "depends_on": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "positive_c4_denominator",
+      "description": "10-minute charging constraint denominator must be strictly positive"
+    },
+    {
+      "name": "c4_bounds",
+      "description": "C4 charging rate must lie in [0.1, 4.81]"
+    },
+    {
+      "name": "exclude_baseline",
+      "description": "Exclude baseline protocol (4.8, 4.8, 4.8, 4.8)"
+    }
+  ],
+  "discrete_reference_grid_size": 224,
+  "discrete_grid_optimum_true": 1079.0,
+  "notes": "Continuous optimization allows off-grid charging rates C1, C2, C3 with automatic C4 derivation."
+}

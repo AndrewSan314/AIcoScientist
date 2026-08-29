@@ -277,6 +277,58 @@ class AttiaAdapter(DatasetAdapter):
                 raise ValueError(f"Candidate dataframe missing design feature {feat!r}")
         return result[self.spec.feature_columns]
 
+    def continuous_search_space(self) -> Any:
+        """Returns the generic constrained continuous SearchSpace for Attia 4-step fast charging."""
+        from src.optimization.search_space import (
+            Constraint,
+            ContinuousVariable,
+            DerivedVariable,
+            SearchSpace,
+        )
+
+        variables = [
+            ContinuousVariable("C1", lower=3.6, upper=8.0),
+            ContinuousVariable("C2", lower=3.6, upper=7.0),
+            ContinuousVariable("C3", lower=3.6, upper=5.6),
+        ]
+
+        def _calc_c4(c: Mapping[str, Any]) -> float:
+            c1, c2, c3 = float(c["C1"]), float(c["C2"]), float(c["C3"])
+            return float(compute_expected_c4(c1, c2, c3))
+
+        derived_variables = [
+            DerivedVariable("C4", compute_fn=_calc_c4, depends_on=("C1", "C2", "C3")),
+        ]
+
+        constraints = [
+            Constraint(
+                name="positive_c4_denominator",
+                predicate=lambda c: bool((1.0 / 6.0) - (0.2 / float(c["C1"]) + 0.2 / float(c["C2"]) + 0.2 / float(c["C3"])) > 0),
+                description="10-minute charging constraint denominator must be strictly positive",
+            ),
+            Constraint(
+                name="c4_bounds",
+                predicate=lambda c: bool(C4_MIN_LIMIT <= float(c.get("C4", _calc_c4(c))) <= C4_MAX_LIMIT),
+                description=f"C4 charging rate must lie in [{C4_MIN_LIMIT}, {C4_MAX_LIMIT}]",
+            ),
+            Constraint(
+                name="exclude_baseline",
+                predicate=lambda c: not (
+                    np.isclose(float(c["C1"]), 4.8, atol=1e-3)
+                    and np.isclose(float(c["C2"]), 4.8, atol=1e-3)
+                    and np.isclose(float(c["C3"]), 4.8, atol=1e-3)
+                ),
+                description="Exclude baseline protocol (4.8, 4.8, 4.8, 4.8)",
+            ),
+        ]
+
+        return SearchSpace(
+            variables=variables,
+            derived_variables=derived_variables,
+            constraints=constraints,
+            name="attia_continuous_fast_charging",
+        )
+
     def build_observed_row(
         self,
         candidate: Mapping[str, Any],
@@ -295,3 +347,5 @@ class AttiaAdapter(DatasetAdapter):
             self.spec.target_column: target,
         }
         return row
+
+

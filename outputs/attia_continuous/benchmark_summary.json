@@ -1,0 +1,504 @@
+{
+  "benchmark": "Attia et al. 2020 Continuous Fast-Charging Bayesian Optimization Benchmark",
+  "benchmark_nature": "simulator != experimental dataset",
+  "discrete_grid_optimum": {
+    "policy_id": "ATTIA_P113",
+    "C1": 6.0,
+    "C2": 4.8,
+    "C3": 4.0,
+    "C4": 4.8,
+    "reference_true_lifetime": 1079.0
+  },
+  "best_continuous_protocol_discovered": {
+    "reference_true_lifetime": 1121.0,
+    "policy_id": "ATTIA_CONT_S20_ST24",
+    "C1": 5.16,
+    "C2": 4.516,
+    "C3": 4.758,
+    "C4": 4.809365313369636,
+    "strategy": "greedy",
+    "seed": 20,
+    "step": 24,
+    "is_novel": true,
+    "min_dist_to_discrete": 0.15484253012307297,
+    "improvement_over_grid": 42.0
+  },
+  "continuous_improvement_found": true,
+  "continuous_improvement_cycles": 42.0,
+  "optimization_parameters": {
+    "initial_policies": 5,
+    "total_budget": 30,
+    "total_queries": 25,
+    "n_seeds": 30,
+    "beta": 1.0,
+    "candidates_evaluated_per_step": 5000,
+    "bootstrap_replicates": 2000
+  },
+  "strategy_comparison": {
+    "random": {
+      "mean_best_seen": 1025.2,
+      "std_best_seen": 50.39526524010653,
+      "median_best_seen": 1027.5,
+      "mean_best_seen_95_ci": [
+        1007.4316666666666,
+        1043.4008333333334
+      ],
+      "mean_simple_regret": 55.96666666666667,
+      "std_simple_regret": 47.48392347422175,
+      "median_simple_regret": 51.5,
+      "mean_simple_regret_95_ci": [
+        40.265,
+        72.66833333333332
+      ],
+      "simple_regret_95_empirical_interval": [
+        0.0,
+        143.32499999999996
+      ],
+      "mean_regret_auc": 82.1820512820513,
+      "mean_novel_proposal_rate": 1.0,
+      "mean_improvement_over_grid": 2.1666666666666665,
+      "max_improvement_over_grid": 21.0
+    },
+    "greedy": {
+      "mean_best_seen": 1012.6333333333333,
+      "std_best_seen": 77.17712870664663,
+      "median_best_seen": 1006.0,
+      "mean_best_seen_95_ci": [
+        984.1975000000001,
+        1039.2708333333333
+      ],
+      "mean_simple_regret": 72.3,
+      "std_simple_regret": 70.15802360287859,
+      "median_simple_regret": 73.0,
+      "mean_simple_regret_95_ci": [
+        49.06000000000002,
+        96.60166666666665
+      ],
+      "simple_regret_95_empirical_interval": [
+        0.0,
+        228.2
+      ],
+      "mean_regret_auc": 98.36410256410255,
+      "mean_novel_proposal_rate": 0.9453333333333334,
+      "mean_improvement_over_grid": 5.933333333333334,
+      "max_improvement_over_grid": 42.0
+    },
+    "gp_ucb": {
+      "mean_best_seen": 1009.4333333333333,
+      "std_best_seen": 62.01039030474753,
+      "median_best_seen": 996.5,
+      "mean_best_seen_95_ci": [
+        986.9991666666667,
+        1030.6683333333333
+      ],
+      "mean_simple_regret": 73.03333333333333,
+      "std_simple_regret": 57.12749403494472,
+      "median_simple_regret": 82.5,
+      "mean_simple_regret_95_ci": [
+        53.76166666666668,
+        93.06833333333331
+      ],
+      "simple_regret_95_empirical_interval": [
+        0.0,
+        169.9749999999999
+      ],
+      "mean_regret_auc": 94.60897435897434,
+      "mean_novel_proposal_rate": 0.9906666666666667,
+      "mean_improvement_over_grid": 3.466666666666667,
+      "max_improvement_over_grid": 26.0
+    }
+  },
+  "paired_comparison_ucb_vs_greedy": {
+    "n_paired_seeds": 30,
+    "regret_diff_ucb_minus_greedy": {
+      "mean": 0.7333333333333333,
+      "median": 0.0,
+      "std": 52.34167149330105,
+      "p_value": 0.9702145698889482
+    },
+    "auc_diff_ucb_minus_greedy": {
+      "mean": -3.7551282051282047,
+      "median": 0.0,
+      "std": 38.27147799186002,
+      "p_value": 0.8864030063670636
+    }
+  },
+  "budget_sweep": [
+    {
+      "budget": 10,
+      "initial_policies": 5,
+      "queries": 5,
+      "strategies": {
+        "random": {
+          "mean_best_seen": 980.5666666666667,
+          "std_best_seen": 57.00071586563981,
+          "median_best_seen": 976.0,
+          "mean_best_seen_95_ci": [
+            960.3983333333333,
+            1001.2333333333333
+          ],
+          "mean_simple_regret": 99.23333333333333,
+          "std_simple_regret": 55.45777103180484,
+          "median_simple_regret": 103.0,
+          "mean_simple_regret_95_ci": [
+            79.69583333333334,
+            118.70499999999997
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            182.27499999999995
+          ],
+          "mean_regret_auc": 112.4611111111111,
+          "mean_novel_proposal_rate": 1.0,
+          "mean_improvement_over_grid": 0.8,
+          "max_improvement_over_grid": 12.0
+        },
+        "greedy": {
+          "mean_best_seen": 958.0333333333333,
+          "std_best_seen": 64.35702321255707,
+          "median_best_seen": 959.5,
+          "mean_best_seen_95_ci": [
+            934.7975,
+            980.2691666666666
+          ],
+          "mean_simple_regret": 121.3,
+          "std_simple_regret": 63.67760933824763,
+          "median_simple_regret": 119.5,
+          "mean_simple_regret_95_ci": [
+            98.69166666666668,
+            143.4383333333333
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            235.0
+          ],
+          "mean_regret_auc": 127.32777777777777,
+          "mean_novel_proposal_rate": 0.8933333333333332,
+          "mean_improvement_over_grid": 0.3333333333333333,
+          "max_improvement_over_grid": 10.0
+        },
+        "gp_ucb": {
+          "mean_best_seen": 969.1,
+          "std_best_seen": 61.45272923991646,
+          "median_best_seen": 959.5,
+          "mean_best_seen_95_ci": [
+            948.0325,
+            990.8033333333333
+          ],
+          "mean_simple_regret": 110.43333333333334,
+          "std_simple_regret": 60.38250679159306,
+          "median_simple_regret": 119.5,
+          "mean_simple_regret_95_ci": [
+            88.69583333333334,
+            131.73416666666665
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            224.12499999999997
+          ],
+          "mean_regret_auc": 120.14999999999999,
+          "mean_novel_proposal_rate": 0.9666666666666667,
+          "mean_improvement_over_grid": 0.5333333333333333,
+          "max_improvement_over_grid": 16.0
+        }
+      },
+      "paired_comparison_ucb_vs_greedy": {
+        "n_paired_seeds": 30,
+        "regret_diff_ucb_minus_greedy": {
+          "mean": -10.866666666666667,
+          "median": 0.0,
+          "std": 38.58598399574048,
+          "p_value": 0.09155570817720989
+        },
+        "auc_diff_ucb_minus_greedy": {
+          "mean": -7.177777777777778,
+          "median": 0.0,
+          "std": 26.525088728526324,
+          "p_value": 0.11585149752593009
+        }
+      }
+    },
+    {
+      "budget": 15,
+      "initial_policies": 5,
+      "queries": 10,
+      "strategies": {
+        "random": {
+          "mean_best_seen": 993.2333333333333,
+          "std_best_seen": 58.15181281209842,
+          "median_best_seen": 986.5,
+          "mean_best_seen_95_ci": [
+            973.9608333333334,
+            1013.3466666666666
+          ],
+          "mean_simple_regret": 86.56666666666666,
+          "std_simple_regret": 56.8250086598797,
+          "median_simple_regret": 92.5,
+          "mean_simple_regret_95_ci": [
+            66.76166666666667,
+            106.63666666666666
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            175.02499999999992
+          ],
+          "mean_regret_auc": 104.27878787878788,
+          "mean_novel_proposal_rate": 1.0,
+          "mean_improvement_over_grid": 0.8,
+          "max_improvement_over_grid": 12.0
+        },
+        "greedy": {
+          "mean_best_seen": 974.3666666666667,
+          "std_best_seen": 67.3316461607218,
+          "median_best_seen": 977.0,
+          "mean_best_seen_95_ci": [
+            951.5641666666668,
+            998.3041666666666
+          ],
+          "mean_simple_regret": 105.5,
+          "std_simple_regret": 65.82461021794833,
+          "median_simple_regret": 102.0,
+          "mean_simple_regret_95_ci": [
+            83.1,
+            128.1675
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            228.475
+          ],
+          "mean_regret_auc": 119.30909090909091,
+          "mean_novel_proposal_rate": 0.9066666666666666,
+          "mean_improvement_over_grid": 0.8666666666666667,
+          "max_improvement_over_grid": 16.0
+        },
+        "gp_ucb": {
+          "mean_best_seen": 980.5333333333333,
+          "std_best_seen": 59.89688457348341,
+          "median_best_seen": 972.5,
+          "mean_best_seen_95_ci": [
+            960.1983333333334,
+            1002.0041666666666
+          ],
+          "mean_simple_regret": 99.86666666666666,
+          "std_simple_regret": 57.16867561229985,
+          "median_simple_regret": 106.5,
+          "mean_simple_regret_95_ci": [
+            80.29833333333333,
+            119.73583333333332
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            224.12499999999997
+          ],
+          "mean_regret_auc": 111.76060606060605,
+          "mean_novel_proposal_rate": 0.98,
+          "mean_improvement_over_grid": 1.4,
+          "max_improvement_over_grid": 26.0
+        }
+      },
+      "paired_comparison_ucb_vs_greedy": {
+        "n_paired_seeds": 30,
+        "regret_diff_ucb_minus_greedy": {
+          "mean": -5.633333333333334,
+          "median": 0.0,
+          "std": 43.75360740464197,
+          "p_value": 0.33169613087134386
+        },
+        "auc_diff_ucb_minus_greedy": {
+          "mean": -7.54848484848485,
+          "median": 0.0,
+          "std": 31.88522701972441,
+          "p_value": 0.23105922995345296
+        }
+      }
+    },
+    {
+      "budget": 20,
+      "initial_policies": 5,
+      "queries": 15,
+      "strategies": {
+        "random": {
+          "mean_best_seen": 1007.4333333333333,
+          "std_best_seen": 52.831340837732334,
+          "median_best_seen": 995.0,
+          "mean_best_seen_95_ci": [
+            990.5325,
+            1025.7333333333333
+          ],
+          "mean_simple_regret": 73.03333333333333,
+          "std_simple_regret": 50.478048034104226,
+          "median_simple_regret": 84.0,
+          "mean_simple_regret_95_ci": [
+            55.962500000000006,
+            90.86749999999999
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            153.475
+          ],
+          "mean_regret_auc": 95.45625,
+          "mean_novel_proposal_rate": 1.0,
+          "mean_improvement_over_grid": 1.4666666666666666,
+          "max_improvement_over_grid": 20.0
+        },
+        "greedy": {
+          "mean_best_seen": 993.0666666666667,
+          "std_best_seen": 77.04004034326537,
+          "median_best_seen": 986.5,
+          "mean_best_seen_95_ci": [
+            966.165,
+            1021.3
+          ],
+          "mean_simple_regret": 88.93333333333334,
+          "std_simple_regret": 73.00067705559115,
+          "median_simple_regret": 92.5,
+          "mean_simple_regret_95_ci": [
+            62.7325,
+            114.7675
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            228.2
+          ],
+          "mean_regret_auc": 112.225,
+          "mean_novel_proposal_rate": 0.92,
+          "mean_improvement_over_grid": 3.0,
+          "max_improvement_over_grid": 32.0
+        },
+        "gp_ucb": {
+          "mean_best_seen": 993.6,
+          "std_best_seen": 59.88932320942322,
+          "median_best_seen": 979.5,
+          "mean_best_seen_95_ci": [
+            973.0,
+            1014.3333333333334
+          ],
+          "mean_simple_regret": 87.6,
+          "std_simple_regret": 56.13567308854012,
+          "median_simple_regret": 99.5,
+          "mean_simple_regret_95_ci": [
+            66.4,
+            107.40249999999999
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            169.9749999999999
+          ],
+          "mean_regret_auc": 105.81875,
+          "mean_novel_proposal_rate": 0.9866666666666667,
+          "mean_improvement_over_grid": 2.2,
+          "max_improvement_over_grid": 26.0
+        }
+      },
+      "paired_comparison_ucb_vs_greedy": {
+        "n_paired_seeds": 30,
+        "regret_diff_ucb_minus_greedy": {
+          "mean": -1.3333333333333333,
+          "median": 0.0,
+          "std": 53.57388281187234,
+          "p_value": 0.810652953445403
+        },
+        "auc_diff_ucb_minus_greedy": {
+          "mean": -6.40625,
+          "median": 0.0,
+          "std": 34.634412039271496,
+          "p_value": 0.47812547119613813
+        }
+      }
+    },
+    {
+      "budget": 30,
+      "initial_policies": 5,
+      "queries": 25,
+      "strategies": {
+        "random": {
+          "mean_best_seen": 1025.2,
+          "std_best_seen": 50.39526524010653,
+          "median_best_seen": 1027.5,
+          "mean_best_seen_95_ci": [
+            1007.4316666666666,
+            1043.4008333333334
+          ],
+          "mean_simple_regret": 55.96666666666667,
+          "std_simple_regret": 47.48392347422175,
+          "median_simple_regret": 51.5,
+          "mean_simple_regret_95_ci": [
+            40.265,
+            72.66833333333332
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            143.32499999999996
+          ],
+          "mean_regret_auc": 82.1820512820513,
+          "mean_novel_proposal_rate": 1.0,
+          "mean_improvement_over_grid": 2.1666666666666665,
+          "max_improvement_over_grid": 21.0
+        },
+        "greedy": {
+          "mean_best_seen": 1012.6333333333333,
+          "std_best_seen": 77.17712870664663,
+          "median_best_seen": 1006.0,
+          "mean_best_seen_95_ci": [
+            984.1975000000001,
+            1039.2708333333333
+          ],
+          "mean_simple_regret": 72.3,
+          "std_simple_regret": 70.15802360287859,
+          "median_simple_regret": 73.0,
+          "mean_simple_regret_95_ci": [
+            49.06000000000002,
+            96.60166666666665
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            228.2
+          ],
+          "mean_regret_auc": 98.36410256410255,
+          "mean_novel_proposal_rate": 0.9453333333333334,
+          "mean_improvement_over_grid": 5.933333333333334,
+          "max_improvement_over_grid": 42.0
+        },
+        "gp_ucb": {
+          "mean_best_seen": 1009.4333333333333,
+          "std_best_seen": 62.01039030474753,
+          "median_best_seen": 996.5,
+          "mean_best_seen_95_ci": [
+            986.9991666666667,
+            1030.6683333333333
+          ],
+          "mean_simple_regret": 73.03333333333333,
+          "std_simple_regret": 57.12749403494472,
+          "median_simple_regret": 82.5,
+          "mean_simple_regret_95_ci": [
+            53.76166666666668,
+            93.06833333333331
+          ],
+          "simple_regret_95_empirical_interval": [
+            0.0,
+            169.9749999999999
+          ],
+          "mean_regret_auc": 94.60897435897434,
+          "mean_novel_proposal_rate": 0.9906666666666667,
+          "mean_improvement_over_grid": 3.466666666666667,
+          "max_improvement_over_grid": 26.0
+        }
+      },
+      "paired_comparison_ucb_vs_greedy": {
+        "n_paired_seeds": 30,
+        "regret_diff_ucb_minus_greedy": {
+          "mean": 0.7333333333333333,
+          "median": 0.0,
+          "std": 52.34167149330105,
+          "p_value": 0.9702145698889482
+        },
+        "auc_diff_ucb_minus_greedy": {
+          "mean": -3.7551282051282047,
+          "median": 0.0,
+          "std": 38.27147799186002,
+          "p_value": 0.8864030063670636
+        }
+      }
+    }
+  ]
+}
