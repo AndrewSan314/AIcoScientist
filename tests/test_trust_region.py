@@ -222,3 +222,37 @@ def test_trust_region_serialization_and_restore(simple_search_space: SearchSpace
     assert restored_state.best_value == state.best_value
     assert restored_state.length == state.length
     assert restored_state.center == state.center
+
+
+def test_trust_region_covariance_aware_success_probability(simple_search_space: SearchSpace) -> None:
+    turbo = TuRBOTrustRegion(search_space=simple_search_space, success_delta=0.5, success_probability_threshold=0.6)
+    turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
+
+    # Candidate with small mean improvement: delta_mu = 1.0 (delta = 0.5 -> delta_mu - delta = 0.5)
+    # Independent variances: var_cand = 4.0, var_inc = 4.0 -> delta_std = sqrt(8.0) ~ 2.828 -> z = 0.5 / 2.828 ~ 0.1768 -> p ~ 0.570 (below 0.60 -> failure)
+    u_uncorr = turbo.update(
+        {"x1": 5.5, "x2": 0.0},
+        observed_value=101.0,
+        posterior_candidate_mean=101.0,
+        posterior_incumbent_mean=100.0,
+        posterior_candidate_variance=4.0,
+        posterior_incumbent_variance=4.0,
+        posterior_candidate_incumbent_covariance=0.0,
+    )
+    assert u_uncorr["success_probability"] < 0.60
+    assert turbo.state.failure_counter == 1
+
+    # Correlated with positive covariance: cov = 3.5 -> delta_var = 4 + 4 - 2(3.5) = 1.0 -> delta_std = 1.0 -> z = 0.5 / 1.0 = 0.5 -> p = Phi(0.5) ~ 0.691 (above 0.60 -> success!)
+    u_corr = turbo.update(
+        {"x1": 5.5, "x2": 0.0},
+        observed_value=101.0,
+        posterior_candidate_mean=101.0,
+        posterior_incumbent_mean=100.0,
+        posterior_candidate_variance=4.0,
+        posterior_incumbent_variance=4.0,
+        posterior_candidate_incumbent_covariance=3.5,
+    )
+    assert u_corr["success_probability"] >= 0.60
+    assert turbo.state.success_counter == 1
+    assert turbo.state.failure_counter == 0
+

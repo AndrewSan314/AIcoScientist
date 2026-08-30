@@ -23,7 +23,11 @@ from src.evaluation.attia_oracle import (
     generate_attia_simulator_seed,
     simulate_attia_policy,
 )
-from src.optimization.acquisition import compute_acquisition
+from src.optimization.acquisition import (
+    compute_acquisition,
+    compute_true_mc_nei,
+    predict_latent_gp,
+)
 from src.optimization.adaptive_controller import AdaptiveBOController
 from src.optimization.search_space import SearchSpace
 from src.optimization.trust_region import TuRBOTrustRegion
@@ -32,6 +36,38 @@ logger = logging.getLogger(__name__)
 
 ATTIA_SOURCE_COMMIT = "0068fd0136bcd65884f5cd94b2b967c1ba73a668"
 SIMULATOR_VERSION = "1.0.0"
+
+
+def fit_attia_continuous_gp(
+    observed_records: list[dict[str, Any]],
+    feature_cols: Sequence[str] = ("C1", "C2", "C3"),
+    random_state: int = 42,
+) -> tuple[GaussianProcessRegressor, StandardScaler, np.ndarray, np.ndarray]:
+    """Fits GaussianProcessRegressor surrogate on observed continuous records.
+
+    Returns:
+        gp: Fitted GaussianProcessRegressor
+        scaler: Fitted StandardScaler
+        X_train_scaled: Scaled training features (N, d)
+        y_train: Raw training targets (N,)
+    """
+    X_train = np.array([[r[c] for c in feature_cols] for r in observed_records], dtype=float)
+    y_train = np.array([r["simulated_lifetime"] for r in observed_records], dtype=float)
+
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    kernel = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
+        noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
+    )
+    gp = GaussianProcessRegressor(
+        kernel=kernel,
+        normalize_y=True,
+        n_restarts_optimizer=2,
+        random_state=random_state,
+    )
+    gp.fit(X_train_scaled, y_train)
+    return gp, scaler, X_train_scaled, y_train
 
 
 def derive_discrete_grid_optimum(discrete_pool: pd.DataFrame) -> dict[str, Any]:
@@ -324,32 +360,6 @@ def run_single_attia_continuous_trajectory(
                 seed=step_seed,
             )
 
-        # 2. Fit GP surrogate on observed simulated observations using ONLY free variables C1, C2, C3
-        X_train = np.array([[r[c] for c in feature_cols] for r in observed_records], dtype=float)
-        y_train = np.array([r["simulated_lifetime"] for r in observed_records], dtype=float)
-
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
-
-        kernel = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
-            noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
-        )
-        gp = GaussianProcessRegressor(
-            kernel=kernel,
-            normalize_y=True,
-            n_restarts_optimizer=2,
-            random_state=optimizer_seed + step,
-        )
-        gp.fit(X_train_scaled, y_train)
-
-        # Observed posterior means for denoised incumbent in NEI
-        obs_posterior_means = gp.predict(X_train_scaled)
-
-        # 3. Predict acquisition across feasible candidates
-        X_cand = cand_batch[feature_cols].to_numpy(dtype=float)
-        X_cand_scaled = scaler.transform(X_cand)
-        pred_mean, pred_std = gp.predict(X_cand_scaled, return_std=True)
-
         observed_df = pd.DataFrame(observed_records)
         novelty_vs_observed = search_space.check_novelty(
             cand_batch,
@@ -357,6 +367,42 @@ def run_single_attia_continuous_trajectory(
             feature_cols=feature_cols,
             tol=duplicate_tol,
         )
+
+        # Resample candidate pool once if all candidates in initial pool are duplicates
+        if not np.any(novelty_vs_observed["min_distance"].to_numpy() >= duplicate_tol):
+            if strategy == "turbo_nei" and turbo is not None and not is_global_escape:
+                cand_batch = turbo.sample_candidates(
+                    n=n_candidates_per_step,
+                    seed=step_seed + 1,
+                )
+            else:
+                cand_batch = search_space.sample_feasible(
+                    n=n_candidates_per_step,
+                    seed=step_seed + 1,
+                )
+            novelty_vs_observed = search_space.check_novelty(
+                cand_batch,
+                reference_points=observed_df,
+                feature_cols=feature_cols,
+                tol=duplicate_tol,
+            )
+            if not np.any(novelty_vs_observed["min_distance"].to_numpy() >= duplicate_tol):
+                raise RuntimeError(
+                    f"No novel candidates found in search space within duplicate tolerance {duplicate_tol} after resampling at step {step}."
+                )
+
+        # 2. Fit GP surrogate on observed simulated observations using ONLY free variables C1, C2, C3
+        gp, scaler, X_train_scaled, y_train = fit_attia_continuous_gp(
+            observed_records, feature_cols=feature_cols, random_state=optimizer_seed + step
+        )
+
+        # Observed posterior latent means for denoised incumbent in NEI
+        obs_posterior_means = predict_latent_gp(gp, X_train_scaled, return_std=False)
+
+        # 3. Predict acquisition across feasible candidates
+        X_cand = cand_batch[feature_cols].to_numpy(dtype=float)
+        X_cand_scaled = scaler.transform(X_cand)
+        pred_mean, pred_std = gp.predict(X_cand_scaled, return_std=True)
 
         step_duplicate_rejections = 0
         current_method = strategy
@@ -542,37 +588,79 @@ def run_single_attia_continuous_trajectory(
 
         tr_update: dict[str, Any] = {}
         if strategy == "turbo_nei" and turbo is not None:
-            # Evaluate posterior values across all observations to find incumbent
-            X_all_sc = scaler.transform([[r[c] for c in feature_cols] for r in observed_records])
-            p_all_m, p_all_s = gp.predict(X_all_sc, return_std=True)
+            # 1. Refit GP strictly on D_{t+1} BEFORE evaluating posterior evidence and TuRBO updates
+            gp_post, scaler_post, X_all_sc, y_all = fit_attia_continuous_gp(
+                observed_records, feature_cols=feature_cols, random_state=step_seed + 1
+            )
 
-            if len(p_all_m) > 1:
-                prev_m = p_all_m[:-1]
-                prev_s = p_all_s[:-1]
+            # 2. Predict latent means, variances, and candidate-incumbent covariance using refitted GP
+            mu_all, cov_all = predict_latent_gp(gp_post, X_all_sc, return_cov=True)
+            mu_all = np.asarray(mu_all, dtype=float)
+            cov_all = np.asarray(cov_all, dtype=float)
+
+            cand_idx = len(mu_all) - 1
+            p_cand_m = float(mu_all[cand_idx])
+            p_cand_v = float(cov_all[cand_idx, cand_idx])
+            p_cand_s = float(np.sqrt(max(p_cand_v, 1e-12)))
+
+            if len(mu_all) > 1:
+                prev_m = mu_all[:-1]
                 inc_i = int(np.argmax(prev_m))
                 p_inc_m = float(prev_m[inc_i])
-                p_inc_s = float(prev_s[inc_i])
+                p_inc_v = float(cov_all[inc_i, inc_i])
+                p_cand_inc_cov = float(cov_all[cand_idx, inc_i])
             else:
-                p_inc_m = float(p_all_m[0])
-                p_inc_s = float(p_all_s[0])
+                p_inc_m = p_cand_m
+                p_inc_v = p_cand_v
+                p_cand_inc_cov = p_cand_v
+            p_inc_s = float(np.sqrt(max(p_inc_v, 1e-12)))
 
-            # Global fallback candidate in case of restart
+            # 3. Global fallback candidate in case of restart scored via True NEI on refitted GP
             fallback_center = None
             fallback_cid = None
-            if turbo.state is not None and turbo.state.length < turbo.min_length * 2.0:
-                g_pool = search_space.sample_feasible(n=500, seed=optimizer_seed * 1000 + step * 79)
-                nov_g = search_space.check_novelty(g_pool, reference_points=pd.DataFrame(observed_records), feature_cols=feature_cols, tol=duplicate_tol)
+            if turbo.state is not None:
+                g_pool = search_space.sample_feasible(n=256, seed=optimizer_seed * 1000 + step * 79 + 1)
+                nov_g = search_space.check_novelty(
+                    g_pool, reference_points=pd.DataFrame(observed_records), feature_cols=feature_cols, tol=duplicate_tol
+                )
                 v_idx = np.where(nov_g["min_distance"].to_numpy() >= duplicate_tol)[0]
-                b_row = g_pool.iloc[v_idx[0]].to_dict() if len(v_idx) > 0 else g_pool.iloc[0].to_dict()
+                if len(v_idx) == 0:
+                    g_pool = search_space.sample_feasible(n=256, seed=optimizer_seed * 1000 + step * 79 + 101)
+                    nov_g = search_space.check_novelty(
+                        g_pool, reference_points=pd.DataFrame(observed_records), feature_cols=feature_cols, tol=duplicate_tol
+                    )
+                    v_idx = np.where(nov_g["min_distance"].to_numpy() >= duplicate_tol)[0]
+
+                if len(v_idx) > 0:
+                    valid_g_pool = g_pool.iloc[v_idx].reset_index(drop=True)
+                    X_g = valid_g_pool[feature_cols].to_numpy(dtype=float)
+                    X_g_sc = scaler_post.transform(X_g)
+                    g_scores = compute_true_mc_nei(
+                        gp_post,
+                        X_observed_scaled=X_all_sc,
+                        X_candidates_scaled=X_g_sc,
+                        n_fantasies=64,
+                        seed=step_seed + 2,
+                    )
+                    best_g_idx = int(np.argmax(g_scores))
+                    b_row = valid_g_pool.iloc[best_g_idx].to_dict()
+                else:
+                    b_row = g_pool.iloc[0].to_dict()
+
                 fallback_center = {k: float(b_row[k]) for k in feature_cols}
-                fallback_cid = generate_continuous_candidate_id(float(b_row["C1"]), float(b_row["C2"]), float(b_row["C3"]), float(b_row["C4"]))
+                fallback_cid = generate_continuous_candidate_id(
+                    float(b_row["C1"]), float(b_row["C2"]), float(b_row["C3"]), float(b_row["C4"])
+                )
 
             tr_update = turbo.update(
                 observed_candidate={"C1": c1, "C2": c2, "C3": c3},
                 observed_value=sim_life,
-                posterior_candidate_mean=float(p_mean[0]),
+                posterior_candidate_mean=p_cand_m,
                 posterior_incumbent_mean=p_inc_m,
-                posterior_candidate_std=float(p_std[0]),
+                posterior_candidate_variance=p_cand_v,
+                posterior_incumbent_variance=p_inc_v,
+                posterior_candidate_incumbent_covariance=p_cand_inc_cov,
+                posterior_candidate_std=p_cand_s,
                 posterior_incumbent_std=p_inc_s,
                 objective="maximize",
                 fallback_center=fallback_center,

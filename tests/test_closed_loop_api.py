@@ -175,3 +175,62 @@ def test_closed_loop_state_save_and_load(tmp_path: Path) -> None:
     next_proposal = restored_optimizer.propose(restored_state)
     assert next_proposal.step == state.step + 1
 
+
+def test_closed_loop_candidate_id_deterministic_sha256() -> None:
+    import hashlib
+    space = SearchSpace(
+        variables=[
+            ContinuousVariable("x1", lower=0.0, upper=10.0),
+            ContinuousVariable("x2", lower=0.0, upper=10.0),
+        ],
+        name="test_space",
+    )
+    init_df = pd.DataFrame([
+        {"x1": 1.0, "x2": 1.0, "performance": 80.0},
+        {"x1": 2.0, "x2": 5.0, "performance": 95.0},
+    ])
+    optimizer = ClosedLoopOptimizer(
+        search_space=space,
+        feature_cols=["x1", "x2"],
+        target_col="performance",
+        strategy="random",
+        n_candidates_per_step=10,
+        random_state=42,
+    )
+    state = optimizer.initialize(init_df)
+    proposal = optimizer.propose(state)
+
+    assert proposal.candidate_id.startswith("EXP_")
+    assert len(proposal.candidate_id) == 16
+
+    # Verify deterministic digest calculation
+    canonical = "|".join(f"{k}={float(proposal.design_variables[k]):.8f}" for k in sorted(["x1", "x2"]))
+    expected_digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:12]
+    assert proposal.candidate_id == f"EXP_{expected_digest}"
+
+
+def test_closed_loop_duplicate_exhaustion_raises_runtime_error() -> None:
+    space = SearchSpace(
+        variables=[
+            ContinuousVariable("x1", lower=1.0, upper=1.00001),
+            ContinuousVariable("x2", lower=1.0, upper=1.00001),
+        ],
+        name="tiny_space",
+    )
+    init_df = pd.DataFrame([
+        {"x1": 1.0, "x2": 1.0, "performance": 80.0, "candidate_id": "INIT_0"},
+    ])
+    optimizer = ClosedLoopOptimizer(
+        search_space=space,
+        feature_cols=["x1", "x2"],
+        target_col="performance",
+        strategy="random",
+        duplicate_tol=0.1,  # Large duplicate tolerance ensures everything is a duplicate
+        n_candidates_per_step=10,
+        random_state=42,
+    )
+    state = optimizer.initialize(init_df)
+    with pytest.raises(RuntimeError, match="No novel candidates found in search space"):
+        optimizer.propose(state)
+
+

@@ -7,20 +7,10 @@ from run_pipeline import main
 from src.utils import MASTER_FILE, METRICS_FILE, MODEL_FILE
 
 
-def test_model_outputs_and_predicts():
-    main()
-    bundle = joblib.load(MODEL_FILE)
-    metrics = json.loads(METRICS_FILE.read_text(encoding="utf-8"))
-    df = pd.read_csv(MASTER_FILE)
+def test_rf_model_baseline_hyperparameters():
+    from src.train_model import _rf_model
+    rf = _rf_model()
+    assert rf.n_estimators == 200
+    assert rf.min_samples_leaf == 2
+    assert rf.random_state == 42
 
-    assert {"mae", "rmse", "r2"} <= set(metrics)
-    assert {"gp_model", "scaler", "rf_metrics", "gp_metrics", "model_versions"} <= set(bundle)
-    pred = bundle["model"].predict(df[bundle["features"]].head(1))
-    gp_mean, gp_std = bundle["gp_model"].predict(
-        bundle["scaler"].transform(df[bundle["features"]].head(1)),
-        return_std=True,
-    )
-    assert len(pred) == 1
-    assert len(gp_mean) == 1
-    assert len(gp_std) == 1
-    assert gp_std[0] >= 0

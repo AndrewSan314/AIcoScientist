@@ -158,6 +158,9 @@ class TuRBOTrustRegion:
         observed_value: float,
         posterior_candidate_mean: float | None = None,
         posterior_incumbent_mean: float | None = None,
+        posterior_candidate_variance: float | None = None,
+        posterior_incumbent_variance: float | None = None,
+        posterior_candidate_incumbent_covariance: float = 0.0,
         posterior_candidate_std: float | None = None,
         posterior_incumbent_std: float | None = None,
         objective: str = "maximize",
@@ -167,7 +170,8 @@ class TuRBOTrustRegion:
     ) -> dict[str, Any]:
         """Updates trust region state using noise-aware Gaussian posterior evidence.
 
-        Evaluates P(Delta f > success_delta | data) >= success_probability_threshold.
+        Evaluates P(Delta f > success_delta | data) >= success_probability_threshold
+        accounting for posterior covariance: Var(f_cand - f_inc) = Var(f_cand) + Var(f_inc) - 2*Cov.
         Moves center only upon verified posterior improvement.
         """
         if self.state is None:
@@ -190,6 +194,9 @@ class TuRBOTrustRegion:
                 "posterior_candidate_std": posterior_candidate_std,
                 "posterior_incumbent_mean": posterior_incumbent_mean,
                 "posterior_incumbent_std": posterior_incumbent_std,
+                "posterior_candidate_variance": posterior_candidate_variance,
+                "posterior_incumbent_variance": posterior_incumbent_variance,
+                "posterior_candidate_incumbent_covariance": posterior_candidate_incumbent_covariance,
                 "success_probability": 1.0,
                 "previous_center": None,
                 "restart_reason": None,
@@ -203,19 +210,33 @@ class TuRBOTrustRegion:
         val = float(observed_value)
         best = float(self.state.best_value)
 
-        # 1. Noise-Aware Posterior Improvement Test
+        # 1. Noise-Aware Posterior Improvement Test with Covariance
         p_succ: float | None = None
         if posterior_candidate_mean is not None and posterior_incumbent_mean is not None:
-            s_cand = max(float(posterior_candidate_std or 1e-6), 1e-6)
-            s_inc = max(float(posterior_incumbent_std or 1e-6), 1e-6)
-            s_diff = float(np.sqrt(s_cand**2 + s_inc**2))
+            if posterior_candidate_variance is not None:
+                var_cand = float(posterior_candidate_variance)
+            elif posterior_candidate_std is not None:
+                var_cand = float(posterior_candidate_std) ** 2
+            else:
+                var_cand = 1e-6
+
+            if posterior_incumbent_variance is not None:
+                var_inc = float(posterior_incumbent_variance)
+            elif posterior_incumbent_std is not None:
+                var_inc = float(posterior_incumbent_std) ** 2
+            else:
+                var_inc = 1e-6
+
+            cov = float(posterior_candidate_incumbent_covariance or 0.0)
+            delta_var = var_cand + var_inc - 2.0 * cov
+            delta_std = float(np.sqrt(max(delta_var, 1e-12)))
 
             if objective == "maximize":
                 delta_mu = float(posterior_candidate_mean - posterior_incumbent_mean)
             else:
                 delta_mu = float(posterior_incumbent_mean - posterior_candidate_mean)
 
-            z = (delta_mu - self.success_delta) / s_diff
+            z = (delta_mu - self.success_delta) / delta_std
             p_succ = float(norm.cdf(z))
             improved = bool(p_succ >= self.success_probability_threshold)
         else:

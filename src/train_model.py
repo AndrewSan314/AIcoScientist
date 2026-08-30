@@ -12,7 +12,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import GroupKFold, train_test_split
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit, train_test_split
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 
@@ -99,6 +99,14 @@ def compute_uncertainty_calibration(
     }
 
 
+def _rf_model() -> RandomForestRegressor:
+    return RandomForestRegressor(
+        n_estimators=200,
+        min_samples_leaf=2,
+        random_state=42,
+    )
+
+
 def _gp_model():
     kernel = ConstantKernel(1.0, (1e-2, 1e2)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
         noise_level=1.0,
@@ -156,9 +164,13 @@ def make_train_test_split(
             f"Group column {group_col!r} contains only {len(unique_groups)} unique group. At least 2 unique groups are required."
         )
 
-    n_splits = min(4, len(unique_groups))
-    gkf = GroupKFold(n_splits=n_splits)
-    train_idx, test_idx = next(gkf.split(df, groups=groups))
+    gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+    train_idx, test_idx = next(gss.split(df, groups=groups))
+    if len(train_idx) < 2 or len(test_idx) < 2:
+        n_splits = min(4, len(unique_groups))
+        gkf = GroupKFold(n_splits=n_splits)
+        train_idx, test_idx = next(gkf.split(df, groups=groups))
+
     if len(train_idx) < 2 or len(test_idx) < 2:
         raise ValueError(
             f"Group split produced insufficient rows: train={len(train_idx)}, test={len(test_idx)}"
@@ -207,7 +219,7 @@ def train_model(
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    rf_model = _rf_model()
     rf_model.fit(X_train, y_train)
     y_pred_rf = rf_model.predict(X_test)
     rf_metrics = {
@@ -245,7 +257,7 @@ def train_model(
         pred_std=y_std_gp,
     )
 
-    final_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+    final_rf_model = _rf_model()
     final_rf_model.fit(X, y)
 
     final_xgb_model = _xgb_model()

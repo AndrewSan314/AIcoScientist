@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
+import hashlib
 import json
 import logging
 from pathlib import Path
@@ -14,7 +15,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.preprocessing import StandardScaler
 
-from src.optimization.acquisition import compute_acquisition
+from src.optimization.acquisition import compute_acquisition, predict_latent_gp
 from src.optimization.search_space import SearchSpace
 from src.optimization.trust_region import TrustRegionState, TuRBOTrustRegion
 
@@ -220,7 +221,39 @@ class ClosedLoopOptimizer:
         if state.gp_model is None or state.scaler is None:
             self._fit_surrogate(state)
 
-        # 3. Predict surrogate mean & epistemic uncertainty
+        # 3. Check duplicate / novelty vs observed
+        observed_df = pd.DataFrame(state.observed_records)
+        novelty_vs_observed = self.search_space.check_novelty(
+            cand_batch,
+            reference_points=observed_df,
+            feature_cols=self.feature_cols,
+            tol=self.duplicate_tol,
+        )
+
+        # Resample once if no novel candidate exists in initial pool
+        if not np.any(novelty_vs_observed["min_distance"].to_numpy() >= self.duplicate_tol):
+            if state.trust_region is not None and "turbo" in self.strategy and not is_global_escape:
+                cand_batch = state.trust_region.sample_candidates(
+                    n=self.n_candidates_per_step,
+                    seed=step_seed + 1,
+                )
+            else:
+                cand_batch = self.search_space.sample_feasible(
+                    n=self.n_candidates_per_step,
+                    seed=step_seed + 1,
+                )
+            novelty_vs_observed = self.search_space.check_novelty(
+                cand_batch,
+                reference_points=observed_df,
+                feature_cols=self.feature_cols,
+                tol=self.duplicate_tol,
+            )
+            if not np.any(novelty_vs_observed["min_distance"].to_numpy() >= self.duplicate_tol):
+                raise RuntimeError(
+                    f"No novel candidates found in search space within duplicate tolerance {self.duplicate_tol} after resampling."
+                )
+
+        # 4. Predict surrogate mean & epistemic uncertainty
         X_cand = cand_batch[self.feature_cols].to_numpy(dtype=float)
         X_cand_scaled = state.scaler.transform(X_cand)
         pred_mean, pred_std = state.gp_model.predict(X_cand_scaled, return_std=True)
@@ -229,15 +262,6 @@ class ClosedLoopOptimizer:
         X_obs = np.array([[r[c] for c in self.feature_cols] for r in state.observed_records], dtype=float)
         X_obs_scaled = state.scaler.transform(X_obs)
         obs_posterior_means = state.gp_model.predict(X_obs_scaled)
-
-        # 4. Check duplicate / novelty vs observed
-        observed_df = pd.DataFrame(state.observed_records)
-        novelty_vs_observed = self.search_space.check_novelty(
-            cand_batch,
-            reference_points=observed_df,
-            feature_cols=self.feature_cols,
-            tol=self.duplicate_tol,
-        )
 
         acq_method = "nei" if "nei" in self.strategy else self.strategy
 
@@ -322,8 +346,9 @@ class ClosedLoopOptimizer:
 
         cand_id = selected_cand.get("candidate_id") or selected_cand.get("policy_id")
         if not cand_id:
-            coords = "_".join(f"{k}={float(selected_cand[k]):.4f}" for k in sorted(self.feature_cols) if k in selected_cand)
-            cand_id = f"EXP_{hash(coords) % 1000000:06d}"
+            coords = "|".join(f"{k}={float(selected_cand[k]):.8f}" for k in sorted(self.feature_cols) if k in selected_cand)
+            digest = hashlib.sha256(coords.encode("utf-8")).hexdigest()[:12]
+            cand_id = f"EXP_{digest}"
 
         design_vars = {k: selected_cand[k] for k in self.feature_cols if k in selected_cand}
         min_dist = float(novelty_vs_observed["min_distance"].iloc[selected_idx])
@@ -350,10 +375,10 @@ class ClosedLoopOptimizer:
         proposal: ExperimentProposal,
         result: ExperimentResult,
     ) -> OptimizerState:
-        """Incorporates experimental result, updates surrogate, and advances noise-aware trust region."""
+        """Incorporates experimental result, refits surrogate on D_{t+1}, and advances noise-aware trust region."""
         val = float(result.target_value)
 
-        # Record observed row
+        # Record observed row into D_{t+1}
         new_row = {
             "step": state.step,
             "candidate_id": proposal.candidate_id,
@@ -363,35 +388,39 @@ class ClosedLoopOptimizer:
         }
         state.observed_records.append(new_row)
 
-        # Refit GP surrogate on all observations (including the new point)
+        # Refit GP surrogate strictly on D_{t+1} BEFORE evaluating posterior evidence and TuRBO updates
         self._fit_surrogate(state)
 
-        # Compute posterior estimates for candidate and incumbent
-        cand_pt = np.array([[proposal.design_variables[c] for c in self.feature_cols]], dtype=float)
-        cand_pt_sc = state.scaler.transform(cand_pt)
-        p_cand_m, p_cand_s = state.gp_model.predict(cand_pt_sc, return_std=True)
-
+        # Compute latent posterior estimates and cross-covariance for candidate and incumbent using refitted GP
         X_obs_all = np.array([[r[c] for c in self.feature_cols] for r in state.observed_records], dtype=float)
         X_obs_sc = state.scaler.transform(X_obs_all)
-        p_obs_m, p_obs_s = state.gp_model.predict(X_obs_sc, return_std=True)
+        p_obs_m, p_obs_cov = predict_latent_gp(state.gp_model, X_obs_sc, return_cov=True)
+        p_obs_m = np.asarray(p_obs_m, dtype=float)
+        p_obs_cov = np.asarray(p_obs_cov, dtype=float)
+
+        cand_idx = len(p_obs_m) - 1
+        p_cand_m = float(p_obs_m[cand_idx])
+        p_cand_v = float(p_obs_cov[cand_idx, cand_idx])
+        p_cand_s = float(np.sqrt(max(p_cand_v, 1e-12)))
 
         # Previous incumbent index (excluding the newly added candidate)
         if len(p_obs_m) > 1:
             prev_obs_m = p_obs_m[:-1]
-            prev_obs_s = p_obs_s[:-1]
             inc_idx = int(np.argmax(prev_obs_m) if state.objective == "maximize" else np.argmin(prev_obs_m))
             p_inc_m = float(prev_obs_m[inc_idx])
-            p_inc_s = float(prev_obs_s[inc_idx])
+            p_inc_v = float(p_obs_cov[inc_idx, inc_idx])
+            p_cand_inc_cov = float(p_obs_cov[cand_idx, inc_idx])
         else:
-            p_inc_m = float(p_obs_m[0])
-            p_inc_s = float(p_obs_s[0])
+            p_inc_m = p_cand_m
+            p_inc_v = p_cand_v
+            p_cand_inc_cov = p_cand_v
+        p_inc_s = float(np.sqrt(max(p_inc_v, 1e-12)))
 
-        # Global fallback candidate in case of restart
+        # Fallback candidate for TuRBO restart chosen by scoring novel global points via refitted GP
         fallback_center: dict[str, Any] | None = None
         fallback_cid: str | None = None
         if state.trust_region is not None:
-            # Generate global pool to choose restart center
-            global_pool = self.search_space.sample_feasible(n=500, seed=self.random_state + state.step * 77)
+            global_pool = self.search_space.sample_feasible(n=256, seed=self.random_state + state.step * 77 + 1)
             nov = self.search_space.check_novelty(
                 global_pool,
                 reference_points=pd.DataFrame(state.observed_records),
@@ -399,23 +428,58 @@ class ClosedLoopOptimizer:
                 tol=self.duplicate_tol,
             )
             valid_idx = np.where(nov["min_distance"].to_numpy() >= self.duplicate_tol)[0]
+            if len(valid_idx) == 0:
+                global_pool = self.search_space.sample_feasible(n=256, seed=self.random_state + state.step * 77 + 101)
+                nov = self.search_space.check_novelty(
+                    global_pool,
+                    reference_points=pd.DataFrame(state.observed_records),
+                    feature_cols=self.feature_cols,
+                    tol=self.duplicate_tol,
+                )
+                valid_idx = np.where(nov["min_distance"].to_numpy() >= self.duplicate_tol)[0]
+
             if len(valid_idx) > 0:
-                best_global_row = global_pool.iloc[valid_idx[0]].to_dict()
+                valid_pool = global_pool.iloc[valid_idx].reset_index(drop=True)
+                X_val = valid_pool[self.feature_cols].to_numpy(dtype=float)
+                X_val_sc = state.scaler.transform(X_val)
+                p_val_m, p_val_s = predict_latent_gp(state.gp_model, X_val_sc, return_std=True)
+                val_scores = compute_acquisition(
+                    method="nei" if "nei" in self.strategy else self.strategy,
+                    mean=p_val_m,
+                    std=p_val_s,
+                    best_observed=state.current_best,
+                    beta=self.beta,
+                    xi=self.xi,
+                    objective=state.objective,
+                    observed_posterior_means=p_obs_m,
+                    gp=state.gp_model,
+                    X_observed_scaled=X_obs_sc,
+                    X_candidates_scaled=X_val_sc,
+                    seed=self.random_state + state.step * 77 + 2,
+                )
+                best_pool_idx = int(np.argmax(val_scores))
+                best_global_row = valid_pool.iloc[best_pool_idx].to_dict()
             else:
                 best_global_row = global_pool.iloc[0].to_dict()
-            fallback_center = {k: best_global_row[k] for k in self.feature_cols if k in best_global_row}
-            fallback_cid = str(best_global_row.get("candidate_id") or "RESTART_GLOBAL_0")
 
-        # Update trust region if applicable
+            fallback_center = {k: best_global_row[k] for k in self.feature_cols if k in best_global_row}
+            coords = "|".join(f"{k}={float(best_global_row[k]):.8f}" for k in sorted(self.feature_cols) if k in best_global_row)
+            digest = hashlib.sha256(coords.encode("utf-8")).hexdigest()[:12]
+            fallback_cid = str(best_global_row.get("candidate_id") or f"RESTART_{digest}")
+
+        # Update trust region using covariance-aware posterior evidence
         tr_info = None
         is_global_escape = proposal.reason_code == "GLOBAL_ESCAPE"
         if state.trust_region is not None:
             tr_info = state.trust_region.update(
                 observed_candidate=proposal.design_variables,
                 observed_value=val,
-                posterior_candidate_mean=float(p_cand_m[0]),
+                posterior_candidate_mean=p_cand_m,
                 posterior_incumbent_mean=p_inc_m,
-                posterior_candidate_std=float(p_cand_s[0]),
+                posterior_candidate_variance=p_cand_v,
+                posterior_incumbent_variance=p_inc_v,
+                posterior_candidate_incumbent_covariance=p_cand_inc_cov,
+                posterior_candidate_std=p_cand_s,
                 posterior_incumbent_std=p_inc_s,
                 objective=state.objective,
                 fallback_center=fallback_center,

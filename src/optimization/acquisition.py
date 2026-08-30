@@ -147,6 +147,82 @@ def safe_cholesky(cov: np.ndarray, base_jitter: float = 1e-8, max_jitter: float 
     return evecs @ np.diag(np.sqrt(evals))
 
 
+def extract_signal_kernel(kernel: Any) -> Any:
+    """Extracts the signal kernel from a composite kernel by removing WhiteKernel components."""
+    if kernel is None:
+        return None
+    from sklearn.gaussian_process.kernels import WhiteKernel, Sum
+    if isinstance(kernel, WhiteKernel):
+        return None
+    if isinstance(kernel, Sum):
+        k1_sig = extract_signal_kernel(kernel.k1)
+        k2_sig = extract_signal_kernel(kernel.k2)
+        if k1_sig is None:
+            return k2_sig
+        if k2_sig is None:
+            return k1_sig
+        return k1_sig + k2_sig
+    return kernel
+
+
+def predict_latent_gp(
+    gp: Any,
+    X: np.ndarray,
+    return_std: bool = False,
+    return_cov: bool = False,
+) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
+    """Predicts the latent GP mean and latent uncertainty excluding WhiteKernel observation noise.
+
+    Mathematical Formulation:
+    -------------------------
+    Under noisy observations y = f(x) + eps where eps ~ N(0, sigma_n^2), the true latent
+    function f(x) has posterior covariance:
+        Sigma_latent(X, X) = K_signal(X, X) - K_signal(X, X_train) @ [K_full]^-1 @ K_signal(X_train, X)
+    which correctly excludes the observation noise WhiteKernel variance on predictions.
+
+    When observation noise > 0, latent variance < noisy predictive variance on test points,
+    and latent variance > 0 on training points.
+    """
+    X_arr = np.asarray(X, dtype=float)
+    if X_arr.ndim == 1:
+        X_arr = X_arr.reshape(1, -1)
+
+    if not hasattr(gp, "kernel_") or not hasattr(gp, "X_train_") or not hasattr(gp, "L_") or not hasattr(gp, "alpha_"):
+        return gp.predict(X_arr, return_std=return_std, return_cov=return_cov)
+
+    signal_kernel = extract_signal_kernel(gp.kernel_)
+    if signal_kernel is None or signal_kernel == gp.kernel_:
+        # No WhiteKernel or cannot separate signal kernel: standard predict
+        return gp.predict(X_arr, return_std=return_std, return_cov=return_cov)
+
+    from scipy.linalg import solve_triangular
+
+    # 1. K_trans = K_signal(X, X_train)
+    K_trans = signal_kernel(X_arr, gp.X_train_)
+
+    # 2. Latent mean: mu = y_mean + K_trans @ alpha_
+    y_mean = getattr(gp, "_y_train_mean", 0.0)
+    mu = y_mean + (K_trans @ gp.alpha_)
+
+    if return_cov:
+        # 3. K_test = K_signal(X, X)
+        K_test = signal_kernel(X_arr, X_arr)
+        # V = L^-1 @ K_trans.T
+        V = solve_triangular(gp.L_, K_trans.T, lower=True, check_finite=False)
+        cov = K_test - (V.T @ V)
+        return mu, cov
+    elif return_std:
+        # diag(K_test)
+        K_diag = signal_kernel.diag(X_arr)
+        V = solve_triangular(gp.L_, K_trans.T, lower=True, check_finite=False)
+        var = K_diag - np.einsum("ij,ij->j", V, V)
+        var = np.maximum(var, 0.0)
+        std = np.sqrt(var)
+        return mu, std
+    else:
+        return mu
+
+
 def compute_true_mc_nei(
     gp: Any,
     X_observed_scaled: np.ndarray,
@@ -163,16 +239,16 @@ def compute_true_mc_nei(
     Mathematical Formulation:
     -------------------------
     Under noisy observations y_i = f(x_i) + eps_i, the true latent values at observed points
-    and candidate points follow a full joint Gaussian Process posterior:
-        [f(X_obs), f(X_cand)] ~ N(mu_joint, Sigma_joint)
-    where Sigma_joint incorporates the full posterior cross-covariance between candidate
-    locations and previously evaluated points.
+    and candidate points follow a full joint Gaussian Process latent posterior:
+        [f(X_obs), f(X_cand)] ~ N(mu_joint, Sigma_joint_latent)
+    where Sigma_joint_latent incorporates the full posterior cross-covariance between candidate
+    locations and previously evaluated points excluding WhiteKernel measurement noise.
 
     Algorithm:
     1. Evaluates candidates in memory-efficient chunks (e.g. 128 candidates per chunk).
     2. For each chunk, constructs the joint design matrix:
            X_joint = [X_obs; X_chunk]
-    3. Predicts joint posterior mean mu_joint and full joint covariance Sigma_joint.
+    3. Predicts latent joint posterior mean mu_joint and full latent joint covariance Sigma_joint.
     4. Computes safe Cholesky factor L_joint (with adaptive jitter escalation).
     5. Draws K correlated joint fantasy samples:
            F_joint = mu_joint + Z * L_joint^T, where Z ~ N(0, I)
@@ -207,8 +283,8 @@ def compute_true_mc_nei(
         # 1. Joint design matrix: (n_obs + n_chunk, d)
         X_joint = np.vstack([X_obs, X_chunk])
 
-        # 2. Joint posterior mean and full joint covariance
-        mu_joint, cov_joint = gp.predict(X_joint, return_cov=True)
+        # 2. Joint latent posterior mean and full latent joint covariance
+        mu_joint, cov_joint = predict_latent_gp(gp, X_joint, return_cov=True)
         mu_joint = np.asarray(mu_joint, dtype=float)
         cov_joint = np.asarray(cov_joint, dtype=float)
 

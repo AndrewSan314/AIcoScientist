@@ -123,28 +123,29 @@ def test_true_mc_nei_minimization_semantics(
 
 def test_true_mc_nei_candidate_observed_covariance_correlation() -> None:
     """Proves that True NEI accounts for cross-covariance between candidate and observed points."""
-    # Observations placed at x = 0.0 and x = 2.0 with high noise
+    # Observations placed at x = 0.0 and x = 2.0 with noise
     X_obs = np.array([[0.0], [2.0]])
-    y_obs = np.array([5.0, 5.0])
+    y_obs = np.array([5.0, 3.0])
 
-    kernel = ConstantKernel(1.0) * RBF(length_scale=0.5) + WhiteKernel(noise_level=0.2)
-    gp = GaussianProcessRegressor(kernel=kernel, random_state=42)
+    kernel = ConstantKernel(1.0, (0.1, 10.0)) * RBF(length_scale=0.5, length_scale_bounds=(0.1, 2.0)) + WhiteKernel(
+        noise_level=0.1, noise_level_bounds=(0.01, 1.0)
+    )
+    gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True, random_state=42)
     gp.fit(X_obs, y_obs)
 
-    # Candidate 1 is close to observed point 0.0 (high correlation)
-    # Candidate 2 is in the middle (x=1.0, low correlation to observations)
+    # Candidate 1 is close to observed point 0.0 (high correlation to incumbent)
+    # Candidate 2 is in the middle (x=1.0, exploratory point)
     X_cand = np.array([[0.05], [1.0]])
 
-    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
-
     # Compute True MC NEI (with exact joint covariance)
-    nei_scores = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=500, seed=42)
+    nei_scores = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=500, xi=0.001, seed=42)
 
     # Scores must be finite, non-negative, and properly distinguish candidate correlations
     assert len(nei_scores) == 2
     assert np.all(np.isfinite(nei_scores))
     assert np.all(nei_scores >= 0.0)
     assert nei_scores[0] != nei_scores[1]
+
 
 
 def test_compute_acquisition_nei_raises_on_missing_gp_inputs(
@@ -206,3 +207,37 @@ def test_compute_acquisition_dispatch_routes_true_nei(
 
     direct_score = compute_true_mc_nei(gp, X_obs, X_cand, seed=42)
     assert np.allclose(score_model, direct_score)
+
+
+def test_predict_latent_gp_variance_smaller_than_noisy() -> None:
+    from src.optimization.acquisition import predict_latent_gp
+    rng = np.random.default_rng(42)
+    X_train = rng.uniform(0.0, 1.0, size=(15, 2))
+    y_train = np.sin(3 * X_train[:, 0]) + rng.normal(0.0, 0.2, size=len(X_train))
+
+    kernel = ConstantKernel(1.0) * Matern(length_scale=0.5, nu=2.5) + WhiteKernel(noise_level=0.1)
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42)
+    gp.fit(X_train, y_train)
+
+    X_test = rng.uniform(0.0, 1.0, size=(20, 2))
+
+    # Latent prediction
+    latent_mean, latent_std = predict_latent_gp(gp, X_test, return_std=True)
+    latent_mean_cov, latent_cov = predict_latent_gp(gp, X_test, return_cov=True)
+
+    # Standard GP prediction (noisy test predictions)
+    noisy_mean, noisy_std = gp.predict(X_test, return_std=True)
+    noisy_mean_cov, noisy_cov = gp.predict(X_test, return_cov=True)
+
+    # Means should match
+    assert np.allclose(latent_mean, noisy_mean, atol=1e-5)
+    assert np.allclose(latent_mean_cov, noisy_mean_cov, atol=1e-5)
+
+    # Latent variance must be strictly smaller than noisy variance on test points
+    assert np.all(latent_std < noisy_std)
+    assert np.all(np.diag(latent_cov) < np.diag(noisy_cov))
+
+    # Check training points: latent variance > 0 (strictly positive under noise)
+    _, train_latent_std = predict_latent_gp(gp, X_train, return_std=True)
+    assert np.all(train_latent_std > 0.0)
+
