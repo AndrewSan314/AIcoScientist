@@ -502,7 +502,7 @@ def run_single_attia_continuous_trajectory(
 
                     x_feat = np.array([[c1_v, c2_v, c3_v]])
                     x_sc = scaler.transform(x_feat)
-                    m, s = gp.predict(x_sc, return_std=True)
+                    m, s = predict_latent_gp(gp, x_sc, return_std=True)
                     score_val = compute_acquisition(
                         method=current_method,
                         mean=m,
@@ -570,9 +570,9 @@ def run_single_attia_continuous_trajectory(
         sim_seed = generate_attia_simulator_seed(benchmark_seed=optimizer_seed, policy_id=cand_id)
         sim_life = float(simulate_attia_policy(c1, c2, c3, mode="hi", variance=True, seed=sim_seed))
 
-        # Predict mean & std at selected point using 3D free variables
+        # Predict mean & std at selected point using 3D free variables and latent GP
         sc_pt = scaler.transform([[c1, c2, c3]])
-        p_mean, p_std = gp.predict(sc_pt, return_std=True)
+        p_mean, p_std = predict_latent_gp(gp, sc_pt, return_std=True)
 
         observed_records.append(
             {

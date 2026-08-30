@@ -56,3 +56,19 @@ def test_pipeline_continues_when_skimage_missing(monkeypatch):
     assert MASTER_FILE.is_file()
     assert MODEL_FILE.is_file()
 
+
+def test_pipeline_reraises_unrelated_import_error(monkeypatch):
+    import builtins
+    import pytest
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "src.sem_features":
+            raise ImportError("Something completely unrelated broke", name="unrelated_pkg")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    with pytest.raises(ImportError, match="Something completely unrelated broke"):
+        main(dataset="si_mxene", mode="full")
+
+

@@ -123,8 +123,11 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
             from src.sem_features import extract_sem_features
             sem_df = extract_sem_features()
             print(f"Saved: data/processed/sem_features_extracted.csv ({len(sem_df)} rows)")
-        except ImportError:
-            print("Skipping optional SEM feature extraction: scikit-image is not installed.")
+        except ImportError as exc:
+            if "skimage" in str(exc) or "scikit-image" in str(exc) or getattr(exc, "name", None) in {"skimage", "scikit-image"}:
+                print("Skipping optional SEM feature extraction: scikit-image is not installed.")
+            else:
+                raise
     if mode == "full":
         print("\nPipeline completed successfully.")
 
