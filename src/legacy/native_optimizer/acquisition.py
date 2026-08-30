@@ -51,13 +51,16 @@ def expected_improvement_acquisition(
     mean: np.ndarray,
     std: np.ndarray,
     best_observed: float,
-    xi: float = 0.01,
+    xi: float = 0.0,
     objective: str = "maximize",
 ) -> np.ndarray:
     """Computes numerically stable Expected Improvement (EI).
 
     EI(x) = (mu(x) - y^* - xi) * Phi(gamma) + sigma(x) * phi(gamma)
     where gamma = (mu(x) - y^* - xi) / sigma(x).
+
+    Default xi=0.0 provides canonical target-scale invariance under positive affine transformations
+    (y' = a*y + b, a > 0). Explicit non-zero xi has target units and is intentionally scale-dependent.
     """
     m = np.asarray(mean, dtype=float)
     s = np.asarray(std, dtype=float)
@@ -89,7 +92,7 @@ def denoised_expected_improvement_acquisition(
     std: np.ndarray,
     best_observed: float | None = None,
     observed_posterior_means: np.ndarray | Sequence[float] | None = None,
-    xi: float = 0.01,
+    xi: float = 0.0,
     objective: str = "maximize",
 ) -> np.ndarray:
     """Computes Denoised-Incumbent Expected Improvement.
@@ -97,6 +100,7 @@ def denoised_expected_improvement_acquisition(
     Heuristic approximation: Evaluates analytic EI over the single posterior mean incumbent:
     f* = max_i mu(x_i_obs) (for maximization) or min_i mu(x_i_obs) (for minimization).
     Preserved for explicit comparison. For canonical joint-posterior NEI, use compute_true_mc_nei.
+    Default xi=0.0 is target-scale invariant.
     """
     m = np.asarray(mean, dtype=float)
 
@@ -244,7 +248,7 @@ def compute_true_mc_nei(
     X_observed_scaled: np.ndarray,
     X_candidates_scaled: np.ndarray,
     n_fantasies: int = 256,
-    xi: float = 0.01,
+    xi: float = 0.0,
     objective: str = "maximize",
     seed: int = 42,
     candidate_chunk_size: int = 128,
@@ -259,6 +263,9 @@ def compute_true_mc_nei(
         [f(X_obs), f(X_cand)] ~ N(mu_joint, Sigma_joint_latent)
     where Sigma_joint_latent incorporates the full posterior cross-covariance between candidate
     locations and previously evaluated points excluding WhiteKernel measurement noise.
+
+    Default xi=0.0 provides canonical target-scale invariance under positive affine transformations
+    (y' = a*y + b, a > 0). Explicit non-zero xi has target units and is intentionally scale-dependent.
 
     Algorithm:
     1. Evaluates candidates in memory-efficient chunks (e.g. 128 candidates per chunk).
@@ -335,10 +342,13 @@ def probability_of_improvement_acquisition(
     mean: np.ndarray,
     std: np.ndarray,
     best_observed: float,
-    xi: float = 0.01,
+    xi: float = 0.0,
     objective: str = "maximize",
 ) -> np.ndarray:
-    """Computes Probability of Improvement (PI): Phi(gamma)."""
+    """Computes Probability of Improvement (PI): Phi(gamma).
+
+    Default xi=0.0 is target-scale invariant.
+    """
     m = np.asarray(mean, dtype=float)
     s = np.asarray(std, dtype=float)
 
@@ -367,7 +377,7 @@ def compute_acquisition(
     std: np.ndarray,
     best_observed: float,
     beta: float = 1.0,
-    xi: float = 0.01,
+    xi: float = 0.0,
     objective: str = "maximize",
     observed_posterior_means: np.ndarray | Sequence[float] | None = None,
     gp: Any | None = None,

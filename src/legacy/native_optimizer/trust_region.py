@@ -103,7 +103,7 @@ class TuRBOTrustRegion:
         max_length: float = 1.6,
         success_tolerance: int = 3,
         failure_tolerance: int = 5,
-        success_delta: float = 1.0,
+        success_delta: float = 0.0,
         success_probability_threshold: float = 0.6,
         global_escape_frequency: int = 6,
         init_radius: float | None = None,  # Backward compatibility
@@ -173,6 +173,10 @@ class TuRBOTrustRegion:
         Evaluates P(Delta f > success_delta | data) >= success_probability_threshold
         accounting for posterior covariance: Var(f_cand - f_inc) = Var(f_cand) + Var(f_inc) - 2*Cov.
         Moves center only upon verified posterior improvement.
+
+        Default success_delta=0.0 provides canonical target-scale invariance under positive affine
+        transformations (y' = a*y + b, a > 0). Explicit success_delta > 0 represents an absolute
+        improvement threshold in target units and is intentionally scale-dependent.
         """
         if self.state is None:
             self.initialize(observed_candidate, observed_value)

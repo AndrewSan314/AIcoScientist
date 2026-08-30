@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 
-from src.optimization.acquisition import compute_acquisition
+from src.legacy.native_optimizer.acquisition import compute_acquisition
 
 
 @dataclass(frozen=True)
