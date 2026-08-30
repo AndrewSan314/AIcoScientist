@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
-import joblib
 import numpy as np
 import pandas as pd
 
 from src.build_dataset import build_dataset
 from src.datasets.base import DatasetAdapter
-from src.train_model import train_model
 from src.utils import OUTPUT_DIR
 
-from .acquisition import ucb
+from .backend import OptimizerBackend
+from .botorch_backend import BoTorchBackend
 from .candidates import normalize_candidate_schema, remove_observed
 from .constraints import apply_constraints
 from .distance import nearest_neighbor_distances
+from .objective import OptimizationObjective
+from .proposal import CandidateProposal
 from .selection import confidence, select_top_n
 
 
@@ -22,35 +24,22 @@ def recommend(
     adapter: DatasetAdapter,
     observed: pd.DataFrame | None = None,
     *,
+    backend: OptimizerBackend | None = None,
     model_bundle: dict | None = None,
     n: int = 3,
     beta: float = 1.0,
+    strategy: str = "gp_ucb",
     model_path: Path | None = None,
     output_path: Path | None = None,
+    seed: int = 42,
 ) -> pd.DataFrame:
+    """Generates candidate recommendations by delegating surrogate/acquisition evaluation to OptimizerBackend."""
     if not adapter.spec.supports_optimization:
         raise ValueError(
             f"Dataset {adapter.spec.name!r} is a prediction-only dataset and does not support recommendation."
         )
     if observed is None:
         observed = build_dataset(adapter)
-
-    if model_bundle is None:
-        if model_path is None:
-            model_path = OUTPUT_DIR / adapter.spec.name / "trained_model.pkl"
-        model_path = Path(model_path)
-        if not model_path.is_file():
-            train_model(observed, adapter=adapter, output_path=model_path)
-        model_bundle = joblib.load(model_path)
-
-    features = list(model_bundle.get("features", adapter.spec.feature_columns))
-    if features != adapter.spec.feature_columns:
-        raise ValueError("Model feature metadata does not match the dataset specification")
-    try:
-        gp_model = model_bundle["gp_model"]
-        scaler = model_bundle["scaler"]
-    except KeyError as error:
-        raise ValueError("Model artifact must contain gp_model and scaler") from error
 
     candidates = normalize_candidate_schema(
         adapter.candidate_space(observed), adapter.spec
@@ -61,26 +50,70 @@ def recommend(
     if candidates.empty:
         raise RuntimeError("No valid unseen candidates are available")
 
-    fill_values = model_bundle.get(
-        "fill_values", observed[features].median(numeric_only=True).to_dict()
-    )
+    # Ensure a candidate_id column exists for 1-to-1 proposal mapping
+    id_col = adapter.spec.candidate_id_column or "candidate_id"
+    if id_col not in candidates.columns:
+        candidates[id_col] = [f"CAND_{i:04d}" for i in range(len(candidates))]
+
+    features = list(adapter.spec.feature_columns)
+    fill_values = observed[features].median(numeric_only=True).to_dict()
     feature_matrix = adapter.build_candidate_features(candidates, observed, fill_values)
     if list(feature_matrix.columns) != features:
         raise ValueError("Adapter returned a candidate feature matrix with the wrong schema")
-    mean, std = gp_model.predict(scaler.transform(feature_matrix), return_std=True)
-    candidates = candidates.copy()
+
+    # Combine candidates with full feature matrix
+    candidates_with_features = candidates.copy()
     for feature in features:
-        if feature not in candidates:
-            candidates[feature] = feature_matrix[feature].to_numpy()
-    candidates["predicted_mean"] = mean
-    candidates["predicted_std"] = std
-    candidates["acquisition_score"] = ucb(
-        mean, std, beta=beta, objective=adapter.spec.objective
+        if feature not in candidates_with_features:
+            candidates_with_features[feature] = feature_matrix[feature].to_numpy()
+
+    # Use BoTorchBackend by default
+    opt_backend = backend if backend is not None else BoTorchBackend(default_strategy=strategy)
+
+    objective = OptimizationObjective(
+        target_name=adapter.spec.target_column,
+        minimize=adapter.spec.objective.strip().lower() == "minimize",
     )
+
+    # Delegate proposal computation to the optimizer backend
+    proposals = opt_backend.propose(
+        observations=observed,
+        candidate_pool=candidates_with_features,
+        objective=objective,
+        feature_columns=features,
+        candidate_id_column=id_col,
+        n=len(candidates_with_features),
+        seed=seed,
+        strategy=strategy,
+        beta=beta,
+    )
+
+    # Map proposals back to candidates dataframe
+    proposal_map = {p.candidate_id: p for p in proposals}
+    candidates = candidates_with_features.copy()
+
+    means = []
+    stds = []
+    acq_scores = []
+    for cid in candidates[id_col]:
+        p = proposal_map.get(str(cid))
+        if p is not None:
+            means.append(p.predicted_mean)
+            stds.append(p.predicted_std)
+            acq_scores.append(p.acquisition_value)
+        else:
+            means.append(0.0)
+            stds.append(1.0)
+            acq_scores.append(0.0)
+
+    candidates["predicted_mean"] = np.array(means, dtype=float)
+    candidates["predicted_std"] = np.array(stds, dtype=float)
+    candidates["acquisition_score"] = np.array(acq_scores, dtype=float)
+
     candidates["final_score"] = adapter.adjust_acquisition_score(
         candidates,
         pd.Series(candidates["acquisition_score"].to_numpy(), index=candidates.index),
-        mean,
+        candidates["predicted_mean"].to_numpy(),
     )
     distance_columns = adapter.distance_columns()
     candidates["nearest_distance"] = nearest_neighbor_distances(
@@ -92,7 +125,7 @@ def recommend(
             candidates["nearest_distance"], candidates["predicted_std"]
         )
     ]
-    candidates[f"predicted_{adapter.spec.target_column}"] = mean
+    candidates[f"predicted_{adapter.spec.target_column}"] = candidates["predicted_mean"]
     candidates["recommendation_reason"] = [
         f"Recommended for high predicted {adapter.spec.target_column} (mean={m:.2f}) with epistemic uncertainty (std={s:.2f}) and novelty distance ({d:.2f})."
         for m, s, d in zip(

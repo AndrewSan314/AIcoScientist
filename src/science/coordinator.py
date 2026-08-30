@@ -14,7 +14,7 @@ import pandas as pd
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
 from src.optimization.closed_loop import ClosedLoopOptimizer, ExperimentProposal, ExperimentResult, OptimizerState
 from src.optimization.search_space import ContinuousVariable, SearchSpace
-from src.optimization.trust_region import TrustRegionState, TuRBOTrustRegion
+from src.legacy.native_optimizer.trust_region import TrustRegionState, TuRBOTrustRegion
 from src.science.direct_baseline import DirectPerformanceModel
 from src.science.ledger import ExperimentLedger, _canonical_json
 from src.science.model_bundle import ScientificModelBundle

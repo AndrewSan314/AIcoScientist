@@ -104,14 +104,18 @@ def load_raw_feconi_mat(
     }
 
 
-class FeCoNiExperimentOracle:
-    """Offline oracle for experimental evaluation on the real Fe-Co-Ni benchmark.
+class DuplicateExperimentQueryError(RuntimeError):
+    """Raised when an optimization run attempts to re-query an already observed candidate."""
 
-    HARD EVALUATION FIREWALL:
-    - Encapsulates ground truth table for all 921 measured physical samples.
-    - Zero latent target/XRD leakage to optimizer candidates.
-    - Strictly rejects out-of-pool / continuous / fabricated candidate queries.
-    - Prevents duplicate evaluations per run trajectory.
+
+class FeCoNiExperimentOracle:
+    """Offline ground-truth oracle for closed-loop Fe-Co-Ni experimental benchmarks.
+
+    Enforces strict experimental integrity:
+    1. Only allows lookups by exact candidate ID.
+    2. Raises DuplicateExperimentQueryError if a candidate is queried more than once in the same run.
+    3. Tracks total number of queries (experimental budget).
+    4. Computes true global best value for benchmark metrics (regret calculation).
     """
 
     def __init__(
@@ -120,63 +124,61 @@ class FeCoNiExperimentOracle:
         target_column: str = "Kerr",
         allow_duplicate_queries: bool = False,
     ) -> None:
-        if target_column not in {"Kerr", "Coer"}:
-            raise ValueError(f"target_column must be 'Kerr' or 'Coer', got '{target_column}'")
-
-        required_cols = [FECONI_CANDIDATE_ID_COLUMN, "Co", "Fe", "Ni", target_column]
-        for col in required_cols:
-            if col not in full_records_df.columns:
-                raise ValueError(f"full_records_df missing required column: '{col}'")
-
         self.target_column = target_column
         self.allow_duplicate_queries = allow_duplicate_queries
-        self._ground_truth_map: dict[str, dict[str, Any]] = {}
-        for _, row in full_records_df.iterrows():
-            cid = str(row[FECONI_CANDIDATE_ID_COLUMN])
-            self._ground_truth_map[cid] = {
-                FECONI_CANDIDATE_ID_COLUMN: cid,
-                "Co": float(row["Co"]),
-                "Fe": float(row["Fe"]),
-                "Ni": float(row["Ni"]),
-                target_column: float(row[target_column]),
-            }
 
+        if FECONI_CANDIDATE_ID_COLUMN not in full_records_df.columns:
+            raise ValueError(f"Oracle requires '{FECONI_CANDIDATE_ID_COLUMN}' column.")
+        if target_column not in full_records_df.columns:
+            raise ValueError(f"Target column '{target_column}' not found in ground-truth DataFrame.")
+
+        self._records = full_records_df.set_index(FECONI_CANDIDATE_ID_COLUMN).to_dict(orient="index")
         self._queried_cids: set[str] = set()
         self._query_history: list[dict[str, Any]] = []
 
-        all_targets = [v[target_column] for v in self._ground_truth_map.values()]
-        self.global_best_value = float(np.max(all_targets))
-        best_cid = max(self._ground_truth_map.keys(), key=lambda k: self._ground_truth_map[k][target_column])
-        self.global_best_candidate_id = best_cid
+        # Find true global maximum target in dataset
+        target_series = full_records_df[target_column]
+        self._global_best_idx = target_series.idxmax()
+        self._global_best_cid = str(full_records_df.loc[self._global_best_idx, FECONI_CANDIDATE_ID_COLUMN])
+        self._global_best_val = float(target_series.max())
 
-    def query(self, candidate_input: str | Mapping[str, Any] | pd.Series) -> dict[str, Any]:
-        """Queries the oracle for ground truth target value of a measured material.
+    @property
+    def global_best_candidate_id(self) -> str:
+        return self._global_best_cid
 
-        Args:
-            candidate_input: Candidate ID string, mapping, or pandas Series.
+    @property
+    def global_best_value(self) -> float:
+        return self._global_best_val
 
-        Returns:
-            Dict containing revealed candidate_id, design variables, and measured target value.
-        """
-        if isinstance(candidate_input, str):
-            cid = candidate_input
-        elif isinstance(candidate_input, (pd.Series, dict)):
-            cid = str(candidate_input.get(FECONI_CANDIDATE_ID_COLUMN, ""))
-        else:
-            raise TypeError(f"Unsupported candidate_input type: {type(candidate_input)}")
-
-        if not cid or cid not in self._ground_truth_map:
-            raise KeyError(
-                f"Candidate ID '{cid}' is not a valid measured physical material in the 921-sample benchmark."
-            )
+    def query(self, candidate_id: str) -> dict[str, Any]:
+        """Queries the oracle for ground-truth physical characterization and target measurements."""
+        cid = str(candidate_id)
+        if cid not in self._records:
+            raise KeyError(f"Candidate ID '{cid}' not found in Fe-Co-Ni ground-truth dataset.")
 
         if not self.allow_duplicate_queries and cid in self._queried_cids:
-            raise ValueError(f"Duplicate experimental measurement requested for sample '{cid}'.")
+            raise DuplicateExperimentQueryError(
+                f"Candidate '{cid}' has already been queried in this benchmark run. "
+                "Re-querying observed candidates violates discrete pool optimization semantics."
+            )
 
+        rec = self._records[cid]
         self._queried_cids.add(cid)
-        record = dict(self._ground_truth_map[cid])
-        self._query_history.append(record)
-        return record
+        query_entry = {
+            "query_number": len(self._query_history) + 1,
+            FECONI_CANDIDATE_ID_COLUMN: cid,
+            self.target_column: rec[self.target_column],
+        }
+        self._query_history.append(query_entry)
+
+        return {
+            FECONI_CANDIDATE_ID_COLUMN: cid,
+            "sample_index": rec["sample_index"],
+            "Co": rec["Co"],
+            "Fe": rec["Fe"],
+            "Ni": rec["Ni"],
+            self.target_column: rec[self.target_column],
+        }
 
     def reset(self) -> None:
         """Resets query history for a new optimization run."""
@@ -221,7 +223,6 @@ class FeCoNiAdapter(DatasetAdapter):
             self._raw_data = raw
 
             C = raw["C"]
-            # Verified column mapping: Col 0 = Co, Col 1 = Fe, Col 2 = Ni
             co_col = C[:, 0]
             fe_col = C[:, 1]
             ni_col = C[:, 2]
@@ -273,11 +274,12 @@ class FeCoNiAdapter(DatasetAdapter):
     def load_data(self) -> pd.DataFrame:
         return self.load()
 
-    def get_candidate_pool(self) -> pd.DataFrame:
-        """Returns the optimizer-visible candidate pool containing ONLY candidate_id, Co, Fe, and Ni.
+    def candidate_space(self, observed: pd.DataFrame | None = None) -> pd.DataFrame:
+        """Returns the discrete candidate pool of measured points."""
+        return self.get_candidate_pool()
 
-        Zero oracle targets or structural spectra are included.
-        """
+    def get_candidate_pool(self) -> pd.DataFrame:
+        """Returns the optimizer-visible candidate pool containing ONLY candidate_id, Co, Fe, and Ni."""
         self._ensure_loaded()
         assert self._full_df is not None
         visible_cols = [FECONI_CANDIDATE_ID_COLUMN, "sample_index", "Co", "Fe", "Ni"]

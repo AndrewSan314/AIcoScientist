@@ -8,7 +8,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.preprocessing import StandardScaler
 
-from src.optimization.acquisition import predict_latent_gp
+from src.science.gp_utils import predict_latent_gp
 
 
 class DirectPerformanceModel:
