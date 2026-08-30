@@ -6,7 +6,13 @@ from pathlib import Path
 import pandas as pd
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
-from src.optimization.search_space import ContinuousVariable, DiscreteVariable, SearchSpace
+from src.optimization.search_space import (
+    Constraint,
+    ContinuousVariable,
+    DerivedVariable,
+    DiscreteVariable,
+    SearchSpace,
+)
 from src.science.provenance import (
     ScientificModelProvenance,
     build_benchmark_run_manifest,
@@ -228,5 +234,45 @@ def test_very_small_float_value_change_changes_dataset_fingerprint() -> None:
     fp1 = compute_dataset_fingerprint(df1, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
     fp2 = compute_dataset_fingerprint(df2, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
     assert fp1 != fp2
+
+
+def test_derived_variable_changes_search_space_fingerprint() -> None:
+    v1 = ContinuousVariable(name="x1", lower=0.0, upper=10.0)
+    v2 = ContinuousVariable(name="x2", lower=0.0, upper=10.0)
+
+    space_plain = SearchSpace(name="space", variables=[v1, v2])
+
+    space_derived1 = SearchSpace(
+        name="space",
+        variables=[v1, v2],
+        derived_variables=[DerivedVariable(name="ratio", compute_fn=lambda d: d["x1"] / (d["x2"] + 1e-5), depends_on=("x1", "x2"))],
+    )
+
+    space_derived2 = SearchSpace(
+        name="space",
+        variables=[v1, v2],
+        derived_variables=[DerivedVariable(name="sum", compute_fn=lambda d: d["x1"] + d["x2"], depends_on=("x1", "x2"))],
+    )
+
+    fp_plain = compute_search_space_fingerprint(space_plain)
+    fp_d1 = compute_search_space_fingerprint(space_derived1)
+    fp_d2 = compute_search_space_fingerprint(space_derived2)
+
+    assert fp_plain != fp_d1
+    assert fp_d1 != fp_d2
+
+
+def test_constraint_changes_search_space_fingerprint() -> None:
+    v1 = ContinuousVariable(name="x1", lower=0.0, upper=10.0)
+    c1 = Constraint(name="max_sum", predicate=lambda d: d["x1"] <= 8.0, description="x1 must be <= 8.0")
+    c2 = Constraint(name="max_sum", predicate=lambda d: d["x1"] <= 5.0, description="x1 must be <= 5.0")
+
+    space1 = SearchSpace(name="space", variables=[v1], constraints=[c1])
+    space2 = SearchSpace(name="space", variables=[v1], constraints=[c2])
+
+    fp1 = compute_search_space_fingerprint(space1)
+    fp2 = compute_search_space_fingerprint(space2)
+    assert fp1 != fp2
+
 
 

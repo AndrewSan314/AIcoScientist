@@ -171,7 +171,9 @@ def compute_dataset_fingerprint(
 def compute_search_space_fingerprint(search_space: Any) -> str:
     """Computes a deterministic SHA-256 fingerprint for a SearchSpace object.
 
-    Handles ContinuousVariable, DiscreteVariable, CategoricalVariable, DerivedVariable, and Constraints.
+    Handles ContinuousVariable, DiscreteVariable, DerivedVariable, and Constraints.
+    Note: Python callable implementations are not serialized directly; supply an explicit
+    provenance_id on custom derived variables or constraints for strict semantic tracking.
     """
     if search_space is None:
         return "NONE"
@@ -194,11 +196,21 @@ def compute_search_space_fingerprint(search_space: Any) -> str:
             ]
         if hasattr(v, "categories") and v.categories is not None:
             v_item["categories"] = [str(cat) for cat in v.categories]
-        if hasattr(v, "depends_on") and v.depends_on is not None:
-            v_item["depends_on"] = sorted(list(v.depends_on))
         if hasattr(v, "provenance_id") and v.provenance_id is not None:
             v_item["provenance_id"] = str(v.provenance_id)
         items.append(v_item)
+
+    derived_variables = getattr(search_space, "derived_variables", [])
+    for d in derived_variables:
+        d_type = getattr(d, "var_type", None) or type(d).__name__
+        d_item: dict[str, Any] = {
+            "name": getattr(d, "name", ""),
+            "var_type": d_type,
+            "depends_on": list(getattr(d, "depends_on", ())),  # Preserve declared depends_on order
+        }
+        if hasattr(d, "provenance_id") and d.provenance_id is not None:
+            d_item["provenance_id"] = str(d.provenance_id)
+        items.append(d_item)
 
     constraints = getattr(search_space, "constraints", [])
     for c in constraints:

@@ -14,7 +14,7 @@ import pandas as pd
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
 from src.optimization.closed_loop import ClosedLoopOptimizer, ExperimentProposal, ExperimentResult, OptimizerState
 from src.optimization.search_space import ContinuousVariable, SearchSpace
-from src.optimization.trust_region import TrustRegionState
+from src.optimization.trust_region import TrustRegionState, TuRBOTrustRegion
 from src.science.direct_baseline import DirectPerformanceModel
 from src.science.ledger import ExperimentLedger, _canonical_json
 from src.science.model_bundle import ScientificModelBundle
@@ -40,6 +40,10 @@ class ResumeStateMismatchError(ValueError):
     """Raised when ledger optimizer snapshot schema/state mismatches the current DatasetSpec or SearchSpace."""
 
 
+class PrimaryTargetRevisionError(ValueError):
+    """Raised when attempting to revise the primary target value on an already COMPLETED experiment."""
+
+
 def _build_fallback_search_space(spec: DatasetSpec, candidate_pool: pd.DataFrame) -> SearchSpace:
     """Infers bounded search space from candidate pool for numeric columns only as fallback."""
     logger.warning(
@@ -55,7 +59,7 @@ def _build_fallback_search_space(spec: DatasetSpec, candidate_pool: pd.DataFrame
         if not pd.api.types.is_numeric_dtype(candidate_pool[col]):
             raise ValueError(
                 f"Candidate variable {col!r} is non-numeric (type: {candidate_pool[col].dtype}). "
-                f"Explicit SearchSpace with DiscreteVariable or CategoricalVariable is required."
+                f"Explicit SearchSpace with numeric DiscreteVariable or pre-encoded categorical features is required."
             )
 
         c_min = float(candidate_pool[col].min())
@@ -208,6 +212,28 @@ class ScientificClosedLoopCoordinator:
             return all_df
         completed_mask = all_df["stage"] == ExperimentStage.COMPLETED.value
         return all_df[completed_mask].reset_index(drop=True)
+
+    def _refit_direct_model(self) -> None:
+        """Refits the direct performance model or resets it if insufficient valid training data remains."""
+        direct_df = self.build_direct_training_frame()
+        self.model_bundle.direct_model.fit(direct_df)
+
+    def _refit_stage_a_model(self) -> None:
+        """Refits Stage A characterization channels or resets channels with insufficient valid data."""
+        stage_a_df = self.build_stage_a_training_frame()
+        self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
+
+    def _refit_stage_b_model(self) -> None:
+        """Refits Stage B performance targets or resets targets with insufficient valid data."""
+        stage_b_df = self.build_stage_b_training_frame()
+        self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+    def _refit_scientific_models(self) -> None:
+        """Refits all scientific component models and refreshes end-to-end model status and provenance."""
+        self._refit_direct_model()
+        self._refit_stage_a_model()
+        self._refit_stage_b_model()
+        self._refresh_model_provenance()
 
     def _refresh_model_provenance(self) -> None:
         """Refreshes the scientific model provenance capturing component-specific training datasets."""
@@ -436,11 +462,9 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Online update of Stage A using all characterized records
-        stage_a_df = self.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-            self._refresh_model_provenance()
+        # Online update of Stage A
+        self._refit_stage_a_model()
+        self._refresh_model_provenance()
 
         if rec.stage == ExperimentStage.COMPLETED:
             self._on_experiment_completed(rec)
@@ -497,11 +521,9 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Online update of Direct Performance Model using all available process -> primary target data
-        direct_df = self.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            self.model_bundle.direct_model.fit(direct_df)
-            self._refresh_model_provenance()
+        # Online update of Direct Performance Model
+        self._refit_direct_model()
+        self._refresh_model_provenance()
 
         if rec.stage == ExperimentStage.COMPLETED:
             self._on_experiment_completed(rec)
@@ -530,6 +552,16 @@ class ScientificClosedLoopCoordinator:
                 allow_measurement_revision=allow_measurement_revision,
             )
 
+        # Enforce strict policy: Primary target column cannot be revised after experiment is COMPLETED
+        if self.spec.target_column in performance:
+            existing_primary = current_rec.performance.get(self.spec.target_column)
+            new_primary = float(performance[self.spec.target_column])
+            if existing_primary is not None and float(existing_primary) != new_primary:
+                raise PrimaryTargetRevisionError(
+                    f"Primary target column {self.spec.target_column!r} cannot be revised after experiment "
+                    f"{experiment_id!r} is COMPLETED (existing: {existing_primary}, attempted: {new_primary})."
+                )
+
         rec = self.ledger.append_transition(
             experiment_id=experiment_id,
             new_stage=ExperimentStage.COMPLETED,
@@ -543,15 +575,9 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Refit Stage B & Direct models if new measurements arrived
-        stage_b_df = self.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        direct_df = self.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            self.model_bundle.direct_model.fit(direct_df)
-
+        # Refit Stage B & Direct models
+        self._refit_stage_b_model()
+        self._refit_direct_model()
         self._refresh_model_provenance()
         return rec
 
@@ -588,19 +614,7 @@ class ScientificClosedLoopCoordinator:
         self.optimizer.observe(self.optimizer_state, prop, exp_res)
 
         # Refit models with complete component views
-        direct_df = self.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            self.model_bundle.direct_model.fit(direct_df)
-
-        stage_a_df = self.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-
-        stage_b_df = self.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        self._refresh_model_provenance()
+        self._refit_scientific_models()
 
         # Save optimizer state snapshot into ledger
         self.ledger.save_optimizer_snapshot(self.optimizer_state.to_dict(), experiment_id=rec.experiment_id)
@@ -623,20 +637,8 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Refit scientific models with updated training frames (excluding failed experiment)
-        direct_df = self.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            self.model_bundle.direct_model.fit(direct_df)
-
-        stage_a_df = self.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-
-        stage_b_df = self.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        self._refresh_model_provenance()
+        # Refit or reset scientific models with updated training frames (excluding failed experiment)
+        self._refit_scientific_models()
         return rec
 
     def record_cancelled(
@@ -653,19 +655,7 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        direct_df = self.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            self.model_bundle.direct_model.fit(direct_df)
-
-        stage_a_df = self.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-
-        stage_b_df = self.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        self._refresh_model_provenance()
+        self._refit_scientific_models()
         return rec
 
     @classmethod
@@ -685,11 +675,12 @@ class ScientificClosedLoopCoordinator:
         ledger = ExperimentLedger(db_path)
 
         # 1. Ingest initial seed experiments into ledger respecting true information horizons
+        cand_vars_keys = spec.candidate_variables or []
         for i, row in initial_data.iterrows():
             eid = str(row[spec.id_column]) if spec.id_column in row and pd.notna(row[spec.id_column]) else str(row.get("experiment_id", f"EXP_INIT_{i:03d}"))
             cid = str(row[spec.candidate_id_column]) if spec.candidate_id_column in row and pd.notna(row[spec.candidate_id_column]) else str(row.get("candidate_id", f"CAND_INIT_{i:03d}"))
             pre_feats = {k: float(row[k]) for k in spec.pre_experiment_features if k in row and pd.notna(row[k])}
-            cand_feats = {k: float(row[k]) for k in spec.candidate_variables if k in row and pd.notna(row[k])} or pre_feats
+            cand_feats = {k: float(row[k]) for k in cand_vars_keys if k in row and pd.notna(row[k])}
             char_feats = {k: float(row[k]) for k in spec.post_experiment_characterization if k in row and pd.notna(row[k])}
             perf_feats = {k: float(row[k]) for k in spec.targets if k in row and pd.notna(row[k])}
 
@@ -769,19 +760,7 @@ class ScientificClosedLoopCoordinator:
         )
 
         # 4. Refit models using coordinator's pure training frame methods
-        direct_df = coord.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            coord.model_bundle.direct_model.fit(direct_df)
-
-        stage_a_df = coord.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            coord.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-
-        stage_b_df = coord.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            coord.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        coord._refresh_model_provenance()
+        coord._refit_scientific_models()
 
         # 5. Initialize optimizer from completed valid observations
         opt_df = coord.build_optimizer_training_frame()
@@ -803,7 +782,7 @@ class ScientificClosedLoopCoordinator:
         allow_parallel_experiments: bool = False,
         random_state: int = 42,
     ) -> ScientificClosedLoopCoordinator:
-        """Recovers and reconstructs coordinator state deterministically from an existing SQLite ledger."""
+        """Recovers and reconstructs coordinator state deterministically from an existing SQLite ledger, reconciling any un-snapshotted completed observations."""
         ledger = ExperimentLedger(db_path)
         valid, errors = ledger.verify_integrity()
         if not valid:
@@ -876,32 +855,83 @@ class ScientificClosedLoopCoordinator:
             random_state=random_state,
         )
 
-        # Refit models using the EXACT SAME component training-view semantics as runtime
-        direct_df = coord.build_direct_training_frame()
-        if len(direct_df) >= 2:
-            coord.model_bundle.direct_model.fit(direct_df)
+        # Refit models using the pure refit helpers (handles reset if < 2 valid rows)
+        coord._refit_scientific_models()
 
-        stage_a_df = coord.build_stage_a_training_frame()
-        if len(stage_a_df) >= 2:
-            coord.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
-
-        stage_b_df = coord.build_stage_b_training_frame()
-        if len(stage_b_df) >= 2:
-            coord.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
-
-        coord._refresh_model_provenance()
-
-        # Restore optimizer state from authoritative snapshot
+        # Optimizer State Reconstruction & Reconciliation
         opt_df = coord.build_optimizer_training_frame()
-        opt_state = optimizer.initialize(opt_df)
+        completed_records = ledger.list_completed_records()
+
         if latest_snapshot is not None:
-            opt_state.step = int(latest_snapshot.get("step", opt_state.step))
-            opt_state.current_best = float(latest_snapshot.get("current_best", opt_state.current_best))
-            if latest_snapshot.get("trust_region_state") and opt_state.trust_region:
-                opt_state.trust_region.state = TrustRegionState.from_dict(latest_snapshot["trust_region_state"])
-            if latest_snapshot.get("history"):
-                opt_state.history = list(latest_snapshot["history"])
+            # 1. Restore optimizer state from authoritative snapshot
+            opt_state = OptimizerState(
+                observed_records=[dict(r) for r in latest_snapshot.get("observed_records", [])],
+                feature_cols=list(candidate_cols),
+                target_col=spec.target_column,
+                objective=spec.objective,
+                step=int(latest_snapshot.get("step", 0)),
+                current_best=float(latest_snapshot.get("current_best", -np.inf if spec.objective == "maximize" else np.inf)),
+                trust_region=None,
+                gp_model=None,
+                scaler=None,
+                history=[dict(h) for h in latest_snapshot.get("history", [])],
+            )
+            if "turbo" in strategy:
+                opt_state.trust_region = TuRBOTrustRegion(search_space=resolved_space)
+                if latest_snapshot.get("trust_region_state"):
+                    opt_state.trust_region.state = TrustRegionState.from_dict(latest_snapshot["trust_region_state"])
+                else:
+                    if opt_state.observed_records:
+                        targets = [float(r[spec.target_column]) for r in opt_state.observed_records]
+                        b_idx = int(np.argmax(targets) if spec.objective == "maximize" else np.argmin(targets))
+                        opt_state.trust_region.initialize(opt_state.observed_records[b_idx], opt_state.current_best)
+
+            # 2. Identify completed ledger records missing from restored optimizer snapshot
+            # Stable identity check using candidate_id / history / observed_records
+            snapshot_cand_ids = {str(r.get("candidate_id")) for r in opt_state.observed_records if r.get("candidate_id")}
+            snapshot_hist_cand_ids = {str(h.get("candidate_id")) for h in opt_state.history if h.get("candidate_id")}
+            known_snapshot_cand_ids = snapshot_cand_ids | snapshot_hist_cand_ids
+
+            missing_completed = [
+                rec for rec in completed_records
+                if rec.candidate_id not in known_snapshot_cand_ids
+            ]
+
+            # 3. Replay missing completed observations in chronological order
+            replayed_any = False
+            for rec in missing_completed:
+                if rec.proposal_metadata.get("proposal"):
+                    prop = ExperimentProposal.from_dict(rec.proposal_metadata["proposal"])
+                else:
+                    prop = ExperimentProposal(
+                        candidate_id=rec.candidate_id,
+                        design_variables=rec.pre_experiment_features,
+                        predicted_performance=0.0,
+                        prediction_uncertainty=1.0,
+                        acquisition_score=float(rec.proposal_metadata.get("acquisition_score", 0.0)),
+                        acquisition_method=str(rec.proposal_metadata.get("strategy", strategy)),
+                        trust_region_center=None,
+                        trust_region_radius=None,
+                        recommendation_reason="",
+                        reason_code=str(rec.proposal_metadata.get("reason_code", "OBSERVATION_RECORDED")),
+                        distance_to_nearest_observed=0.0,
+                        step=int(rec.proposal_metadata.get("optimizer_step", opt_state.step)),
+                    )
+                target_val = float(rec.performance[spec.target_column])
+                exp_res = ExperimentResult(
+                    candidate_id=rec.candidate_id,
+                    design_variables=rec.pre_experiment_features,
+                    target_value=target_val,
+                )
+                optimizer.observe(opt_state, prop, exp_res)
+                replayed_any = True
+
+            if replayed_any:
+                ledger.save_optimizer_snapshot(opt_state.to_dict())
+
             optimizer._fit_surrogate(opt_state)
+        else:
+            opt_state = optimizer.initialize(opt_df)
 
         coord.optimizer_state = opt_state
 

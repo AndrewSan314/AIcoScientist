@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,6 +9,7 @@ from src.optimization.search_space import ContinuousVariable, SearchSpace
 from src.science.cli import run_synthetic_demo
 from src.science.coordinator import (
     PendingExperimentError,
+    PrimaryTargetRevisionError,
     ResumeStateMismatchError,
     ScientificClosedLoopCoordinator,
 )
@@ -781,4 +784,226 @@ def test_proposal_metadata_includes_optimizer_state_hash(tmp_path: Path) -> None
     assert len(rec.proposal_metadata["optimizer_state_hash"]) == 64
     assert "search_space_fingerprint" in rec.proposal_metadata
     coord.ledger.close()
+
+
+def test_resume_reconciles_unobserved_completed_ledger_record(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
+
+    db_path = tmp_path / "reconcile_test.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, rat = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.45, "z2": -0.1})
+
+    # Monkeypatch save_optimizer_snapshot to simulate crash right after ledger completion but before snapshot persistence
+    monkeypatch.setattr(coord.ledger, "save_optimizer_snapshot", lambda *args, **kwargs: None)
+
+    # Complete the record in ledger
+    completed_rec = coord.record_performance(rec.experiment_id, {"y": 999.0})
+    assert completed_rec.stage == ExperimentStage.COMPLETED
+
+    coord.ledger.close()
+
+    # Resume from ledger: must reconcile and replay missing completed observation exactly once
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    assert resumed.optimizer_state.current_best == 999.0
+    assert len(resumed.optimizer_state.observed_records) == 9
+    assert len(resumed.optimizer_state.history) == 1
+    assert resumed.optimizer_state.history[0]["candidate_id"] == rec.candidate_id
+    assert resumed.optimizer_state.history[0]["target_value"] == 999.0
+
+    # Verify next proposal succeeds without double-observation
+    next_rec, next_rat = resumed.propose_next(n_mc_samples=16)
+    assert next_rec.stage == ExperimentStage.PROPOSED
+    assert next_rec.experiment_id != rec.experiment_id
+
+    resumed.ledger.close()
+
+
+def test_model_invalidation_and_reset_when_data_drops_below_minimum(tmp_path: Path) -> None:
+    spec = DatasetSpec(
+        name="min_data_test",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1", "z1"],
+        target_column="y",
+        pre_experiment_features=["x1"],
+        candidate_variables=["x1"],
+        post_experiment_characterization=["z1"],
+        targets=["y"],
+    )
+    two_stage_spec = TwoStageModelSpec(
+        dataset_name="min_data_test",
+        process_features=["x1"],
+        characterization_targets=["z1"],
+        performance_targets=["y"],
+    )
+    space = SearchSpace(name="space", variables=[ContinuousVariable(name="x1", lower=1.0, upper=10.0)])
+    initial_df = pd.DataFrame([
+        {"exp_id": "EXP_00", "cand_id": "C0", "x1": 1.0, "z1": 0.1, "y": 500.0},
+        {"exp_id": "EXP_01", "cand_id": "C1", "x1": 2.0, "z1": 0.2, "y": 550.0},
+    ])
+    cand_pool = pd.DataFrame([{"cand_id": f"CP_{i}", "x1": float(i)} for i in range(1, 10)])
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=spec,
+        two_stage_spec=two_stage_spec,
+        initial_data=initial_df,
+        candidate_pool=cand_pool,
+        search_space=space,
+        db_path=tmp_path / "reset_test.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    # Initially fitted on 2 rows
+    assert coord.model_bundle.direct_model.is_fitted is True
+    assert coord.model_bundle.two_stage_model.stage_a.is_fitted is True
+    assert coord.model_bundle.two_stage_model.stage_b.is_fitted is True
+
+    # Mark 1 record as FAILED -> valid rows drops to 1 (< 2 minimum)
+    coord.record_failed("EXP_01", "Test invalidation")
+
+    # Assert: stale GP removed, is_fitted False, status updated
+    assert coord.model_bundle.direct_model.is_fitted is False
+    assert coord.model_bundle.direct_model.gp is None
+    assert coord.model_bundle.direct_model.training_sample_count == 1
+
+    stage_a_status = coord.model_bundle.two_stage_model.stage_a.characterization_model_status["z1"]
+    assert stage_a_status["available"] is False
+    assert stage_a_status["reason"] == "INSUFFICIENT_DATA"
+    assert stage_a_status["training_sample_count"] == 1
+
+    stage_b_status = coord.model_bundle.two_stage_model.stage_b.target_status["y"]
+    assert stage_b_status["available"] is False
+    assert stage_b_status["reason"] == "INSUFFICIENT_DATA"
+    assert stage_b_status["training_sample_count"] == 1
+
+    coord.ledger.close()
+
+
+def test_primary_target_revision_after_completed_is_rejected(tmp_path: Path) -> None:
+    spec = DatasetSpec(
+        name="revision_test",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1", "z1"],
+        target_column="y",
+        pre_experiment_features=["x1"],
+        candidate_variables=["x1"],
+        post_experiment_characterization=["z1"],
+        targets=["y", "secondary_y"],
+    )
+    two_stage_spec = TwoStageModelSpec(
+        dataset_name="revision_test",
+        process_features=["x1"],
+        characterization_targets=["z1"],
+        performance_targets=["y", "secondary_y"],
+    )
+    space = SearchSpace(name="space", variables=[ContinuousVariable(name="x1", lower=1.0, upper=10.0)])
+    initial_df = pd.DataFrame([
+        {"exp_id": "EXP_00", "cand_id": "C0", "x1": 1.0, "z1": 0.1, "y": 500.0, "secondary_y": 50.0},
+        {"exp_id": "EXP_01", "cand_id": "C1", "x1": 2.0, "z1": 0.2, "y": 550.0, "secondary_y": 55.0},
+    ])
+    cand_pool = pd.DataFrame([{"cand_id": f"CP_{i}", "x1": float(i)} for i in range(1, 10)])
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=spec,
+        two_stage_spec=two_stage_spec,
+        initial_data=initial_df,
+        candidate_pool=cand_pool,
+        search_space=space,
+        db_path=tmp_path / "rev_test.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.3})
+    coord.record_performance(rec.experiment_id, {"y": 700.0})
+
+    # Attempting to revise primary target from 700.0 to 750.0 must raise PrimaryTargetRevisionError
+    with pytest.raises(PrimaryTargetRevisionError, match="Primary target column 'y' cannot be revised"):
+        coord.record_additional_performance(rec.experiment_id, {"y": 750.0}, allow_measurement_revision=True)
+
+    # Assert ledger record was NOT modified
+    fetched = coord.ledger.get_record(rec.experiment_id)
+    assert fetched.performance["y"] == 700.0
+
+    # Adding secondary target succeeds
+    updated = coord.record_additional_performance(rec.experiment_id, {"secondary_y": 88.0})
+    assert updated.performance["secondary_y"] == 88.0
+    assert updated.performance["y"] == 700.0
+
+    coord.ledger.close()
+
+
+def test_historical_candidate_variables_do_not_inherit_static_context(tmp_path: Path) -> None:
+    spec = DatasetSpec(
+        name="static_ctx_test",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["material_code", "temperature"],
+        target_column="y",
+        pre_experiment_features=["material_code", "temperature"],
+        candidate_variables=["temperature"],
+        targets=["y"],
+    )
+    two_stage_spec = TwoStageModelSpec(
+        dataset_name="static_ctx_test",
+        process_features=["material_code", "temperature"],
+        characterization_targets=[],
+        performance_targets=["y"],
+    )
+    space = SearchSpace(name="space", variables=[ContinuousVariable(name="temperature", lower=100.0, upper=500.0)])
+    initial_df = pd.DataFrame([
+        {"exp_id": "EXP_00", "cand_id": "C0", "material_code": 1.0, "temperature": 300.0, "y": 50.0},
+        {"exp_id": "EXP_01", "cand_id": "C1", "material_code": 1.0, "temperature": 350.0, "y": 60.0},
+    ])
+    cand_pool = pd.DataFrame([{"cand_id": f"CP_{i}", "temperature": float(i * 50)} for i in range(1, 10)])
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=spec,
+        two_stage_spec=two_stage_spec,
+        initial_data=initial_df,
+        candidate_pool=cand_pool,
+        search_space=space,
+        db_path=tmp_path / "cand_vars_test.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec0 = coord.ledger.get_record("EXP_00")
+    assert rec0 is not None
+    # candidate_variables must ONLY contain controllable variable 'temperature'
+    assert "temperature" in rec0.candidate_variables
+    assert "material_code" not in rec0.candidate_variables
+    # pre_experiment_features contains both
+    assert "material_code" in rec0.pre_experiment_features
+    assert "temperature" in rec0.pre_experiment_features
+
+    coord.ledger.close()
+
 

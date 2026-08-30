@@ -67,9 +67,21 @@ class StageACharacterizationModel:
         }
         self.is_fitted = False
 
+    def reset(self) -> StageACharacterizationModel:
+        """Resets the model to an unfitted, unavailable state across all channels."""
+        self.models.clear()
+        self.scalers.clear()
+        self.training_sample_counts.clear()
+        self.characterization_model_status = {
+            c: {"available": False, "training_sample_count": 0, "reason": "NOT_FITTED"}
+            for c in self.characterization_targets
+        }
+        self.is_fitted = False
+        return self
+
     def fit(self, df: pd.DataFrame) -> StageACharacterizationModel:
         if df.empty:
-            raise ValueError("Cannot fit Stage A on empty DataFrame")
+            return self.reset()
 
         self.models.clear()
         self.scalers.clear()
@@ -192,9 +204,21 @@ class StageBPerformanceModel:
         }
         self.is_fitted = False
 
+    def reset(self) -> StageBPerformanceModel:
+        """Resets the model to an unfitted, unavailable state across all targets."""
+        self.models.clear()
+        self.scalers.clear()
+        self.training_sample_counts.clear()
+        self.target_status = {
+            p: {"available": False, "training_sample_count": 0, "reason": "NOT_FITTED"}
+            for p in self.performance_targets
+        }
+        self.is_fitted = False
+        return self
+
     def fit(self, df: pd.DataFrame) -> StageBPerformanceModel:
         if df.empty:
-            raise ValueError("Cannot fit Stage B on empty DataFrame")
+            return self.reset()
 
         self.models.clear()
         self.scalers.clear()
@@ -327,7 +351,15 @@ class TwoStageScientificModel:
     def is_fitted(self) -> bool:
         return self.stage_a.is_fitted and self.stage_b.is_fitted
 
+    def reset(self) -> TwoStageScientificModel:
+        """Resets both Stage A and Stage B models."""
+        self.stage_a.reset()
+        self.stage_b.reset()
+        return self
+
     def fit(self, df: pd.DataFrame) -> TwoStageScientificModel:
+        if df.empty:
+            return self.reset()
         self.stage_a.fit(df)
         self.stage_b.fit(df)
         return self

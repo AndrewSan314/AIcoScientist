@@ -33,14 +33,27 @@ class DirectPerformanceModel:
         self.training_sample_count: int = 0
         self.is_fitted: bool = False
 
+    def reset(self) -> DirectPerformanceModel:
+        """Resets the model to an unfitted, unavailable state."""
+        self.gp = None
+        self.scaler = None
+        self.training_sample_count = 0
+        self.is_fitted = False
+        return self
+
     def fit(self, df: pd.DataFrame) -> DirectPerformanceModel:
         if df.empty:
-            raise ValueError("Cannot fit DirectPerformanceModel on empty DataFrame")
+            return self.reset()
 
         cols_needed = self.process_features + [self.target_column]
+        missing = [c for c in cols_needed if c not in df.columns]
+        if missing:
+            return self.reset()
+
         valid_df = df[cols_needed].dropna()
         if len(valid_df) < 2:
-            self.is_fitted = False
+            self.reset()
+            self.training_sample_count = len(valid_df)
             return self
 
         X = valid_df[self.process_features].to_numpy(dtype=float)
