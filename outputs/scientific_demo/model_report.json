@@ -1,0 +1,70 @@
+{
+  "dataset_name": "synthetic_science",
+  "target_column": "y",
+  "test_sample_count": 25,
+  "direct_baseline": {
+    "metrics": {
+      "mae": 12.274314970212636,
+      "rmse": 14.367996917379743,
+      "r2": 0.9421385522173016
+    },
+    "calibration": {
+      "coverage_50_pct": 0.2,
+      "coverage_80_pct": 0.48,
+      "coverage_90_pct": 0.76,
+      "coverage_95_pct": 0.84,
+      "mean_nll": 4.2390682937350235,
+      "mean_standardized_residual": 0.6181212385850691,
+      "std_standardized_residual": 1.2992637550159432
+    }
+  },
+  "stage_a_characterization": {
+    "z1": {
+      "mae": 0.07718562414252278,
+      "rmse": 0.09120056699420077,
+      "r2": 0.9908414696560545
+    },
+    "z2": {
+      "mae": 0.03830146827117834,
+      "rmse": 0.05122262828011936,
+      "r2": 0.9895808942657476
+    }
+  },
+  "stage_b_diagnostic_upper_bound": {
+    "nature": "Diagnostic oracle-characterization upper bound (not achievable at proposal time)",
+    "metrics": {
+      "mae": 5.180142798434267,
+      "rmse": 6.2916657380595815,
+      "r2": 0.9889049790443815
+    },
+    "sample_count": 25
+  },
+  "two_stage_end_to_end": {
+    "metrics": {
+      "mae": 8.202731785130068,
+      "rmse": 10.100660988542199,
+      "r2": 0.9714045830176883
+    },
+    "calibration": {
+      "coverage_50_pct": 0.32,
+      "coverage_80_pct": 0.6,
+      "coverage_90_pct": 0.64,
+      "coverage_95_pct": 0.8,
+      "mean_nll": 3.9334983298092574,
+      "mean_standardized_residual": 0.721195309918366,
+      "std_standardized_residual": 1.24642275585052
+    },
+    "uncertainty_decomposition": {
+      "mean_total_variance": 58.75273731149287,
+      "mean_characterization_propagation_variance": 31.784176214686887,
+      "mean_performance_model_variance": 26.968561096806,
+      "mean_characterization_variance_fraction": 0.5393280367404926
+    }
+  },
+  "model_disagreement_summary": {
+    "mean_absolute_disagreement": 6.404636699582539,
+    "max_absolute_disagreement": 19.64714795441978,
+    "high_disagreement_count": 0,
+    "high_disagreement_fraction": 0.0
+  }
+}

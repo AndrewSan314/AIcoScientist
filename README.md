@@ -81,9 +81,14 @@ python run_pipeline.py --dataset attia --mode benchmark
 # 4. Run full continuous Bayesian Optimization benchmark across 30 seeds
 python run_pipeline.py --dataset attia --mode continuous_benchmark
 
-# 5. Launch interactive Streamlit exploration dashboard
+# 5. Run generic domain-agnostic closed-loop experimentation cycle with 2-stage surrogate and SQLite ledger
+python -m src.science.cli demo --seed 42 --steps 5
+
+# 6. Launch interactive Streamlit exploration dashboard
 streamlit run app/streamlit_app.py
 ```
+
+See [docs/SCIENTIFIC_CLOSED_LOOP.md](docs/SCIENTIFIC_CLOSED_LOOP.md) for full architecture details on the Two-Stage Process -> Structure -> Property framework, Monte Carlo uncertainty propagation via Law of Total Variance, and cryptographic event ledgers.
 
 ---
 

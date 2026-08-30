@@ -1,0 +1,21 @@
+{
+  "dataset": "synthetic_science",
+  "seed": 42,
+  "steps": 5,
+  "completed_experiments": 15,
+  "ledger_verified": true,
+  "git": {
+    "code_head_commit": "476cf0aeb62ea0ef081d182206cc7d35c8dcc5f0",
+    "branch": "main",
+    "git_dirty": true,
+    "git_diff_sha256": "111d43bab9a865c2add0912056b35cb91340395861f40a1d791b613d3e463719"
+  },
+  "environment": {
+    "python_version": "3.12.13",
+    "numpy_version": "2.4.6",
+    "scipy_version": "1.18.0",
+    "sklearn_version": "1.9.0",
+    "joblib_version": "1.5.3",
+    "platform": "Windows-11-10.0.26200-SP0"
+  }
+}
