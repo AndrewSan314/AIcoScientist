@@ -1313,19 +1313,22 @@ def run_attia_continuous_benchmark(
     with open(output_dir / "benchmark_summary.json", "w", encoding="utf-8") as f:
         json.dump(benchmark_summary, f, indent=2)
 
-    import datetime
-    run_manifest = {
-        "dataset": "attia_continuous",
-        "baseline_commit": "53a1c7241222105cdede343d5a155fdd5a97ee78",
-        "simulator_version": SIMULATOR_VERSION,
-        "attia_source_commit": ATTIA_SOURCE_COMMIT,
-        "n_seeds": n_seeds,
-        "budgets": budgets,
-        "strategies": strategies,
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "reference_underestimated": any_ref_underestimated,
-        "continuous_regret_valid": not any_ref_underestimated,
-    }
+    from src.science.provenance import build_benchmark_run_manifest
+
+    run_manifest = build_benchmark_run_manifest(
+        dataset_name="attia_continuous",
+        comparison_baseline_commit="53a1c7241222105cdede343d5a155fdd5a97ee78",
+        simulator_version=SIMULATOR_VERSION,
+        attia_source_commit=ATTIA_SOURCE_COMMIT,
+        n_seeds=n_seeds,
+        budgets=budgets,
+        strategies=strategies,
+        initial_policies=initial_policies,
+        candidate_pool_size=len(discrete_pool),
+        duplicate_tolerance=1e-3,
+        n_jobs=n_jobs,
+        reference_underestimated=any_ref_underestimated,
+    )
     with open(output_dir / "run_manifest.json", "w", encoding="utf-8") as fm:
         json.dump(run_manifest, fm, indent=2)
 
