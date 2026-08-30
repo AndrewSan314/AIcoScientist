@@ -37,11 +37,14 @@ def generate_feconi_candidate_id(index: int) -> str:
     return f"FECONI_{index:03d}"
 
 
-def load_raw_feconi_mat(mat_path: Path | str = FECONI_DEFAULT_MAT_PATH) -> dict[str, np.ndarray]:
+def load_raw_feconi_mat(
+    mat_path: Path | str = FECONI_DEFAULT_MAT_PATH,
+    allow_unverified_hash: bool = False,
+) -> dict[str, np.ndarray]:
     """Loads and strictly validates the raw Fe-Co-Ni benchmark MAT file.
 
     Validates:
-    1. File existence and SHA256 integrity.
+    1. File existence and SHA256 integrity (raises ValueError on mismatch unless allow_unverified_hash=True).
     2. Presence of keys: C, Coer, Kerr, TTH, XRD.
     3. Exactly 921 rows without NaN or Inf.
     4. Row sum consistency ~ 100%.
@@ -54,6 +57,12 @@ def load_raw_feconi_mat(mat_path: Path | str = FECONI_DEFAULT_MAT_PATH) -> dict[
         file_hash = hashlib.sha256(f.read()).hexdigest()
 
     if file_hash != EXPECTED_SHA256:
+        if not allow_unverified_hash:
+            raise ValueError(
+                f"SHA256 hash mismatch for Fe-Co-Ni dataset at '{path}'. "
+                f"Expected '{EXPECTED_SHA256}', but got '{file_hash}'. "
+                "Pass allow_unverified_hash=True to override strict validation."
+            )
         logger.warning(
             "MAT file SHA256 (%s) does not match expected canonical hash (%s). Proceeding with loaded data.",
             file_hash,
@@ -193,6 +202,7 @@ class FeCoNiAdapter(DatasetAdapter):
         mat_path: Path | str = FECONI_DEFAULT_MAT_PATH,
         target: str = "Kerr",
         objective: str = "maximize",
+        allow_unverified_hash: bool = False,
     ) -> None:
         if target not in {"Kerr", "Coer"}:
             raise ValueError(f"Target must be 'Kerr' or 'Coer', got '{target}'")
@@ -201,12 +211,13 @@ class FeCoNiAdapter(DatasetAdapter):
         self.mat_path = Path(mat_path)
         self.target = target
         self.objective = objective
+        self.allow_unverified_hash = allow_unverified_hash
         self._raw_data: dict[str, np.ndarray] | None = None
         self._full_df: pd.DataFrame | None = None
 
     def _ensure_loaded(self) -> None:
         if self._raw_data is None or self._full_df is None:
-            raw = load_raw_feconi_mat(self.mat_path)
+            raw = load_raw_feconi_mat(self.mat_path, allow_unverified_hash=self.allow_unverified_hash)
             self._raw_data = raw
 
             C = raw["C"]

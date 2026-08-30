@@ -21,6 +21,7 @@ from src.optimization.acquisition import (
     expected_improvement_acquisition,
     greedy_acquisition,
     predict_latent_gp,
+    safe_cholesky,
     ucb_acquisition,
 )
 
@@ -175,8 +176,13 @@ def run_single_reproduction_trajectory(
                 b = 1.0 if strategy == "gp_ucb_1" else beta
                 scores = ucb_acquisition(pred_mean, pred_std, beta=b, objective="maximize")
             elif strategy == "thompson_sampling":
+                mu_latent, cov_latent = predict_latent_gp(gp, X_unseen_scaled, return_cov=True)
+                mu_latent = np.asarray(mu_latent, dtype=float).flatten()
+                cov_latent = np.asarray(cov_latent, dtype=float)
+                L = safe_cholesky(cov_latent, base_jitter=1e-8)
                 step_rng = np.random.default_rng(step_seed)
-                scores = step_rng.normal(pred_mean, np.maximum(pred_std, 1e-6))
+                z = step_rng.standard_normal(size=len(mu_latent))
+                scores = mu_latent + (L @ z)
             elif strategy in {"expected_improvement", "ei"}:
                 scores = expected_improvement_acquisition(
                     mean=pred_mean,
@@ -312,6 +318,7 @@ def run_feconi_reproduction_benchmark(
         steps_to_5: list[int] = []
         steps_to_1: list[int] = []
         steps_to_01: list[int] = []
+        steps_to_exact: list[int] = []
         final_regrets: list[float] = []
         final_best: list[float] = []
 
@@ -343,6 +350,9 @@ def run_feconi_reproduction_benchmark(
             hit_01 = np.where(devs <= 0.1)[0]
             steps_to_01.append(int(hit_01[0] + 1) if len(hit_01) > 0 else total_budget + 1)
 
+            hit_exact = np.where(bests >= global_best - 1e-6)[0]
+            steps_to_exact.append(int(hit_exact[0] + 1) if len(hit_exact) > 0 else total_budget + 1)
+
         auc_mean = float(np.mean(seed_aucs))
         auc_ci = compute_bootstrap_ci_95(seed_aucs)
         regret_mean = float(np.mean(final_regrets))
@@ -358,12 +368,14 @@ def run_feconi_reproduction_benchmark(
             "success_rate_5pct": float(np.mean([1 if s <= total_budget else 0 for s in steps_to_5])),
             "success_rate_1pct": float(np.mean([1 if s <= total_budget else 0 for s in steps_to_1])),
             "success_rate_0.1pct": float(np.mean([1 if s <= total_budget else 0 for s in steps_to_01])),
+            "exact_optimum_hit_rate": float(np.mean([1 if s <= total_budget else 0 for s in steps_to_exact])),
             "mean_steps_to_10pct": float(np.mean(steps_to_10)),
             "median_steps_to_10pct": float(np.median(steps_to_10)),
             "mean_steps_to_5pct": float(np.mean(steps_to_5)),
             "median_steps_to_5pct": float(np.median(steps_to_5)),
             "mean_steps_to_1pct": float(np.mean(steps_to_1)),
             "median_steps_to_1pct": float(np.median(steps_to_1)),
+            "median_steps_to_exact_optimum": float(np.median(steps_to_exact)),
         }
 
     if output_dir is not None:

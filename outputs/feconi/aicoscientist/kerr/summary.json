@@ -20,12 +20,14 @@
       "success_rate_5pct": 0.16666666666666666,
       "success_rate_1pct": 0.03333333333333333,
       "success_rate_0.1pct": 0.03333333333333333,
+      "exact_optimum_hit_rate": 0.03333333333333333,
       "mean_steps_to_10pct": 60.766666666666666,
       "median_steps_to_10pct": 67.0,
       "mean_steps_to_5pct": 97.23333333333333,
       "median_steps_to_5pct": 101.0,
       "mean_steps_to_1pct": 100.63333333333334,
-      "median_steps_to_1pct": 101.0
+      "median_steps_to_1pct": 101.0,
+      "median_steps_to_exact_optimum": 101.0
     },
     "greedy": {
       "mean_auc": 0.7857282082491582,
@@ -43,12 +45,14 @@
       "success_rate_5pct": 1.0,
       "success_rate_1pct": 1.0,
       "success_rate_0.1pct": 1.0,
+      "exact_optimum_hit_rate": 1.0,
       "mean_steps_to_10pct": 14.566666666666666,
       "median_steps_to_10pct": 14.0,
       "mean_steps_to_5pct": 16.8,
       "median_steps_to_5pct": 17.0,
       "mean_steps_to_1pct": 16.966666666666665,
-      "median_steps_to_1pct": 17.0
+      "median_steps_to_1pct": 17.0,
+      "median_steps_to_exact_optimum": 17.0
     },
     "gp_ucb": {
       "mean_auc": 0.8055348479797979,
@@ -66,12 +70,14 @@
       "success_rate_5pct": 1.0,
       "success_rate_1pct": 1.0,
       "success_rate_0.1pct": 1.0,
+      "exact_optimum_hit_rate": 1.0,
       "mean_steps_to_10pct": 8.566666666666666,
       "median_steps_to_10pct": 9.0,
       "mean_steps_to_5pct": 10.733333333333333,
       "median_steps_to_5pct": 10.0,
       "mean_steps_to_1pct": 10.8,
-      "median_steps_to_1pct": 10.0
+      "median_steps_to_1pct": 10.0,
+      "median_steps_to_exact_optimum": 10.0
     },
     "expected_improvement": {
       "mean_auc": 0.8058471779461277,
@@ -89,18 +95,20 @@
       "success_rate_5pct": 1.0,
       "success_rate_1pct": 1.0,
       "success_rate_0.1pct": 1.0,
+      "exact_optimum_hit_rate": 1.0,
       "mean_steps_to_10pct": 8.233333333333333,
       "median_steps_to_10pct": 8.0,
       "mean_steps_to_5pct": 10.466666666666667,
       "median_steps_to_5pct": 10.5,
       "mean_steps_to_1pct": 10.466666666666667,
-      "median_steps_to_1pct": 10.5
+      "median_steps_to_1pct": 10.5,
+      "median_steps_to_exact_optimum": 10.5
     },
     "noisy_expected_improvement": {
-      "mean_auc": 0.8058154708754207,
+      "mean_auc": 0.8045072567340065,
       "auc_95_ci": [
-        0.8035272747474747,
-        0.8081227362121209
+        0.8006595081481479,
+        0.8077989368686866
       ],
       "mean_final_regret": 0.0,
       "final_regret_95_ci": [
@@ -112,18 +120,20 @@
       "success_rate_5pct": 1.0,
       "success_rate_1pct": 1.0,
       "success_rate_0.1pct": 1.0,
-      "mean_steps_to_10pct": 8.266666666666667,
+      "exact_optimum_hit_rate": 1.0,
+      "mean_steps_to_10pct": 8.033333333333333,
       "median_steps_to_10pct": 8.0,
-      "mean_steps_to_5pct": 10.4,
-      "median_steps_to_5pct": 10.5,
-      "mean_steps_to_1pct": 10.4,
-      "median_steps_to_1pct": 10.5
+      "mean_steps_to_5pct": 11.433333333333334,
+      "median_steps_to_5pct": 11.0,
+      "mean_steps_to_1pct": 11.533333333333333,
+      "median_steps_to_1pct": 11.0,
+      "median_steps_to_exact_optimum": 11.0
     },
     "turbo_nei": {
-      "mean_auc": 0.799825777272727,
+      "mean_auc": 0.8039240735690234,
       "auc_95_ci": [
-        0.7945599786195284,
-        0.8042341557659931
+        0.8012655401094274,
+        0.8066671400336699
       ],
       "mean_final_regret": 0.0,
       "final_regret_95_ci": [
@@ -135,12 +145,14 @@
       "success_rate_5pct": 1.0,
       "success_rate_1pct": 1.0,
       "success_rate_0.1pct": 1.0,
-      "mean_steps_to_10pct": 8.533333333333333,
-      "median_steps_to_10pct": 7.5,
-      "mean_steps_to_5pct": 12.466666666666667,
-      "median_steps_to_5pct": 12.5,
-      "mean_steps_to_1pct": 12.466666666666667,
-      "median_steps_to_1pct": 12.5
+      "exact_optimum_hit_rate": 1.0,
+      "mean_steps_to_10pct": 8.4,
+      "median_steps_to_10pct": 8.0,
+      "mean_steps_to_5pct": 10.833333333333334,
+      "median_steps_to_5pct": 10.0,
+      "mean_steps_to_1pct": 11.066666666666666,
+      "median_steps_to_1pct": 10.5,
+      "median_steps_to_exact_optimum": 10.5
     }
   }
 }
