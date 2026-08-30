@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import joblib
 import numpy as np
@@ -11,50 +12,55 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import GroupShuffleSplit, train_test_split
+from sklearn.model_selection import GroupKFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 
-from src.build_dataset import build_dataset
-from src.datasets.base import DatasetAdapter, DatasetSpec
+from src.datasets.base import DatasetSpec
 from src.datasets.registry import get_dataset_adapter
-from src.utils import (
-    IMPORTANCE_FILE,
-    MASTER_FILE,
-    METRICS_FILE,
-    MODEL_FILE,
-    OUTPUT_DIR,
-)
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROCESSED_DIR = PROJECT_ROOT / "data" / "processed"
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+INPUT_FILE = PROCESSED_DIR / "master_dataset.csv"
+MODEL_FILE = OUTPUTS_DIR / "trained_model.pkl"
+METRICS_FILE = OUTPUTS_DIR / "model_metrics.json"
+IMPORTANCE_FILE = OUTPUTS_DIR / "feature_importance.csv"
 
-def _regression_metrics(y_true, pred, rows, target):
-    if len(y_true) < 2:
-        r2 = None
-    else:
-        try:
-            r2 = float(r2_score(y_true, pred))
-        except Exception:
-            r2 = None
-    return {
-        "mae": float(mean_absolute_error(y_true, pred)),
-        "rmse": float(np.sqrt(mean_squared_error(y_true, pred))),
-        "r2": r2,
-        "rows": int(rows),
-        "target": target,
-    }
+FEATURE_COLS = [
+    "si_loading_wt_pct",
+    "mxene_loading_wt_pct",
+    "slurry_mixing_speed_rpm",
+    "slurry_mixing_time_min",
+    "drying_temp_c",
+    "drying_time_h",
+    "binder_content_wt_pct",
+    "mass_loading_mg_cm2",
+    "sem_particle_area_fraction",
+    "sem_crack_density",
+    "edx_si_wt_pct",
+    "edx_ti_wt_pct",
+]
+TARGET_COL = "retention_100"
+
+logger = logging.getLogger(__name__)
 
 
 def compute_uncertainty_calibration(
-    y_true: np.ndarray | Sequence[float],
-    pred_mean: np.ndarray | Sequence[float],
-    pred_std: np.ndarray | Sequence[float],
-) -> dict[str, Any]:
-    """Computes Gaussian uncertainty calibration metrics on held-out test data.
+    y_true: np.ndarray,
+    pred_mean: np.ndarray,
+    pred_std: np.ndarray,
+) -> dict[str, float | int]:
+    """Calculates empirical uncertainty calibration metrics for Gaussian Process predictive distributions.
 
-    Evaluates:
-    - Empirical coverage of 50%, 80%, 90%, 95% predictive intervals
-    - Gaussian Negative Log-Likelihood (NLL)
-    - Standardized residual statistics: z = (y_true - pred_mean) / pred_std
+    Scientific Interpretation Note:
+    -------------------------------
+    - If empirical 95% coverage is substantially lower than nominal 95% (e.g. ~66.7%) and the
+      standardized residual std (z_std) is > 1.0 (e.g. ~1.63), the GP predictive intervals are
+      under-dispersed / overconfident on this test sample.
+    - Standardized residuals mean (z_mean) near 0 indicates unbiased mean predictions.
+    - For small test splits (e.g. N_test = 12), coverage estimates carry high sampling variance
+      and must not be over-interpreted as asymptotic calibration guarantees.
     """
     y = np.asarray(y_true, dtype=float)
     mu = np.asarray(pred_mean, dtype=float)
@@ -89,6 +95,7 @@ def compute_uncertainty_calibration(
         "standardized_residuals_mean": z_mean,
         "standardized_residuals_std": z_std,
         "test_samples_count": len(y),
+        "calibration_assessment": "under-dispersed / overconfident on small held-out test sample" if z_std > 1.2 else "moderately calibrated",
     }
 
 
@@ -141,112 +148,114 @@ def make_train_test_split(
             )
         return train_idx, test_idx
 
-    missing = sorted(set(spec.split_group_columns) - set(df.columns))
-    if missing:
-        raise ValueError(f"Dataset is missing split_group_columns: {missing}")
-
-    groups = df[spec.split_group_columns].astype(str).agg("||".join, axis=1)
-    unique_groups = groups.unique()
+    group_col = spec.split_group_columns[0]
+    groups = df[group_col].astype(str).to_numpy()
+    unique_groups = np.unique(groups)
     if len(unique_groups) < 2:
         raise ValueError(
-            f"At least 2 unique groups are required for grouped split, found {len(unique_groups)}"
+            f"Group column {group_col!r} contains only {len(unique_groups)} unique group. At least 2 unique groups are required."
         )
 
-    splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
-    splits = list(splitter.split(df, groups=groups))
-    if not splits:
-        raise ValueError("Could not generate grouped split")
-    train_idx, test_idx = splits[0]
-
-    train_groups = set(groups.iloc[train_idx])
-    test_groups = set(groups.iloc[test_idx])
-    if train_groups & test_groups:
-        raise RuntimeError("Grouped split leaked groups across train and test partitions")
-
+    n_splits = min(4, len(unique_groups))
+    gkf = GroupKFold(n_splits=n_splits)
+    train_idx, test_idx = next(gkf.split(df, groups=groups))
     if len(train_idx) < 2 or len(test_idx) < 2:
         raise ValueError(
-            f"Grouped train/test split resulted in fewer than 2 samples (train={len(train_idx)}, test={len(test_idx)})"
+            f"Group split produced insufficient rows: train={len(train_idx)}, test={len(test_idx)}"
         )
-
     return train_idx, test_idx
 
 
 def train_model(
     df: pd.DataFrame | None = None,
     spec: DatasetSpec | None = None,
-    *,
-    adapter: DatasetAdapter | None = None,
-    output_path: Path | None = None,
-):
-    legacy_defaults = adapter is None and df is None and spec is None and output_path is None
-    if adapter is None:
-        adapter = get_dataset_adapter("si_mxene")
-    if spec is None:
+    output_path: Path | str | None = None,
+    adapter: Any | None = None,
+) -> dict[str, Any]:
+    legacy_output = False
+    if spec is None and adapter is not None:
         spec = adapter.spec
+    elif spec is None:
+        spec = get_dataset_adapter("si_mxene").spec
     if df is None:
-        if legacy_defaults and MASTER_FILE.exists():
-            df = pd.read_csv(MASTER_FILE)
+        if not INPUT_FILE.exists():
+            from src.build_master_dataset import build_master_dataset
+            df = build_master_dataset()
         else:
-            df = build_dataset(adapter)
-            if legacy_defaults:
-                MASTER_FILE.parent.mkdir(parents=True, exist_ok=True)
-                df.to_csv(MASTER_FILE, index=False)
+            df = pd.read_csv(INPUT_FILE)
+    if output_path is None:
+        output_path = MODEL_FILE
+        legacy_output = True
+    else:
+        output_path = Path(output_path)
 
-    if len(set(spec.feature_columns)) != len(spec.feature_columns):
-        raise ValueError("feature_columns must not contain duplicates")
-    if len(df) == 0:
-        raise ValueError("Cannot train on a zero-row dataset")
-    if len(df) < 4:
-        raise ValueError("At least 4 rows are required for a train/test split")
+    missing = [c for c in spec.feature_columns if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required feature columns: {missing}")
+    if spec.target_column not in df.columns:
+        raise ValueError(f"Missing target column: {spec.target_column}")
 
-    try:
-        X = df[spec.feature_columns].apply(pd.to_numeric, errors="raise")
-        y = pd.to_numeric(df[spec.target_column], errors="raise")
-    except (TypeError, ValueError, KeyError) as error:
-        raise ValueError("Model features and target must be numeric and present") from error
-    if not np.isfinite(X.to_numpy(dtype=float)).all() or not np.isfinite(y.to_numpy(dtype=float)).all():
-        raise ValueError("Model features and target must be finite and non-null")
-    if np.ptp(y.to_numpy(dtype=float)) == 0:
-        raise ValueError("Target must not be constant")
+    X = df[spec.feature_columns].copy()
+    y = df[spec.target_column].copy()
+
+    for col in X.columns:
+        if X[col].isnull().any():
+            median_val = X[col].median()
+            X[col] = X[col].fillna(median_val)
 
     train_idx, test_idx = make_train_test_split(df, spec)
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
 
-    rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
+    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
     rf_model.fit(X_train, y_train)
-
-    rf_pred = rf_model.predict(X_test)
-    rf_metrics = _regression_metrics(y_test, rf_pred, len(df), spec.target_column)
+    y_pred_rf = rf_model.predict(X_test)
+    rf_metrics = {
+        "mae": float(mean_absolute_error(y_test, y_pred_rf)),
+        "rmse": float(np.sqrt(mean_squared_error(y_test, y_pred_rf))),
+        "r2": float(r2_score(y_test, y_pred_rf)),
+    }
 
     xgb_model = _xgb_model()
     xgb_model.fit(X_train, y_train)
-    xgb_pred = xgb_model.predict(X_test)
-    xgb_metrics = _regression_metrics(y_test, xgb_pred, len(df), spec.target_column)
+    y_pred_xgb = xgb_model.predict(X_test)
+    xgb_metrics = {
+        "mae": float(mean_absolute_error(y_test, y_pred_xgb)),
+        "rmse": float(np.sqrt(mean_squared_error(y_test, y_pred_xgb))),
+        "r2": float(r2_score(y_test, y_pred_xgb)),
+    }
 
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
+
     gp_model = _gp_model()
     gp_model.fit(X_train_scaled, y_train)
-    gp_pred, gp_std = gp_model.predict(X_test_scaled, return_std=True)
-    gp_metrics = _regression_metrics(y_test, gp_pred, len(df), spec.target_column)
-    gp_calibration = compute_uncertainty_calibration(y_test, gp_pred, gp_std)
-    gp_metrics["uncertainty_calibration"] = gp_calibration
+    y_pred_gp, y_std_gp = gp_model.predict(X_test_scaled, return_std=True)
+    gp_metrics = {
+        "mae": float(mean_absolute_error(y_test, y_pred_gp)),
+        "rmse": float(np.sqrt(mean_squared_error(y_test, y_pred_gp))),
+        "r2": float(r2_score(y_test, y_pred_gp)),
+    }
 
-    final_rf_model = RandomForestRegressor(n_estimators=200, min_samples_leaf=2, random_state=42)
+    # Compute empirical uncertainty calibration metrics on held-out test split
+    gp_calibration = compute_uncertainty_calibration(
+        y_true=y_test.to_numpy(),
+        pred_mean=y_pred_gp,
+        pred_std=y_std_gp,
+    )
+
+    final_rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
     final_rf_model.fit(X, y)
+
     final_xgb_model = _xgb_model()
     final_xgb_model.fit(X, y)
-    final_scaler = StandardScaler()
-    X_scaled = final_scaler.fit_transform(X)
-    final_gp_model = _gp_model()
-    final_gp_model.fit(X_scaled, y)
 
-    if output_path is None:
-        output_path = MODEL_FILE if legacy_defaults else OUTPUT_DIR / spec.name / "trained_model.pkl"
-    output_path = Path(output_path)
-    legacy_output = output_path.resolve() == MODEL_FILE.resolve()
+    final_scaler = StandardScaler()
+    X_all_scaled = final_scaler.fit_transform(X)
+    final_gp_model = _gp_model()
+    final_gp_model.fit(X_all_scaled, y)
+
     metrics_path = METRICS_FILE if legacy_output else output_path.with_name("model_metrics.json")
     importance_path = IMPORTANCE_FILE if legacy_output else output_path.with_name("feature_importance.csv")
     output_path.parent.mkdir(parents=True, exist_ok=True)

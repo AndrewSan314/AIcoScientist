@@ -36,6 +36,7 @@ def test_dynamic_cycling_spec_guards(dynamic_adapter: DynamicCyclingAdapter):
     assert not overlap, f"Feature columns overlap with oracle columns: {overlap}"
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_two_representations(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies cell-level (92 rows) and protocol-level (47 rows) datasets and replicate aggregations."""
     cells_df = dynamic_adapter.load_cells()
@@ -57,6 +58,7 @@ def test_dynamic_cycling_two_representations(dynamic_adapter: DynamicCyclingAdap
             assert np.isclose(proto_row["target_std"], expected_std, atol=1e-5)
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_replicate_grouped_split(dynamic_adapter: DynamicCyclingAdapter):
     """Proves that replicate cells with the same protocol_id never cross train/test splits."""
     cells_df = dynamic_adapter.load_cells()
@@ -71,6 +73,7 @@ def test_dynamic_cycling_replicate_grouped_split(dynamic_adapter: DynamicCycling
     assert not overlap, f"Protocol replicates leaked across train/test partitions: {overlap}"
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_oracle_replicate_mean_protection(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies OfflineOracle with replicate_policy='mean' returns mean target and hides private rows."""
     cells_df = dynamic_adapter.load_cells()
@@ -95,7 +98,7 @@ def test_dynamic_cycling_oracle_replicate_mean_protection(dynamic_adapter: Dynam
         _ = response["raw_row"]
 
 
-
+@pytest.mark.external_data
 def test_dynamic_cycling_candidate_space_unseen_filter(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies candidate_space strictly removes observed protocols to prevent redundant queries."""
     protocols_df = dynamic_adapter.load_protocols()
@@ -112,6 +115,7 @@ def test_dynamic_cycling_candidate_space_unseen_filter(dynamic_adapter: DynamicC
     assert protocols_df["protocol_id"].iloc[1] not in set(cands["protocol_id"])
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies closed-loop BO execution across Random, Greedy, and GP-UCB."""
     candidate_pool = dynamic_adapter.load_candidate_pool()
@@ -125,7 +129,6 @@ def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCycli
         "top_10_pct_val": float(protocols_df["target_mean"].quantile(0.9)),
         "top_5_pct_val": float(protocols_df["target_mean"].quantile(0.95)),
     }
-
 
     init_indices = [0, 1, 2, 3, 4]
     total_queries = 10
@@ -149,6 +152,7 @@ def test_dynamic_cycling_optimization_trajectories(dynamic_adapter: DynamicCycli
             assert best_vals[i] >= best_vals[i - 1], f"Best seen decreased for strategy {strat}"
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     """Verifies dynamic cycling benchmark runs end-to-end and saves all metrics and replicate differences."""
     summary = run_dynamic_cycling_benchmark(
@@ -172,6 +176,7 @@ def test_dynamic_cycling_benchmark_end_to_end(tmp_path):
     assert (tmp_path / "replicate_feature_differences.csv").exists()
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_production_invariants(dynamic_adapter: DynamicCyclingAdapter):
     """Proves production adapter enforces 92 cells, 47 protocols, and rejects corruptions."""
     cells_df = dynamic_adapter.load_cells()
@@ -184,6 +189,7 @@ def test_dynamic_cycling_production_invariants(dynamic_adapter: DynamicCyclingAd
     assert protocols_df["protocol_id"].nunique() == 47
 
 
+@pytest.mark.external_data
 def test_dynamic_cycling_surrogate_evaluation_protocol_and_cell_level(dynamic_adapter: DynamicCyclingAdapter):
     """Verifies surrogate evaluation computes both cell-level split and protocol-level Repeated K-Fold CV with OOF metrics."""
     surr = evaluate_surrogate_prediction(dynamic_adapter, random_state=42)
@@ -213,6 +219,3 @@ def test_dynamic_cycling_surrogate_evaluation_protocol_and_cell_level(dynamic_ad
             assert "mae" in rep_metric
             assert "rmse" in rep_metric
             assert "r2" in rep_metric
-
-
-

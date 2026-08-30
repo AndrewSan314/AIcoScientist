@@ -89,7 +89,7 @@ def test_trust_region_shrink_on_failure(simple_search_space: SearchSpace) -> Non
     assert turbo.state.contractions_count == 1
 
 
-def test_trust_region_restart_when_too_small(simple_search_space: SearchSpace) -> None:
+def test_trust_region_restart_with_fallback_center(simple_search_space: SearchSpace) -> None:
     turbo = TuRBOTrustRegion(
         search_space=simple_search_space,
         init_radius=0.8,
@@ -102,11 +102,81 @@ def test_trust_region_restart_when_too_small(simple_search_space: SearchSpace) -
     turbo.update({"x1": 4.0, "x2": 0.0}, observed_value=90.0)  # 0.4
     turbo.update({"x1": 4.0, "x2": 0.0}, observed_value=90.0)  # 0.2
     turbo.update({"x1": 4.0, "x2": 0.0}, observed_value=90.0)  # 0.1
-    u_restart = turbo.update({"x1": 4.0, "x2": 0.0}, observed_value=90.0)  # 0.05 < 0.1 -> restart
+    u_restart = turbo.update(
+        {"x1": 4.0, "x2": 0.0},
+        observed_value=90.0,
+        fallback_center={"x1": 8.5, "x2": 2.5},
+        fallback_candidate_id="GLOBAL_RESTART_42",
+    )
 
     assert u_restart["restarted"]
     assert turbo.state.restarts_count == 1
     assert np.isclose(turbo.state.radius, 0.8)
+    assert turbo.state.center["x1"] == 8.5
+    assert turbo.state.center["x2"] == 2.5
+    assert u_restart["restart_reason"] == "trust_region_contracted_below_min_length"
+    assert u_restart["restart_candidate_id"] == "GLOBAL_RESTART_42"
+
+
+def test_noise_aware_turbo_rejects_noisy_outlier_without_posterior_evidence(simple_search_space: SearchSpace) -> None:
+    turbo = TuRBOTrustRegion(
+        search_space=simple_search_space,
+        init_radius=0.8,
+        success_delta=1.0,
+        success_probability_threshold=0.6,
+    )
+    turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
+
+    # A noisy spike of 200.0 observed, but posterior mean is only 95.0 vs incumbent 100.0 with high uncertainty
+    u = turbo.update(
+        {"x1": 6.0, "x2": 0.0},
+        observed_value=200.0,
+        posterior_candidate_mean=95.0,
+        posterior_incumbent_mean=100.0,
+        posterior_candidate_std=10.0,
+        posterior_incumbent_std=2.0,
+    )
+
+    # Must NOT count as success because posterior evidence is weak
+    assert turbo.state.success_counter == 0
+    assert turbo.state.failure_counter == 1
+    assert turbo.state.center["x1"] == 5.0  # Center remains unchanged
+
+
+def test_noise_aware_turbo_expands_on_verified_posterior_improvement(simple_search_space: SearchSpace) -> None:
+    turbo = TuRBOTrustRegion(
+        search_space=simple_search_space,
+        init_radius=0.5,
+        success_tolerance=2,
+        success_delta=1.0,
+        success_probability_threshold=0.6,
+    )
+    turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
+
+    # 1st strong posterior improvement
+    u1 = turbo.update(
+        {"x1": 5.5, "x2": 0.5},
+        observed_value=110.0,
+        posterior_candidate_mean=108.0,
+        posterior_incumbent_mean=100.0,
+        posterior_candidate_std=2.0,
+        posterior_incumbent_std=2.0,
+    )
+    assert turbo.state.success_counter == 1
+    assert turbo.state.center["x1"] == 5.5
+
+    # 2nd strong posterior improvement -> triggers expansion
+    u2 = turbo.update(
+        {"x1": 6.0, "x2": 0.5},
+        observed_value=120.0,
+        posterior_candidate_mean=118.0,
+        posterior_incumbent_mean=108.0,
+        posterior_candidate_std=2.0,
+        posterior_incumbent_std=2.0,
+    )
+    assert u2["expanded"]
+    assert turbo.state.expansions_count == 1
+    assert np.isclose(turbo.state.radius, 1.0)
 
 
 def test_trust_region_sampling_within_bounds_and_constraints(simple_search_space: SearchSpace) -> None:

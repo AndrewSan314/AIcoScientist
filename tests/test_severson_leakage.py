@@ -41,6 +41,7 @@ def test_severson_spec_leakage_guards():
     assert "split" not in spec.feature_columns
 
 
+@pytest.mark.external_data
 def test_severson_physical_cell_reconstruction_uniqueness(severson_df: pd.DataFrame):
     """Proves that after reconstruction, each physical cell is unique and carry-over cells are merged."""
     assert len(severson_df) == 124
@@ -118,6 +119,7 @@ def test_severson_hard_horizon_sentinel_invariance():
         ), f"Feature {feat_name} changed when cycle > 100 was altered! Clean: {clean_feats[feat_name]}, Corrupted: {corrupted_feats[feat_name]}"
 
 
+@pytest.mark.external_data
 def test_severson_split_isolation_and_no_leakage(severson_df: pd.DataFrame):
     """Verifies train and test partitions have zero overlap of physical cells."""
     train_cells = set(severson_df[severson_df["split"] == "train"]["physical_cell_id"])
@@ -133,6 +135,7 @@ def test_severson_split_isolation_and_no_leakage(severson_df: pd.DataFrame):
     assert not (prim_test_cells & sec_test_cells), "Primary and secondary test overlap!"
 
 
+@pytest.mark.external_data
 def test_severson_make_train_test_split_grouped(severson_df: pd.DataFrame):
     """Verifies make_train_test_split respects physical_cell_id grouping."""
     adapter = SeversonAdapter()
@@ -144,6 +147,7 @@ def test_severson_make_train_test_split_grouped(severson_df: pd.DataFrame):
     assert not (train_cells & test_cells), f"Leaked cells across split: {train_cells & test_cells}"
 
 
+@pytest.mark.external_data
 def test_severson_benchmark_end_to_end(tmp_path):
     """Verifies Severson benchmark runs end-to-end and creates expected outputs."""
     summary = run_severson_benchmark(output_dir=tmp_path)

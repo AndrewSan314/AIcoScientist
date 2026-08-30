@@ -89,25 +89,25 @@ streamlit run app/streamlit_app.py
 
 ## Test Suite & Continuous Integration
 
-Run the comprehensive pytest suite (181 tests):
+Run the comprehensive pytest suite (187 tests):
 
 ```bash
-# Run fast unit tests
-pytest -q -m "not slow" -p no:cacheprovider
+# Run fast self-contained unit tests (171 tests)
+pytest -q -m "not slow and not external_data and not integration" -p no:cacheprovider
 
-# Run full test suite
+# Run full test suite including external datasets (187 tests)
 pytest -q -p no:cacheprovider
 ```
 
-CI workflows automatically run on GitHub Actions across Linux (`ubuntu-latest`) and Windows (`windows-latest`) on Python 3.11 and 3.12 (`.github/workflows/test.yml`).
+CI workflows automatically run on GitHub Actions using `requirements-core.txt` across Linux (`ubuntu-latest`) and Windows (`windows-latest`) on Python 3.11 and 3.12 (`.github/workflows/test.yml`).
 
 ---
 
 ## Key Output Artifacts
 
-- `outputs/overnight_upgrade_report.md`: Comprehensive 27-section scientific and benchmarking report.
+- `outputs/overnight_upgrade_report.md`: Comprehensive scientific and benchmarking report.
 - `outputs/model_metrics.json`: Supervised model holdout metrics and GP uncertainty calibration.
 - `outputs/attia_continuous/benchmark_summary.json`: Continuous benchmark metrics, paired Wilcoxon tests, and sample efficiency to thresholds.
-- `outputs/attia_continuous/turbo_state_history.csv`: Complete 18-column TuRBO trust region state trace.
+- `outputs/attia_continuous/turbo_state_history.csv`: Complete 22-column TuRBO trust region state trace.
 - `outputs/attia_continuous/run_manifest.json`: Continuous benchmark run manifest.
 - `outputs/attia_continuous/continuous_reference_manifest.json`: Derivative-free continuous reference verification.

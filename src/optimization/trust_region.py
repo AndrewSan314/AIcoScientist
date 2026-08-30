@@ -7,6 +7,7 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 from src.optimization.search_space import (
     ContinuousVariable,
@@ -88,7 +89,7 @@ class TrustRegionState:
 
 
 class TuRBOTrustRegion:
-    """Domain-agnostic TuRBO (Trust Region Bayesian Optimization) controller.
+    """Noise-aware TuRBO (Trust Region Bayesian Optimization) controller.
 
     Operates in normalized [0, 1]^d free-variable coordinates without
     access to hidden simulator or evaluator truths.
@@ -102,11 +103,13 @@ class TuRBOTrustRegion:
         max_length: float = 1.6,
         success_tolerance: int = 3,
         failure_tolerance: int = 5,
-        improvement_threshold: float = 1e-3,
+        success_delta: float = 1.0,
+        success_probability_threshold: float = 0.6,
         global_escape_frequency: int = 6,
         init_radius: float | None = None,  # Backward compatibility
         min_radius: float | None = None,
         max_radius: float | None = None,
+        improvement_threshold: float | None = None,
     ) -> None:
         self.search_space = search_space
         self.init_length = float(init_radius if init_radius is not None else init_length)
@@ -114,7 +117,8 @@ class TuRBOTrustRegion:
         self.max_length = float(max_radius if max_radius is not None else max_length)
         self.success_tolerance = int(success_tolerance)
         self.failure_tolerance = int(failure_tolerance)
-        self.improvement_threshold = float(improvement_threshold)
+        self.success_delta = float(improvement_threshold if improvement_threshold is not None else success_delta)
+        self.success_probability_threshold = float(success_probability_threshold)
         self.global_escape_frequency = int(global_escape_frequency)
         self.state: TrustRegionState | None = None
 
@@ -152,33 +156,74 @@ class TuRBOTrustRegion:
         self,
         observed_candidate: Mapping[str, Any],
         observed_value: float,
+        posterior_candidate_mean: float | None = None,
+        posterior_incumbent_mean: float | None = None,
+        posterior_candidate_std: float | None = None,
+        posterior_incumbent_std: float | None = None,
         objective: str = "maximize",
         fallback_center: Mapping[str, Any] | None = None,
+        fallback_candidate_id: str | None = None,
+        global_escape: bool = False,
     ) -> dict[str, Any]:
-        """Updates trust region state based on the newly evaluated experimental candidate."""
+        """Updates trust region state using noise-aware Gaussian posterior evidence.
+
+        Evaluates P(Delta f > success_delta | data) >= success_probability_threshold.
+        Moves center only upon verified posterior improvement.
+        """
         if self.state is None:
             self.initialize(observed_candidate, observed_value)
             return {
                 "expanded": False,
                 "contracted": False,
                 "restarted": False,
-                "global_escape": False,
+                "global_escape": global_escape,
                 "length": self.init_length,
                 "radius": self.init_length,
                 "success_counter": 0,
                 "failure_counter": 0,
                 "restarts_count": 0,
+                "expansions_count": 0,
+                "contractions_count": 0,
+                "best_value": float(observed_value),
+                "center": dict(self.state.center),
+                "posterior_candidate_mean": posterior_candidate_mean,
+                "posterior_candidate_std": posterior_candidate_std,
+                "posterior_incumbent_mean": posterior_incumbent_mean,
+                "posterior_incumbent_std": posterior_incumbent_std,
+                "success_probability": 1.0,
+                "previous_center": None,
+                "restart_reason": None,
+                "restart_candidate_id": None,
             }
 
         self.state.step += 1
+        if global_escape:
+            self.state.global_escapes_count += 1
+
         val = float(observed_value)
         best = float(self.state.best_value)
 
-        # Check if meaningful improvement occurred
-        if objective == "maximize":
-            improved = val > best + self.improvement_threshold
+        # 1. Noise-Aware Posterior Improvement Test
+        p_succ: float | None = None
+        if posterior_candidate_mean is not None and posterior_incumbent_mean is not None:
+            s_cand = max(float(posterior_candidate_std or 1e-6), 1e-6)
+            s_inc = max(float(posterior_incumbent_std or 1e-6), 1e-6)
+            s_diff = float(np.sqrt(s_cand**2 + s_inc**2))
+
+            if objective == "maximize":
+                delta_mu = float(posterior_candidate_mean - posterior_incumbent_mean)
+            else:
+                delta_mu = float(posterior_incumbent_mean - posterior_candidate_mean)
+
+            z = (delta_mu - self.success_delta) / s_diff
+            p_succ = float(norm.cdf(z))
+            improved = bool(p_succ >= self.success_probability_threshold)
         else:
-            improved = val < best - self.improvement_threshold
+            # Deterministic observed fallback
+            if objective == "maximize":
+                improved = val > best + self.success_delta
+            else:
+                improved = val < best - self.success_delta
 
         expanded = False
         contracted = False
@@ -216,12 +261,19 @@ class TuRBOTrustRegion:
                 self.state.failure_counter = 0
 
         # Check restart condition
+        previous_center: dict[str, Any] | None = None
+        restart_reason: str | None = None
+        restart_cid: str | None = None
+
         if self.state.length < self.state.min_length:
             restarted = True
             self.state.restarts_count += 1
             self.state.length = self.state.init_length
             self.state.success_counter = 0
             self.state.failure_counter = 0
+            previous_center = dict(self.state.center)
+            restart_reason = "trust_region_contracted_below_min_length"
+            restart_cid = fallback_candidate_id
 
             if fallback_center is not None:
                 self.state.center = {
@@ -235,13 +287,24 @@ class TuRBOTrustRegion:
             "expanded": expanded,
             "contracted": contracted,
             "restarted": restarted,
+            "global_escape": global_escape,
             "length": float(self.state.length),
             "radius": float(self.state.length),
             "success_counter": int(self.state.success_counter),
             "failure_counter": int(self.state.failure_counter),
             "restarts_count": int(self.state.restarts_count),
+            "expansions_count": int(self.state.expansions_count),
+            "contractions_count": int(self.state.contractions_count),
             "best_value": float(self.state.best_value),
             "center": dict(self.state.center),
+            "posterior_candidate_mean": posterior_candidate_mean,
+            "posterior_candidate_std": posterior_candidate_std,
+            "posterior_incumbent_mean": posterior_incumbent_mean,
+            "posterior_incumbent_std": posterior_incumbent_std,
+            "success_probability": p_succ,
+            "previous_center": previous_center,
+            "restart_reason": restart_reason,
+            "restart_candidate_id": restart_cid,
         }
         self.state.history.append(update_info)
         return update_info

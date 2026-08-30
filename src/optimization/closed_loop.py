@@ -145,7 +145,6 @@ class ClosedLoopOptimizer:
         targets = [float(r[self.target_col]) for r in records]
         current_best = float(np.max(targets) if self.objective == "maximize" else np.min(targets))
 
-        # Best initial candidate
         best_idx = int(np.argmax(targets) if self.objective == "maximize" else np.argmin(targets))
         best_record = records[best_idx]
 
@@ -297,7 +296,7 @@ class ClosedLoopOptimizer:
                 reason_code = "TURBO_EXPLOITATION_NEI"
                 reason = (
                     f"Recommended because candidate lies inside the active trust region "
-                    f"(radius={tr_radius:.3f}) with high Noisy Expected Improvement (score={acq_score:.3f}, "
+                    f"(length={tr_radius:.3f}) with high Noisy Expected Improvement (score={acq_score:.3f}, "
                     f"pred_mean={m_val:.2f}, std={s_val:.2f})."
                 )
             elif "nei" in self.strategy:
@@ -351,16 +350,8 @@ class ClosedLoopOptimizer:
         proposal: ExperimentProposal,
         result: ExperimentResult,
     ) -> OptimizerState:
-        """Incorporates experimental result and updates surrogate model and trust region."""
+        """Incorporates experimental result, updates surrogate, and advances noise-aware trust region."""
         val = float(result.target_value)
-
-        # Update current best
-        if state.objective == "maximize":
-            is_improvement = val > state.current_best + 1e-4
-            state.current_best = max(state.current_best, val)
-        else:
-            is_improvement = val < state.current_best - 1e-4
-            state.current_best = min(state.current_best, val)
 
         # Record observed row
         new_row = {
@@ -372,17 +363,73 @@ class ClosedLoopOptimizer:
         }
         state.observed_records.append(new_row)
 
+        # Refit GP surrogate on all observations (including the new point)
+        self._fit_surrogate(state)
+
+        # Compute posterior estimates for candidate and incumbent
+        cand_pt = np.array([[proposal.design_variables[c] for c in self.feature_cols]], dtype=float)
+        cand_pt_sc = state.scaler.transform(cand_pt)
+        p_cand_m, p_cand_s = state.gp_model.predict(cand_pt_sc, return_std=True)
+
+        X_obs_all = np.array([[r[c] for c in self.feature_cols] for r in state.observed_records], dtype=float)
+        X_obs_sc = state.scaler.transform(X_obs_all)
+        p_obs_m, p_obs_s = state.gp_model.predict(X_obs_sc, return_std=True)
+
+        # Previous incumbent index (excluding the newly added candidate)
+        if len(p_obs_m) > 1:
+            prev_obs_m = p_obs_m[:-1]
+            prev_obs_s = p_obs_s[:-1]
+            inc_idx = int(np.argmax(prev_obs_m) if state.objective == "maximize" else np.argmin(prev_obs_m))
+            p_inc_m = float(prev_obs_m[inc_idx])
+            p_inc_s = float(prev_obs_s[inc_idx])
+        else:
+            p_inc_m = float(p_obs_m[0])
+            p_inc_s = float(p_obs_s[0])
+
+        # Global fallback candidate in case of restart
+        fallback_center: dict[str, Any] | None = None
+        fallback_cid: str | None = None
+        if state.trust_region is not None:
+            # Generate global pool to choose restart center
+            global_pool = self.search_space.sample_feasible(n=500, seed=self.random_state + state.step * 77)
+            nov = self.search_space.check_novelty(
+                global_pool,
+                reference_points=pd.DataFrame(state.observed_records),
+                feature_cols=self.feature_cols,
+                tol=self.duplicate_tol,
+            )
+            valid_idx = np.where(nov["min_distance"].to_numpy() >= self.duplicate_tol)[0]
+            if len(valid_idx) > 0:
+                best_global_row = global_pool.iloc[valid_idx[0]].to_dict()
+            else:
+                best_global_row = global_pool.iloc[0].to_dict()
+            fallback_center = {k: best_global_row[k] for k in self.feature_cols if k in best_global_row}
+            fallback_cid = str(best_global_row.get("candidate_id") or "RESTART_GLOBAL_0")
+
         # Update trust region if applicable
         tr_info = None
+        is_global_escape = proposal.reason_code == "GLOBAL_ESCAPE"
         if state.trust_region is not None:
             tr_info = state.trust_region.update(
                 observed_candidate=proposal.design_variables,
                 observed_value=val,
+                posterior_candidate_mean=float(p_cand_m[0]),
+                posterior_incumbent_mean=p_inc_m,
+                posterior_candidate_std=float(p_cand_s[0]),
+                posterior_incumbent_std=p_inc_s,
                 objective=state.objective,
+                fallback_center=fallback_center,
+                fallback_candidate_id=fallback_cid,
+                global_escape=is_global_escape,
             )
 
-        # Refit GP surrogate
-        self._fit_surrogate(state)
+        # Update current best
+        if state.objective == "maximize":
+            is_improvement = val > state.current_best + 1e-4
+            state.current_best = max(state.current_best, val)
+        else:
+            is_improvement = val < state.current_best - 1e-4
+            state.current_best = min(state.current_best, val)
 
         # Record step history
         step_record = {
@@ -394,9 +441,14 @@ class ClosedLoopOptimizer:
             "reason_code": proposal.reason_code,
             "distance_to_nearest_observed": proposal.distance_to_nearest_observed,
             "trust_region_radius": tr_info.get("length", tr_info.get("radius")) if tr_info else None,
+            "trust_region_length": tr_info.get("length") if tr_info else None,
             "restarted": tr_info.get("restarted") if tr_info else False,
             "expanded": tr_info.get("expanded") if tr_info else False,
             "contracted": tr_info.get("contracted") if tr_info else False,
+            "global_escape": is_global_escape,
+            "success_probability": tr_info.get("success_probability") if tr_info else None,
+            "restart_reason": tr_info.get("restart_reason") if tr_info else None,
+            "restart_candidate_id": tr_info.get("restart_candidate_id") if tr_info else None,
         }
         state.history.append(step_record)
         return state

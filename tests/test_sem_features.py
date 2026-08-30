@@ -1,7 +1,13 @@
 import numpy as np
-from matplotlib import pyplot as plt
+import pytest
+
+cv2 = pytest.importorskip("cv2")
+skimage = pytest.importorskip("skimage")
+plt = pytest.importorskip("matplotlib.pyplot")
 
 from src.sem_features import FEATURE_COLUMNS, extract_sem_features
+
+pytestmark = [pytest.mark.integration]
 
 
 def test_sem_features_include_bad_image_without_crashing(tmp_path):

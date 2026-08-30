@@ -1,6 +1,12 @@
 import numpy as np
+import pytest
+
+cv2 = pytest.importorskip("cv2")
+skimage = pytest.importorskip("skimage")
 
 from src.sem_analysis import CRACK_METRIC_COLUMNS, _elongated_crack_mask, analyze_sem_image, crack_mask
+
+pytestmark = [pytest.mark.integration]
 
 
 def test_sem_analysis_detects_crack_metrics():

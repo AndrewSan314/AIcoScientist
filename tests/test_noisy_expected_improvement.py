@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
+from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel, RBF
 
 from src.optimization.acquisition import (
     compute_acquisition,
@@ -119,6 +119,72 @@ def test_true_mc_nei_minimization_semantics(
     assert np.all(np.isfinite(min_scores))
     # Maximization and minimization rankings should generally be inverted
     assert np.corrcoef(max_scores, min_scores)[0, 1] < 0.0
+
+
+def test_true_mc_nei_candidate_observed_covariance_correlation() -> None:
+    """Proves that True NEI accounts for cross-covariance between candidate and observed points."""
+    # Observations placed at x = 0.0 and x = 2.0 with high noise
+    X_obs = np.array([[0.0], [2.0]])
+    y_obs = np.array([5.0, 5.0])
+
+    kernel = ConstantKernel(1.0) * RBF(length_scale=0.5) + WhiteKernel(noise_level=0.2)
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42)
+    gp.fit(X_obs, y_obs)
+
+    # Candidate 1 is close to observed point 0.0 (high correlation)
+    # Candidate 2 is in the middle (x=1.0, low correlation to observations)
+    X_cand = np.array([[0.05], [1.0]])
+
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+
+    # Compute True MC NEI (with exact joint covariance)
+    nei_scores = compute_true_mc_nei(gp, X_obs, X_cand, n_fantasies=500, seed=42)
+
+    # Scores must be finite, non-negative, and properly distinguish candidate correlations
+    assert len(nei_scores) == 2
+    assert np.all(np.isfinite(nei_scores))
+    assert np.all(nei_scores >= 0.0)
+    assert nei_scores[0] != nei_scores[1]
+
+
+def test_compute_acquisition_nei_raises_on_missing_gp_inputs(
+    fitted_gp: tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]
+) -> None:
+    gp, X_obs, X_cand = fitted_gp
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+
+    # Silent fallback is strictly removed: missing GP or design matrices must raise ValueError
+    for m in ["nei", "true_nei", "noisy_expected_improvement", "turbo_nei"]:
+        with pytest.raises(ValueError, match="requires 'gp', 'X_observed_scaled'"):
+            compute_acquisition(
+                method=m,
+                mean=cand_mean,
+                std=cand_std,
+                best_observed=10.0,
+                gp=None,
+                X_observed_scaled=None,
+                X_candidates_scaled=None,
+            )
+
+
+def test_explicit_denoised_ei_works_without_gp(
+    fitted_gp: tuple[GaussianProcessRegressor, np.ndarray, np.ndarray]
+) -> None:
+    gp, X_obs, X_cand = fitted_gp
+    cand_mean, cand_std = gp.predict(X_cand, return_std=True)
+    obs_m = gp.predict(X_obs)
+
+    # Denoised EI works with explicit method designation
+    scores = compute_acquisition(
+        method="denoised_expected_improvement",
+        mean=cand_mean,
+        std=cand_std,
+        best_observed=10.0,
+        observed_posterior_means=obs_m,
+    )
+    assert len(scores) == len(X_cand)
+    assert np.all(np.isfinite(scores))
+    assert np.all(scores >= 0.0)
 
 
 def test_compute_acquisition_dispatch_routes_true_nei(

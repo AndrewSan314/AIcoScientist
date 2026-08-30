@@ -7,6 +7,7 @@ import pytest
 
 from src.datasets.attia import (
     AttiaAdapter,
+    compute_expected_c4,
     generate_continuous_candidate_id,
 )
 from src.evaluation.attia_continuous_benchmark import (
@@ -119,7 +120,7 @@ def test_programmatic_discrete_grid_optimum_and_continuous_reference(tmp_path: P
     assert (tmp_path / "continuous_reference_manifest.json").is_file()
 
 
-def test_reference_underestimation_detection() -> None:
+def test_reference_underestimation_detection_and_invalidation() -> None:
     adapter = AttiaAdapter()
     space = adapter.continuous_search_space()
     discrete_pool = adapter.load_candidate_pool()
@@ -135,8 +136,8 @@ def test_reference_underestimation_detection() -> None:
         n_candidates_per_step=20,
     )
 
-    # Intentionally set an artificially low reference lifetime to trigger detection
-    _, ref_under = evaluate_continuous_trajectory(
+    # Intentionally set an artificially low reference lifetime (500.0)
+    eval_hist, ref_under = evaluate_continuous_trajectory(
         raw_trajectory=raw_hist,
         init_indices=init_indices,
         discrete_pool=discrete_pool,
@@ -144,6 +145,19 @@ def test_reference_underestimation_detection() -> None:
         discrete_grid_optimum_lifetime=1079.0,
     )
     assert ref_under is True
+    # If reference is underestimated, continuous regret must become None / invalid, never clamped to 0.0
+    last_row = eval_hist[-1]
+    assert last_row["continuous_simple_regret"] is None
+    assert last_row["continuous_simple_regret_valid"] is False
+
+
+def test_c4_formula_exactness() -> None:
+    # Exact formula: C4 = 0.2 / (1/6 - (0.2/C1 + 0.2/C2 + 0.2/C3))
+    c1, c2, c3 = 6.0, 4.8, 4.0
+    expected = 0.2 / (1.0 / 6.0 - (0.2 / 6.0 + 0.2 / 4.8 + 0.2 / 4.0))
+    computed = compute_expected_c4(c1, c2, c3)
+    assert np.isclose(computed, expected, atol=1e-5)
+    assert np.isclose(computed, 4.8, atol=1e-2)  # Matches Attia P113 (6.0-4.8-4.0-4.8)
 
 
 def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
@@ -181,13 +195,19 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
 
     turbo_df = pd.read_csv(tmp_path / "turbo_state_history.csv")
     assert "benchmark_seed" in turbo_df.columns
-    assert "strategy" in turbo_df.columns
     assert "step" in turbo_df.columns
     assert "candidate_id" in turbo_df.columns
+    assert "trust_region_center_C1" in turbo_df.columns
+    assert "trust_region_center_C2" in turbo_df.columns
+    assert "trust_region_center_C3" in turbo_df.columns
     assert "trust_region_length" in turbo_df.columns
+    assert "posterior_candidate_mean" in turbo_df.columns
+    assert "posterior_candidate_std" in turbo_df.columns
+    assert "posterior_incumbent_mean" in turbo_df.columns
+    assert "posterior_incumbent_std" in turbo_df.columns
     assert "success_counter" in turbo_df.columns
     assert "failure_counter" in turbo_df.columns
     assert "expanded" in turbo_df.columns
     assert "contracted" in turbo_df.columns
     assert "restarted" in turbo_df.columns
-
+    assert "global_escape" in turbo_df.columns
