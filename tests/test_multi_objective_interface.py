@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.optimization.multi_objective import (
+from src.legacy.native_optimizer.multi_objective import (
     MultiObjectiveSpec,
     Objective,
     PlaceholderqNEHVI,

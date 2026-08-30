@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from src.optimization.adaptive_controller import AdaptiveBOController
+from src.legacy.native_optimizer.adaptive_controller import AdaptiveBOController
 
 
 def test_adaptive_controller_mode_switching() -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from src.optimization.acquisition import (
+from src.legacy.native_optimizer.acquisition import (
     compute_acquisition,
     expected_improvement_acquisition,
     greedy_acquisition,

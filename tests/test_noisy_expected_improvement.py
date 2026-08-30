@@ -5,7 +5,7 @@ import pytest
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel, RBF
 
-from src.optimization.acquisition import (
+from src.legacy.native_optimizer.acquisition import (
     compute_acquisition,
     compute_true_mc_nei,
     denoised_expected_improvement_acquisition,
@@ -210,7 +210,7 @@ def test_compute_acquisition_dispatch_routes_true_nei(
 
 
 def test_predict_latent_gp_variance_smaller_than_noisy() -> None:
-    from src.optimization.acquisition import predict_latent_gp
+    from src.legacy.native_optimizer.acquisition import predict_latent_gp
     rng = np.random.default_rng(42)
     X_train = rng.uniform(0.0, 1.0, size=(15, 2))
     y_train = np.sin(3 * X_train[:, 0]) + rng.normal(0.0, 0.2, size=len(X_train))
@@ -244,7 +244,7 @@ def test_predict_latent_gp_variance_smaller_than_noisy() -> None:
 
 def test_predict_latent_gp_normalize_y_scaling() -> None:
     """Tests that predict_latent_gp correctly scales latent mean, std, and cov back to original target units when normalize_y=True."""
-    from src.optimization.acquisition import predict_latent_gp
+    from src.legacy.native_optimizer.acquisition import predict_latent_gp
 
     rng = np.random.default_rng(123)
     X_train = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8], [0.9, 1.0]])
@@ -278,7 +278,7 @@ def test_predict_latent_gp_normalize_y_scaling() -> None:
 
 def test_bo_acquisitions_use_latent_gp_uncertainty() -> None:
     """Verifies that UCB and EI proposal scoring receives latent GP uncertainty rather than noisy observation uncertainty."""
-    from src.optimization.acquisition import compute_acquisition, predict_latent_gp
+    from src.legacy.native_optimizer.acquisition import compute_acquisition, predict_latent_gp
 
     rng = np.random.default_rng(99)
     X_train = rng.uniform(0.0, 1.0, size=(10, 2))

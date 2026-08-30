@@ -9,7 +9,7 @@ from src.optimization.search_space import (
     DerivedVariable,
     SearchSpace,
 )
-from src.optimization.trust_region import TuRBOTrustRegion
+from src.legacy.native_optimizer.trust_region import TuRBOTrustRegion
 
 
 @pytest.fixture
@@ -209,7 +209,7 @@ def test_trust_region_global_escape_trigger(simple_search_space: SearchSpace) ->
 
 
 def test_trust_region_serialization_and_restore(simple_search_space: SearchSpace) -> None:
-    from src.optimization.trust_region import TrustRegionState
+    from src.legacy.native_optimizer.trust_region import TrustRegionState
 
     turbo = TuRBOTrustRegion(search_space=simple_search_space, init_length=0.6)
     state = turbo.initialize({"x1": 5.0, "x2": 0.0}, initial_best_value=100.0)
