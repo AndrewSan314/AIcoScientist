@@ -105,6 +105,18 @@ class ScientificClosedLoopCoordinator:
         """Returns the number of completed experiments in the ledger."""
         return len(self.ledger.list_completed_records())
 
+    def _is_experiment_observed_by_optimizer(self, experiment_id: str) -> bool:
+        """Defensive idempotence check: returns True if experiment_id has already been observed by active optimizer state."""
+        if self.optimizer_state is None:
+            return False
+        for r in self.optimizer_state.observed_records:
+            if r.get("experiment_id") == experiment_id:
+                return True
+        for h in self.optimizer_state.history:
+            if h.get("experiment_id") == experiment_id:
+                return True
+        return False
+
     def build_stage_a_training_frame(self, char_col: str | None = None) -> pd.DataFrame:
         """Constructs the training view for Stage A (Process -> Characterization).
 
@@ -275,6 +287,93 @@ class ScientificClosedLoopCoordinator:
         )
         self.model_bundle.provenance = new_prov
 
+    def _rebuild_optimizer_from_ledger(self) -> None:
+        """Deterministically rebuilds optimizer state from valid completed observations in the ledger.
+
+        Reconstructs observed_records, current_best, GP surrogate, history, and TuRBO trust region
+        by replaying surviving completed online observations in chronological order
+        using their original ExperimentProposal specifications.
+        Persists a new authoritative optimizer snapshot to the ledger and refreshes provenance.
+        """
+        completed_records = self.ledger.list_completed_records()
+
+        # Partition surviving completed records into initial seed records and online proposed experiments
+        seed_records: list[ScientificExperimentRecord] = []
+        online_records: list[ScientificExperimentRecord] = []
+
+        for r in completed_records:
+            if r.proposal_metadata and r.proposal_metadata.get("proposal"):
+                online_records.append(r)
+            else:
+                seed_records.append(r)
+
+        # Sort online records chronologically by proposal sequence
+        online_records.sort(key=lambda x: int(x.proposal_metadata.get("proposal_sequence", 0)))
+
+        candidate_cols = self.spec.candidate_columns or self.spec.candidate_variables or self.spec.pre_experiment_features
+
+        if seed_records:
+            seed_rows = []
+            for r in seed_records:
+                row_dict = {
+                    "candidate_id": r.candidate_id,
+                    "experiment_id": r.experiment_id,
+                    **{k: float(r.pre_experiment_features[k]) for k in candidate_cols if k in r.pre_experiment_features},
+                    self.spec.target_column: float(r.performance[self.spec.target_column]),
+                }
+                seed_rows.append(row_dict)
+            new_opt_state = self.optimizer.initialize(seed_rows)
+        elif online_records:
+            first_rec = online_records.pop(0)
+            first_row = {
+                "candidate_id": first_rec.candidate_id,
+                "experiment_id": first_rec.experiment_id,
+                **{k: float(first_rec.pre_experiment_features[k]) for k in candidate_cols if k in first_rec.pre_experiment_features},
+                self.spec.target_column: float(first_rec.performance[self.spec.target_column]),
+            }
+            new_opt_state = self.optimizer.initialize([first_row])
+        else:
+            raise RuntimeError("Cannot rebuild optimizer: no completed valid records exist in the ledger.")
+
+        # Replay surviving online proposed observations
+        for rec in online_records:
+            prop_data = rec.proposal_metadata.get("proposal")
+            if prop_data:
+                prop = ExperimentProposal.from_dict(prop_data)
+            else:
+                prop = ExperimentProposal(
+                    candidate_id=rec.candidate_id,
+                    design_variables=rec.pre_experiment_features,
+                    predicted_performance=0.0,
+                    prediction_uncertainty=1.0,
+                    acquisition_score=float(rec.proposal_metadata.get("acquisition_score", 0.0)),
+                    acquisition_method=str(rec.proposal_metadata.get("strategy", self.optimizer.strategy)),
+                    trust_region_center=None,
+                    trust_region_radius=None,
+                    recommendation_reason="",
+                    reason_code=str(rec.proposal_metadata.get("reason_code", "OBSERVATION_RECORDED")),
+                    distance_to_nearest_observed=0.0,
+                    step=int(rec.proposal_metadata.get("optimizer_step", new_opt_state.step + 1)),
+                )
+            new_opt_state.step = int(rec.proposal_metadata.get("optimizer_step", prop.step))
+            target_val = float(rec.performance[self.spec.target_column])
+            exp_res = ExperimentResult(
+                candidate_id=rec.candidate_id,
+                design_variables=rec.pre_experiment_features,
+                target_value=target_val,
+                observations={"experiment_id": rec.experiment_id},
+            )
+            self.optimizer.observe(new_opt_state, prop, exp_res)
+
+        self.optimizer._fit_surrogate(new_opt_state)
+        self.optimizer_state = new_opt_state
+
+        # Persist new authoritative snapshot
+        self.ledger.save_optimizer_snapshot(self.optimizer_state.to_dict())
+
+        # Refit scientific models and refresh provenance
+        self._refit_scientific_models()
+
     def propose_next(
         self,
         pre_experiment_context: Mapping[str, Any] | None = None,
@@ -339,6 +438,8 @@ class ScientificClosedLoopCoordinator:
 
         # 6. Compute prospective optimizer state hash and search space fingerprint
         history_df = self.ledger.to_dataframe()
+        if not history_df.empty and "stage" in history_df.columns:
+            history_df = history_df[~history_df["stage"].isin([ExperimentStage.FAILED.value, ExperimentStage.CANCELLED.value])].reset_index(drop=True)
         incumbent = self.optimizer_state.current_best
         prospective_snap = prospective_opt_state.to_dict()
         opt_state_hash = hashlib.sha256(_canonical_json(prospective_snap).encode("utf-8")).hexdigest()
@@ -435,6 +536,8 @@ class ScientificClosedLoopCoordinator:
         if current_rec is None:
             raise KeyError(f"Experiment {experiment_id!r} not found in ledger.")
 
+        was_completed = (current_rec.stage == ExperimentStage.COMPLETED)
+
         # Check completion condition: all required characterization channels + primary performance present
         merged_chars = dict(current_rec.characterization)
         merged_chars.update(dict(characterization))
@@ -462,11 +565,14 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Online update of Stage A
+        # Online update of Stage A and Stage B models
         self._refit_stage_a_model()
+        if was_completed:
+            self._refit_stage_b_model()
         self._refresh_model_provenance()
 
-        if rec.stage == ExperimentStage.COMPLETED:
+        # Only observe if transitioned to COMPLETED for the first time
+        if rec.stage == ExperimentStage.COMPLETED and not was_completed:
             self._on_experiment_completed(rec)
 
         return rec
@@ -493,6 +599,7 @@ class ScientificClosedLoopCoordinator:
                 allow_measurement_revision=allow_measurement_revision,
             )
 
+        was_completed = (current_rec.stage == ExperimentStage.COMPLETED)
         merged_perfs = dict(current_rec.performance)
         merged_perfs.update(dict(performance))
         has_primary_perf = self.spec.target_column in merged_perfs
@@ -525,7 +632,7 @@ class ScientificClosedLoopCoordinator:
         self._refit_direct_model()
         self._refresh_model_provenance()
 
-        if rec.stage == ExperimentStage.COMPLETED:
+        if rec.stage == ExperimentStage.COMPLETED and not was_completed:
             self._on_experiment_completed(rec)
 
         return rec
@@ -583,11 +690,19 @@ class ScientificClosedLoopCoordinator:
 
     def _on_experiment_completed(self, rec: ScientificExperimentRecord) -> None:
         """Handles completion of an experiment: feeds optimizer, refits models, refreshes provenance, snapshots state."""
+        # Defensive idempotence guard: do not re-observe if already recorded in optimizer state
+        if self._is_experiment_observed_by_optimizer(rec.experiment_id):
+            logger.warning(
+                f"Experiment {rec.experiment_id!r} is already observed in optimizer state; skipping duplicate observation."
+            )
+            return
+
         target_val = float(rec.performance[self.spec.target_column])
         exp_res = ExperimentResult(
             candidate_id=rec.candidate_id,
             design_variables=rec.pre_experiment_features,
             target_value=target_val,
+            observations={"experiment_id": rec.experiment_id},
         )
 
         # Restore exact proposal semantics from record or cached proposal
@@ -625,7 +740,8 @@ class ScientificClosedLoopCoordinator:
         failure_reason: str,
         quality_flags: list[str] | None = None,
     ) -> ScientificExperimentRecord:
-        """Records experimental failure in audit trail without fabricating fake low target numbers and refits active models."""
+        """Records experimental failure in audit trail and rebuilds optimizer/models if previously observed."""
+        was_observed = self._is_experiment_observed_by_optimizer(experiment_id)
         rec = self.ledger.append_transition(
             experiment_id=experiment_id,
             new_stage=ExperimentStage.FAILED,
@@ -637,8 +753,10 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        # Refit or reset scientific models with updated training frames (excluding failed experiment)
-        self._refit_scientific_models()
+        if was_observed:
+            self._rebuild_optimizer_from_ledger()
+        else:
+            self._refit_scientific_models()
         return rec
 
     def record_cancelled(
@@ -646,7 +764,8 @@ class ScientificClosedLoopCoordinator:
         experiment_id: str,
         reason: str,
     ) -> ScientificExperimentRecord:
-        """Records cancellation of an experiment and refits active models."""
+        """Records cancellation of an experiment and rebuilds optimizer/models if previously observed."""
+        was_observed = self._is_experiment_observed_by_optimizer(experiment_id)
         rec = self.ledger.append_transition(
             experiment_id=experiment_id,
             new_stage=ExperimentStage.CANCELLED,
@@ -655,7 +774,10 @@ class ScientificClosedLoopCoordinator:
             spec=self.spec,
         )
 
-        self._refit_scientific_models()
+        if was_observed:
+            self._rebuild_optimizer_from_ledger()
+        else:
+            self._refit_scientific_models()
         return rec
 
     @classmethod
@@ -764,7 +886,16 @@ class ScientificClosedLoopCoordinator:
 
         # 5. Initialize optimizer from completed valid observations
         opt_df = coord.build_optimizer_training_frame()
-        opt_state = optimizer.initialize(opt_df)
+        init_rows = []
+        for _, row in opt_df.iterrows():
+            r_dict = {
+                "candidate_id": str(row.get("candidate_id", "")),
+                "experiment_id": str(row.get("experiment_id", "")),
+                **{k: float(row[k]) for k in candidate_cols if k in row and pd.notna(row[k])},
+                spec.target_column: float(row[spec.target_column]),
+            }
+            init_rows.append(r_dict)
+        opt_state = optimizer.initialize(init_rows if init_rows else opt_df)
         coord.optimizer_state = opt_state
         ledger.save_optimizer_snapshot(opt_state.to_dict())
 
@@ -887,15 +1018,23 @@ class ScientificClosedLoopCoordinator:
                         opt_state.trust_region.initialize(opt_state.observed_records[b_idx], opt_state.current_best)
 
             # 2. Identify completed ledger records missing from restored optimizer snapshot
-            # Stable identity check using candidate_id / history / observed_records
+            # Primary identity: experiment_id; legacy fallback: candidate_id
+            snapshot_exp_ids = {str(r.get("experiment_id")) for r in opt_state.observed_records if r.get("experiment_id")}
+            snapshot_hist_exp_ids = {str(h.get("experiment_id")) for h in opt_state.history if h.get("experiment_id")}
+            known_exp_ids = snapshot_exp_ids | snapshot_hist_exp_ids
+
             snapshot_cand_ids = {str(r.get("candidate_id")) for r in opt_state.observed_records if r.get("candidate_id")}
             snapshot_hist_cand_ids = {str(h.get("candidate_id")) for h in opt_state.history if h.get("candidate_id")}
-            known_snapshot_cand_ids = snapshot_cand_ids | snapshot_hist_cand_ids
+            known_cand_ids = snapshot_cand_ids | snapshot_hist_cand_ids
 
-            missing_completed = [
-                rec for rec in completed_records
-                if rec.candidate_id not in known_snapshot_cand_ids
-            ]
+            missing_completed = []
+            for rec in completed_records:
+                if known_exp_ids:
+                    if rec.experiment_id not in known_exp_ids:
+                        missing_completed.append(rec)
+                else:
+                    if rec.candidate_id not in known_cand_ids:
+                        missing_completed.append(rec)
 
             # 3. Replay missing completed observations in chronological order
             replayed_any = False
@@ -915,13 +1054,15 @@ class ScientificClosedLoopCoordinator:
                         recommendation_reason="",
                         reason_code=str(rec.proposal_metadata.get("reason_code", "OBSERVATION_RECORDED")),
                         distance_to_nearest_observed=0.0,
-                        step=int(rec.proposal_metadata.get("optimizer_step", opt_state.step)),
+                        step=int(rec.proposal_metadata.get("optimizer_step", opt_state.step + 1)),
                     )
+                opt_state.step = int(rec.proposal_metadata.get("optimizer_step", prop.step))
                 target_val = float(rec.performance[spec.target_column])
                 exp_res = ExperimentResult(
                     candidate_id=rec.candidate_id,
                     design_variables=rec.pre_experiment_features,
                     target_value=target_val,
+                    observations={"experiment_id": rec.experiment_id},
                 )
                 optimizer.observe(opt_state, prop, exp_res)
                 replayed_any = True

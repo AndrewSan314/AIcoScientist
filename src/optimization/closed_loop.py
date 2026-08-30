@@ -565,9 +565,11 @@ class ClosedLoopOptimizer:
             state.current_best = min(state.current_best, val)
 
         # Record step history
+        exp_id = result.observations.get("experiment_id") or result.metadata.get("experiment_id")
         step_record = {
             "step": state.step,
             "candidate_id": proposal.candidate_id,
+            "experiment_id": str(exp_id) if exp_id is not None else None,
             "target_value": val,
             "best_observed": state.current_best,
             "is_improvement": is_improvement,

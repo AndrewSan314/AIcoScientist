@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 
 import numpy as np
@@ -1005,5 +1006,398 @@ def test_historical_candidate_variables_do_not_inherit_static_context(tmp_path: 
     assert "temperature" in rec0.pre_experiment_features
 
     coord.ledger.close()
+
+
+def test_invalidation_removes_observation_and_recomputes_best_and_surrogate(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    db_path = tmp_path / "inv_test.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    init_best = float(coord.optimizer_state.current_best)
+
+    # Propose and complete EXP_1 with target 850.0 (new best)
+    rec1, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec1.experiment_id)
+    coord.record_characterization(rec1.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec1.experiment_id, {"y": 850.0})
+
+    # Propose and complete EXP_2 with target 950.0 (new best)
+    rec2, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec2.experiment_id)
+    coord.record_characterization(rec2.experiment_id, {"z1": 0.3, "z2": 0.4})
+    coord.record_performance(rec2.experiment_id, {"y": 950.0})
+
+    assert coord.optimizer_state.current_best == 950.0
+    assert len(coord.optimizer_state.observed_records) == 6
+    assert len(coord.optimizer_state.history) == 2
+
+    # Invalidate EXP_2 with record_failed
+    coord.record_failed(rec2.experiment_id, "QC contaminated sample")
+
+    # Assert EXP_2 is removed from optimizer state and current_best is reverted to 850.0
+    assert len(coord.optimizer_state.observed_records) == 5
+    assert len(coord.optimizer_state.history) == 1
+    assert coord.optimizer_state.current_best == 850.0
+    assert not any(r.get("experiment_id") == rec2.experiment_id for r in coord.optimizer_state.observed_records)
+    assert not any(h.get("experiment_id") == rec2.experiment_id for h in coord.optimizer_state.history)
+    assert rec2.experiment_id not in coord.model_bundle.provenance.training_experiment_ids
+
+    # Invalidate EXP_1 with record_cancelled
+    coord.record_cancelled(rec1.experiment_id, "Cancelled post-run")
+
+    assert len(coord.optimizer_state.observed_records) == 4
+    assert len(coord.optimizer_state.history) == 0
+    assert coord.optimizer_state.current_best == init_best
+
+    coord.ledger.close()
+
+    # Resume from ledger: must not resurrect invalidated observations
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    assert len(resumed.optimizer_state.observed_records) == 4
+    assert len(resumed.optimizer_state.history) == 0
+    assert resumed.optimizer_state.current_best == init_best
+    resumed.ledger.close()
+
+
+def test_invalidation_and_rebuild_matches_clean_control_run(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    # 1. Clean control run
+    coord_ctrl = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=tmp_path / "ctrl.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_c1, _ = coord_ctrl.propose_next(n_mc_samples=16)
+    coord_ctrl.record_executed(rec_c1.experiment_id)
+    coord_ctrl.record_characterization(rec_c1.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord_ctrl.record_performance(rec_c1.experiment_id, {"y": 600.0})
+    ctrl_next_rec, ctrl_next_rat = coord_ctrl.propose_next(n_mc_samples=16)
+    coord_ctrl.ledger.close()
+
+    # 2. Invalidate & Rebuild run
+    coord_inv = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=tmp_path / "inv.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_i1, _ = coord_inv.propose_next(n_mc_samples=16)
+    coord_inv.record_executed(rec_i1.experiment_id)
+    coord_inv.record_characterization(rec_i1.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord_inv.record_performance(rec_i1.experiment_id, {"y": 600.0})
+
+    # Propose second experiment that will be invalidated
+    rec_i2, _ = coord_inv.propose_next(n_mc_samples=16)
+    coord_inv.record_executed(rec_i2.experiment_id)
+    coord_inv.record_characterization(rec_i2.experiment_id, {"z1": 0.5, "z2": -0.3})
+    coord_inv.record_performance(rec_i2.experiment_id, {"y": 950.0})
+
+    # Invalidate second experiment
+    coord_inv.record_failed(rec_i2.experiment_id, "Bad run")
+
+    # Propose next after invalidation
+    inv_next_rec, inv_next_rat = coord_inv.propose_next(n_mc_samples=16)
+    coord_inv.ledger.close()
+
+    # Assert exact match with control
+    assert ctrl_next_rec.candidate_id == inv_next_rec.candidate_id
+    assert ctrl_next_rec.pre_experiment_features == inv_next_rec.pre_experiment_features
+    assert ctrl_next_rec.candidate_variables == inv_next_rec.candidate_variables
+    assert ctrl_next_rec.proposal_metadata["acquisition_score"] == pytest.approx(inv_next_rec.proposal_metadata["acquisition_score"])
+    assert ctrl_next_rec.proposal_metadata["strategy"] == inv_next_rec.proposal_metadata["strategy"]
+    assert ctrl_next_rec.proposal_metadata["reason_code"] == inv_next_rec.proposal_metadata["reason_code"]
+    assert ctrl_next_rat.expected_learning_value == pytest.approx(inv_next_rat.expected_learning_value)
+
+
+def test_post_completion_characterization_does_not_duplicate_optimizer_observation(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=tmp_path / "idem.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 600.0})
+
+    n_obs_before = len(coord.optimizer_state.observed_records)
+    n_hist_before = len(coord.optimizer_state.history)
+    assert n_obs_before == 5
+    assert n_hist_before == 1
+
+    # Record revised characterization on already completed experiment
+    coord.record_characterization(rec.experiment_id, {"z1": 0.88, "z2": 0.12}, allow_measurement_revision=True)
+
+    assert len(coord.optimizer_state.observed_records) == n_obs_before
+    assert len(coord.optimizer_state.history) == n_hist_before
+
+    # Defensive idempotence guard: invoking _on_experiment_completed directly is a no-op
+    coord._on_experiment_completed(coord.ledger.get_record(rec.experiment_id))
+    assert len(coord.optimizer_state.observed_records) == n_obs_before
+    assert len(coord.optimizer_state.history) == n_hist_before
+
+    coord.ledger.close()
+
+
+def test_distinct_replicate_experiments_with_same_candidate_id(tmp_path: Path) -> None:
+    spec = DatasetSpec(
+        name="rep_test",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1"],
+        target_column="y",
+        pre_experiment_features=["x1"],
+        candidate_variables=["x1"],
+        targets=["y"],
+    )
+    two_stage_spec = TwoStageModelSpec(
+        dataset_name="rep_test",
+        process_features=["x1"],
+        characterization_targets=[],
+        performance_targets=["y"],
+    )
+    space = SearchSpace(name="space", variables=[ContinuousVariable(name="x1", lower=1.0, upper=10.0)])
+    initial_df = pd.DataFrame([
+        {"exp_id": "EXP_00", "cand_id": "C0", "x1": 1.0, "y": 500.0},
+        {"exp_id": "EXP_01", "cand_id": "C1", "x1": 2.0, "y": 550.0},
+    ])
+    cand_pool = pd.DataFrame([{"cand_id": "C_SHARED", "x1": 5.0}])
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=spec,
+        two_stage_spec=two_stage_spec,
+        initial_data=initial_df,
+        candidate_pool=cand_pool,
+        search_space=space,
+        db_path=tmp_path / "rep.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    # Replicate 1
+    rec1, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec1.experiment_id)
+    coord.record_performance(rec1.experiment_id, {"y": 700.0})
+
+    # Allow parallel proposal to simulate replicate with same candidate_id
+    coord.allow_parallel_experiments = True
+    rec2, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec2.experiment_id)
+    coord.record_performance(rec2.experiment_id, {"y": 710.0})
+
+    assert len(coord.optimizer_state.observed_records) == 4
+    # Invalidate Replicate 2 only
+    coord.record_failed(rec2.experiment_id, "Bad replicate 2")
+
+    # Assert Replicate 1 survives while Replicate 2 is removed
+    assert len(coord.optimizer_state.observed_records) == 3
+    assert any(r.get("experiment_id") == rec1.experiment_id for r in coord.optimizer_state.observed_records)
+    assert not any(r.get("experiment_id") == rec2.experiment_id for r in coord.optimizer_state.observed_records)
+
+    coord.ledger.close()
+
+
+def test_legacy_snapshot_without_experiment_id_resumes_cleanly(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    db_path = tmp_path / "legacy.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 900.0})
+
+    # Strip experiment_id from snapshot to simulate legacy format
+    snap = coord.ledger.get_latest_optimizer_snapshot()
+    assert snap is not None
+    legacy_snap = copy.deepcopy(snap)
+    for r in legacy_snap.get("observed_records", []):
+        r.pop("experiment_id", None)
+    for h in legacy_snap.get("history", []):
+        h.pop("experiment_id", None)
+
+    coord.ledger.save_optimizer_snapshot(legacy_snap)
+    coord.ledger.close()
+
+    # Resume from legacy snapshot
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    assert len(resumed.optimizer_state.observed_records) == 5
+    assert resumed.optimizer_state.current_best == 900.0
+    resumed.ledger.close()
+
+
+def test_uninterrupted_control_vs_crash_reconciliation_exact_match(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    # 1. Uninterrupted control run
+    coord_ctrl = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=tmp_path / "ctrl_crash.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_c, _ = coord_ctrl.propose_next(n_mc_samples=16)
+    coord_ctrl.record_executed(rec_c.experiment_id)
+    coord_ctrl.record_characterization(rec_c.experiment_id, {"z1": 0.2, "z2": -0.1})
+    coord_ctrl.record_performance(rec_c.experiment_id, {"y": 725.0})
+    ctrl_next_rec, ctrl_next_rat = coord_ctrl.propose_next(n_mc_samples=16)
+    ctrl_best = coord_ctrl.optimizer_state.current_best
+    ctrl_n_obs = len(coord_ctrl.optimizer_state.observed_records)
+    ctrl_n_hist = len(coord_ctrl.optimizer_state.history)
+    coord_ctrl.ledger.close()
+
+    # 2. Crash run
+    db_crash = tmp_path / "sim_crash.db"
+    coord_crash = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_crash,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_cr, _ = coord_crash.propose_next(n_mc_samples=16)
+    coord_crash.record_executed(rec_cr.experiment_id)
+    coord_crash.record_characterization(rec_cr.experiment_id, {"z1": 0.2, "z2": -0.1})
+
+    # Suppress optimizer snapshot write to simulate crash before snapshot persistence
+    monkeypatch.setattr(coord_crash.ledger, "save_optimizer_snapshot", lambda *args, **kwargs: None)
+    coord_crash.record_performance(rec_cr.experiment_id, {"y": 725.0})
+    coord_crash.ledger.close()
+
+    # Resume from ledger and reconcile
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_crash,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    resumed_next_rec, resumed_next_rat = resumed.propose_next(n_mc_samples=16)
+
+    # Assert exact match between control and resumed
+    assert ctrl_next_rec.candidate_id == resumed_next_rec.candidate_id
+    assert ctrl_next_rec.pre_experiment_features == resumed_next_rec.pre_experiment_features
+    assert ctrl_next_rec.candidate_variables == resumed_next_rec.candidate_variables
+    assert ctrl_next_rec.proposal_metadata["acquisition_score"] == pytest.approx(resumed_next_rec.proposal_metadata["acquisition_score"])
+    assert ctrl_next_rec.proposal_metadata["reason_code"] == resumed_next_rec.proposal_metadata["reason_code"]
+    assert ctrl_best == resumed.optimizer_state.current_best
+    assert ctrl_n_obs == len(resumed.optimizer_state.observed_records)
+    assert ctrl_n_hist == len(resumed.optimizer_state.history)
+
+    resumed.ledger.close()
+
+
+def test_turbo_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    db_path = tmp_path / "turbo_inv.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="turbo_nei",
+        random_state=42,
+    )
+
+    rec1, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec1.experiment_id)
+    coord.record_characterization(rec1.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec1.experiment_id, {"y": 600.0})
+
+    rec2, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec2.experiment_id)
+    coord.record_characterization(rec2.experiment_id, {"z1": 0.3, "z2": 0.4})
+    coord.record_performance(rec2.experiment_id, {"y": 800.0})
+
+    assert len(coord.optimizer_state.history) == 2
+    orig_reason_code_1 = coord.optimizer_state.history[0]["reason_code"]
+
+    # Invalidate rec2
+    coord.record_failed(rec2.experiment_id, "Bad run")
+
+    assert len(coord.optimizer_state.history) == 1
+    assert coord.optimizer_state.history[0]["reason_code"] == orig_reason_code_1
+    assert coord.optimizer_state.trust_region is not None
+
+    coord.ledger.close()
+
 
 
