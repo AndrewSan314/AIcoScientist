@@ -8,7 +8,10 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
+
+import numpy as np
+import pandas as pd
 
 
 def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
@@ -30,6 +33,8 @@ def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
             cwd=str(repo_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5,
             check=False,
         )
@@ -42,6 +47,8 @@ def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
             cwd=str(repo_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5,
             check=False,
         )
@@ -54,6 +61,8 @@ def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
             cwd=str(repo_path),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=5,
             check=False,
         )
@@ -65,6 +74,8 @@ def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
                 cwd=str(repo_path),
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=5,
                 check=False,
             )
@@ -85,7 +96,6 @@ def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
 def get_environment_provenance() -> dict[str, Any]:
     """Captures runtime environment, OS, Python version, and core library versions."""
     import joblib
-    import numpy as np
     import scipy
     import sklearn
 
@@ -97,6 +107,84 @@ def get_environment_provenance() -> dict[str, Any]:
         "joblib_version": joblib.__version__,
         "platform": platform.platform(),
     }
+
+
+def compute_dataset_fingerprint(
+    df: pd.DataFrame,
+    feature_cols: Sequence[str],
+    target_cols: Sequence[str],
+    id_col: str | None = None,
+) -> str:
+    """Computes a deterministic SHA-256 fingerprint over the scientific training data content.
+
+    Includes schema, column types, row ordering, non-oracle training values, and missingness.
+    """
+    if df.empty:
+        return hashlib.sha256(b"EMPTY_DATASET").hexdigest()[:16]
+
+    cols_to_use = []
+    if id_col and id_col in df.columns:
+        cols_to_use.append(id_col)
+    for c in sorted(feature_cols):
+        if c in df.columns and c not in cols_to_use:
+            cols_to_use.append(c)
+    for c in sorted(target_cols):
+        if c in df.columns and c not in cols_to_use:
+            cols_to_use.append(c)
+
+    sub_df = df[cols_to_use].copy()
+
+    # Sort deterministically
+    if id_col and id_col in sub_df.columns:
+        sub_df = sub_df.sort_values(by=id_col).reset_index(drop=True)
+    else:
+        sort_by = [c for c in cols_to_use if c in sub_df.columns]
+        if sort_by:
+            sub_df = sub_df.sort_values(by=sort_by).reset_index(drop=True)
+
+    hasher = hashlib.sha256()
+    hasher.update(json.dumps([(c, str(sub_df[c].dtype)) for c in cols_to_use]).encode("utf-8"))
+
+    for _, row in sub_df.iterrows():
+        row_repr = []
+        for c in cols_to_use:
+            val = row[c]
+            if pd.isna(val):
+                row_repr.append("NaN")
+            elif isinstance(val, (float, np.floating)):
+                row_repr.append(f"{float(val):.8e}")
+            elif isinstance(val, (int, np.integer)):
+                row_repr.append(str(int(val)))
+            else:
+                row_repr.append(str(val).strip())
+        hasher.update(("|".join(row_repr) + "\n").encode("utf-8"))
+
+    return hasher.hexdigest()[:16]
+
+
+def compute_spec_fingerprint(
+    spec: Any,
+    two_stage_spec: Any | None = None,
+) -> str:
+    """Computes a deterministic SHA-256 fingerprint over the scientific dataset and two-stage specs."""
+    spec_dict: dict[str, Any] = {
+        "name": getattr(spec, "name", ""),
+        "pre_experiment_features": sorted(getattr(spec, "pre_experiment_features", [])),
+        "candidate_variables": sorted(getattr(spec, "candidate_variables", [])),
+        "post_experiment_characterization": sorted(getattr(spec, "post_experiment_characterization", [])),
+        "targets": sorted(getattr(spec, "targets", [])),
+        "target_column": getattr(spec, "target_column", ""),
+        "objective": getattr(spec, "objective", "maximize"),
+        "constraints": sorted(getattr(spec, "constraints", [])),
+    }
+    if two_stage_spec is not None:
+        spec_dict["two_stage"] = {
+            "process_features": sorted(getattr(two_stage_spec, "process_features", [])),
+            "characterization_targets": sorted(getattr(two_stage_spec, "characterization_targets", [])),
+            "performance_targets": sorted(getattr(two_stage_spec, "performance_targets", [])),
+        }
+    canon = json.dumps(spec_dict, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()[:16]
 
 
 def build_benchmark_run_manifest(

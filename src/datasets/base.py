@@ -65,7 +65,9 @@ class DatasetSpec:
         # Initialize defaults for new scientific contract fields if not provided
         if not self.targets:
             object.__setattr__(self, "targets", [self.target_column])
-        if not self.candidate_variables:
+        if not self.candidate_columns and self.candidate_variables:
+            object.__setattr__(self, "candidate_columns", list(self.candidate_variables))
+        if not self.candidate_variables and self.candidate_columns:
             object.__setattr__(self, "candidate_variables", list(self.candidate_columns))
         if not self.pre_experiment_features:
             if self.candidate_columns:

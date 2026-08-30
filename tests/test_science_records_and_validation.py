@@ -60,6 +60,23 @@ def test_experiment_record_valid_transitions() -> None:
     assert rec.is_terminal()
 
 
+def test_experiment_record_copy() -> None:
+    rec = ScientificExperimentRecord(
+        experiment_id="EXP_001",
+        candidate_id="CAND_A",
+        dataset_name="battery_lab_v1",
+        pre_experiment_features={"temp": 300.0},
+        characterization={"sem_porosity": 0.18},
+    )
+    copied = rec.copy()
+    assert copied.experiment_id == rec.experiment_id
+    assert copied.pre_experiment_features == rec.pre_experiment_features
+
+    # Mutating copy does not alter original
+    copied.pre_experiment_features["temp"] = 500.0
+    assert rec.pre_experiment_features["temp"] == 300.0
+
+
 def test_experiment_record_invalid_transitions() -> None:
     rec = ScientificExperimentRecord(
         experiment_id="EXP_002",
@@ -118,6 +135,31 @@ def test_validation_proposal_horizon_enforcement(sample_spec: DatasetSpec) -> No
     )
     with pytest.raises(InformationHorizonError, match="Performance outcomes cannot be present at stage PROPOSED"):
         validate_record_against_spec(bad_proposal_perf, sample_spec)
+
+
+def test_validation_finite_values_and_completed_requirements(sample_spec: DatasetSpec) -> None:
+    # Non-finite values rejected
+    bad_val_rec = ScientificExperimentRecord(
+        experiment_id="EXP_BAD_01",
+        candidate_id="CAND_B1",
+        dataset_name="battery_lab_v1",
+        stage=ExperimentStage.PROPOSED,
+        pre_experiment_features={"temp": float("nan"), "mixing_time": 30.0},
+    )
+    with pytest.raises(InformationHorizonError, match="non-finite numerical value"):
+        validate_record_against_spec(bad_val_rec, sample_spec)
+
+    # Completed stage requires primary target
+    bad_completed = ScientificExperimentRecord(
+        experiment_id="EXP_BAD_02",
+        candidate_id="CAND_B2",
+        dataset_name="battery_lab_v1",
+        stage=ExperimentStage.COMPLETED,
+        pre_experiment_features={"temp": 300.0, "mixing_time": 30.0},
+        performance={},  # Missing "cycle_life"
+    )
+    with pytest.raises(InformationHorizonError, match="primary target 'cycle_life' is missing"):
+        validate_record_against_spec(bad_completed, sample_spec)
 
 
 def test_validation_valid_lifecycle_passes(sample_spec: DatasetSpec) -> None:

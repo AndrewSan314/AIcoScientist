@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.datasets.base import DatasetAdapter, DatasetSpec, TwoStageModelSpec
+from src.optimization.search_space import ContinuousVariable, SearchSpace
 
 
 class SyntheticExperimentOracle:
@@ -100,6 +101,18 @@ class SyntheticScienceAdapter(DatasetAdapter):
     @property
     def two_stage_spec(self) -> TwoStageModelSpec:
         return self._two_stage_spec
+
+    @property
+    def search_space(self) -> SearchSpace:
+        """Explicit generic SearchSpace declaring variable bounds and types."""
+        return SearchSpace(
+            name="synthetic_science_space",
+            variables=[
+                ContinuousVariable(name="x1", lower=1.0, upper=5.0),
+                ContinuousVariable(name="x2", lower=10.0, upper=50.0),
+                ContinuousVariable(name="x3", lower=0.1, upper=2.0),
+            ],
+        )
 
     def load(self, force_recompute: bool = False) -> pd.DataFrame:
         return self.load_initial_dataset(n_samples=15, seed=42)

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Mapping
+import math
+from typing import Any, Mapping
+
+import numpy as np
 
 from src.datasets.base import DatasetSpec
 from src.science.records import ExperimentStage, ScientificExperimentRecord
@@ -8,6 +11,20 @@ from src.science.records import ExperimentStage, ScientificExperimentRecord
 
 class InformationHorizonError(ValueError):
     """Raised when an experiment record violates information horizon boundaries."""
+
+
+def _check_finite_numerical_values(data_dict: Mapping[str, Any], field_name: str) -> None:
+    """Checks that numerical values are finite (not NaN, null, or Inf)."""
+    for k, v in data_dict.items():
+        if isinstance(v, (float, int, np.number)):
+            if math.isnan(float(v)) or math.isinf(float(v)):
+                raise InformationHorizonError(
+                    f"Field {field_name!r} contains non-finite numerical value for {k!r}: {v}"
+                )
+        elif v is None:
+            raise InformationHorizonError(
+                f"Field {field_name!r} contains None/null value for {k!r}"
+            )
 
 
 def validate_record_against_spec(
@@ -46,6 +63,15 @@ def validate_record_against_spec(
             f"Allowed candidate variables: {sorted(allowed_cand_vars)}"
         )
 
+    # Validate subset relationship between candidate variables and pre-experiment features
+    if spec.candidate_variables and spec.pre_experiment_features:
+        if not set(spec.candidate_variables).issubset(set(spec.pre_experiment_features)):
+            invalid_spec_cand = set(spec.candidate_variables) - set(spec.pre_experiment_features)
+            raise InformationHorizonError(
+                f"DatasetSpec violation: candidate_variables must be a subset of pre_experiment_features. "
+                f"Invalid: {sorted(invalid_spec_cand)}"
+            )
+
     # 3. Pre-experiment features check
     pre_feats = set(record.pre_experiment_features.keys())
     allowed_pre_feats = set(spec.pre_experiment_features) or set(spec.feature_columns)
@@ -55,6 +81,8 @@ def validate_record_against_spec(
             f"Pre-experiment features contain unexpected columns: {sorted(invalid_pre)}. "
             f"Allowed: {sorted(allowed_pre_feats)}"
         )
+    _check_finite_numerical_values(record.pre_experiment_features, "pre_experiment_features")
+    _check_finite_numerical_values(record.candidate_variables, "candidate_variables")
 
     # 4. Proposal-stage Horizon Check: Characterization and Performance MUST NOT be measured at proposal time
     if record.stage in {ExperimentStage.PROPOSED, ExperimentStage.SCHEDULED}:
@@ -79,6 +107,7 @@ def validate_record_against_spec(
                 f"Characterization contains unknown channels: {sorted(invalid_chars)}. "
                 f"Allowed characterization channels: {sorted(allowed_chars)}"
             )
+        _check_finite_numerical_values(record.characterization, "characterization")
 
     # 6. Performance Horizon Check
     if record.performance:
@@ -90,3 +119,36 @@ def validate_record_against_spec(
                 f"Performance contains unknown targets: {sorted(invalid_perfs)}. "
                 f"Allowed targets: {sorted(allowed_perfs)}"
             )
+        _check_finite_numerical_values(record.performance, "performance")
+
+    # 7. Completed Stage Check: Primary target must be present
+    if record.stage == ExperimentStage.COMPLETED:
+        primary_target = spec.target_column
+        if primary_target not in record.performance:
+            raise InformationHorizonError(
+                f"Cannot mark experiment COMPLETED: primary target {primary_target!r} is missing from performance measurements."
+            )
+
+
+def validate_transition_before_append(
+    current_record: ScientificExperimentRecord,
+    new_stage: ExperimentStage | str,
+    delta_payload: Mapping[str, Any],
+    spec: DatasetSpec | None = None,
+) -> ScientificExperimentRecord:
+    """Creates a prospective in-memory copy of record, validates transition and spec boundaries before any ledger commit."""
+    target_stage = ExperimentStage(new_stage) if isinstance(new_stage, str) else new_stage
+    prospective_record = current_record.copy()
+    prospective_record.transition_to(
+        new_stage=target_stage,
+        characterization=delta_payload.get("characterization"),
+        performance=delta_payload.get("performance"),
+        measurement_uncertainty=delta_payload.get("measurement_uncertainty"),
+        quality_flags=delta_payload.get("quality_flags"),
+        failure_reason=delta_payload.get("failure_reason"),
+    )
+
+    if spec is not None:
+        validate_record_against_spec(prospective_record, spec)
+
+    return prospective_record

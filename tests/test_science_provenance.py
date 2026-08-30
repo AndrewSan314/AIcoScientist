@@ -3,9 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pandas as pd
+
+from src.datasets.base import DatasetSpec, TwoStageModelSpec
 from src.science.provenance import (
     ScientificModelProvenance,
     build_benchmark_run_manifest,
+    compute_dataset_fingerprint,
+    compute_spec_fingerprint,
     get_environment_provenance,
     get_git_provenance,
 )
@@ -46,6 +51,42 @@ def test_build_benchmark_run_manifest() -> None:
     assert "python_version" in manifest
     assert "numpy_version" in manifest
     assert "git_dirty" in manifest
+
+
+def test_dataset_and_spec_fingerprints() -> None:
+    df1 = pd.DataFrame({
+        "exp_id": ["EXP_01", "EXP_02"],
+        "x1": [1.0, 2.0],
+        "y": [100.0, 200.0],
+    })
+    df2 = pd.DataFrame({
+        "exp_id": ["EXP_02", "EXP_01"],
+        "x1": [2.0, 1.0],
+        "y": [200.0, 100.0],
+    })
+    # Identical content in different row order produces same fingerprint
+    fp1 = compute_dataset_fingerprint(df1, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
+    fp2 = compute_dataset_fingerprint(df2, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
+    assert fp1 == fp2
+
+    # Modified value changes fingerprint
+    df3 = df1.copy()
+    df3.loc[0, "y"] = 105.0
+    fp3 = compute_dataset_fingerprint(df3, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
+    assert fp1 != fp3
+
+    spec1 = DatasetSpec(
+        name="test_spec",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1"],
+        target_column="y",
+        pre_experiment_features=["x1"],
+        candidate_variables=["x1"],
+        targets=["y"],
+    )
+    spec_fp1 = compute_spec_fingerprint(spec1)
+    assert isinstance(spec_fp1, str) and len(spec_fp1) > 0
 
 
 def test_scientific_model_provenance_determinism() -> None:

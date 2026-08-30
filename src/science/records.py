@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -46,6 +47,7 @@ VALID_STAGE_TRANSITIONS: dict[ExperimentStage, set[ExperimentStage]] = {
         ExperimentStage.CANCELLED,
     },
     ExperimentStage.PERFORMANCE_MEASURED: {
+        ExperimentStage.CHARACTERIZED,
         ExperimentStage.COMPLETED,
         ExperimentStage.FAILED,
         ExperimentStage.CANCELLED,
@@ -126,6 +128,29 @@ class ScientificExperimentRecord:
             self.failure_reason = failure_reason
 
         return self
+
+    def copy(self) -> ScientificExperimentRecord:
+        """Creates a deep copy of this record for prospective transition validation."""
+        return ScientificExperimentRecord(
+            experiment_id=self.experiment_id,
+            candidate_id=self.candidate_id,
+            dataset_name=self.dataset_name,
+            stage=self.stage,
+            created_at=self.created_at,
+            updated_at=self.updated_at,
+            pre_experiment_features=dict(self.pre_experiment_features),
+            candidate_variables=dict(self.candidate_variables),
+            characterization=dict(self.characterization),
+            performance=dict(self.performance),
+            measurement_uncertainty=dict(self.measurement_uncertainty),
+            constraints=dict(self.constraints),
+            quality_flags=list(self.quality_flags),
+            batch_id=self.batch_id,
+            replicate_id=self.replicate_id,
+            proposal_metadata=copy.deepcopy(self.proposal_metadata),
+            provenance=copy.deepcopy(self.provenance),
+            failure_reason=self.failure_reason,
+        )
 
     def is_terminal(self) -> bool:
         return self.stage in {ExperimentStage.COMPLETED, ExperimentStage.FAILED, ExperimentStage.CANCELLED}
