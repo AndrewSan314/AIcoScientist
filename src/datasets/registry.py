@@ -13,6 +13,10 @@ AVAILABLE_DATASETS = (
     "feconi",
     "feconi_kerr",
     "feconi_coercivity",
+    "auirh",
+    "auirh_k0",
+    "auirh_i_lim",
+    "auirh_alpha",
 )
 
 
@@ -37,6 +41,15 @@ def get_dataset_adapter(name: str) -> DatasetAdapter:
     elif dataset_key in {"feconi_coer", "feconi_coercivity"}:
         from .feconi import FeCoNiAdapter
         return FeCoNiAdapter(target="Coer")
+    elif dataset_key in {"auirh", "auirh_k0"}:
+        from .auirh import AuIrRhAdapter
+        return AuIrRhAdapter(target="k0")
+    elif dataset_key in {"auirh_i_lim", "auirh_ilim"}:
+        from .auirh import AuIrRhAdapter
+        return AuIrRhAdapter(target="i_lim")
+    elif dataset_key == "auirh_alpha":
+        from .auirh import AuIrRhAdapter
+        return AuIrRhAdapter(target="alpha")
     else:
         available = ", ".join(sorted(AVAILABLE_DATASETS))
         raise ValueError(f"Unknown dataset {name!r}; available datasets: {available}")

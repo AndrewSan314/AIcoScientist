@@ -1,0 +1,50 @@
+{
+  "Au-rich->Ir-rich": {
+    "source_library": "Au-rich",
+    "destination_library": "Ir-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "mean_regret_cold_start": 0.0035649608930300508,
+    "std_regret_cold_start": 0.0015602870468613495,
+    "mean_regret_warm_prior": 0.0021085136858988007,
+    "std_regret_warm_prior": 0.00010383983973009936,
+    "regret_delta": -0.0014564472071312501,
+    "transfer_impact": "helpful"
+  },
+  "Au-rich->Rh-rich": {
+    "source_library": "Au-rich",
+    "destination_library": "Rh-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "mean_regret_cold_start": 0.00228832061058765,
+    "std_regret_cold_start": 0.0006992162852693497,
+    "mean_regret_warm_prior": 0.00287743103611515,
+    "std_regret_warm_prior": 0.00015581606280104998,
+    "regret_delta": 0.0005891104255275003,
+    "transfer_impact": "neutral/unhelpful"
+  },
+  "Ir-rich->Rh-rich": {
+    "source_library": "Ir-rich",
+    "destination_library": "Rh-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "mean_regret_cold_start": 0.00228832061058765,
+    "std_regret_cold_start": 0.0006992162852693497,
+    "mean_regret_warm_prior": 0.0030361879402257498,
+    "std_regret_warm_prior": 2.940841309549691e-06,
+    "regret_delta": 0.0007478673296381,
+    "transfer_impact": "neutral/unhelpful"
+  },
+  "Rh-rich->Ir-rich": {
+    "source_library": "Rh-rich",
+    "destination_library": "Ir-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "mean_regret_cold_start": 0.0035649608930300508,
+    "std_regret_cold_start": 0.0015602870468613495,
+    "mean_regret_warm_prior": 0.0024478089437921504,
+    "std_regret_warm_prior": 0.00023545541816325042,
+    "regret_delta": -0.0011171519492379003,
+    "transfer_impact": "helpful"
+  }
+}

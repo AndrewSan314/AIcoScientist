@@ -1,6 +1,6 @@
 # NIST Fe-Co-Ni Combinatorial Benchmark: Paper Reproduction Report
 
-**Dataset**: Wang et al., *Active learning for accelerated design of ternary materials libraries*, 2022.  
+**Dataset**: Wang et al., *Benchmarking Active Learning Strategies for Materials Optimization and Discovery*, 2022.  
 **Benchmark Suite**: 100 Seeds, 100 Query Budget per seed, Discrete Finite Pool ($N=921$).  
 **Targets**:
 1. **Kerr Rotation** ($\theta_K$, mrad) — Global Maximum: **0.82504 mrad** (Sample `feconi_00760`, Composition: $\text{Fe}_{55.8}\text{Co}_{39.8}\text{Ni}_{4.4}$). Smooth single-mode landscape.

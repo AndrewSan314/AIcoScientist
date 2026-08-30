@@ -57,15 +57,15 @@ def fit_gp_surrogate(
     target_col: str,
     seed: int,
 ) -> tuple[GaussianProcessRegressor, StandardScaler]:
-    """Fits Gaussian Process surrogate model with Matern 5/2 kernel."""
+    """Fits Gaussian Process surrogate model matching ClosedLoopOptimizer._fit_surrogate semantics."""
     X_obs = observed_df[feature_cols].to_numpy(dtype=float)
     y_obs = observed_df[target_col].to_numpy(dtype=float)
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_obs)
 
-    kernel = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, length_scale_bounds=(1e-2, 1e3), nu=2.5) + WhiteKernel(
-        noise_level=1e-3, noise_level_bounds=(1e-5, 1e1)
+    kernel = ConstantKernel(1.0, (1e-2, 1e4)) * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(
+        noise_level=1.0, noise_level_bounds=(1e-5, 1e2)
     )
     gp = GaussianProcessRegressor(
         kernel=kernel,
@@ -119,19 +119,11 @@ def run_single_aicoscientist_trajectory(
     ]
     seen_cids: set[str] = {init_cid}
 
-    # Setup trust region if using turbo
+    # Setup trust region if using turbo (using default frozen ClosedLoopOptimizer parameters)
     turbo: TuRBOTrustRegion | None = None
     search_space = get_feconi_search_space()
     if "turbo" in strategy:
-        turbo = TuRBOTrustRegion(
-            search_space=search_space,
-            init_length=0.8,
-            min_length=0.05,
-            max_length=1.6,
-            success_tolerance=3,
-            failure_tolerance=5,
-            success_delta=1e-4,
-        )
+        turbo = TuRBOTrustRegion(search_space=search_space)
         turbo.initialize(
             center_candidate={"Co": float(init_cand["Co"]), "Fe": float(init_cand["Fe"])},
             initial_best_value=float(init_res[target_name]),
@@ -257,24 +249,88 @@ def run_single_aicoscientist_trajectory(
         obs_val = float(res[target_name])
         seen_cids.add(cid)
 
-        # Update TuRBO state using frozen TuRBO update
+        observed_records.append(
+            {
+                FECONI_CANDIDATE_ID_COLUMN: cid,
+                "sample_index": int(selected_row["sample_index"]),
+                "Co": float(selected_row["Co"]),
+                "Fe": float(selected_row["Fe"]),
+                "Ni": float(selected_row["Ni"]),
+                target_name: obs_val,
+            }
+        )
+
+        # Update TuRBO state using frozen ClosedLoopOptimizer lifecycle on D_{t+1}
         if turbo is not None and turbo.state is not None:
-            cand_coord = np.array([[float(selected_row["Co"]), float(selected_row["Fe"])]])
-            cand_scaled = scaler.transform(cand_coord)
-            mu_cand, std_cand = predict_latent_gp(gp, cand_scaled, return_std=True)
+            # 1. Refit GP surrogate strictly on D_{t+1}
+            obs_df_next = pd.DataFrame(observed_records)
+            gp_next, scaler_next = fit_gp_surrogate(obs_df_next, feature_cols, target_name, seed=step_seed + 1)
 
-            inc_coord = np.array([[float(turbo.state.center["Co"]), float(turbo.state.center["Fe"])]])
-            inc_scaled = scaler.transform(inc_coord)
-            mu_inc, std_inc = predict_latent_gp(gp, inc_scaled, return_std=True)
+            # 2. Compute latent joint posterior and covariance over all observed points in D_{t+1}
+            X_obs_all = obs_df_next[feature_cols].to_numpy(dtype=float)
+            X_obs_all_sc = scaler_next.transform(X_obs_all)
+            p_obs_m, p_obs_cov = predict_latent_gp(gp_next, X_obs_all_sc, return_cov=True)
+            p_obs_m = np.asarray(p_obs_m, dtype=float)
+            p_obs_cov = np.asarray(p_obs_cov, dtype=float)
 
+            # 3. Identify newly observed candidate (last row) and previous incumbent (excluding last row)
+            cand_idx = len(p_obs_m) - 1
+            p_cand_m = float(p_obs_m[cand_idx])
+            p_cand_v = float(p_obs_cov[cand_idx, cand_idx])
+            p_cand_s = float(np.sqrt(max(p_cand_v, 1e-12)))
+
+            if len(p_obs_m) > 1:
+                prev_obs_m = p_obs_m[:-1]
+                inc_idx = int(np.argmax(prev_obs_m))
+                p_inc_m = float(prev_obs_m[inc_idx])
+                p_inc_v = float(p_obs_cov[inc_idx, inc_idx])
+                p_cand_inc_cov = float(p_obs_cov[cand_idx, inc_idx])
+            else:
+                p_inc_m = p_cand_m
+                p_inc_v = p_cand_v
+                p_cand_inc_cov = p_cand_v
+            p_inc_s = float(np.sqrt(max(p_inc_v, 1e-12)))
+
+            # 4. Fallback center from unmeasured pool if TuRBO restart triggers
+            fallback_center: dict[str, Any] | None = None
+            fallback_cid: str | None = None
+            can_restart = (
+                (turbo.state.failure_counter + 1 >= turbo.state.failure_tolerance and (turbo.state.length / 2.0) < turbo.state.min_length)
+                or (turbo.state.length < turbo.state.min_length)
+            )
+            if can_restart:
+                unseen_rem = candidate_pool[~candidate_pool[FECONI_CANDIDATE_ID_COLUMN].isin(seen_cids)].copy().reset_index(drop=True)
+                if not unseen_rem.empty:
+                    X_rem = unseen_rem[feature_cols].to_numpy(dtype=float)
+                    X_rem_sc = scaler_next.transform(X_rem)
+                    scores_restart = compute_true_mc_nei(
+                        gp=gp_next,
+                        X_observed_scaled=X_obs_all_sc,
+                        X_candidates_scaled=X_rem_sc,
+                        n_fantasies=256,
+                        xi=0.01,
+                        objective="maximize",
+                        seed=step_seed + 2,
+                    )
+                    best_restart_idx = int(np.argmax(scores_restart))
+                    best_restart_row = unseen_rem.iloc[best_restart_idx]
+                    fallback_center = {"Co": float(best_restart_row["Co"]), "Fe": float(best_restart_row["Fe"])}
+                    fallback_cid = str(best_restart_row[FECONI_CANDIDATE_ID_COLUMN])
+
+            # 5. Advance TuRBO state using full covariance-aware posterior evidence
             turbo.update(
                 observed_candidate={"Co": float(selected_row["Co"]), "Fe": float(selected_row["Fe"])},
                 observed_value=obs_val,
-                posterior_candidate_mean=float(mu_cand[0]),
-                posterior_incumbent_mean=float(mu_inc[0]),
-                posterior_candidate_std=float(std_cand[0]),
-                posterior_incumbent_std=float(std_inc[0]),
+                posterior_candidate_mean=p_cand_m,
+                posterior_incumbent_mean=p_inc_m,
+                posterior_candidate_variance=p_cand_v,
+                posterior_incumbent_variance=p_inc_v,
+                posterior_candidate_incumbent_covariance=p_cand_inc_cov,
+                posterior_candidate_std=p_cand_s,
+                posterior_incumbent_std=p_inc_s,
                 objective="maximize",
+                fallback_center=fallback_center,
+                fallback_candidate_id=fallback_cid,
                 global_escape=is_escape,
             )
 

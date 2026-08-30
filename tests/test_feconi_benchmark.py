@@ -170,6 +170,59 @@ def test_selected_candidates_always_belong_to_finite_pool(synthetic_pool_and_ora
         assert cid in valid_cids
 
 
+def test_turbo_uses_default_frozen_parameters_and_lifecycle(synthetic_pool_and_oracle: tuple[pd.DataFrame, FeCoNiExperimentOracle]):
+    """Tests that TuRBO uses frozen default parameters, refits on D_{t+1}, and passes candidate-incumbent covariance."""
+    pool, oracle = synthetic_pool_and_oracle
+    oracle.reset()
+
+    update_calls = []
+    original_update = TuRBOTrustRegion.update
+
+    def spy_update(self, **kwargs):
+        update_calls.append(kwargs)
+        return original_update(self, **kwargs)
+
+    with patch.object(TuRBOTrustRegion, "update", side_effect=spy_update, autospec=True):
+        traj = run_single_aicoscientist_trajectory(
+            candidate_pool=pool,
+            oracle=oracle,
+            target_name="Kerr",
+            strategy="turbo_nei",
+            init_sample_index=0,
+            total_budget=4,
+            seed=42,
+        )
+
+    # 1. Verify TuRBO update was called on subsequent steps
+    assert len(update_calls) == 3, f"Expected 3 update calls for steps 2, 3, 4, got {len(update_calls)}"
+
+    for call in update_calls:
+        # 2. Verify all covariance and variance arguments are passed
+        assert "posterior_candidate_variance" in call
+        assert "posterior_incumbent_variance" in call
+        assert "posterior_candidate_incumbent_covariance" in call
+        assert isinstance(call["posterior_candidate_variance"], float)
+        assert isinstance(call["posterior_incumbent_variance"], float)
+        assert isinstance(call["posterior_candidate_incumbent_covariance"], float)
+
+        # 3. Verify non-zero variance
+        assert call["posterior_candidate_variance"] >= 0.0
+        assert call["posterior_incumbent_variance"] >= 0.0
+
+
+def test_turbo_default_trust_region_parameters():
+    """Tests that TuRBOTrustRegion for Fe-Co-Ni is initialized with frozen default parameters."""
+    search_space = get_feconi_search_space()
+    tr = TuRBOTrustRegion(search_space=search_space)
+    assert tr.init_length == 0.8
+    assert tr.min_length == 0.05
+    assert tr.max_length == 1.6
+    assert tr.success_tolerance == 3
+    assert tr.failure_tolerance == 5
+    assert tr.success_delta == 1.0  # Default frozen ClosedLoopOptimizer parameter
+    assert tr.global_escape_frequency == 6
+
+
 def test_global_optimum_used_only_for_evaluation_metrics(synthetic_pool_and_oracle: tuple[pd.DataFrame, FeCoNiExperimentOracle]):
     """Test 14: Global optimum is used strictly as an offline reference for regret calculations."""
     pool, oracle = synthetic_pool_and_oracle

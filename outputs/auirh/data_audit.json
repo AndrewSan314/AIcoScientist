@@ -1,0 +1,256 @@
+{
+  "mission": "Au-Ir-Rh Autonomous SECCM Experimental Benchmark",
+  "dataset_name": "Au-Ir-Rh Combinatorial Thin-Film Autonomous SECCM",
+  "source_archives": {
+    "EDX_dataset.zip": {
+      "sha256": "95340043ccecec0e9c92c75900c1992d3f92e98fc72cc80c895b53289f5b8791",
+      "size_bytes": 11963
+    },
+    "SECCM_dataset.zip": {
+      "sha256": "6e30cdb3a5ecd257daa091bfc2b6cfaa7889d27938e27ae614977d8845f0ffc0",
+      "size_bytes": 6608379
+    },
+    "XRD_dataset.zip": {
+      "sha256": "c87af16d875a97f32127753cec0b6ac179efb3735ec9386eaebf5f130592cfde",
+      "size_bytes": 25794320
+    }
+  },
+  "edx_summary": {
+    "files": {
+      "Au-Ir-Rh_Au-rich_EDX.csv": {
+        "sha256": "12a31c04e3476229efadc628a4281fc13b007a18d12b0950f973caf6b06188fd",
+        "rows": 342,
+        "columns": [
+          "Area",
+          "Au [at.%]",
+          "Ir [at.%]",
+          "Rh [at.%]",
+          "Library"
+        ]
+      },
+      "Au-Ir-Rh_Ir-rich_EDX.csv": {
+        "sha256": "7dab109ebfba5893aa54d13727005a705f9b3e9994990ad089f66f3430f4c197",
+        "rows": 342,
+        "columns": [
+          "Area",
+          "Au [at.%]",
+          "Ir [at.%]",
+          "Rh [at.%]",
+          "Library"
+        ]
+      },
+      "Au-Ir-Rh_Rh-rich_EDX.csv": {
+        "sha256": "6477439649749316c2503ecfbd55564747d925fed405fe5919dcee2dc7788572",
+        "rows": 342,
+        "columns": [
+          "Area",
+          "Au [at.%]",
+          "Ir [at.%]",
+          "Rh [at.%]",
+          "Library"
+        ]
+      }
+    },
+    "total_areas_deposited": 1026,
+    "libraries": {
+      "Au-rich": 342,
+      "Ir-rich": 342,
+      "Rh-rich": 342
+    },
+    "composition_columns": [
+      "Au [at.%]",
+      "Ir [at.%]",
+      "Rh [at.%]"
+    ],
+    "sum_consistency": {
+      "min_sum": 99.98999999999998,
+      "max_sum": 100.01,
+      "mean_sum": 99.99976608187136,
+      "std_sum": 0.002887121893583211
+    },
+    "nan_count": 0,
+    "inf_count": 0
+  },
+  "seccm_summary": {
+    "fit_parameters_file": {
+      "filename": "LSV_fit_parameters.csv",
+      "sha256": "6edb3f7b36fb78c78a85d09335bf7606c815211622c5b533054b880db7f41f15",
+      "total_measured_areas": 966,
+      "libraries": {
+        "Ir-rich": 322,
+        "Au-rich": 322,
+        "Rh-rich": 322
+      },
+      "target_columns": [
+        "k^0 [cm/s]",
+        "i_lim [A/cm^2]",
+        "alpha [a.u.]"
+      ]
+    },
+    "lsv_curves": {
+      "total_files": 966,
+      "curve_points_per_sample": 208,
+      "columns": [
+        "Potential vs. RHE [V]",
+        "Current density [A/cm^2]",
+        "Standard deviation [A/cm^2]"
+      ],
+      "potential_range_V": [
+        -0.8438529968261719,
+        0.004617691040039
+      ],
+      "uncertainty_column": "Standard deviation [A/cm^2]"
+    }
+  },
+  "xrd_summary": {
+    "total_files": 1026,
+    "libraries": {
+      "Au-rich": 342,
+      "Ir-rich": 342,
+      "Rh-rich": 342
+    },
+    "format": "Two-column XY diffractogram with metadata header",
+    "stage_1_policy": "EXCLUDED from optimizer features; characterization/audit only"
+  },
+  "finite_pool_verification": {
+    "total_joined_measured_candidates": 966,
+    "candidates_per_library": {
+      "Au-rich": 322,
+      "Ir-rich": 322,
+      "Rh-rich": 322
+    },
+    "unmeasured_perimeter_areas_per_library": {
+      "Au-rich": [
+        12,
+        24,
+        25,
+        26,
+        38,
+        39,
+        40,
+        41,
+        55,
+        56,
+        280,
+        281,
+        295,
+        296,
+        297,
+        298,
+        310,
+        311,
+        312,
+        324
+      ],
+      "Ir-rich": [
+        12,
+        24,
+        25,
+        26,
+        38,
+        39,
+        40,
+        41,
+        55,
+        56,
+        280,
+        281,
+        295,
+        296,
+        297,
+        298,
+        310,
+        311,
+        312,
+        324
+      ],
+      "Rh-rich": [
+        12,
+        24,
+        25,
+        26,
+        38,
+        39,
+        40,
+        41,
+        55,
+        56,
+        280,
+        281,
+        295,
+        296,
+        297,
+        298,
+        310,
+        311,
+        312,
+        324
+      ]
+    },
+    "candidate_id_scheme": "AUIRH_<LIBRARY>_<AREA:03d>",
+    "optimizer_design_variables": [
+      "Au",
+      "Ir"
+    ],
+    "derived_variable": "Rh = 100 - Au - Ir"
+  },
+  "targets": {
+    "primary": {
+      "name": "k0",
+      "source_column": "k^0 [cm/s]",
+      "unit": "cm/s",
+      "objective": "maximize",
+      "min": 0.0003247497194505,
+      "max": 0.0142014497462072,
+      "mean": 0.006568220156910564,
+      "std": 0.003268072811771054,
+      "global_optimum": {
+        "candidate_id": "AUIRH_Au-rich_170",
+        "library": "Au-rich",
+        "area": 170,
+        "Au": 60.66,
+        "Ir": 21.16,
+        "Rh": 18.18,
+        "value": 0.0142014497462072
+      }
+    },
+    "secondary_i_lim": {
+      "name": "i_lim",
+      "source_column": "i_lim [A/cm^2]",
+      "unit": "A/cm^2",
+      "objective": "maximize",
+      "min": 6.6023305163829775,
+      "max": 8.830337149995579,
+      "mean": 7.891252074594303,
+      "std": 0.3698338005735168,
+      "global_optimum": {
+        "candidate_id": "AUIRH_Rh-rich_180",
+        "library": "Rh-rich",
+        "area": 180,
+        "Au": 35.17,
+        "Ir": 35.47,
+        "Rh": 29.36,
+        "value": 8.830337149995579
+      }
+    },
+    "secondary_alpha": {
+      "name": "alpha",
+      "source_column": "alpha [a.u.]",
+      "unit": "a.u.",
+      "objective": "maximize",
+      "min": 0.237105521112453,
+      "max": 0.3275620428393234,
+      "mean": 0.2944331790260143,
+      "std": 0.017960599250556982,
+      "global_optimum": {
+        "candidate_id": "AUIRH_Au-rich_114",
+        "library": "Au-rich",
+        "area": 114,
+        "Au": 46.17,
+        "Ir": 23.45,
+        "Rh": 30.38,
+        "value": 0.3275620428393234
+      }
+    }
+  }
+}
