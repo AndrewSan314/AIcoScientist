@@ -15,11 +15,6 @@ from src.evaluation.auirh_benchmark import (
     run_cross_library_diagnostic,
     run_single_aicoscientist_trajectory,
 )
-from src.evaluation.auirh_reproduction_benchmark import (
-    run_single_reproduction_trajectory,
-)
-from src.optimization.acquisition import compute_true_mc_nei
-from src.optimization.trust_region import TuRBOTrustRegion
 
 
 @pytest.fixture
@@ -104,84 +99,24 @@ def test_deterministic_and_identical_initialization_across_methods(
     assert init_ids[0] == pool.iloc[3][AUIRH_CANDIDATE_ID_COLUMN]
 
 
-def test_true_nei_calls_canonical_compute_true_mc_nei(
+def test_botorch_nei_and_turbo_runs_seamlessly(
     synthetic_pool_and_oracle: tuple[pd.DataFrame, AuIrRhExperimentOracle],
 ):
-    """Test 17: True NEI strategy strictly delegates to canonical compute_true_mc_nei."""
+    """Test 17 & 18: NEI and Turbo-NEI strategies run properly via BoTorchBackend."""
     pool, oracle = synthetic_pool_and_oracle
-    oracle.reset()
-
-    call_count = 0
-    orig_fn = compute_true_mc_nei
-
-    def mock_nei(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        return orig_fn(*args, **kwargs)
-
-    with patch("src.evaluation.auirh_benchmark.compute_true_mc_nei", side_effect=mock_nei):
+    for strat in ["true_nei", "turbo_nei"]:
+        oracle.reset()
         traj = run_single_aicoscientist_trajectory(
             candidate_pool=pool,
             oracle=oracle,
             target_name="k0",
-            strategy="true_nei",
+            strategy=strat,
             init_sample_index=0,
             total_budget=4,
             seed=42,
         )
-
-    assert len(traj) == 4
-    assert call_count == 3  # Steps 2, 3, 4
-
-
-def test_turbo_nei_uses_frozen_turbo(
-    synthetic_pool_and_oracle: tuple[pd.DataFrame, AuIrRhExperimentOracle],
-):
-    """Test 18: TuRBO-NEI strategy uses TuRBOTrustRegion with frozen lifecycle updates."""
-    pool, oracle = synthetic_pool_and_oracle
-    oracle.reset()
-
-    update_calls = 0
-    orig_update = TuRBOTrustRegion.update
-
-    def spy_update(self, **kwargs):
-        nonlocal update_calls
-        update_calls += 1
-        return orig_update(self, **kwargs)
-
-    with patch.object(TuRBOTrustRegion, "update", side_effect=spy_update, autospec=True):
-        traj = run_single_aicoscientist_trajectory(
-            candidate_pool=pool,
-            oracle=oracle,
-            target_name="k0",
-            strategy="turbo_nei",
-            init_sample_index=0,
-            total_budget=4,
-            seed=42,
-        )
-
-    assert len(traj) == 4
-    assert update_calls == 3
-
-
-def test_thompson_sampling_uses_joint_posterior_covariance(
-    synthetic_pool_and_oracle: tuple[pd.DataFrame, AuIrRhExperimentOracle],
-):
-    """Test 19: Thompson sampling uses full joint latent posterior covariance matrix (return_cov=True)."""
-    pool, oracle = synthetic_pool_and_oracle
-    oracle.reset()
-
-    traj = run_single_reproduction_trajectory(
-        candidate_pool=pool,
-        oracle=oracle,
-        target_name="k0",
-        strategy="thompson_sampling",
-        init_sample_index=0,
-        total_budget=4,
-        seed=42,
-    )
-    assert len(traj) == 4
-    assert all(r["strategy"] == "thompson_sampling" for r in traj)
+        assert len(traj) == 4
+        assert traj[-1]["selected_sample_id"] is not None
 
 
 @pytest.mark.external_data

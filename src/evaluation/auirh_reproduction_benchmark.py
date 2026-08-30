@@ -18,7 +18,7 @@ from src.datasets.auirh import (
     AuIrRhAdapter,
     AuIrRhExperimentOracle,
 )
-from src.optimization.acquisition import (
+from src.legacy.native_optimizer.acquisition import (
     expected_improvement_acquisition,
     greedy_acquisition,
     predict_latent_gp,
@@ -190,7 +190,7 @@ def run_single_reproduction_trajectory(
                     mean=pred_mean,
                     std=pred_std,
                     best_observed=current_best,
-                    xi=0.01,
+                    xi=0.0,
                     objective="maximize",
                 )
             else:

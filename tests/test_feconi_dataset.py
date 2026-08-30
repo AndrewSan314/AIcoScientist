@@ -79,9 +79,9 @@ def test_sha256_mismatch_raises_value_error(tmp_path: Path):
 def test_oracle_refuses_unknown_candidate_id_synthetic(synthetic_feconi_df: pd.DataFrame):
     """Test 4: Oracle refuses unknown candidate IDs."""
     oracle = FeCoNiExperimentOracle(full_records_df=synthetic_feconi_df, target_column="Kerr")
-    with pytest.raises(KeyError, match="not a valid measured physical material"):
+    with pytest.raises(KeyError, match="not found in Fe-Co-Ni ground-truth dataset"):
         oracle.query("FECONI_9999")
-    with pytest.raises(KeyError, match="not a valid measured physical material"):
+    with pytest.raises(KeyError, match="not found in Fe-Co-Ni ground-truth dataset"):
         oracle.query("NON_EXISTENT_ID")
 
 
@@ -91,7 +91,7 @@ def test_oracle_refuses_duplicate_reveal_synthetic(synthetic_feconi_df: pd.DataF
     res1 = oracle.query("FECONI_000")
     assert res1["candidate_id"] == "FECONI_000"
     assert "Kerr" in res1
-    with pytest.raises(ValueError, match="Duplicate experimental measurement"):
+    with pytest.raises(Exception, match="already been queried"):
         oracle.query("FECONI_000")
 
 

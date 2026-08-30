@@ -8,7 +8,7 @@ from src.datasets.registry import get_dataset_adapter
 from src.evaluation.metrics import best_seen, simple_regret, top_k_hit_rate
 from src.evaluation.oracle import OfflineOracle
 from src.evaluation.replay import replay
-from src.optimization.acquisition import ucb
+from src.legacy.native_optimizer.acquisition import ucb_acquisition as ucb
 from src.optimization.candidates import remove_observed
 from src.optimization.constraints import apply_constraints
 from src.optimization.recommender import recommend

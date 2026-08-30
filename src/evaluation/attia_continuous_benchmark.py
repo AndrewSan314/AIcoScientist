@@ -23,14 +23,14 @@ from src.evaluation.attia_oracle import (
     generate_attia_simulator_seed,
     simulate_attia_policy,
 )
-from src.optimization.acquisition import (
+from src.legacy.native_optimizer.acquisition import (
     compute_acquisition,
     compute_true_mc_nei,
     predict_latent_gp,
 )
-from src.optimization.adaptive_controller import AdaptiveBOController
+from src.legacy.native_optimizer.adaptive_controller import AdaptiveBOController
+from src.legacy.native_optimizer.trust_region import TuRBOTrustRegion
 from src.optimization.search_space import SearchSpace
-from src.optimization.trust_region import TuRBOTrustRegion
 
 logger = logging.getLogger(__name__)
 
