@@ -823,6 +823,39 @@ def evaluate_continuous_trajectory(
     return evaluated_history, reference_underestimated
 
 
+def _run_single_seed_strat(
+    seed_idx: int,
+    strat: str,
+    search_space: SearchSpace,
+    discrete_pool: pd.DataFrame,
+    init_indices: list[int],
+    max_queries: int,
+    beta: float,
+    n_candidates_per_step: int,
+    cont_ref_opt_true: float,
+    discrete_opt_true: float,
+) -> tuple[int, str, list[dict[str, Any]], list[dict[str, Any]], bool]:
+    """Worker task executing a single strategy on a single seed."""
+    raw_hist, decision_records = run_single_attia_continuous_trajectory(
+        search_space=search_space,
+        discrete_pool=discrete_pool,
+        init_indices=init_indices,
+        total_queries=max_queries,
+        strategy=strat,
+        optimizer_seed=seed_idx,
+        beta=beta,
+        n_candidates_per_step=n_candidates_per_step,
+    )
+    eval_hist, ref_under = evaluate_continuous_trajectory(
+        raw_trajectory=raw_hist,
+        init_indices=init_indices,
+        discrete_pool=discrete_pool,
+        continuous_ref_lifetime=cont_ref_opt_true,
+        discrete_grid_optimum_lifetime=discrete_opt_true,
+    )
+    return seed_idx, strat, eval_hist, decision_records, ref_under
+
+
 def run_attia_continuous_benchmark(
     adapter: AttiaAdapter | None = None,
     budgets: Sequence[int] = (10, 15, 20, 30),
@@ -831,6 +864,7 @@ def run_attia_continuous_benchmark(
     beta: float = 1.0,
     n_candidates_per_step: int = 5000,
     output_dir: Path | str | None = None,
+    n_jobs: int = -1,
 ) -> dict[str, Any]:
     """Runs the hardened continuous Bayesian Optimization benchmark across multiple budgets and paired seeds."""
     if adapter is None:
@@ -885,103 +919,125 @@ def run_attia_continuous_benchmark(
     any_ref_underestimated = False
 
     logger.info(
-        "Running hardened %d-strategy Continuous BO benchmark across %d seeds and budgets %s...",
+        "Running hardened %d-strategy Continuous BO benchmark across %d seeds and budgets %s (n_jobs=%s)...",
         len(strategies),
         n_seeds,
         budgets,
+        n_jobs,
     )
 
+    tasks = []
     for seed_idx in range(n_seeds):
         seed_rng = np.random.default_rng(seed_idx * 7919 + 42)
         init_indices = seed_rng.choice(len(discrete_pool), size=initial_policies, replace=False).tolist()
-
         full_evaluated_trajectories[seed_idx] = {}
-
         for strat in strategies:
-            # Run pure optimizer (NO reference truth inside)
-            raw_hist, decision_records = run_single_attia_continuous_trajectory(
+            tasks.append((seed_idx, strat, init_indices))
+
+    if n_jobs == 1:
+        results = [
+            _run_single_seed_strat(
+                seed_idx=s_idx,
+                strat=strat,
                 search_space=search_space,
                 discrete_pool=discrete_pool,
-                init_indices=init_indices,
-                total_queries=max_queries,
-                strategy=strat,
-                optimizer_seed=seed_idx,
+                init_indices=i_indices,
+                max_queries=max_queries,
                 beta=beta,
                 n_candidates_per_step=n_candidates_per_step,
+                cont_ref_opt_true=cont_ref_opt_true,
+                discrete_opt_true=discrete_opt_true,
             )
-            if strat == "adaptive":
-                all_adaptive_decision_records.extend(decision_records)
+            for s_idx, strat, i_indices in tasks
+        ]
+    else:
+        from joblib import Parallel, delayed
 
-            # Post-hoc evaluator joins latent true values
-            eval_hist, ref_under = evaluate_continuous_trajectory(
-                raw_trajectory=raw_hist,
-                init_indices=init_indices,
+        results = Parallel(n_jobs=n_jobs, verbose=5)(
+            delayed(_run_single_seed_strat)(
+                seed_idx=s_idx,
+                strat=strat,
+                search_space=search_space,
                 discrete_pool=discrete_pool,
-                continuous_ref_lifetime=cont_ref_opt_true,
-                discrete_grid_optimum_lifetime=discrete_opt_true,
+                init_indices=i_indices,
+                max_queries=max_queries,
+                beta=beta,
+                n_candidates_per_step=n_candidates_per_step,
+                cont_ref_opt_true=cont_ref_opt_true,
+                discrete_opt_true=discrete_opt_true,
             )
-            if ref_under:
-                any_ref_underestimated = True
+            for s_idx, strat, i_indices in tasks
+        )
 
-            full_evaluated_trajectories[seed_idx][strat] = eval_hist
+    # Sort results to ensure deterministic ordering regardless of worker completion order
+    strat_order = {s: i for i, s in enumerate(strategies)}
+    results.sort(key=lambda item: (item[0], strat_order.get(item[1], 0)))
 
-            for row in eval_hist:
-                if row["step"] > 0:
-                    all_proposed_protocols.append(
+    for seed_idx, strat, eval_hist, decision_records, ref_under in results:
+        if strat == "adaptive":
+            all_adaptive_decision_records.extend(decision_records)
+        if ref_under:
+            any_ref_underestimated = True
+
+        full_evaluated_trajectories[seed_idx][strat] = eval_hist
+
+        for row in eval_hist:
+            if row["step"] > 0:
+                all_proposed_protocols.append(
+                    {
+                        "benchmark_seed": seed_idx,
+                        "strategy": strat,
+                        "step": row["step"],
+                        "query_id": row["query_id"],
+                        "candidate_id": row["candidate_id"],
+                        "C1": row["C1"],
+                        "C2": row["C2"],
+                        "C3": row["C3"],
+                        "C4": row["C4"],
+                        "simulator_seed": row["simulator_seed"],
+                        "simulated_lifetime": row["simulated_lifetime"],
+                        "reference_true_lifetime": row["reference_true_lifetime"],
+                        "is_off_grid": row["is_off_grid"],
+                        "min_distance_to_grid": row["min_distance_to_grid"],
+                        "is_new_vs_observed": row["is_new_vs_observed"],
+                        "min_distance_to_observed": row["min_distance_to_observed"],
+                    }
+                )
+                if strat == "turbo_nei":
+                    all_turbo_state_records.append(
                         {
                             "benchmark_seed": seed_idx,
-                            "strategy": strat,
                             "step": row["step"],
-                            "query_id": row["query_id"],
                             "candidate_id": row["candidate_id"],
-                            "C1": row["C1"],
-                            "C2": row["C2"],
-                            "C3": row["C3"],
-                            "C4": row["C4"],
-                            "simulator_seed": row["simulator_seed"],
-                            "simulated_lifetime": row["simulated_lifetime"],
-                            "reference_true_lifetime": row["reference_true_lifetime"],
-                            "is_off_grid": row["is_off_grid"],
-                            "min_distance_to_grid": row["min_distance_to_grid"],
-                            "is_new_vs_observed": row["is_new_vs_observed"],
-                            "min_distance_to_observed": row["min_distance_to_observed"],
+                            "trust_region_center_C1": float(json.loads(row["trust_region_center"])["C1"]) if row.get("trust_region_center") else None,
+                            "trust_region_center_C2": float(json.loads(row["trust_region_center"])["C2"]) if row.get("trust_region_center") else None,
+                            "trust_region_center_C3": float(json.loads(row["trust_region_center"])["C3"]) if row.get("trust_region_center") else None,
+                            "trust_region_length": row.get("trust_region_length"),
+                            "proposal_predicted_mean": row.get("proposal_predicted_mean"),
+                            "proposal_predicted_std": row.get("proposal_predicted_std"),
+                            "post_observation_candidate_mean": row.get("post_observation_candidate_mean"),
+                            "post_observation_candidate_std": row.get("post_observation_candidate_std"),
+                            "post_observation_incumbent_mean": row.get("post_observation_incumbent_mean"),
+                            "post_observation_incumbent_std": row.get("post_observation_incumbent_std"),
+                            "post_observation_candidate_incumbent_covariance": row.get("post_observation_candidate_incumbent_covariance"),
+                            "posterior_candidate_mean": row.get("posterior_candidate_mean"),
+                            "posterior_candidate_std": row.get("posterior_candidate_std"),
+                            "posterior_incumbent_mean": row.get("posterior_incumbent_mean"),
+                            "posterior_incumbent_std": row.get("posterior_incumbent_std"),
+                            "success_probability": row.get("success_probability"),
+                            "success_counter": row.get("success_counter", 0),
+                            "failure_counter": row.get("failure_counter", 0),
+                            "expanded": bool(row.get("expanded", False)),
+                            "contracted": bool(row.get("contracted", False)),
+                            "restarted": bool(row.get("restarted", False)),
+                            "restart_reason": row.get("restart_reason"),
+                            "restart_candidate_id": row.get("restart_candidate_id"),
+                            "global_escape": bool(row.get("global_escape", False)),
+                            "acquisition_score": row.get("acquisition_score"),
+                            "simulated_lifetime": row.get("simulated_lifetime"),
+                            "best_observed_lifetime": row.get("best_observed_lifetime"),
                         }
                     )
-                    if strat == "turbo_nei":
-                        all_turbo_state_records.append(
-                            {
-                                "benchmark_seed": seed_idx,
-                                "step": row["step"],
-                                "candidate_id": row["candidate_id"],
-                                "trust_region_center_C1": float(json.loads(row["trust_region_center"])["C1"]) if row.get("trust_region_center") else None,
-                                "trust_region_center_C2": float(json.loads(row["trust_region_center"])["C2"]) if row.get("trust_region_center") else None,
-                                "trust_region_center_C3": float(json.loads(row["trust_region_center"])["C3"]) if row.get("trust_region_center") else None,
-                                "trust_region_length": row.get("trust_region_length"),
-                                "proposal_predicted_mean": row.get("proposal_predicted_mean"),
-                                "proposal_predicted_std": row.get("proposal_predicted_std"),
-                                "post_observation_candidate_mean": row.get("post_observation_candidate_mean"),
-                                "post_observation_candidate_std": row.get("post_observation_candidate_std"),
-                                "post_observation_incumbent_mean": row.get("post_observation_incumbent_mean"),
-                                "post_observation_incumbent_std": row.get("post_observation_incumbent_std"),
-                                "post_observation_candidate_incumbent_covariance": row.get("post_observation_candidate_incumbent_covariance"),
-                                "posterior_candidate_mean": row.get("posterior_candidate_mean"),
-                                "posterior_candidate_std": row.get("posterior_candidate_std"),
-                                "posterior_incumbent_mean": row.get("posterior_incumbent_mean"),
-                                "posterior_incumbent_std": row.get("posterior_incumbent_std"),
-                                "success_probability": row.get("success_probability"),
-                                "success_counter": row.get("success_counter", 0),
-                                "failure_counter": row.get("failure_counter", 0),
-                                "expanded": bool(row.get("expanded", False)),
-                                "contracted": bool(row.get("contracted", False)),
-                                "restarted": bool(row.get("restarted", False)),
-                                "restart_reason": row.get("restart_reason"),
-                                "restart_candidate_id": row.get("restart_candidate_id"),
-                                "global_escape": bool(row.get("global_escape", False)),
-                                "acquisition_score": row.get("acquisition_score"),
-                                "simulated_lifetime": row.get("simulated_lifetime"),
-                                "best_observed_lifetime": row.get("best_observed_lifetime"),
-                            }
-                        )
 
     # Compute metrics for each budget
     budget_sweep_results: list[dict[str, Any]] = []
