@@ -406,10 +406,10 @@ def run_single_attia_continuous_trajectory(
         # Observed posterior latent means for denoised incumbent in NEI
         obs_posterior_means = predict_latent_gp(gp, X_train_scaled, return_std=False)
 
-        # 3. Predict acquisition across feasible candidates
+        # 3. Predict acquisition across feasible candidates using latent GP uncertainty
         X_cand = cand_batch[feature_cols].to_numpy(dtype=float)
         X_cand_scaled = scaler.transform(X_cand)
-        pred_mean, pred_std = gp.predict(X_cand_scaled, return_std=True)
+        pred_mean, pred_std = predict_latent_gp(gp, X_cand_scaled, return_std=True)
 
         step_duplicate_rejections = 0
         current_method = strategy

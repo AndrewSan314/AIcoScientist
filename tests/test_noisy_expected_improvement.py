@@ -276,3 +276,52 @@ def test_predict_latent_gp_normalize_y_scaling() -> None:
     assert np.allclose(np.diag(latent_cov), latent_std**2, rtol=1e-5)
 
 
+def test_bo_acquisitions_use_latent_gp_uncertainty() -> None:
+    """Verifies that UCB and EI proposal scoring receives latent GP uncertainty rather than noisy observation uncertainty."""
+    from src.optimization.acquisition import compute_acquisition, predict_latent_gp
+
+    rng = np.random.default_rng(99)
+    X_train = rng.uniform(0.0, 1.0, size=(10, 2))
+    y_train = np.sin(3 * X_train[:, 0]) + rng.normal(0.0, 0.5, size=len(X_train))
+
+    kernel = ConstantKernel(1.0) * Matern(length_scale=0.5, nu=2.5) + WhiteKernel(noise_level=0.25)
+    gp = GaussianProcessRegressor(kernel=kernel, random_state=42)
+    gp.fit(X_train, y_train)
+
+    X_cand = rng.uniform(0.0, 1.0, size=(5, 2))
+
+    latent_mean, latent_std = predict_latent_gp(gp, X_cand, return_std=True)
+    noisy_mean, noisy_std = gp.predict(X_cand, return_std=True)
+
+    # 1. Latent uncertainty is strictly lower than noisy predictive uncertainty
+    assert np.all(latent_std < noisy_std)
+
+    # 2. UCB computed with latent std vs noisy std
+    ucb_latent = compute_acquisition(
+        method="gp_ucb",
+        mean=latent_mean,
+        std=latent_std,
+        best_observed=float(np.max(y_train)),
+        beta=2.0,
+    )
+    ucb_noisy = compute_acquisition(
+        method="gp_ucb",
+        mean=noisy_mean,
+        std=noisy_std,
+        best_observed=float(np.max(y_train)),
+        beta=2.0,
+    )
+    # Since latent_std < noisy_std, ucb_latent is strictly smaller than ucb_noisy for positive beta
+    assert np.all(ucb_latent < ucb_noisy)
+
+    # 3. EI computed with latent std vs noisy std
+    ei_latent = compute_acquisition(
+        method="expected_improvement",
+        mean=latent_mean,
+        std=latent_std,
+        best_observed=float(np.max(y_train)),
+    )
+    assert np.all(np.isfinite(ei_latent))
+
+
+

@@ -31,6 +31,7 @@ from src.evaluation.attia_oracle import (
 )
 
 
+@pytest.mark.external_data
 def test_attia_candidate_space_schema() -> None:
     adapter = AttiaAdapter()
     cand_pool = adapter.load_candidate_pool()
@@ -61,6 +62,7 @@ def test_attia_candidate_space_schema() -> None:
         assert col not in cand_pool.columns
 
 
+@pytest.mark.external_data
 def test_attia_policy_c4_validation() -> None:
     adapter = AttiaAdapter()
     cand_pool = adapter.load_candidate_pool()
@@ -111,6 +113,7 @@ def test_attia_malformed_policy_rejection() -> None:
             load_raw_attia_policies(bad_csv4, expected_policies=None)
 
 
+@pytest.mark.external_data
 def test_attia_fair_stochastic_seeding() -> None:
     benchmark_seed = 42
     policy_id = "ATTIA_P010"
@@ -139,6 +142,7 @@ def test_attia_fair_stochastic_seeding() -> None:
     assert out1.metadata["simulated"] is True
 
 
+@pytest.mark.external_data
 def test_attia_strict_oracle_contract() -> None:
     adapter = AttiaAdapter()
     pool = adapter.load_candidate_pool()
@@ -159,6 +163,7 @@ def test_attia_strict_oracle_contract() -> None:
         oracle.query(bad_coord_cand)
 
 
+@pytest.mark.external_data
 def test_attia_optimizer_evaluator_separation() -> None:
     adapter = AttiaAdapter()
     pool = adapter.load_candidate_pool()
@@ -199,6 +204,7 @@ def test_attia_optimizer_evaluator_separation() -> None:
     assert set(raw_hist[0].keys()) == expected_keys
 
 
+@pytest.mark.external_data
 def test_attia_evaluator_stage_metrics() -> None:
     adapter = AttiaAdapter()
     pool = adapter.load_candidate_pool()
@@ -239,6 +245,7 @@ def test_attia_evaluator_stage_metrics() -> None:
         assert "best_reference_true" in row
 
 
+@pytest.mark.external_data
 def test_attia_reference_manifest_and_cache_invalidation() -> None:
     adapter = AttiaAdapter()
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -296,6 +303,7 @@ def test_attia_deterministic_bootstrap_ci() -> None:
     assert ci_low1 <= mean_val <= ci_high1
 
 
+@pytest.mark.external_data
 def test_attia_benchmark_end_to_end() -> None:
     adapter = AttiaAdapter()
     with tempfile.TemporaryDirectory() as tmpdir:

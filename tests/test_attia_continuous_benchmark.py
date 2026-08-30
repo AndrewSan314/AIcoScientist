@@ -51,6 +51,7 @@ def test_continuous_fair_stochastic_seeding() -> None:
     assert sim_a == sim_b
 
 
+@pytest.mark.external_data
 def test_optimizer_evaluator_strict_isolation() -> None:
     adapter = AttiaAdapter()
     space = adapter.continuous_search_space()
@@ -98,6 +99,7 @@ def test_optimizer_evaluator_strict_isolation() -> None:
         assert "gap_to_discrete_grid_optimum" in row
 
 
+@pytest.mark.external_data
 def test_programmatic_discrete_grid_optimum_and_continuous_reference(tmp_path: Path) -> None:
     adapter = AttiaAdapter()
     discrete_pool = adapter.load_candidate_pool()
@@ -120,6 +122,7 @@ def test_programmatic_discrete_grid_optimum_and_continuous_reference(tmp_path: P
     assert (tmp_path / "continuous_reference_manifest.json").is_file()
 
 
+@pytest.mark.external_data
 def test_reference_underestimation_detection_and_invalidation() -> None:
     adapter = AttiaAdapter()
     space = adapter.continuous_search_space()
@@ -160,6 +163,7 @@ def test_c4_formula_exactness() -> None:
     assert np.isclose(computed, 4.8, atol=1e-2)  # Matches Attia P113 (6.0-4.8-4.0-4.8)
 
 
+@pytest.mark.external_data
 def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     adapter = AttiaAdapter()
     summary = run_attia_continuous_benchmark(

@@ -253,15 +253,15 @@ class ClosedLoopOptimizer:
                     f"No novel candidates found in search space within duplicate tolerance {self.duplicate_tol} after resampling."
                 )
 
-        # 4. Predict surrogate mean & epistemic uncertainty
+        # 4. Predict surrogate mean & epistemic uncertainty using latent GP
         X_cand = cand_batch[self.feature_cols].to_numpy(dtype=float)
         X_cand_scaled = state.scaler.transform(X_cand)
-        pred_mean, pred_std = state.gp_model.predict(X_cand_scaled, return_std=True)
+        pred_mean, pred_std = predict_latent_gp(state.gp_model, X_cand_scaled, return_std=True)
 
         # Denoised posterior means and design at observed points
         X_obs = np.array([[r[c] for c in self.feature_cols] for r in state.observed_records], dtype=float)
         X_obs_scaled = state.scaler.transform(X_obs)
-        obs_posterior_means = state.gp_model.predict(X_obs_scaled)
+        obs_posterior_means = predict_latent_gp(state.gp_model, X_obs_scaled, return_std=False)
 
         acq_method = "nei" if "nei" in self.strategy else self.strategy
 

@@ -6,6 +6,7 @@ import pytest
 from src.datasets.dynamic_cycling import DYNAMIC_CYCLING_FEATURE_COLUMNS, DynamicCyclingAdapter
 
 
+@pytest.mark.external_data
 def test_candidate_pool_zero_oracle_data():
     adapter = DynamicCyclingAdapter()
     pool = adapter.load_candidate_pool()
@@ -26,6 +27,7 @@ def test_candidate_pool_zero_oracle_data():
     assert len(present_forbidden) == 0, f"Candidate pool leaked oracle columns: {present_forbidden}"
 
 
+@pytest.mark.external_data
 def test_candidate_space_zero_oracle_data():
     adapter = DynamicCyclingAdapter()
     obs = pd.DataFrame({"protocol_id": ["P1", "P2"]})
@@ -44,6 +46,7 @@ def test_candidate_space_zero_oracle_data():
     assert len(set(cands.columns) & forbidden_oracle_columns) == 0
 
 
+@pytest.mark.external_data
 def test_dynamic_hidden_oracle_cell_level_and_replicate_aware():
     from src.evaluation.oracle import OfflineOracle
 

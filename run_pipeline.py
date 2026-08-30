@@ -121,10 +121,10 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
         print("\n[extra] Extracting SEM image features...")
         try:
             from src.sem_features import extract_sem_features
-        except ImportError as exc:
-            raise ImportError("SEM feature extraction requires scikit-image. Install the full project dependencies.") from exc
-        sem_df = extract_sem_features()
-        print(f"Saved: data/processed/sem_features_extracted.csv ({len(sem_df)} rows)")
+            sem_df = extract_sem_features()
+            print(f"Saved: data/processed/sem_features_extracted.csv ({len(sem_df)} rows)")
+        except ImportError:
+            print("Skipping optional SEM feature extraction: scikit-image is not installed.")
     if mode == "full":
         print("\nPipeline completed successfully.")
 

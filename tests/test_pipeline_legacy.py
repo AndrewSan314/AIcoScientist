@@ -39,3 +39,20 @@ def test_legacy_pipeline_contract():
 
     bundle = joblib.load(MODEL_FILE)
     assert bundle["dataset"] == "si_mxene"
+
+
+def test_pipeline_continues_when_skimage_missing(monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if "skimage" in name or name == "src.sem_features":
+            raise ImportError("No module named 'skimage'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", mock_import)
+    # Pipeline should continue and succeed gracefully
+    main(dataset="si_mxene", mode="full")
+    assert MASTER_FILE.is_file()
+    assert MODEL_FILE.is_file()
+
