@@ -241,3 +241,38 @@ def test_predict_latent_gp_variance_smaller_than_noisy() -> None:
     _, train_latent_std = predict_latent_gp(gp, X_train, return_std=True)
     assert np.all(train_latent_std > 0.0)
 
+
+def test_predict_latent_gp_normalize_y_scaling() -> None:
+    """Tests that predict_latent_gp correctly scales latent mean, std, and cov back to original target units when normalize_y=True."""
+    from src.optimization.acquisition import predict_latent_gp
+
+    rng = np.random.default_rng(123)
+    X_train = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8], [0.9, 1.0]])
+    # Targets in a large physical scale (e.g. battery cycle life: 500 to 1200)
+    y_train = np.array([500.0, 650.0, 800.0, 1000.0, 1200.0])
+
+    kernel = ConstantKernel(1.0, (1e-3, 1e3)) * Matern(length_scale=0.5, nu=2.5) + WhiteKernel(noise_level=0.1, noise_level_bounds=(1e-5, 5.0))
+    gp = GaussianProcessRegressor(kernel=kernel, normalize_y=True, random_state=42)
+    gp.fit(X_train, y_train)
+
+    X_test = rng.uniform(0.0, 1.0, size=(10, 2))
+
+    # 1. Latent mean vs standard predict mean
+    latent_mean, latent_std = predict_latent_gp(gp, X_test, return_std=True)
+    latent_mean_cov, latent_cov = predict_latent_gp(gp, X_test, return_cov=True)
+    standard_mean, standard_std = gp.predict(X_test, return_std=True)
+
+    # Latent mean must match standard mean in original physical scale
+    assert np.allclose(latent_mean, standard_mean, atol=1e-5)
+    assert np.allclose(latent_mean_cov, standard_mean, atol=1e-5)
+    assert np.all(latent_mean > 300.0)  # Verify not in normalized scale (~0)!
+
+    # 2. Latent std must be in original scale and strictly smaller than noisy std
+    assert np.all(latent_std > 1.0)  # Original scale std is >> 1.0 (not normalized std < 1.0)
+    assert np.all(latent_std < standard_std)
+
+    # 3. Covariance consistency: diag(cov) == std^2 and all finite
+    assert np.all(np.isfinite(latent_cov))
+    assert np.allclose(np.diag(latent_cov), latent_std**2, rtol=1e-5)
+
+

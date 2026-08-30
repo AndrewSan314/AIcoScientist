@@ -329,6 +329,13 @@ def run_single_attia_continuous_trajectory(
             "contracted": False,
             "restarted": False,
             "global_escape": False,
+            "proposal_predicted_mean": None,
+            "proposal_predicted_std": None,
+            "post_observation_candidate_mean": None,
+            "post_observation_candidate_std": None,
+            "post_observation_incumbent_mean": None,
+            "post_observation_incumbent_std": None,
+            "post_observation_candidate_incumbent_covariance": None,
             "posterior_candidate_mean": None,
             "posterior_candidate_std": None,
             "posterior_incumbent_mean": None,
@@ -616,9 +623,16 @@ def run_single_attia_continuous_trajectory(
             p_inc_s = float(np.sqrt(max(p_inc_v, 1e-12)))
 
             # 3. Global fallback candidate in case of restart scored via True NEI on refitted GP
+            can_restart = (
+                turbo.state is not None
+                and (
+                    (turbo.state.failure_counter + 1 >= turbo.state.failure_tolerance and (turbo.state.length / 2.0) < turbo.state.min_length)
+                    or (turbo.state.length < turbo.state.min_length)
+                )
+            )
             fallback_center = None
             fallback_cid = None
-            if turbo.state is not None:
+            if can_restart:
                 g_pool = search_space.sample_feasible(n=256, seed=optimizer_seed * 1000 + step * 79 + 1)
                 nov_g = search_space.check_novelty(
                     g_pool, reference_points=pd.DataFrame(observed_records), feature_cols=feature_cols, tol=duplicate_tol
@@ -702,11 +716,21 @@ def run_single_attia_continuous_trajectory(
             "contracted": bool(tr_update.get("contracted", False)),
             "restarted": bool(tr_update.get("restarted", False)),
             "global_escape": is_global_escape,
-            "posterior_candidate_mean": float(p_mean[0]),
-            "posterior_candidate_std": float(p_std[0]),
+            # Explicit proposal-time surrogate prediction
+            "proposal_predicted_mean": float(p_mean[0]),
+            "proposal_predicted_std": float(p_std[0]),
+            # Explicit post-observation refitted surrogate statistics
+            "post_observation_candidate_mean": tr_update.get("posterior_candidate_mean", float(p_mean[0])),
+            "post_observation_candidate_std": tr_update.get("posterior_candidate_std", float(p_std[0])),
+            "post_observation_incumbent_mean": tr_update.get("posterior_incumbent_mean"),
+            "post_observation_incumbent_std": tr_update.get("posterior_incumbent_std"),
+            "post_observation_candidate_incumbent_covariance": tr_update.get("posterior_candidate_incumbent_covariance"),
+            "success_probability": tr_update.get("success_probability"),
+            # Backward compatibility aliases
+            "posterior_candidate_mean": tr_update.get("posterior_candidate_mean", float(p_mean[0])),
+            "posterior_candidate_std": tr_update.get("posterior_candidate_std", float(p_std[0])),
             "posterior_incumbent_mean": tr_update.get("posterior_incumbent_mean"),
             "posterior_incumbent_std": tr_update.get("posterior_incumbent_std"),
-            "success_probability": tr_update.get("success_probability"),
             "restart_reason": tr_update.get("restart_reason"),
             "restart_candidate_id": tr_update.get("restart_candidate_id"),
         }
@@ -933,6 +957,13 @@ def run_attia_continuous_benchmark(
                                 "trust_region_center_C2": float(json.loads(row["trust_region_center"])["C2"]) if row.get("trust_region_center") else None,
                                 "trust_region_center_C3": float(json.loads(row["trust_region_center"])["C3"]) if row.get("trust_region_center") else None,
                                 "trust_region_length": row.get("trust_region_length"),
+                                "proposal_predicted_mean": row.get("proposal_predicted_mean"),
+                                "proposal_predicted_std": row.get("proposal_predicted_std"),
+                                "post_observation_candidate_mean": row.get("post_observation_candidate_mean"),
+                                "post_observation_candidate_std": row.get("post_observation_candidate_std"),
+                                "post_observation_incumbent_mean": row.get("post_observation_incumbent_mean"),
+                                "post_observation_incumbent_std": row.get("post_observation_incumbent_std"),
+                                "post_observation_candidate_incumbent_covariance": row.get("post_observation_candidate_incumbent_covariance"),
                                 "posterior_candidate_mean": row.get("posterior_candidate_mean"),
                                 "posterior_candidate_std": row.get("posterior_candidate_std"),
                                 "posterior_incumbent_mean": row.get("posterior_incumbent_mean"),

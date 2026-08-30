@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import h5py
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,6 +19,7 @@ from src.datasets.severson import (
 
 def test_synthetic_severson_h5py_structure(tmp_path: Path):
     """Tests Severson HDF5 parser logic with a minimal synthetic HDF5 file."""
+    h5py = pytest.importorskip("h5py")
     mat_path = tmp_path / "2017-05-12_batchdata_updated_struct_errorcorrect.mat"
     with h5py.File(mat_path, "w") as f:
         batch_grp = f.create_group("batch")

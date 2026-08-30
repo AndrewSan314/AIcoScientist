@@ -419,7 +419,16 @@ class ClosedLoopOptimizer:
         # Fallback candidate for TuRBO restart chosen by scoring novel global points via refitted GP
         fallback_center: dict[str, Any] | None = None
         fallback_cid: str | None = None
-        if state.trust_region is not None:
+        tr = state.trust_region
+        can_restart = (
+            tr is not None
+            and tr.state is not None
+            and (
+                (tr.state.failure_counter + 1 >= tr.state.failure_tolerance and (tr.state.length / 2.0) < tr.state.min_length)
+                or (tr.state.length < tr.state.min_length)
+            )
+        )
+        if can_restart:
             global_pool = self.search_space.sample_feasible(n=256, seed=self.random_state + state.step * 77 + 1)
             nov = self.search_space.check_novelty(
                 global_pool,

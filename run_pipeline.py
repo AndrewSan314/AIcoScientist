@@ -7,7 +7,6 @@ import pandas as pd
 from src.build_dataset import build_dataset, build_master_dataset
 from src.datasets.registry import get_dataset_adapter
 from src.recommend import recommend_top
-from src.sem_features import extract_sem_features
 from src.train_model import train_model
 from src.utils import (
     MASTER_FILE,
@@ -120,6 +119,10 @@ def main(dataset: str = "si_mxene", mode: str = "full") -> None:
 
     if legacy and mode == "full" and SEM_IMAGE_DIR.exists() and any(SEM_IMAGE_DIR.iterdir()):
         print("\n[extra] Extracting SEM image features...")
+        try:
+            from src.sem_features import extract_sem_features
+        except ImportError as exc:
+            raise ImportError("SEM feature extraction requires scikit-image. Install the full project dependencies.") from exc
         sem_df = extract_sem_features()
         print(f"Saved: data/processed/sem_features_extracted.csv ({len(sem_df)} rows)")
     if mode == "full":

@@ -5,7 +5,6 @@ import logging
 from pathlib import Path
 from typing import Any, Mapping
 
-import h5py
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -51,7 +50,8 @@ SEVERSON_ORACLE_COLUMNS: list[str] = [
 ]
 
 
-def _read_hdf5_str(f: h5py.File, ref: Any) -> str:
+def _read_hdf5_str(f: Any, ref: Any) -> str:
+    import h5py
     if not isinstance(ref, h5py.Reference):
         return str(ref)
     obj = f[ref]
@@ -63,6 +63,10 @@ def _read_hdf5_str(f: h5py.File, ref: Any) -> str:
 
 def load_raw_batch_hdf5(mat_path: Path, max_cycle_extract: int = 105) -> dict[str, dict[str, Any]]:
     """Loads a single Severson MATLAB 7.3 HDF5 batch file with strict structural validation."""
+    try:
+        import h5py
+    except ImportError as exc:
+        raise ImportError("Parsing raw Severson .mat files requires 'h5py'. Install h5py or use processed CSV data.") from exc
     cells: dict[str, dict[str, Any]] = {}
     with h5py.File(mat_path, "r") as f:
         if "batch" not in f:

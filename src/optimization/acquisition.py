@@ -200,24 +200,40 @@ def predict_latent_gp(
     # 1. K_trans = K_signal(X, X_train)
     K_trans = signal_kernel(X_arr, gp.X_train_)
 
-    # 2. Latent mean: mu = y_mean + K_trans @ alpha_
+    # 2. Target normalization scaling factors
     y_mean = getattr(gp, "_y_train_mean", 0.0)
-    mu = y_mean + (K_trans @ gp.alpha_)
+    y_std = getattr(gp, "_y_train_std", 1.0)
+    normalize_y = bool(getattr(gp, "normalize_y", False))
+
+    # 3. Latent mean (normalized space -> original target units)
+    mu_normalized = K_trans @ gp.alpha_
+    if normalize_y:
+        mu = y_mean + (y_std * mu_normalized)
+    else:
+        mu = y_mean + mu_normalized
 
     if return_cov:
-        # 3. K_test = K_signal(X, X)
+        # 4. K_test = K_signal(X, X)
         K_test = signal_kernel(X_arr, X_arr)
         # V = L^-1 @ K_trans.T
         V = solve_triangular(gp.L_, K_trans.T, lower=True, check_finite=False)
-        cov = K_test - (V.T @ V)
+        cov_normalized = K_test - (V.T @ V)
+        if normalize_y:
+            cov = cov_normalized * (y_std ** 2)
+        else:
+            cov = cov_normalized
         return mu, cov
     elif return_std:
         # diag(K_test)
         K_diag = signal_kernel.diag(X_arr)
         V = solve_triangular(gp.L_, K_trans.T, lower=True, check_finite=False)
-        var = K_diag - np.einsum("ij,ij->j", V, V)
-        var = np.maximum(var, 0.0)
-        std = np.sqrt(var)
+        var_normalized = K_diag - np.einsum("ij,ij->j", V, V)
+        var_normalized = np.maximum(var_normalized, 0.0)
+        std_normalized = np.sqrt(var_normalized)
+        if normalize_y:
+            std = std_normalized * y_std
+        else:
+            std = std_normalized
         return mu, std
     else:
         return mu
