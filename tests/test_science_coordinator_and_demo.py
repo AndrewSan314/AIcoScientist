@@ -14,7 +14,7 @@ from src.science.coordinator import (
     ResumeStateMismatchError,
     ScientificClosedLoopCoordinator,
 )
-from src.science.records import ExperimentStage
+from src.science.records import ExperimentStage, ScientificExperimentRecord
 from src.science.synthetic import SyntheticExperimentOracle, SyntheticScienceAdapter
 from src.science.validation import InformationHorizonError
 
@@ -1203,40 +1203,80 @@ def test_distinct_replicate_experiments_with_same_candidate_id(tmp_path: Path) -
         {"exp_id": "EXP_00", "cand_id": "C0", "x1": 1.0, "y": 500.0},
         {"exp_id": "EXP_01", "cand_id": "C1", "x1": 2.0, "y": 550.0},
     ])
-    cand_pool = pd.DataFrame([{"cand_id": "C_SHARED", "x1": 5.0}])
+    cand_pool = pd.DataFrame([{"candidate_id": "C_SHARED", "cand_id": "C_SHARED", "x1": 5.0}])
 
+    db_path = tmp_path / "rep.db"
     coord = ScientificClosedLoopCoordinator.initialize_new(
         spec=spec,
         two_stage_spec=two_stage_spec,
         initial_data=initial_df,
         candidate_pool=cand_pool,
         search_space=space,
-        db_path=tmp_path / "rep.db",
+        db_path=db_path,
         strategy="expected_improvement",
         random_state=42,
     )
 
-    # Replicate 1
+    # Replicate 1 from proposal
     rec1, _ = coord.propose_next(n_mc_samples=16)
     coord.record_executed(rec1.experiment_id)
     coord.record_performance(rec1.experiment_id, {"y": 700.0})
 
-    # Allow parallel proposal to simulate replicate with same candidate_id
-    coord.allow_parallel_experiments = True
-    rec2, _ = coord.propose_next(n_mc_samples=16)
+    # Replicate 2: Second physical run testing the EXACT same candidate design recipe
+    rec2 = ScientificExperimentRecord(
+        experiment_id="EXP_REPLICATE_02",
+        candidate_id=rec1.candidate_id,  # Truly shared candidate_id
+        dataset_name=spec.name,
+        stage=ExperimentStage.PROPOSED,
+        pre_experiment_features=rec1.pre_experiment_features,
+        candidate_variables=rec1.candidate_variables,
+        proposal_metadata={
+            "proposal": rec1.proposal_metadata["proposal"],
+            "proposal_sequence": 2,
+            "optimizer_step": 2,
+            "strategy": "expected_improvement",
+            "reason_code": "REPLICATE_RUN",
+        },
+    )
+    coord.ledger.record_proposal(rec2, spec=spec)
     coord.record_executed(rec2.experiment_id)
     coord.record_performance(rec2.experiment_id, {"y": 710.0})
 
+    # Assert true same candidate_id but distinct experiment_ids
+    assert rec1.candidate_id == rec2.candidate_id
+    assert rec1.experiment_id != rec2.experiment_id
+    shared_candidate_id = rec1.candidate_id
+
+    # Assert both coexist in optimizer state
     assert len(coord.optimizer_state.observed_records) == 4
+    shared_obs = [r for r in coord.optimizer_state.observed_records if r.get("candidate_id") == shared_candidate_id]
+    assert len(shared_obs) == 2
+    assert {r["experiment_id"] for r in shared_obs} == {rec1.experiment_id, rec2.experiment_id}
+
     # Invalidate Replicate 2 only
     coord.record_failed(rec2.experiment_id, "Bad replicate 2")
 
     # Assert Replicate 1 survives while Replicate 2 is removed
     assert len(coord.optimizer_state.observed_records) == 3
-    assert any(r.get("experiment_id") == rec1.experiment_id for r in coord.optimizer_state.observed_records)
+    assert any(r.get("experiment_id") == rec1.experiment_id and r.get("candidate_id") == shared_candidate_id for r in coord.optimizer_state.observed_records)
     assert not any(r.get("experiment_id") == rec2.experiment_id for r in coord.optimizer_state.observed_records)
 
     coord.ledger.close()
+
+    # Resume from ledger: must preserve Replicate 1 and exclude Replicate 2
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=spec,
+        two_stage_spec=two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    assert len(resumed.optimizer_state.observed_records) == 3
+    assert any(r.get("experiment_id") == rec1.experiment_id and r.get("candidate_id") == shared_candidate_id for r in resumed.optimizer_state.observed_records)
+    assert not any(r.get("experiment_id") == rec2.experiment_id for r in resumed.optimizer_state.observed_records)
+    resumed.ledger.close()
 
 
 def test_legacy_snapshot_without_experiment_id_resumes_cleanly(tmp_path: Path) -> None:
@@ -1273,7 +1313,7 @@ def test_legacy_snapshot_without_experiment_id_resumes_cleanly(tmp_path: Path) -
     coord.ledger.save_optimizer_snapshot(legacy_snap)
     coord.ledger.close()
 
-    # Resume from legacy snapshot
+    # Resume from legacy snapshot: must perform one-time migration and save new snapshot containing experiment_id
     resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
         db_path=db_path,
         spec=adapter.spec,
@@ -1285,6 +1325,98 @@ def test_legacy_snapshot_without_experiment_id_resumes_cleanly(tmp_path: Path) -
     )
     assert len(resumed.optimizer_state.observed_records) == 5
     assert resumed.optimizer_state.current_best == 900.0
+    # Verify all records in active optimizer state have experiment_id populated
+    assert all("experiment_id" in r and r["experiment_id"] for r in resumed.optimizer_state.observed_records)
+
+    # Verify newly saved snapshot in ledger also has experiment_id populated
+    migrated_snap = resumed.ledger.get_latest_optimizer_snapshot()
+    assert migrated_snap is not None
+    assert all("experiment_id" in r and r["experiment_id"] for r in migrated_snap.get("observed_records", []))
+    resumed.ledger.close()
+
+
+def test_crash_after_invalidation_before_snapshot_reconciles_on_resume(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    # 1. Clean control run (propose and complete A only)
+    coord_ctrl = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=tmp_path / "ctrl_inv_crash.db",
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_a, _ = coord_ctrl.propose_next(n_mc_samples=16)
+    coord_ctrl.record_executed(rec_a.experiment_id)
+    coord_ctrl.record_characterization(rec_a.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord_ctrl.record_performance(rec_a.experiment_id, {"y": 850.0})
+    ctrl_next_rec, ctrl_next_rat = coord_ctrl.propose_next(n_mc_samples=16)
+    ctrl_best = coord_ctrl.optimizer_state.current_best
+    coord_ctrl.ledger.close()
+
+    # 2. Invalidate run with crash before rebuilt snapshot save
+    db_path = tmp_path / "crash_inv.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec_a2, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec_a2.experiment_id)
+    coord.record_characterization(rec_a2.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec_a2.experiment_id, {"y": 850.0})
+
+    rec_b, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec_b.experiment_id)
+    coord.record_characterization(rec_b.experiment_id, {"z1": 0.3, "z2": 0.4})
+    coord.record_performance(rec_b.experiment_id, {"y": 999.0})  # B is current best
+
+    assert coord.optimizer_state.current_best == 999.0
+    assert len(coord.optimizer_state.observed_records) == 6
+
+    # Simulate crash: ledger marks B as FAILED, but snapshot save is suppressed
+    # so the snapshot in SQLite still contains B (999.0)
+    monkeypatch.setattr(coord.ledger, "save_optimizer_snapshot", lambda *args, **kwargs: None)
+    coord.record_failed(rec_b.experiment_id, "QC tainted sample")
+    coord.ledger.close()
+
+    # Resume from ledger: must detect snapshot contains stale observation B
+    # and perform full deterministic rebuild from ledger!
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    # Assert B is absent from optimizer observed_records and history
+    assert len(resumed.optimizer_state.observed_records) == 5
+    assert not any(r.get("experiment_id") == rec_b.experiment_id for r in resumed.optimizer_state.observed_records)
+    assert not any(h.get("experiment_id") == rec_b.experiment_id for h in resumed.optimizer_state.history)
+    assert resumed.optimizer_state.current_best == 850.0  # recomputed without B
+
+    # Propose next and verify it matches clean control
+    resumed_next_rec, resumed_next_rat = resumed.propose_next(n_mc_samples=16)
+    assert ctrl_next_rec.candidate_id == resumed_next_rec.candidate_id
+    assert ctrl_next_rec.pre_experiment_features == resumed_next_rec.pre_experiment_features
+    assert ctrl_next_rec.candidate_variables == resumed_next_rec.candidate_variables
+    assert ctrl_next_rec.proposal_metadata["acquisition_score"] == pytest.approx(resumed_next_rec.proposal_metadata["acquisition_score"])
+    assert ctrl_next_rec.proposal_metadata["reason_code"] == resumed_next_rec.proposal_metadata["reason_code"]
+
     resumed.ledger.close()
 
 

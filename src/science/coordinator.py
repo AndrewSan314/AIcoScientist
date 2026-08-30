@@ -270,7 +270,13 @@ class ScientificClosedLoopCoordinator:
             id_col=self.spec.id_column,
         )
         spec_fp = compute_spec_fingerprint(self.spec, self.two_stage_spec, self.search_space)
-        all_training_ids = sorted(set(direct_ids + [eid for ids in stage_a_ids.values() for eid in ids]))
+        all_training_ids = sorted(
+            set(
+                direct_ids
+                + [eid for ids in stage_a_ids.values() for eid in ids]
+                + [eid for ids in stage_b_ids.values() for eid in ids]
+            )
+        )
 
         new_prov = ScientificModelProvenance.create(
             dataset_name=self.spec.name,
@@ -913,7 +919,7 @@ class ScientificClosedLoopCoordinator:
         allow_parallel_experiments: bool = False,
         random_state: int = 42,
     ) -> ScientificClosedLoopCoordinator:
-        """Recovers and reconstructs coordinator state deterministically from an existing SQLite ledger, reconciling any un-snapshotted completed observations."""
+        """Recovers and reconstructs coordinator state deterministically from an existing SQLite ledger, performing two-way observation reconciliation."""
         ledger = ExperimentLedger(db_path)
         valid, errors = ledger.verify_integrity()
         if not valid:
@@ -1017,64 +1023,60 @@ class ScientificClosedLoopCoordinator:
                         b_idx = int(np.argmax(targets) if spec.objective == "maximize" else np.argmin(targets))
                         opt_state.trust_region.initialize(opt_state.observed_records[b_idx], opt_state.current_best)
 
-            # 2. Identify completed ledger records missing from restored optimizer snapshot
-            # Primary identity: experiment_id; legacy fallback: candidate_id
-            snapshot_exp_ids = {str(r.get("experiment_id")) for r in opt_state.observed_records if r.get("experiment_id")}
-            snapshot_hist_exp_ids = {str(h.get("experiment_id")) for h in opt_state.history if h.get("experiment_id")}
-            known_exp_ids = snapshot_exp_ids | snapshot_hist_exp_ids
+            coord.optimizer_state = opt_state
 
-            snapshot_cand_ids = {str(r.get("candidate_id")) for r in opt_state.observed_records if r.get("candidate_id")}
-            snapshot_hist_cand_ids = {str(h.get("candidate_id")) for h in opt_state.history if h.get("candidate_id")}
-            known_cand_ids = snapshot_cand_ids | snapshot_hist_cand_ids
+            # 2. Two-way reconciliation against authoritative ledger completed records
+            ledger_valid_exp_ids = {r.experiment_id for r in completed_records}
+            snapshot_obs_exp_ids = {str(r["experiment_id"]) for r in opt_state.observed_records if r.get("experiment_id")}
 
-            missing_completed = []
-            for rec in completed_records:
-                if known_exp_ids:
-                    if rec.experiment_id not in known_exp_ids:
-                        missing_completed.append(rec)
-                else:
-                    if rec.candidate_id not in known_cand_ids:
-                        missing_completed.append(rec)
+            has_missing_exp_id = len(snapshot_obs_exp_ids) < len(opt_state.observed_records)
 
-            # 3. Replay missing completed observations in chronological order
-            replayed_any = False
-            for rec in missing_completed:
-                if rec.proposal_metadata.get("proposal"):
-                    prop = ExperimentProposal.from_dict(rec.proposal_metadata["proposal"])
-                else:
-                    prop = ExperimentProposal(
+            if has_missing_exp_id:
+                # Legacy snapshot migration: lacks experiment_id; perform one-time full rebuild from ledger and persist new snapshot
+                coord._rebuild_optimizer_from_ledger()
+            elif snapshot_obs_exp_ids == ledger_valid_exp_ids:
+                # Snapshot exactly matches ledger valid observations
+                optimizer._fit_surrogate(opt_state)
+            elif snapshot_obs_exp_ids.issubset(ledger_valid_exp_ids):
+                # Snapshot missing some completed observations (crash after completion before snapshot write)
+                missing_completed = [rec for rec in completed_records if rec.experiment_id not in snapshot_obs_exp_ids]
+                for rec in missing_completed:
+                    if rec.proposal_metadata.get("proposal"):
+                        prop = ExperimentProposal.from_dict(rec.proposal_metadata["proposal"])
+                    else:
+                        prop = ExperimentProposal(
+                            candidate_id=rec.candidate_id,
+                            design_variables=rec.pre_experiment_features,
+                            predicted_performance=0.0,
+                            prediction_uncertainty=1.0,
+                            acquisition_score=float(rec.proposal_metadata.get("acquisition_score", 0.0)),
+                            acquisition_method=str(rec.proposal_metadata.get("strategy", strategy)),
+                            trust_region_center=None,
+                            trust_region_radius=None,
+                            recommendation_reason="",
+                            reason_code=str(rec.proposal_metadata.get("reason_code", "OBSERVATION_RECORDED")),
+                            distance_to_nearest_observed=0.0,
+                            step=int(rec.proposal_metadata.get("optimizer_step", opt_state.step + 1)),
+                        )
+                    opt_state.step = int(rec.proposal_metadata.get("optimizer_step", prop.step))
+                    target_val = float(rec.performance[spec.target_column])
+                    exp_res = ExperimentResult(
                         candidate_id=rec.candidate_id,
                         design_variables=rec.pre_experiment_features,
-                        predicted_performance=0.0,
-                        prediction_uncertainty=1.0,
-                        acquisition_score=float(rec.proposal_metadata.get("acquisition_score", 0.0)),
-                        acquisition_method=str(rec.proposal_metadata.get("strategy", strategy)),
-                        trust_region_center=None,
-                        trust_region_radius=None,
-                        recommendation_reason="",
-                        reason_code=str(rec.proposal_metadata.get("reason_code", "OBSERVATION_RECORDED")),
-                        distance_to_nearest_observed=0.0,
-                        step=int(rec.proposal_metadata.get("optimizer_step", opt_state.step + 1)),
+                        target_value=target_val,
+                        observations={"experiment_id": rec.experiment_id},
                     )
-                opt_state.step = int(rec.proposal_metadata.get("optimizer_step", prop.step))
-                target_val = float(rec.performance[spec.target_column])
-                exp_res = ExperimentResult(
-                    candidate_id=rec.candidate_id,
-                    design_variables=rec.pre_experiment_features,
-                    target_value=target_val,
-                    observations={"experiment_id": rec.experiment_id},
-                )
-                optimizer.observe(opt_state, prop, exp_res)
-                replayed_any = True
+                    optimizer.observe(opt_state, prop, exp_res)
 
-            if replayed_any:
                 ledger.save_optimizer_snapshot(opt_state.to_dict())
-
-            optimizer._fit_surrogate(opt_state)
+                optimizer._fit_surrogate(opt_state)
+            else:
+                # Snapshot contains stale/invalid observations that were later invalidated (crash before rebuilt snapshot save)
+                coord._rebuild_optimizer_from_ledger()
         else:
             opt_state = optimizer.initialize(opt_df)
-
-        coord.optimizer_state = opt_state
+            coord.optimizer_state = opt_state
+            ledger.save_optimizer_snapshot(opt_state.to_dict())
 
         # Restore pending proposal if any
         pending_records = ledger.list_pending_records()
