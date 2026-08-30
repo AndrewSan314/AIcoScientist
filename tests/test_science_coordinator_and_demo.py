@@ -114,16 +114,68 @@ def test_coordinator_asymmetric_async_flow(tmp_path: Path) -> None:
     assert rec_completed.has_performance()
 
 
-def test_coordinator_exact_deterministic_resume(tmp_path: Path) -> None:
-    """Verifies that an uninterrupted run and an interrupted/resumed run produce 100% identical proposals."""
+def test_coordinator_failed_proposal_transactional_rollback(tmp_path: Path) -> None:
+    """Verifies that a failed proposal request leaves active optimizer state 100% unchanged."""
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
+
+    db_test = tmp_path / "trans_test.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_test,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    step_before = coord.optimizer_state.step
+    best_before = coord.optimizer_state.current_best
+    history_len_before = len(coord.optimizer_state.history)
+
+    # Trigger proposal failure via conflicting pre_experiment_context
+    with pytest.raises(InformationHorizonError):
+        coord.propose_next(pre_experiment_context={"x1": 9999.0})
+
+    # Assert optimizer state is untouched
+    assert coord.optimizer_state.step == step_before
+    assert coord.optimizer_state.current_best == best_before
+    assert len(coord.optimizer_state.history) == history_len_before
+
+    # Now make valid proposal and compare with clean control coordinator
+    rec_actual, rat_actual = coord.propose_next(n_mc_samples=16)
+
+    db_control = tmp_path / "trans_control.db"
+    coord_control = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_control,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_control, rat_control = coord_control.propose_next(n_mc_samples=16)
+
+    assert rec_actual.candidate_id == rec_control.candidate_id
+    assert rec_actual.candidate_variables == rec_control.candidate_variables
+    assert rat_actual.acquisition_score == pytest.approx(rat_control.acquisition_score, rel=1e-5)
+
+
+def test_coordinator_pending_proposal_crash_and_exact_resume(tmp_path: Path) -> None:
+    """CRITICAL TEST: Verifies that crashing with a pending proposal and resuming produces bit-for-bit identical next step."""
     adapter = SyntheticScienceAdapter()
     oracle = SyntheticExperimentOracle()
 
     init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
     cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
 
-    # --- Run A: Uninterrupted 3 steps ---
-    db_a = tmp_path / "run_a.db"
+    # --- Run A: Continuous Uninterrupted Run ---
+    db_a = tmp_path / "pending_a.db"
     coord_a = ScientificClosedLoopCoordinator.initialize_new(
         spec=adapter.spec,
         two_stage_spec=adapter.two_stage_spec,
@@ -135,19 +187,38 @@ def test_coordinator_exact_deterministic_resume(tmp_path: Path) -> None:
         random_state=42,
     )
 
-    proposals_a = []
-    for step in range(3):
-        rec, _ = coord_a.propose_next(n_mc_samples=16)
-        proposals_a.append(rec.candidate_variables)
-        coord_a.record_executed(rec.experiment_id)
-        chars = oracle.evaluate_characterization(rec.pre_experiment_features, seed=500 + step)
-        coord_a.record_characterization(rec.experiment_id, chars)
-        perf = oracle.evaluate_performance(rec.pre_experiment_features, chars, seed=600 + step)
-        coord_a.record_performance(rec.experiment_id, perf)
+    # Step 1
+    rec_a1, _ = coord_a.propose_next(n_mc_samples=16)
+    coord_a.record_executed(rec_a1.experiment_id)
+    c1 = oracle.evaluate_characterization(rec_a1.pre_experiment_features, seed=101)
+    coord_a.record_characterization(rec_a1.experiment_id, c1)
+    p1 = oracle.evaluate_performance(rec_a1.pre_experiment_features, c1, seed=201)
+    coord_a.record_performance(rec_a1.experiment_id, p1)
+
+    # Step 2
+    rec_a2, _ = coord_a.propose_next(n_mc_samples=16)
+    coord_a.record_executed(rec_a2.experiment_id)
+    c2 = oracle.evaluate_characterization(rec_a2.pre_experiment_features, seed=102)
+    coord_a.record_characterization(rec_a2.experiment_id, c2)
+    p2 = oracle.evaluate_performance(rec_a2.pre_experiment_features, c2, seed=202)
+    coord_a.record_performance(rec_a2.experiment_id, p2)
+
+    # Step 3 proposed
+    rec_a3, rat_a3 = coord_a.propose_next(n_mc_samples=16)
+
+    # Step 3 executed & completed in run A
+    coord_a.record_executed(rec_a3.experiment_id)
+    c3 = oracle.evaluate_characterization(rec_a3.pre_experiment_features, seed=103)
+    coord_a.record_characterization(rec_a3.experiment_id, c3)
+    p3 = oracle.evaluate_performance(rec_a3.pre_experiment_features, c3, seed=203)
+    coord_a.record_performance(rec_a3.experiment_id, p3)
+
+    # Step 4 proposed in run A
+    rec_a4, rat_a4 = coord_a.propose_next(n_mc_samples=16)
     coord_a.ledger.close()
 
-    # --- Run B: 2 steps, close, resume, propose 3rd step ---
-    db_b = tmp_path / "run_b.db"
+    # --- Run B: Process Crashes after Step 3 Proposal ---
+    db_b = tmp_path / "pending_b.db"
     coord_b = ScientificClosedLoopCoordinator.initialize_new(
         spec=adapter.spec,
         two_stage_spec=adapter.two_stage_spec,
@@ -159,18 +230,27 @@ def test_coordinator_exact_deterministic_resume(tmp_path: Path) -> None:
         random_state=42,
     )
 
-    proposals_b = []
-    for step in range(2):
-        rec, _ = coord_b.propose_next(n_mc_samples=16)
-        proposals_b.append(rec.candidate_variables)
-        coord_b.record_executed(rec.experiment_id)
-        chars = oracle.evaluate_characterization(rec.pre_experiment_features, seed=500 + step)
-        coord_b.record_characterization(rec.experiment_id, chars)
-        perf = oracle.evaluate_performance(rec.pre_experiment_features, chars, seed=600 + step)
-        coord_b.record_performance(rec.experiment_id, perf)
+    # Step 1
+    rec_b1, _ = coord_b.propose_next(n_mc_samples=16)
+    coord_b.record_executed(rec_b1.experiment_id)
+    coord_b.record_characterization(rec_b1.experiment_id, c1)
+    coord_b.record_performance(rec_b1.experiment_id, p1)
+
+    # Step 2
+    rec_b2, _ = coord_b.propose_next(n_mc_samples=16)
+    coord_b.record_executed(rec_b2.experiment_id)
+    coord_b.record_characterization(rec_b2.experiment_id, c2)
+    coord_b.record_performance(rec_b2.experiment_id, p2)
+
+    # Step 3 proposed
+    rec_b3, rat_b3 = coord_b.propose_next(n_mc_samples=16)
+    assert rec_a3.candidate_id == rec_b3.candidate_id
+    assert rec_a3.candidate_variables == rec_b3.candidate_variables
+
+    # SIMULATE CRASH: close coordinator B while step 3 is pending in ledger
     coord_b.ledger.close()
 
-    # Resume from ledger
+    # Resume from ledger with pending experiment
     resumed_b = ScientificClosedLoopCoordinator.resume_from_ledger(
         db_path=db_b,
         spec=adapter.spec,
@@ -180,15 +260,101 @@ def test_coordinator_exact_deterministic_resume(tmp_path: Path) -> None:
         strategy="expected_improvement",
         random_state=42,
     )
-    rec3, _ = resumed_b.propose_next(n_mc_samples=16)
-    proposals_b.append(rec3.candidate_variables)
+
+    # Assert pending record exists and restored proposal matches exactly
+    pending = resumed_b.ledger.list_pending_records()
+    assert len(pending) == 1
+    assert pending[0].experiment_id == rec_b3.experiment_id
+    assert resumed_b._last_proposal is not None
+    assert resumed_b._last_proposal.candidate_id == rec_b3.candidate_id
+
+    # Execute & complete the pending step 3 in resumed session
+    resumed_b.record_executed(pending[0].experiment_id)
+    resumed_b.record_characterization(pending[0].experiment_id, c3)
+    resumed_b.record_performance(pending[0].experiment_id, p3)
+
+    # Propose Step 4 in resumed session
+    rec_b4, rat_b4 = resumed_b.propose_next(n_mc_samples=16)
     resumed_b.ledger.close()
 
-    # Verify all 3 steps match bit-for-bit
-    assert len(proposals_a) == 3
-    assert len(proposals_b) == 3
-    for step_idx in range(3):
-        assert proposals_a[step_idx] == proposals_b[step_idx]
+    # Verify Step 4 candidate and rationale match Run A
+    assert rec_a4.candidate_id == rec_b4.candidate_id
+    assert rec_a4.candidate_variables == rec_b4.candidate_variables
+    assert rat_a4.acquisition_score == pytest.approx(rat_b4.acquisition_score, rel=1e-5)
+
+
+def test_turbo_proposal_reason_code_survives_resume(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
+
+    db_path = tmp_path / "turbo_test.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="turbo_nei",
+        random_state=42,
+    )
+
+    rec, rat = coord.propose_next(n_mc_samples=16)
+    assert "reason_code" in rec.proposal_metadata
+    orig_reason = rec.proposal_metadata["reason_code"]
+    coord.ledger.close()
+
+    # Resume from ledger
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        strategy="turbo_nei",
+        random_state=42,
+    )
+    assert resumed._last_proposal is not None
+    assert resumed._last_proposal.reason_code == orig_reason
+    resumed.ledger.close()
+
+
+def test_component_training_horizons_and_asynchronous_refits(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
+
+    db_path = tmp_path / "horizons.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+
+    # 1. Record characterization ONLY
+    coord.record_characterization(rec.experiment_id, {"z1": 0.35, "z2": -0.2})
+
+    # Stage A training frame must immediately contain this experiment
+    stage_a_df = coord.build_stage_a_training_frame()
+    assert rec.experiment_id in list(stage_a_df["experiment_id"])
+
+    # Direct training frame must NOT contain this experiment yet (performance pending)
+    direct_df = coord.build_direct_training_frame()
+    assert rec.experiment_id not in list(direct_df["experiment_id"])
+
+    # Provenance Stage A tracking reflects the new experiment
+    assert rec.experiment_id in coord.model_bundle.provenance.stage_a_training_experiment_ids_per_channel["z1"]
+
+    coord.ledger.close()
 
 
 def test_coordinator_pre_experiment_context_merging(tmp_path: Path) -> None:

@@ -76,6 +76,14 @@ class ExperimentLedger:
             )
             self._conn.execute(
                 """
+                CREATE TABLE IF NOT EXISTS proposal_sequences (
+                    dataset_name TEXT PRIMARY KEY,
+                    next_sequence INTEGER NOT NULL
+                )
+                """
+            )
+            self._conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS ledger_metadata (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
@@ -106,12 +114,49 @@ class ExperimentLedger:
             (str(cnt),),
         )
 
+    def allocate_proposal_sequence(self, dataset_name: str) -> int:
+        """Atomically allocates and increments a persistent sequence counter for dataset_name."""
+        with self._conn:
+            cursor = self._conn.execute(
+                "SELECT next_sequence FROM proposal_sequences WHERE dataset_name = ?",
+                (dataset_name,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                cnt_cursor = self._conn.execute(
+                    "SELECT COUNT(*) as cnt FROM experiments WHERE dataset_name = ? AND experiment_id != 'SYSTEM_OPTIMIZER'",
+                    (dataset_name,),
+                )
+                cnt_row = cnt_cursor.fetchone()
+                cur_seq = int(cnt_row["cnt"]) + 1 if cnt_row else 1
+                self._conn.execute(
+                    "INSERT INTO proposal_sequences (dataset_name, next_sequence) VALUES (?, ?)",
+                    (dataset_name, cur_seq + 1),
+                )
+                return cur_seq
+            else:
+                cur_seq = int(row["next_sequence"])
+                self._conn.execute(
+                    "UPDATE proposal_sequences SET next_sequence = ? WHERE dataset_name = ?",
+                    (cur_seq + 1, dataset_name),
+                )
+                return cur_seq
+
     def next_proposal_sequence(self, dataset_name: str | None = None) -> int:
-        """Returns a strictly monotonic proposal sequence integer (1-indexed) derived from the total historical proposals."""
-        query = "SELECT COUNT(*) as cnt FROM experiments"
+        """Returns the next proposal sequence integer without consuming it."""
+        if dataset_name is not None:
+            cursor = self._conn.execute(
+                "SELECT next_sequence FROM proposal_sequences WHERE dataset_name = ?",
+                (dataset_name,),
+            )
+            row = cursor.fetchone()
+            if row is not None:
+                return int(row["next_sequence"])
+
+        query = "SELECT COUNT(*) as cnt FROM experiments WHERE experiment_id != 'SYSTEM_OPTIMIZER'"
         params: list[Any] = []
         if dataset_name is not None:
-            query += " WHERE dataset_name = ?"
+            query += " AND dataset_name = ?"
             params.append(dataset_name)
         cursor = self._conn.execute(query, params)
         row = cursor.fetchone()
@@ -251,12 +296,52 @@ class ExperimentLedger:
 
         return validated_record
 
-    def save_optimizer_snapshot(self, snapshot: Mapping[str, Any]) -> None:
-        """Persists a deterministic optimizer state snapshot after completed experimental observations."""
+    def save_optimizer_snapshot(
+        self,
+        snapshot: Mapping[str, Any],
+        experiment_id: str | None = None,
+    ) -> None:
+        """Persists a deterministic optimizer state snapshot and anchors it in the SHA-256 event hash chain."""
         now_iso = datetime.now(timezone.utc).isoformat()
         step = int(snapshot.get("step", 0))
         canon_json = _canonical_json(snapshot)
+        target_exp_id = experiment_id or "SYSTEM_OPTIMIZER"
+
         with self._conn:
+            if target_exp_id == "SYSTEM_OPTIMIZER":
+                self._conn.execute(
+                    """
+                    INSERT OR IGNORE INTO experiments (experiment_id, candidate_id, dataset_name, current_stage, created_at, updated_at)
+                    VALUES ('SYSTEM_OPTIMIZER', 'SYSTEM', 'system', 'COMPLETED', ?, ?)
+                    """,
+                    (now_iso, now_iso),
+                )
+
+            prev_hash = self._get_latest_event_hash()
+            event_payload = {
+                "event_type": "OPTIMIZER_STATE_SNAPSHOT",
+                "step": step,
+                "snapshot": dict(snapshot),
+            }
+            event_envelope = {
+                "experiment_id": target_exp_id,
+                "event_type": "OPTIMIZER_STATE_SNAPSHOT",
+                "created_at": now_iso,
+                "payload": event_payload,
+            }
+            canon_env = _canonical_json(event_envelope)
+            hasher = hashlib.sha256()
+            hasher.update(prev_hash.encode("utf-8"))
+            hasher.update(canon_env.encode("utf-8"))
+            event_hash = hasher.hexdigest()
+
+            self._conn.execute(
+                """
+                INSERT INTO experiment_events (experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash)
+                VALUES (?, 'OPTIMIZER_STATE_SNAPSHOT', ?, ?, ?, ?)
+                """,
+                (target_exp_id, now_iso, _canonical_json(event_payload), prev_hash, event_hash),
+            )
             self._conn.execute(
                 """
                 INSERT INTO optimizer_snapshots (step, created_at, snapshot_json)
@@ -264,6 +349,7 @@ class ExperimentLedger:
                 """,
                 (step, now_iso, canon_json),
             )
+            self._update_head_metadata(event_hash)
 
     def get_latest_optimizer_snapshot(self) -> dict[str, Any] | None:
         """Retrieves the latest optimizer state snapshot for exact resume."""
@@ -277,11 +363,14 @@ class ExperimentLedger:
 
     def get_record(self, experiment_id: str) -> ScientificExperimentRecord | None:
         """Reconstructs the current state of an experiment from its event history."""
+        if experiment_id == "SYSTEM_OPTIMIZER":
+            return None
+
         cursor = self._conn.execute(
             """
             SELECT payload_json, event_type
             FROM experiment_events
-            WHERE experiment_id = ?
+            WHERE experiment_id = ? AND event_type != 'OPTIMIZER_STATE_SNAPSHOT'
             ORDER BY event_id ASC
             """,
             (experiment_id,),
@@ -310,7 +399,7 @@ class ExperimentLedger:
         dataset_name: str | None = None,
     ) -> list[ScientificExperimentRecord]:
         """Lists all experiment records matching optional stage and dataset filters."""
-        query = "SELECT experiment_id FROM experiments WHERE 1=1"
+        query = "SELECT experiment_id FROM experiments WHERE experiment_id != 'SYSTEM_OPTIMIZER'"
         params: list[Any] = []
         if stage is not None:
             stage_val = stage.value if isinstance(stage, ExperimentStage) else str(stage)
@@ -329,7 +418,7 @@ class ExperimentLedger:
         """Returns non-terminal records (in-flight proposals, scheduled, or executed)."""
         terminal_stages = ("COMPLETED", "FAILED", "CANCELLED")
         cursor = self._conn.execute(
-            f"SELECT experiment_id FROM experiments WHERE current_stage NOT IN ({','.join(['?']*len(terminal_stages))}) ORDER BY created_at ASC",
+            f"SELECT experiment_id FROM experiments WHERE experiment_id != 'SYSTEM_OPTIMIZER' AND current_stage NOT IN ({','.join(['?']*len(terminal_stages))}) ORDER BY created_at ASC",
             terminal_stages,
         )
         return [self.get_record(row["experiment_id"]) for row in cursor.fetchall()]  # type: ignore
@@ -338,15 +427,30 @@ class ExperimentLedger:
         return self.list_records(stage=ExperimentStage.COMPLETED)
 
     def verify_integrity(self) -> tuple[bool, list[str]]:
-        """Verifies cryptographic SHA-256 hash chaining across all events from genesis and checks projection consistency."""
+        """Verifies cryptographic SHA-256 hash chaining, head metadata consistency, and projection consistency."""
         cursor = self._conn.execute(
             "SELECT event_id, experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash FROM experiment_events ORDER BY event_id ASC"
         )
         rows = cursor.fetchall()
         errors: list[str] = []
 
+        # Read stored head metadata
+        meta_cursor = self._conn.execute("SELECT key, value FROM ledger_metadata")
+        meta_dict = {row["key"]: row["value"] for row in meta_cursor.fetchall()}
+        meta_head = meta_dict.get("head_hash")
+        meta_count_str = meta_dict.get("event_count")
+
+        if meta_count_str is not None:
+            meta_count = int(meta_count_str)
+            if len(rows) != meta_count:
+                errors.append(
+                    f"Ledger metadata mismatch: event_count recorded={meta_count}, actual={len(rows)} (tail event deletion/truncation detected)."
+                )
+
         if not rows:
-            return True, []
+            if meta_count_str is not None and int(meta_count_str) > 0:
+                errors.append("Ledger metadata indicates non-empty event log, but experiment_events table is empty.")
+            return len(errors) == 0, errors
 
         expected_prev_hash = "0" * 64
 
@@ -391,8 +495,15 @@ class ExperimentLedger:
 
             expected_prev_hash = curr_h
 
+        if meta_head is not None:
+            actual_last_hash = rows[-1]["event_hash"]
+            if actual_last_hash != meta_head:
+                errors.append(
+                    f"Ledger metadata mismatch: head_hash recorded={meta_head}, actual={actual_last_hash} (tail truncation detected)."
+                )
+
         # Verify summary projection table consistency
-        exp_cursor = self._conn.execute("SELECT experiment_id, current_stage FROM experiments")
+        exp_cursor = self._conn.execute("SELECT experiment_id, current_stage FROM experiments WHERE experiment_id != 'SYSTEM_OPTIMIZER'")
         for exp_row in exp_cursor.fetchall():
             exp_id = exp_row["experiment_id"]
             proj_stage = exp_row["current_stage"]

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 import hashlib
 import json
+from pathlib import Path
 import platform
 import subprocess
 import sys
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -15,12 +15,8 @@ import pandas as pd
 
 
 def get_git_provenance(repo_root: Path | str | None = None) -> dict[str, Any]:
-    """Extracts git revision, branch, dirty status, and tracked diff hash safely."""
-    if repo_root is None:
-        repo_path = Path(__file__).resolve().parents[2]
-    else:
-        repo_path = Path(repo_root)
-
+    """Extracts git commit, branch, and working-tree dirty status without crashing if git is absent."""
+    repo_path = Path(repo_root) if repo_root else Path(__file__).resolve().parents[2]
     head_commit: str | None = None
     branch: str | None = None
     is_dirty = False
@@ -118,6 +114,7 @@ def compute_dataset_fingerprint(
     """Computes a deterministic SHA-256 fingerprint over the scientific training data content.
 
     Includes schema, column types, row ordering, non-oracle training values, and missingness.
+    Preserves declared column order.
     """
     if df.empty:
         return hashlib.sha256(b"EMPTY_DATASET").hexdigest()[:16]
@@ -125,16 +122,16 @@ def compute_dataset_fingerprint(
     cols_to_use = []
     if id_col and id_col in df.columns:
         cols_to_use.append(id_col)
-    for c in sorted(feature_cols):
+    for c in feature_cols:
         if c in df.columns and c not in cols_to_use:
             cols_to_use.append(c)
-    for c in sorted(target_cols):
+    for c in target_cols:
         if c in df.columns and c not in cols_to_use:
             cols_to_use.append(c)
 
     sub_df = df[cols_to_use].copy()
 
-    # Sort deterministically
+    # Sort rows deterministically by id or existing columns
     if id_col and id_col in sub_df.columns:
         sub_df = sub_df.sort_values(by=id_col).reset_index(drop=True)
     else:
@@ -162,27 +159,62 @@ def compute_dataset_fingerprint(
     return hasher.hexdigest()[:16]
 
 
+def compute_search_space_fingerprint(search_space: Any) -> str:
+    """Computes a deterministic SHA-256 fingerprint for a SearchSpace object."""
+    if search_space is None:
+        return "NONE"
+    items = []
+    variables = getattr(search_space, "variables", [])
+    for v in variables:
+        items.append({
+            "name": getattr(v, "name", ""),
+            "lower": getattr(v, "lower", None),
+            "upper": getattr(v, "upper", None),
+            "categories": getattr(v, "categories", None),
+            "var_type": getattr(v, "var_type", None) or type(v).__name__,
+        })
+    canon = json.dumps(items, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()[:16]
+
+
 def compute_spec_fingerprint(
     spec: Any,
     two_stage_spec: Any | None = None,
+    search_space: Any | None = None,
 ) -> str:
-    """Computes a deterministic SHA-256 fingerprint over the scientific dataset and two-stage specs."""
+    """Computes a deterministic SHA-256 fingerprint over scientific dataset, two-stage specs, and search space.
+
+    CRITICAL RULE: Declared feature ordering is semantic. Ordered lists (e.g. process_features,
+    feature_columns) are NOT sorted to ensure [x1, x2] and [x2, x1] produce distinct fingerprints.
+    """
     spec_dict: dict[str, Any] = {
         "name": getattr(spec, "name", ""),
-        "pre_experiment_features": sorted(getattr(spec, "pre_experiment_features", [])),
-        "candidate_variables": sorted(getattr(spec, "candidate_variables", [])),
-        "post_experiment_characterization": sorted(getattr(spec, "post_experiment_characterization", [])),
-        "targets": sorted(getattr(spec, "targets", [])),
+        "id_column": getattr(spec, "id_column", ""),
+        "candidate_id_column": getattr(spec, "candidate_id_column", ""),
+        "entity_id_column": getattr(spec, "entity_id_column", None),
+        "feature_columns": list(getattr(spec, "feature_columns", [])),
+        "candidate_columns": list(getattr(spec, "candidate_columns", [])),
+        "candidate_variables": list(getattr(spec, "candidate_variables", [])),
+        "pre_experiment_features": list(getattr(spec, "pre_experiment_features", [])),
+        "post_experiment_characterization": list(getattr(spec, "post_experiment_characterization", [])),
+        "targets": list(getattr(spec, "targets", [])),
         "target_column": getattr(spec, "target_column", ""),
         "objective": getattr(spec, "objective", "maximize"),
-        "constraints": sorted(getattr(spec, "constraints", [])),
+        "oracle_columns": list(getattr(spec, "oracle_columns", [])),
+        "constraints": [getattr(c, "to_dict", lambda: str(c))() for c in getattr(spec, "constraints", [])],
+        "feature_horizon": getattr(spec, "feature_horizon", None),
+        "source_dataset": getattr(spec, "source_dataset", None),
+        "source_version": getattr(spec, "source_version", None),
     }
     if two_stage_spec is not None:
         spec_dict["two_stage"] = {
-            "process_features": sorted(getattr(two_stage_spec, "process_features", [])),
-            "characterization_targets": sorted(getattr(two_stage_spec, "characterization_targets", [])),
-            "performance_targets": sorted(getattr(two_stage_spec, "performance_targets", [])),
+            "process_features": list(getattr(two_stage_spec, "process_features", [])),
+            "characterization_targets": list(getattr(two_stage_spec, "characterization_targets", [])),
+            "performance_targets": list(getattr(two_stage_spec, "performance_targets", [])),
         }
+    if search_space is not None:
+        spec_dict["search_space_fingerprint"] = compute_search_space_fingerprint(search_space)
+
     canon = json.dumps(spec_dict, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canon.encode("utf-8")).hexdigest()[:16]
 
@@ -247,6 +279,9 @@ class ScientificModelProvenance:
     code_head_commit: str | None
     git_dirty: bool
     git_diff_sha256: str | None
+    direct_training_experiment_ids: list[str] = field(default_factory=list)
+    stage_a_training_experiment_ids_per_channel: dict[str, list[str]] = field(default_factory=dict)
+    stage_b_training_experiment_ids_per_target: dict[str, list[str]] = field(default_factory=dict)
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     library_versions: dict[str, str] = field(default_factory=get_environment_provenance)
 
@@ -261,18 +296,28 @@ class ScientificModelProvenance:
         target_columns: list[str],
         random_seed: int,
         model_types: dict[str, str],
+        direct_training_experiment_ids: list[str] | None = None,
+        stage_a_training_experiment_ids_per_channel: dict[str, list[str]] | None = None,
+        stage_b_training_experiment_ids_per_target: dict[str, list[str]] | None = None,
         repo_root: Path | str | None = None,
     ) -> ScientificModelProvenance:
         git_info = get_git_provenance(repo_root)
 
-        # Deterministic model_run_id from inputs
+        direct_ids = sorted(direct_training_experiment_ids or training_experiment_ids)
+        stage_a_ids = {k: sorted(v) for k, v in (stage_a_training_experiment_ids_per_channel or {}).items()}
+        stage_b_ids = {k: sorted(v) for k, v in (stage_b_training_experiment_ids_per_target or {}).items()}
+
+        # Deterministic model_run_id from inputs (respecting declared feature order)
         hasher = hashlib.sha256()
         hasher.update(dataset_name.encode("utf-8"))
         hasher.update(dataset_fingerprint.encode("utf-8"))
         hasher.update(spec_fingerprint.encode("utf-8"))
         hasher.update(json.dumps(sorted(training_experiment_ids)).encode("utf-8"))
-        hasher.update(json.dumps(sorted(feature_columns)).encode("utf-8"))
-        hasher.update(json.dumps(sorted(target_columns)).encode("utf-8"))
+        hasher.update(json.dumps(direct_ids).encode("utf-8"))
+        hasher.update(json.dumps(stage_a_ids, sort_keys=True).encode("utf-8"))
+        hasher.update(json.dumps(stage_b_ids, sort_keys=True).encode("utf-8"))
+        hasher.update(json.dumps(list(feature_columns)).encode("utf-8"))  # Ordered
+        hasher.update(json.dumps(list(target_columns)).encode("utf-8"))   # Ordered
         hasher.update(str(random_seed).encode("utf-8"))
         hasher.update(json.dumps(model_types, sort_keys=True).encode("utf-8"))
         if git_info["code_head_commit"]:
@@ -295,6 +340,9 @@ class ScientificModelProvenance:
             code_head_commit=git_info["code_head_commit"],
             git_dirty=git_info["git_dirty"],
             git_diff_sha256=git_info["git_diff_sha256"],
+            direct_training_experiment_ids=direct_ids,
+            stage_a_training_experiment_ids_per_channel=stage_a_ids,
+            stage_b_training_experiment_ids_per_target=stage_b_ids,
         )
 
     def to_dict(self) -> dict[str, Any]:

@@ -4,7 +4,11 @@ import copy
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
+
+
+class DuplicateMeasurementError(ValueError):
+    """Raised when attempting to overwrite an existing physical measurement without explicit revision authorization."""
 
 
 class ExperimentStage(str, Enum):
@@ -20,7 +24,7 @@ class ExperimentStage(str, Enum):
     CANCELLED = "CANCELLED"
 
 
-# Valid stage transition graph
+# Valid stage transition graph (supports incremental additive measurement self-transitions)
 VALID_STAGE_TRANSITIONS: dict[ExperimentStage, set[ExperimentStage]] = {
     ExperimentStage.PROPOSED: {
         ExperimentStage.SCHEDULED,
@@ -34,6 +38,7 @@ VALID_STAGE_TRANSITIONS: dict[ExperimentStage, set[ExperimentStage]] = {
         ExperimentStage.CANCELLED,
     },
     ExperimentStage.EXECUTED: {
+        ExperimentStage.EXECUTED,
         ExperimentStage.CHARACTERIZED,
         ExperimentStage.PERFORMANCE_MEASURED,
         ExperimentStage.COMPLETED,
@@ -41,12 +46,14 @@ VALID_STAGE_TRANSITIONS: dict[ExperimentStage, set[ExperimentStage]] = {
         ExperimentStage.CANCELLED,
     },
     ExperimentStage.CHARACTERIZED: {
+        ExperimentStage.CHARACTERIZED,
         ExperimentStage.PERFORMANCE_MEASURED,
         ExperimentStage.COMPLETED,
         ExperimentStage.FAILED,
         ExperimentStage.CANCELLED,
     },
     ExperimentStage.PERFORMANCE_MEASURED: {
+        ExperimentStage.PERFORMANCE_MEASURED,
         ExperimentStage.CHARACTERIZED,
         ExperimentStage.COMPLETED,
         ExperimentStage.FAILED,
@@ -92,8 +99,8 @@ class ScientificExperimentRecord:
     def __post_init__(self) -> None:
         if isinstance(self.stage, str):
             self.stage = ExperimentStage(self.stage)
-        if not self.candidate_variables and self.pre_experiment_features:
-            self.candidate_variables = dict(self.pre_experiment_features)
+        # Note: candidate_variables is NOT automatically inferred from pre_experiment_features
+        # to respect the fundamental subset relationship: candidate_variables ⊆ pre_experiment_features
 
     def transition_to(
         self,
@@ -103,6 +110,7 @@ class ScientificExperimentRecord:
         measurement_uncertainty: Mapping[str, float] | None = None,
         quality_flags: list[str] | None = None,
         failure_reason: str | None = None,
+        allow_measurement_revision: bool = False,
     ) -> ScientificExperimentRecord:
         """Transitions record to a new lifecycle stage with validation."""
         target_stage = ExperimentStage(new_stage) if isinstance(new_stage, str) else new_stage
@@ -112,6 +120,24 @@ class ScientificExperimentRecord:
                 f"Invalid stage transition from {self.stage.value} to {target_stage.value}. "
                 f"Valid targets are: {[s.value for s in valid_targets]}"
             )
+
+        # Check duplicate measurement conflicts
+        if characterization:
+            for k, v in characterization.items():
+                if k in self.characterization and not allow_measurement_revision:
+                    if self.characterization[k] != v:
+                        raise DuplicateMeasurementError(
+                            f"Duplicate characterization measurement for channel {k!r}: existing={self.characterization[k]}, new={v}. "
+                            f"Pass allow_measurement_revision=True to record an explicit audit revision."
+                        )
+        if performance:
+            for k, v in performance.items():
+                if k in self.performance and not allow_measurement_revision:
+                    if self.performance[k] != v:
+                        raise DuplicateMeasurementError(
+                            f"Duplicate performance measurement for target {k!r}: existing={self.performance[k]}, new={v}. "
+                            f"Pass allow_measurement_revision=True to record an explicit audit revision."
+                        )
 
         self.stage = target_stage
         self.updated_at = datetime.now(timezone.utc).isoformat()
@@ -155,11 +181,33 @@ class ScientificExperimentRecord:
     def is_terminal(self) -> bool:
         return self.stage in {ExperimentStage.COMPLETED, ExperimentStage.FAILED, ExperimentStage.CANCELLED}
 
-    def has_characterization(self) -> bool:
+    def has_any_characterization(self) -> bool:
         return bool(self.characterization)
 
-    def has_performance(self) -> bool:
+    def has_characterization(self) -> bool:
+        """Backward compatible alias for has_any_characterization."""
+        return self.has_any_characterization()
+
+    def has_required_characterization(self, required_channels: Sequence[str]) -> bool:
+        """Returns True if all required characterization channels are present."""
+        if not required_channels:
+            return True
+        return set(required_channels).issubset(self.characterization.keys())
+
+    def has_any_performance(self) -> bool:
         return bool(self.performance)
+
+    def has_performance(self) -> bool:
+        """Backward compatible alias for has_any_performance."""
+        return self.has_any_performance()
+
+    def has_primary_target(self, primary_target: str) -> bool:
+        return primary_target in self.performance
+
+    def has_required_performance(self, required_targets: Sequence[str]) -> bool:
+        if not required_targets:
+            return True
+        return set(required_targets).issubset(self.performance.keys())
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)

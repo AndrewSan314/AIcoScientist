@@ -37,6 +37,10 @@ The architecture models the core scientific inquiry loop across materials, chemi
 +-------------------------------------------------------------------------------+
 ```
 
+### Search Space & Variable Semantics
+- **Supported Variables**: Continuous numeric (`ContinuousVariable`) and discrete numeric (`DiscreteVariable`).
+- **Categorical Variables**: Categorical variables are supported once explicitly mapped to deterministic integer or ordinal encodings. Arbitrary raw string categorical GP kernels are not currently implemented.
+
 ---
 
 ## 2. Mathematical Foundation: Uncertainty Propagation
@@ -58,64 +62,66 @@ At candidate proposal time, physical characterization has not occurred. To evalu
 
 ---
 
-## 3. Tamper-Evident Experiment Ledger
+## 3. Transactional Proposal Semantics & Pending Resume
 
-All experimental events and transitions are persisted to an append-only SQLite ledger (`ExperimentLedger`) secured by **tamper-evident SHA-256 event hash chaining that detects modification or deletion of hashed historical events while the expected chain head/event count remains available**:
+To guarantee safe and deterministic physical execution:
 
-- **Genesis Hash**: $H_0 = \text{"0"} \times 64$
-- **Canonical Event Envelope**: Full structured dictionary including `experiment_id`, `event_type`, `created_at`, `payload`.
-- **Event Hash**: $H_i = \text{SHA256}(H_{i-1} \,\|\, \text{canonical\_json}(\text{envelope}_i))$
-- **Integrity Verification**: `verify_integrity()` recomputes the entire chain from genesis and cross-checks the projection tables (`experiments.current_stage`) against replayed event history.
-- **Deterministic Snapshots**: The ledger stores exact `OPTIMIZER_STATE_SNAPSHOT` records including `OptimizerState` step counter, current best, and `TuRBOTrustRegion` state (`TrustRegionState`) for exact, bitwise-consistent resume.
+1. **Transactional Proposal Generation**:
+   - The coordinator creates a deep clone of active `OptimizerState`.
+   - The optimizer evaluates the next candidate using this prospective clone (`step += 1`, prospective trust region state).
+   - Candidate parameters, static pre-experiment context, direct model predictions, two-stage predictions, and `ScientificRationale` are evaluated and validated against `DatasetSpec` boundaries.
+   - If any validation check fails (e.g. context conflict, missing process variable, non-finite value), the active optimizer state remains **100% unchanged** (no step mutation or leaked trust region adjustments).
+   - Upon successful validation, the proposal is committed to the ledger, the optimizer snapshot is hash-anchored, and active state is promoted.
 
----
-
-## 4. Scientific Lifecycle & Stage Transitions
-
-```
-                               ┌──────────────┐
-                               │   PROPOSED   │
-                               └──────┬───────┘
-                                      │ (Dispatched / Executed)
-                               ┌──────▼───────┐
-                               │   EXECUTED   │
-                               └───┬──────┬───┘
-               (Char arrives first)│      │ (Perf arrives first)
-                   ┌───────────────┘      └───────────────┐
-                   ▼                                      ▼
-           ┌──────────────┐                       ┌──────────────────────┐
-           │ CHARACTERIZED│                       │ PERFORMANCE_MEASURED │
-           └──────┬───────┘                       └──────────┬───────────┘
-                  │ (Perf arrives)                           │ (Char arrives)
-                  └───────────────┐      ┌───────────────────┘
-                                  ▼      ▼
-                               ┌──────────────┐
-                               │  COMPLETED   │
-                               └──────────────┘
-```
-
-- **Symmetric Asynchronous Lifecycle**: Supports either characterization arriving first (`CHARACTERIZED`) or performance arriving first (`PERFORMANCE_MEASURED`).
-- **Direct Datasets**: Datasets without characterization targets transition directly from `EXECUTED` to `COMPLETED` when performance is recorded.
-- **Prospective Pre-Commit Validation**: Transitions are validated on an in-memory clone against `DatasetSpec` before executing any SQL commit.
-- **Experimental Failures**: A failed synthesis is recorded with `stage=FAILED` and a descriptive `failure_reason`. It is never converted into fabricated zero or worst-case target values.
-- **Monotonic ID Sequencing**: Sequence counters increment monotonically even across `FAILED` or `CANCELLED` experiments to prevent experiment ID collisions.
+2. **Crash & Resume with a Pending Proposal**:
+   - If the process terminates after a proposal is committed but before experimental observations are recorded, `resume_from_ledger()` restores the pending experiment and its exact `ExperimentProposal` metadata (`candidate_id`, `design_variables`, `acquisition_score`, `reason_code`, `step`).
+   - When the pending experiment's measurements eventually arrive, `observe()` receives the exact original proposal semantics, ensuring uninterrupted mathematical convergence.
 
 ---
 
-## 5. Structured Deterministic Scientific Rationale
+## 4. Asynchronous Measurements & Component Training Horizons
 
-Every proposed experiment generates a structured `ScientificRationale` answering 6 core scientific questions:
+Physical experimentation frequently yields partial and asynchronous data:
+
+1. **Partial Measurements**:
+   - **Characterization**: Channels can arrive incrementally (e.g. $z_1$ first, $z_2$ later). The experiment is not marked complete until all required channels (`spec.post_experiment_characterization`) are available.
+   - **Performance**: Primary target (`spec.target_column`) is required for completion. Optional secondary performance targets can arrive incrementally without prematurely completing the record.
+   - **Duplicate Detection**: Submitting different values for an existing channel raises `DuplicateMeasurementError` unless `allow_measurement_revision=True` is explicitly passed for audited revisions.
+
+2. **Component-Specific Training Horizons**:
+   - **Stage A ($X \to C$)**: Trains on all records with valid process features and characterization, including `CHARACTERIZED` records whose performance is still pending.
+   - **Direct Baseline ($X \to Y$)**: Trains on all records with valid process features and primary target, including `PERFORMANCE_MEASURED` records whose characterization is pending.
+   - **Stage B ($X, C \to Y$)**: Trains independently per target $y_j$ on records having valid process features, all required characterization inputs, and $y_j$.
+   - **Optimizer**: Evaluates completed experiments meeting all completion criteria.
+
+---
+
+## 5. Tamper-Evident Ledger & Provenance
+
+All experimental events and transitions are persisted to an append-only SQLite ledger (`ExperimentLedger`):
+
+- **Tamper-Evident SHA-256 Hash Chaining**:
+  $$H_i = \text{SHA256}\left(H_{i-1} \,\|\, \text{canonical\_json}\left(\{\text{experiment\_id}, \text{event\_type}, \text{created\_at}, \text{payload}\}\right)\right)$$
+- **Snapshot Hash Anchoring**: Optimizer snapshots are committed directly into the hash chain as `OPTIMIZER_STATE_SNAPSHOT` events.
+- **Head & Event-Count Verification**: `verify_integrity()` checks SHA-256 chain continuity from genesis $H_0$, confirms `event_count` and `head_hash` against stored metadata, and cross-checks projection summary tables against event replay.
+- **Scientific Model Provenance**: `ScientificModelProvenance` tracks deterministic SHA-256 fingerprints across datasets (preserving declared feature ordering), specs, and component-specific training experiment IDs, dynamically refreshing `model_run_id` upon every asynchronous model refit.
+
+---
+
+## 6. Scientific Rationale & Learning Value
+
+Every proposal generates a structured `ScientificRationale` answering 6 core scientific questions:
 
 1. **WHAT SHOULD WE TEST?**: Candidate parameters and coordinates relative to nearest observed experiment.
 2. **PREDICTED PERFORMANCE**: Expected target mean and latent uncertainty $\pm \sigma$, plus model disagreement $|\mu_{\text{direct}} - \mu_{\text{two\_stage}}|$.
 3. **EXPECTED STRUCTURE / CHARACTERIZATION**: Stage A predictions per characterization channel with latent error bars.
-4. **WHY THIS EXPERIMENT?**: Optimizer strategy (e.g. Expected Improvement, TuRBO-NEI, GP-UCB) and acquisition score.
-5. **WHAT WILL WE LEARN?**: Quantified `expected_learning_value` score bounded strictly in $[0, 1]$ combining normalized uncertainty, spatial novelty, and model disagreement ratio $r / (1+r)$.
+4. **WHY THIS EXPERIMENT?**: Optimizer strategy and acquisition score.
+5. **WHAT WILL WE LEARN?**: Quantified `expected_learning_value` score bounded in $[0, 1]$ combining normalized uncertainty, spatial novelty, and model disagreement ratio $r / (1+r)$.
 6. **SCIENTIFIC CAVEATS**: Explicit warnings that characterization values are surrogate estimates rather than physically verified values.
 
 ---
 
-## 6. Running the Synthetic Demo
+## 7. Running the Synthetic Demo
 
 ```bash
 # Run a 5-step autonomous closed-loop experimentation cycle on synthetic data

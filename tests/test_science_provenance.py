@@ -125,3 +125,82 @@ def test_scientific_model_provenance_determinism() -> None:
         model_types={"stage_a": "GaussianProcessRegressor", "stage_b": "GaussianProcessRegressor"},
     )
     assert prov1.model_run_id != prov3.model_run_id
+
+
+def test_feature_order_changes_spec_and_model_fingerprint() -> None:
+    spec_a = DatasetSpec(
+        name="test_order",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1", "x2"],
+        target_column="y",
+        pre_experiment_features=["x1", "x2"],
+        candidate_variables=["x1", "x2"],
+        targets=["y"],
+    )
+    spec_b = DatasetSpec(
+        name="test_order",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x2", "x1"],  # Swapped feature ordering
+        target_column="y",
+        pre_experiment_features=["x2", "x1"],
+        candidate_variables=["x2", "x1"],
+        targets=["y"],
+    )
+    fp_a = compute_spec_fingerprint(spec_a)
+    fp_b = compute_spec_fingerprint(spec_b)
+    assert fp_a != fp_b
+
+    # Model provenance with different feature ordering
+    prov_a = ScientificModelProvenance.create(
+        dataset_name="test_order",
+        dataset_fingerprint="fp123",
+        spec_fingerprint=fp_a,
+        training_experiment_ids=["EXP_001"],
+        feature_columns=["x1", "x2"],
+        target_columns=["y"],
+        random_seed=42,
+        model_types={"direct": "GPR"},
+    )
+    prov_b = ScientificModelProvenance.create(
+        dataset_name="test_order",
+        dataset_fingerprint="fp123",
+        spec_fingerprint=fp_b,
+        training_experiment_ids=["EXP_001"],
+        feature_columns=["x2", "x1"],
+        target_columns=["y"],
+        random_seed=42,
+        model_types={"direct": "GPR"},
+    )
+    assert prov_a.model_run_id != prov_b.model_run_id
+
+
+def test_component_training_set_provenance_sensitivity() -> None:
+    prov1 = ScientificModelProvenance.create(
+        dataset_name="comp_test",
+        dataset_fingerprint="fp123",
+        spec_fingerprint="spec123",
+        training_experiment_ids=["EXP_001"],
+        feature_columns=["x1"],
+        target_columns=["y"],
+        random_seed=42,
+        model_types={"stage_a": "GPR"},
+        stage_a_training_experiment_ids_per_channel={"z1": ["EXP_001"]},
+    )
+    # Stage A receives a new experiment EXP_002 while direct model remains on EXP_001
+    prov2 = ScientificModelProvenance.create(
+        dataset_name="comp_test",
+        dataset_fingerprint="fp123",
+        spec_fingerprint="spec123",
+        training_experiment_ids=["EXP_001", "EXP_002"],
+        feature_columns=["x1"],
+        target_columns=["y"],
+        random_seed=42,
+        model_types={"stage_a": "GPR"},
+        stage_a_training_experiment_ids_per_channel={"z1": ["EXP_001", "EXP_002"]},
+    )
+    assert prov1.model_run_id != prov2.model_run_id
+    assert prov1.stage_a_training_experiment_ids_per_channel["z1"] == ["EXP_001"]
+    assert prov2.stage_a_training_experiment_ids_per_channel["z1"] == ["EXP_001", "EXP_002"]
+

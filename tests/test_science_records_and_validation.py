@@ -190,3 +190,53 @@ def test_validation_valid_lifecycle_passes(sample_spec: DatasetSpec) -> None:
         performance={"cycle_life": 980.0},
     )
     validate_record_against_spec(rec, sample_spec)
+
+
+def test_record_does_not_infer_all_pre_features_as_controllable() -> None:
+    rec = ScientificExperimentRecord(
+        experiment_id="EXP_SUBSET_01",
+        candidate_id="CAND_S1",
+        dataset_name="battery_lab_v1",
+        pre_experiment_features={"material_code": 101, "temp": 300.0},
+        candidate_variables={"temp": 300.0},
+    )
+    assert "material_code" not in rec.candidate_variables
+    assert "temp" in rec.candidate_variables
+    assert rec.candidate_variables == {"temp": 300.0}
+
+
+def test_partial_characterization_and_duplicate_measurement_detection() -> None:
+    from src.science.records import DuplicateMeasurementError
+
+    rec = ScientificExperimentRecord(
+        experiment_id="EXP_PART_01",
+        candidate_id="CAND_P1",
+        dataset_name="battery_lab_v1",
+        stage=ExperimentStage.EXECUTED,
+        pre_experiment_features={"temp": 300.0},
+    )
+
+    assert not rec.has_any_characterization()
+    assert not rec.has_required_characterization(["sem_porosity", "xrd_peak"])
+
+    # 1. z1 arrives
+    rec.transition_to(ExperimentStage.CHARACTERIZED, characterization={"sem_porosity": 0.18})
+    assert rec.has_any_characterization()
+    assert not rec.has_required_characterization(["sem_porosity", "xrd_peak"])
+
+    # 2. Conflicting duplicate measurement without revision flag
+    with pytest.raises(DuplicateMeasurementError, match="Duplicate characterization measurement"):
+        rec.transition_to(ExperimentStage.CHARACTERIZED, characterization={"sem_porosity": 0.25})
+
+    # 3. Valid additive measurement: z2 arrives
+    rec.transition_to(ExperimentStage.CHARACTERIZED, characterization={"xrd_peak": 42.0})
+    assert rec.has_required_characterization(["sem_porosity", "xrd_peak"])
+    assert rec.characterization == {"sem_porosity": 0.18, "xrd_peak": 42.0}
+
+    # 4. Explicit revision allowed
+    rec.transition_to(
+        ExperimentStage.CHARACTERIZED,
+        characterization={"sem_porosity": 0.20},
+        allow_measurement_revision=True,
+    )
+    assert rec.characterization["sem_porosity"] == 0.20

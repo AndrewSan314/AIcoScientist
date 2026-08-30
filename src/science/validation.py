@@ -121,12 +121,18 @@ def validate_record_against_spec(
             )
         _check_finite_numerical_values(record.performance, "performance")
 
-    # 7. Completed Stage Check: Primary target must be present
+    # 7. Completed Stage Check: Primary target and all required characterization channels must be present
     if record.stage == ExperimentStage.COMPLETED:
         primary_target = spec.target_column
         if primary_target not in record.performance:
             raise InformationHorizonError(
                 f"Cannot mark experiment COMPLETED: primary target {primary_target!r} is missing from performance measurements."
+            )
+        required_chars = set(spec.post_experiment_characterization)
+        if required_chars and not required_chars.issubset(set(record.characterization.keys())):
+            missing_chars = required_chars - set(record.characterization.keys())
+            raise InformationHorizonError(
+                f"Cannot mark experiment COMPLETED: required characterization channels are missing: {sorted(missing_chars)}"
             )
 
 
@@ -146,6 +152,7 @@ def validate_transition_before_append(
         measurement_uncertainty=delta_payload.get("measurement_uncertainty"),
         quality_flags=delta_payload.get("quality_flags"),
         failure_reason=delta_payload.get("failure_reason"),
+        allow_measurement_revision=bool(delta_payload.get("allow_measurement_revision", False)),
     )
 
     if spec is not None:

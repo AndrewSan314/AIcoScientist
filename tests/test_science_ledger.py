@@ -214,3 +214,95 @@ def test_ledger_projection_verification(tmp_path: Path) -> None:
     assert not valid
     assert any("Projection mismatch" in err for err in errors)
     tampered_ledger.close()
+
+
+def test_ledger_head_and_event_count_tail_truncation_detection(tmp_path: Path) -> None:
+    db_file = tmp_path / "tail_trunc_ledger.db"
+    ledger = ExperimentLedger(db_file)
+
+    rec1 = ScientificExperimentRecord(
+        experiment_id="EXP_001",
+        candidate_id="CAND_001",
+        dataset_name="test_ds",
+        pre_experiment_features={"x": 1.0},
+    )
+    rec2 = ScientificExperimentRecord(
+        experiment_id="EXP_002",
+        candidate_id="CAND_002",
+        dataset_name="test_ds",
+        pre_experiment_features={"x": 2.0},
+    )
+    ledger.record_proposal(rec1)
+    ledger.record_proposal(rec2)
+    ledger.append_transition("EXP_001", ExperimentStage.EXECUTED, "EXEC", {})
+
+    valid, errors = ledger.verify_integrity()
+    assert valid
+    ledger.close()
+
+    # Tamper: delete the last event (event_id 3) via direct SQLite without updating ledger_metadata
+    conn = sqlite3.connect(db_file)
+    with conn:
+        conn.execute("DELETE FROM experiment_events WHERE event_id = 3")
+    conn.close()
+
+    tampered_ledger = ExperimentLedger(db_file)
+    valid, errors = tampered_ledger.verify_integrity()
+    assert not valid
+    assert any("tail" in err.lower() or "mismatch" in err.lower() for err in errors)
+    tampered_ledger.close()
+
+
+def test_ledger_optimizer_snapshot_hash_chaining_and_tamper_detection(tmp_path: Path) -> None:
+    db_file = tmp_path / "snapshot_ledger.db"
+    ledger = ExperimentLedger(db_file)
+
+    rec = ScientificExperimentRecord(
+        experiment_id="EXP_001",
+        candidate_id="CAND_001",
+        dataset_name="test_ds",
+        pre_experiment_features={"x": 1.0},
+    )
+    ledger.record_proposal(rec)
+    ledger.save_optimizer_snapshot({"step": 1, "current_best": 150.0}, experiment_id="EXP_001")
+
+    valid, errors = ledger.verify_integrity()
+    assert valid
+    assert ledger.get_latest_optimizer_snapshot()["current_best"] == 150.0
+    ledger.close()
+
+    # Tamper with the snapshot event payload directly
+    conn = sqlite3.connect(db_file)
+    with conn:
+        conn.execute(
+            "UPDATE experiment_events SET payload_json = '{\"event_type\": \"OPTIMIZER_STATE_SNAPSHOT\", \"step\": 1, \"snapshot\": {\"current_best\": 9999.0}}' WHERE event_type = 'OPTIMIZER_STATE_SNAPSHOT'"
+        )
+    conn.close()
+
+    tampered_ledger = ExperimentLedger(db_file)
+    valid, errors = tampered_ledger.verify_integrity()
+    assert not valid
+    assert any("tamper detected" in err.lower() or "event_hash mismatch" in err.lower() for err in errors)
+    tampered_ledger.close()
+
+
+def test_atomic_proposal_sequence_survives_reopen(tmp_path: Path) -> None:
+    db_file = tmp_path / "atomic_seq_ledger.db"
+    ledger = ExperimentLedger(db_file)
+
+    seq1 = ledger.allocate_proposal_sequence("battery_ds")
+    assert seq1 == 1
+
+    seq2 = ledger.allocate_proposal_sequence("battery_ds")
+    assert seq2 == 2
+
+    ledger.close()
+
+    # Reopen ledger
+    reopened = ExperimentLedger(db_file)
+    assert reopened.next_proposal_sequence("battery_ds") == 3
+
+    seq3 = reopened.allocate_proposal_sequence("battery_ds")
+    assert seq3 == 3
+    assert reopened.next_proposal_sequence("battery_ds") == 4
+    reopened.close()

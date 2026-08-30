@@ -41,6 +41,7 @@ class ExperimentProposal:
     def to_dict(self) -> dict[str, Any]:
         return {
             "candidate_id": self.candidate_id,
+            "design_variables": dict(self.design_variables),
             **self.design_variables,
             "predicted_performance": float(self.predicted_performance),
             "prediction_uncertainty": float(self.prediction_uncertainty),
@@ -53,6 +54,34 @@ class ExperimentProposal:
             "distance_to_nearest_observed": float(self.distance_to_nearest_observed),
             "step": int(self.step),
         }
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> ExperimentProposal:
+        d = dict(data)
+        cand_id = str(d["candidate_id"])
+        design_vars = dict(d.get("design_variables", {}))
+        if not design_vars:
+            std_keys = {
+                "candidate_id", "design_variables", "predicted_performance", "prediction_uncertainty",
+                "acquisition_score", "acquisition_method", "trust_region_center", "trust_region_radius",
+                "recommendation_reason", "reason_code", "distance_to_nearest_observed", "step",
+            }
+            design_vars = {k: v for k, v in d.items() if k not in std_keys}
+
+        return cls(
+            candidate_id=cand_id,
+            design_variables=design_vars,
+            predicted_performance=float(d.get("predicted_performance", 0.0)),
+            prediction_uncertainty=float(d.get("prediction_uncertainty", 0.0)),
+            acquisition_score=float(d.get("acquisition_score", 0.0)),
+            acquisition_method=str(d.get("acquisition_method", "expected_improvement")),
+            trust_region_center=d.get("trust_region_center"),
+            trust_region_radius=float(d["trust_region_radius"]) if d.get("trust_region_radius") is not None else None,
+            recommendation_reason=str(d.get("recommendation_reason", "")),
+            reason_code=str(d.get("reason_code", "BALANCED_EXPLORATION_EXPLOITATION")),
+            distance_to_nearest_observed=float(d.get("distance_to_nearest_observed", 0.0)),
+            step=int(d.get("step", 0)),
+        )
 
 
 @dataclass(frozen=True)
@@ -91,15 +120,46 @@ class OptimizerState:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "observed_records": self.observed_records,
-            "feature_cols": self.feature_cols,
+            "observed_records": [dict(r) for r in self.observed_records],
+            "feature_cols": list(self.feature_cols),
             "target_col": self.target_col,
             "objective": self.objective,
             "step": int(self.step),
             "current_best": float(self.current_best),
             "trust_region_state": self.trust_region.state.to_dict() if self.trust_region and self.trust_region.state else None,
-            "history": self.history,
+            "history": [dict(h) for h in self.history],
         }
+
+    def clone(self) -> OptimizerState:
+        """Deeply clones optimizer state so prospective proposal mutations do not affect active state."""
+        cloned_tr = None
+        if self.trust_region is not None:
+            cloned_tr = TuRBOTrustRegion(
+                search_space=self.trust_region.search_space,
+                init_length=self.trust_region.init_length,
+                min_length=self.trust_region.min_length,
+                max_length=self.trust_region.max_length,
+                success_tolerance=self.trust_region.success_tolerance,
+                failure_tolerance=self.trust_region.failure_tolerance,
+                success_delta=self.trust_region.success_delta,
+                success_probability_threshold=self.trust_region.success_probability_threshold,
+                global_escape_frequency=self.trust_region.global_escape_frequency,
+            )
+            if self.trust_region.state is not None:
+                cloned_tr.state = TrustRegionState.from_dict(self.trust_region.state.to_dict())
+
+        return OptimizerState(
+            observed_records=[dict(r) for r in self.observed_records],
+            feature_cols=list(self.feature_cols),
+            target_col=self.target_col,
+            objective=self.objective,
+            step=int(self.step),
+            current_best=float(self.current_best),
+            trust_region=cloned_tr,
+            gp_model=self.gp_model,
+            scaler=self.scaler,
+            history=[dict(h) for h in self.history],
+        )
 
 
 class ClosedLoopOptimizer:
