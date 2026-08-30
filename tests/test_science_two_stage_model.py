@@ -11,7 +11,7 @@ from src.science.direct_baseline import DirectPerformanceModel
 from src.science.evaluation import evaluate_two_stage_model
 from src.science.model_bundle import ScientificModelBundle
 from src.science.provenance import ScientificModelProvenance
-from src.science.two_stage import TwoStageScientificModel
+from src.science.two_stage import MissingCharacterizationModelError, TwoStageScientificModel
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def synthetic_data() -> tuple[pd.DataFrame, pd.DataFrame, TwoStageModelSpec, Dat
         "y": y_tr,
     })
 
-    # Test set
+    # Test set with non-default integer index
     x1_te = rng.uniform(1.0, 5.0, size=n_test)
     x2_te = rng.uniform(10.0, 50.0, size=n_test)
     z1_te = np.sin(x1_te) + 0.05 * x2_te + rng.normal(0.0, 0.05, size=n_test)
@@ -54,7 +54,7 @@ def synthetic_data() -> tuple[pd.DataFrame, pd.DataFrame, TwoStageModelSpec, Dat
         "z1": z1_te,
         "z2": z2_te,
         "y": y_te,
-    })
+    }, index=[100 + i * 5 for i in range(n_test)])
 
     two_stage_spec = TwoStageModelSpec(
         dataset_name="synthetic_science_test",
@@ -93,7 +93,7 @@ def test_two_stage_scientific_model_predictions_and_variance_decomposition(synth
     assert np.all(char_preds["z1"]["observation_std"] >= char_preds["z1"]["latent_std"])
 
     # 2. Stage B Diagnostic with Observed Characterization
-    b_mean, b_std = model.predict_performance_with_observed_characterization(
+    b_mean, b_std, b_noise = model.predict_performance_with_observed_characterization(
         test_df[["x1", "x2"]],
         test_df[["z1", "z2"]],
     )
@@ -123,6 +123,30 @@ def test_two_stage_scientific_model_predictions_and_variance_decomposition(synth
     e2e_pred_same = model.predict_end_to_end(test_df[["x1", "x2"]], n_mc_samples=64, seed=101)
     assert np.allclose(e2e_pred.performance_mean, e2e_pred_same.performance_mean, atol=1e-9)
     assert np.allclose(e2e_pred.performance_latent_std, e2e_pred_same.performance_latent_std, atol=1e-9)
+
+
+def test_missing_characterization_model_error(synthetic_data) -> None:
+    train_df, test_df, two_stage_spec, _ = synthetic_data
+
+    # Data missing z2 column
+    df_missing_z2 = train_df.drop(columns=["z2"])
+    model = TwoStageScientificModel(two_stage_spec, random_state=42)
+    model.fit(df_missing_z2)
+
+    # Stage A has z1 fitted, but z2 is marked unavailable
+    assert model.stage_a.characterization_model_status["z1"]["available"] is True
+    assert model.stage_a.characterization_model_status["z2"]["available"] is False
+
+    # Calling predict_end_to_end must raise MissingCharacterizationModelError
+    with pytest.raises(MissingCharacterizationModelError, match="Stage A models are unavailable"):
+        model.predict_end_to_end(test_df[["x1", "x2"]])
+
+    # Meanwhile direct model fits and predicts without problem
+    direct_model = DirectPerformanceModel(two_stage_spec.process_features, "y", random_state=42)
+    direct_model.fit(df_missing_z2)
+    assert direct_model.is_fitted
+    m, s = direct_model.predict(test_df[["x1", "x2"]])
+    assert len(m) == len(test_df)
 
 
 def test_direct_baseline_and_honest_evaluation(synthetic_data) -> None:
@@ -158,7 +182,8 @@ def test_direct_baseline_and_honest_evaluation(synthetic_data) -> None:
     assert "stage_b_diagnostic_upper_bound" in report
     assert "two_stage_end_to_end" in report
     assert "model_disagreement_summary" in report
-    assert "coverage_95_pct" in report["two_stage_end_to_end"]["calibration"]
+    assert "coverage_95_pct" in report["two_stage_end_to_end"]["observation_predictive_calibration"]
+    assert "latent_uncertainty_calibration_diagnostic" in report["two_stage_end_to_end"]
 
 
 def test_scientific_model_bundle_serialization(synthetic_data, tmp_path: Path) -> None:

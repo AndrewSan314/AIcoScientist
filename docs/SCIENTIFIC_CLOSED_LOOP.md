@@ -6,7 +6,7 @@ This document describes the domain-generic closed-loop experimentation and reaso
 
 ## 1. Scientific Overview & Information Horizons
 
-The architecture models the core scientific inquiry loop across materials and chemical systems:
+The architecture models the core scientific inquiry loop across materials, chemistry, and battery engineering systems:
 
 ```
 +-------------------------------------------------------------------------------+
@@ -49,47 +49,56 @@ At candidate proposal time, physical characterization has not occurred. To evalu
 2. **Evaluate Stage B Surrogate**:
    $$\left(\mu_Y^{(k)}, \sigma_Y^{(k)}\right) = \text{StageB}\left(x, C^{(k)}\right)$$
 
-3. **Decompose Total Variance**:
+3. **Decompose Total Epistemic & Predictive Variance**:
    $$\mathbb{E}[Y \mid x] = \frac{1}{K}\sum_{k=1}^K \mu_Y^{(k)}$$
 
-   $$\text{Var}[Y \mid x] = \underbrace{\frac{1}{K}\sum_{k=1}^K \left(\sigma_Y^{(k)}\right)^2}_{\text{performance model variance}} + \underbrace{\frac{1}{K-1}\sum_{k=1}^K \left(\mu_Y^{(k)} - \mathbb{E}[Y \mid x]\right)^2}_{\text{characterization propagation variance}}$$
+   $$\text{Var}_{\text{latent}}[Y \mid x] = \underbrace{\frac{1}{K}\sum_{k=1}^K \left(\sigma_Y^{(k)}\right)^2}_{\text{performance model variance}} + \underbrace{\frac{1}{K-1}\sum_{k=1}^K \left(\mu_Y^{(k)} - \mathbb{E}[Y \mid x]\right)^2}_{\text{characterization propagation variance}}$$
+
+   $$\text{Var}_{\text{predictive}}[Y \mid x] = \text{Var}_{\text{latent}}[Y \mid x] + \sigma^2_{\text{obs\_noise}}$$
 
 ---
 
-## 3. Cryptographic Experiment Ledger
+## 3. Tamper-Evident Experiment Ledger
 
-All experimental events and transitions are persisted to an append-only SQLite ledger (`ExperimentLedger`) secured by **SHA-256 event hash chaining**:
+All experimental events and transitions are persisted to an append-only SQLite ledger (`ExperimentLedger`) secured by **tamper-evident SHA-256 event hash chaining that detects modification or deletion of hashed historical events while the expected chain head/event count remains available**:
 
 - **Genesis Hash**: $H_0 = \text{"0"} \times 64$
-- **Canonical Event Payload**: Sorted, deterministic JSON formatting
-- **Event Hash**: $H_i = \text{SHA256}(H_{i-1} \,\|\, \text{canonical\_json}(\text{event}_i))$
-- **Audit Verification**: `verify_integrity()` recomputes the entire chain from genesis to mathematically prove that no historical observation, proposal, or measurement has been retroactively modified or tampered with.
+- **Canonical Event Envelope**: Full structured dictionary including `experiment_id`, `event_type`, `created_at`, `payload`.
+- **Event Hash**: $H_i = \text{SHA256}(H_{i-1} \,\|\, \text{canonical\_json}(\text{envelope}_i))$
+- **Integrity Verification**: `verify_integrity()` recomputes the entire chain from genesis and cross-checks the projection tables (`experiments.current_stage`) against replayed event history.
+- **Deterministic Snapshots**: The ledger stores exact `OPTIMIZER_STATE_SNAPSHOT` records including `OptimizerState` step counter, current best, and `TuRBOTrustRegion` state (`TrustRegionState`) for exact, bitwise-consistent resume.
 
 ---
 
 ## 4. Scientific Lifecycle & Stage Transitions
 
 ```
-                    ┌──────────────┐
-                    │   PROPOSED   │
-                    └──────┬───────┘
-                           │ (Scheduled / Dispatched)
-                    ┌──────▼───────┐
-                    │   EXECUTED   │
-                    └──────┬───────┘
-                           │ (Physical characterization measured)
-                    ┌──────▼───────┐
-                    │ CHARACTERIZED│
-                    └──────┬───────┘
-                           │ (Performance measured)
-                    ┌──────▼───────┐
-                    │  COMPLETED   │
-                    └──────────────┘
+                               ┌──────────────┐
+                               │   PROPOSED   │
+                               └──────┬───────┘
+                                      │ (Dispatched / Executed)
+                               ┌──────▼───────┐
+                               │   EXECUTED   │
+                               └───┬──────┬───┘
+               (Char arrives first)│      │ (Perf arrives first)
+                   ┌───────────────┘      └───────────────┐
+                   ▼                                      ▼
+           ┌──────────────┐                       ┌──────────────────────┐
+           │ CHARACTERIZED│                       │ PERFORMANCE_MEASURED │
+           └──────┬───────┘                       └──────────┬───────────┘
+                  │ (Perf arrives)                           │ (Char arrives)
+                  └───────────────┐      ┌───────────────────┘
+                                  ▼      ▼
+                               ┌──────────────┐
+                               │  COMPLETED   │
+                               └──────────────┘
 ```
 
-- **Partial & Asynchronous Measurements**: Characterization updates Stage A immediately even if performance measurements take days or weeks.
+- **Symmetric Asynchronous Lifecycle**: Supports either characterization arriving first (`CHARACTERIZED`) or performance arriving first (`PERFORMANCE_MEASURED`).
+- **Direct Datasets**: Datasets without characterization targets transition directly from `EXECUTED` to `COMPLETED` when performance is recorded.
+- **Prospective Pre-Commit Validation**: Transitions are validated on an in-memory clone against `DatasetSpec` before executing any SQL commit.
 - **Experimental Failures**: A failed synthesis is recorded with `stage=FAILED` and a descriptive `failure_reason`. It is never converted into fabricated zero or worst-case target values.
-- **Pending Experiment Guard**: `PendingExperimentError` prevents launching concurrent uncontrolled experiments unless explicit parallelization is authorized.
+- **Monotonic ID Sequencing**: Sequence counters increment monotonically even across `FAILED` or `CANCELLED` experiments to prevent experiment ID collisions.
 
 ---
 
@@ -101,7 +110,7 @@ Every proposed experiment generates a structured `ScientificRationale` answering
 2. **PREDICTED PERFORMANCE**: Expected target mean and latent uncertainty $\pm \sigma$, plus model disagreement $|\mu_{\text{direct}} - \mu_{\text{two\_stage}}|$.
 3. **EXPECTED STRUCTURE / CHARACTERIZATION**: Stage A predictions per characterization channel with latent error bars.
 4. **WHY THIS EXPERIMENT?**: Optimizer strategy (e.g. Expected Improvement, TuRBO-NEI, GP-UCB) and acquisition score.
-5. **WHAT WILL WE LEARN?**: Quantified `learning_value_score` combining uncertainty, spatial novelty, and model disagreement.
+5. **WHAT WILL WE LEARN?**: Quantified `expected_learning_value` score bounded strictly in $[0, 1]$ combining normalized uncertainty, spatial novelty, and model disagreement ratio $r / (1+r)$.
 6. **SCIENTIFIC CAVEATS**: Explicit warnings that characterization values are surrogate estimates rather than physically verified values.
 
 ---
@@ -117,4 +126,3 @@ Artifacts generated in `outputs/scientific_demo/`:
 - `proposal_history.jsonl`: Step-by-step proposals and rendered rationales.
 - `model_report.json`: 4-way honest evaluation metrics (Direct, Stage A, Diagnostic B upper-bound, End-to-End Two-Stage).
 - `run_provenance.json`: Environment, library versions, and git fingerprints.
-- `experiment_ledger.db`: Tamper-evident SQLite database.

@@ -54,6 +54,7 @@ def run_synthetic_demo(
         two_stage_spec=adapter.two_stage_spec,
         initial_data=init_df,
         candidate_pool=candidate_pool,
+        search_space=adapter.search_space,
         db_path=db_path,
         strategy="expected_improvement",
         random_state=seed,

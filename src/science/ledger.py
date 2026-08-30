@@ -9,16 +9,22 @@ from typing import Any, Mapping, Sequence
 
 import pandas as pd
 
+from src.datasets.base import DatasetSpec
 from src.science.records import ExperimentStage, ScientificExperimentRecord
+from src.science.validation import validate_record_against_spec, validate_transition_before_append
 
 
-def _canonical_json(payload: Mapping[str, Any]) -> str:
+def _canonical_json(payload: Any) -> str:
     """Produces a deterministic, sorted, compact JSON string for cryptographic hash chaining."""
     return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
 class ExperimentLedger:
-    """Generic append-only SQLite Experiment Ledger with tamper-evident SHA-256 event hash chaining."""
+    """Append-only SQLite Experiment Ledger with tamper-evident SHA-256 event hash chaining.
+
+    Provides tamper-evident event auditing that detects modification or deletion of hashed historical
+    events while the expected chain head/event count remains available.
+    """
 
     def __init__(self, db_path: Path | str = ":memory:") -> None:
         self.db_path = str(db_path)
@@ -26,10 +32,12 @@ class ExperimentLedger:
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(self.db_path)
         self._conn.row_factory = sqlite3.Row
+        self._conn.execute("PRAGMA foreign_keys = ON")
         self._init_schema()
 
     def _init_schema(self) -> None:
         with self._conn:
+            self._conn.execute("PRAGMA foreign_keys = ON")
             self._conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS experiments (
@@ -57,6 +65,24 @@ class ExperimentLedger:
                 """
             )
             self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS optimizer_snapshots (
+                    snapshot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    step INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    snapshot_json TEXT NOT NULL
+                )
+                """
+            )
+            self._conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS ledger_metadata (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+                """
+            )
+            self._conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_events_exp_id ON experiment_events (experiment_id)"
             )
 
@@ -67,18 +93,57 @@ class ExperimentLedger:
         row = cursor.fetchone()
         return str(row["event_hash"]) if row else ("0" * 64)
 
-    def record_proposal(self, record: ScientificExperimentRecord) -> ScientificExperimentRecord:
-        """Records a new experiment proposal event in the ledger."""
+    def _update_head_metadata(self, event_hash: str) -> None:
+        cursor = self._conn.execute("SELECT COUNT(*) as cnt FROM experiment_events")
+        row = cursor.fetchone()
+        cnt = int(row["cnt"]) if row else 0
+        self._conn.execute(
+            "INSERT OR REPLACE INTO ledger_metadata (key, value) VALUES ('head_hash', ?)",
+            (event_hash,),
+        )
+        self._conn.execute(
+            "INSERT OR REPLACE INTO ledger_metadata (key, value) VALUES ('event_count', ?)",
+            (str(cnt),),
+        )
+
+    def next_proposal_sequence(self, dataset_name: str | None = None) -> int:
+        """Returns a strictly monotonic proposal sequence integer (1-indexed) derived from the total historical proposals."""
+        query = "SELECT COUNT(*) as cnt FROM experiments"
+        params: list[Any] = []
+        if dataset_name is not None:
+            query += " WHERE dataset_name = ?"
+            params.append(dataset_name)
+        cursor = self._conn.execute(query, params)
+        row = cursor.fetchone()
+        return int(row["cnt"]) + 1 if row else 1
+
+    def record_proposal(
+        self,
+        record: ScientificExperimentRecord,
+        spec: DatasetSpec | None = None,
+    ) -> ScientificExperimentRecord:
+        """Validates and records a new experiment proposal event in the ledger transactionally."""
+        # 1. Validate record against spec BEFORE database mutation
+        if spec is not None:
+            validate_record_against_spec(record, spec)
+
         prev_hash = self._get_latest_event_hash()
         payload = record.to_dict()
-        canon_payload = _canonical_json(payload)
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        # Build full scientific event envelope for hashing
+        event_envelope = {
+            "experiment_id": record.experiment_id,
+            "event_type": "PROPOSAL_CREATED",
+            "created_at": now_iso,
+            "payload": payload,
+        }
+        canon_envelope = _canonical_json(event_envelope)
 
         hasher = hashlib.sha256()
         hasher.update(prev_hash.encode("utf-8"))
-        hasher.update(canon_payload.encode("utf-8"))
+        hasher.update(canon_envelope.encode("utf-8"))
         event_hash = hasher.hexdigest()
-
-        now_iso = datetime.now(timezone.utc).isoformat()
 
         with self._conn:
             self._conn.execute(
@@ -104,11 +169,13 @@ class ExperimentLedger:
                     record.experiment_id,
                     "PROPOSAL_CREATED",
                     now_iso,
-                    canon_payload,
+                    _canonical_json(payload),
                     prev_hash,
                     event_hash,
                 ),
             )
+            self._update_head_metadata(event_hash)
+
         return record
 
     def append_transition(
@@ -117,39 +184,45 @@ class ExperimentLedger:
         new_stage: ExperimentStage | str,
         event_type: str,
         delta_payload: Mapping[str, Any],
+        spec: DatasetSpec | None = None,
     ) -> ScientificExperimentRecord:
-        """Appends a validated lifecycle event to the ledger and updates the experiment state."""
+        """Validates prospective transition BEFORE committing event to the ledger."""
         current_record = self.get_record(experiment_id)
         if current_record is None:
             raise KeyError(f"Experiment {experiment_id!r} not found in ledger.")
 
-        # Apply transition in memory to validate
+        # 1. Validate prospective transition and spec boundaries BEFORE touching SQL
         target_stage = ExperimentStage(new_stage) if isinstance(new_stage, str) else new_stage
-        current_record.transition_to(
+        validated_record = validate_transition_before_append(
+            current_record=current_record,
             new_stage=target_stage,
-            characterization=delta_payload.get("characterization"),
-            performance=delta_payload.get("performance"),
-            measurement_uncertainty=delta_payload.get("measurement_uncertainty"),
-            quality_flags=delta_payload.get("quality_flags"),
-            failure_reason=delta_payload.get("failure_reason"),
+            delta_payload=delta_payload,
+            spec=spec,
         )
 
         prev_hash = self._get_latest_event_hash()
-        full_record_dict = current_record.to_dict()
-        event_body = {
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        event_payload = {
             "event_type": event_type,
             "target_stage": target_stage.value,
             "delta": dict(delta_payload),
-            "record_snapshot": full_record_dict,
+            "record_snapshot": validated_record.to_dict(),
         }
-        canon_payload = _canonical_json(event_body)
+
+        # Build full scientific event envelope for hashing
+        event_envelope = {
+            "experiment_id": experiment_id,
+            "event_type": event_type,
+            "created_at": now_iso,
+            "payload": event_payload,
+        }
+        canon_envelope = _canonical_json(event_envelope)
 
         hasher = hashlib.sha256()
         hasher.update(prev_hash.encode("utf-8"))
-        hasher.update(canon_payload.encode("utf-8"))
+        hasher.update(canon_envelope.encode("utf-8"))
         event_hash = hasher.hexdigest()
-
-        now_iso = datetime.now(timezone.utc).isoformat()
 
         with self._conn:
             self._conn.execute(
@@ -169,13 +242,38 @@ class ExperimentLedger:
                     experiment_id,
                     event_type,
                     now_iso,
-                    canon_payload,
+                    _canonical_json(event_payload),
                     prev_hash,
                     event_hash,
                 ),
             )
+            self._update_head_metadata(event_hash)
 
-        return current_record
+        return validated_record
+
+    def save_optimizer_snapshot(self, snapshot: Mapping[str, Any]) -> None:
+        """Persists a deterministic optimizer state snapshot after completed experimental observations."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        step = int(snapshot.get("step", 0))
+        canon_json = _canonical_json(snapshot)
+        with self._conn:
+            self._conn.execute(
+                """
+                INSERT INTO optimizer_snapshots (step, created_at, snapshot_json)
+                VALUES (?, ?, ?)
+                """,
+                (step, now_iso, canon_json),
+            )
+
+    def get_latest_optimizer_snapshot(self) -> dict[str, Any] | None:
+        """Retrieves the latest optimizer state snapshot for exact resume."""
+        cursor = self._conn.execute(
+            "SELECT snapshot_json FROM optimizer_snapshots ORDER BY snapshot_id DESC LIMIT 1"
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return json.loads(row["snapshot_json"])
 
     def get_record(self, experiment_id: str) -> ScientificExperimentRecord | None:
         """Reconstructs the current state of an experiment from its event history."""
@@ -240,27 +338,29 @@ class ExperimentLedger:
         return self.list_records(stage=ExperimentStage.COMPLETED)
 
     def verify_integrity(self) -> tuple[bool, list[str]]:
-        """Verifies cryptographic SHA-256 hash chaining across all events from genesis."""
+        """Verifies cryptographic SHA-256 hash chaining across all events from genesis and checks projection consistency."""
         cursor = self._conn.execute(
-            "SELECT event_id, experiment_id, payload_json, previous_event_hash, event_hash FROM experiment_events ORDER BY event_id ASC"
+            "SELECT event_id, experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash FROM experiment_events ORDER BY event_id ASC"
         )
         rows = cursor.fetchall()
+        errors: list[str] = []
+
         if not rows:
             return True, []
 
-        errors: list[str] = []
         expected_prev_hash = "0" * 64
 
         for row in rows:
             eid = row["event_id"]
+            exp_id = row["experiment_id"]
+            ev_type = row["event_type"]
+            ev_created = row["created_at"]
             prev_h = row["previous_event_hash"]
             curr_h = row["event_hash"]
             raw_payload = row["payload_json"]
 
-            # Canonicalize payload to verify
             try:
-                parsed = json.loads(raw_payload)
-                canon = _canonical_json(parsed)
+                parsed_payload = json.loads(raw_payload)
             except Exception as exc:
                 errors.append(f"Event {eid}: invalid payload JSON: {exc}")
                 continue
@@ -270,9 +370,18 @@ class ExperimentLedger:
                     f"Event {eid}: previous_event_hash mismatch. Expected {expected_prev_hash}, got {prev_h}"
                 )
 
+            # Reconstruct full envelope
+            envelope = {
+                "experiment_id": exp_id,
+                "event_type": ev_type,
+                "created_at": ev_created,
+                "payload": parsed_payload,
+            }
+            canon_env = _canonical_json(envelope)
+
             hasher = hashlib.sha256()
             hasher.update(prev_h.encode("utf-8"))
-            hasher.update(canon.encode("utf-8"))
+            hasher.update(canon_env.encode("utf-8"))
             recomputed = hasher.hexdigest()
 
             if recomputed != curr_h:
@@ -281,6 +390,23 @@ class ExperimentLedger:
                 )
 
             expected_prev_hash = curr_h
+
+        # Verify summary projection table consistency
+        exp_cursor = self._conn.execute("SELECT experiment_id, current_stage FROM experiments")
+        for exp_row in exp_cursor.fetchall():
+            exp_id = exp_row["experiment_id"]
+            proj_stage = exp_row["current_stage"]
+            try:
+                rec = self.get_record(exp_id)
+                if rec is None:
+                    errors.append(f"Projection mismatch: experiment {exp_id} exists in summary table but has no events.")
+                elif rec.stage.value != proj_stage:
+                    errors.append(
+                        f"Projection mismatch: experiment {exp_id} summary table stage {proj_stage!r} "
+                        f"does not match reconstructed event stage {rec.stage.value!r}."
+                    )
+            except Exception as exc:
+                errors.append(f"Projection error: failed to reconstruct experiment {exp_id}: {exc}")
 
         is_valid = len(errors) == 0
         return is_valid, errors
@@ -301,13 +427,10 @@ class ExperimentLedger:
                 "replicate_id": r.replicate_id,
                 "failure_reason": r.failure_reason,
             }
-            # Flatten pre-experiment features
             for k, v in r.pre_experiment_features.items():
                 flat[k] = v
-            # Flatten characterization
             for k, v in r.characterization.items():
                 flat[k] = v
-            # Flatten performance
             for k, v in r.performance.items():
                 flat[k] = v
             rows.append(flat)

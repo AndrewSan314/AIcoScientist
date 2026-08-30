@@ -8,6 +8,8 @@ models/*.pth
 models/*.pt
 outputs/**/trained_model.pkl
 outputs/trained_model.pkl
+outputs/**/*.db
+outputs/*.db
 *.log
 
 .gitnexus/
@@ -28,6 +30,3 @@ data/external/attia_2020/*
 *.zip
 *.crdownload
 .DS_Store
-
-
-

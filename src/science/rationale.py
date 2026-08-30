@@ -9,7 +9,11 @@ import pandas as pd
 
 @dataclass
 class ScientificRationale:
-    """Structured, deterministic scientific rationale object explaining an experimental proposal."""
+    """Structured, deterministic scientific rationale object explaining an experimental proposal.
+
+    Note: MODEL_DISAGREEMENT_HIGH is an exploratory heuristic flag indicating disparity between
+    the direct statistical surrogate and the mechanistic two-stage surrogate, not a formal hypothesis test.
+    """
 
     experiment_id: str
     candidate_id: str
@@ -62,10 +66,13 @@ class ScientificRationale:
             "",
             "3. EXPECTED STRUCTURE / CHARACTERIZATION (Stage A Estimates):",
         ])
-        for char_name, char_stats in self.predicted_characterization.items():
-            m = char_stats.get("mean", float("nan"))
-            s = char_stats.get("latent_std", float("nan"))
-            lines.append(f"   - {char_name}: {m:.4f} ± {s:.4f}")
+        if self.predicted_characterization:
+            for char_name, char_stats in self.predicted_characterization.items():
+                m = char_stats.get("mean", float("nan"))
+                s = char_stats.get("latent_std", float("nan"))
+                lines.append(f"   - {char_name}: {m:.4f} ± {s:.4f}")
+        else:
+            lines.append("   - (Characterization surrogate unavailable; using direct performance predictions)")
 
         lines.extend([
             "",
@@ -81,7 +88,7 @@ class ScientificRationale:
         lines.extend([
             "",
             "5. WHAT WILL WE LEARN? (Exploratory Information Value):",
-            f"   - Overall Learning Value Score: {self.expected_learning_value:.4f}",
+            f"   - Overall Learning Value Score: {self.expected_learning_value:.4f} (bounded in [0, 1])",
         ])
         for comp_name, comp_val in self.learning_value_components.items():
             lines.append(f"     * {comp_name}: {comp_val:.4f}")
@@ -102,7 +109,7 @@ def generate_scientific_rationale(
     candidate_id: str,
     candidate_process: Mapping[str, Any],
     direct_prediction: tuple[float, float],
-    two_stage_prediction: Any,
+    two_stage_prediction: Any | None,
     acquisition_method: str,
     acquisition_score: float,
     observed_history: pd.DataFrame | None = None,
@@ -111,30 +118,60 @@ def generate_scientific_rationale(
 ) -> ScientificRationale:
     """Constructs a deterministic, structured ScientificRationale object from models and optimizer state."""
     dir_mean, dir_std = direct_prediction
-    e2e_mean = float(two_stage_prediction.performance_mean[0]) if hasattr(two_stage_prediction.performance_mean, "__len__") else float(two_stage_prediction.performance_mean)
-    e2e_std = float(two_stage_prediction.performance_latent_std[0]) if hasattr(two_stage_prediction.performance_latent_std, "__len__") else float(two_stage_prediction.performance_latent_std)
 
-    # 1. Model disagreement
-    disagreement = abs(dir_mean - e2e_mean)
-    pooled_std = np.sqrt(dir_std**2 + e2e_std**2)
-    disagreement_flag = "MODEL_DISAGREEMENT_HIGH" if (pooled_std > 1e-6 and disagreement > 2.0 * pooled_std) else None
+    if two_stage_prediction is not None:
+        e2e_mean = float(two_stage_prediction.performance_mean[0]) if hasattr(two_stage_prediction.performance_mean, "__len__") else float(two_stage_prediction.performance_mean)
+        e2e_std = float(two_stage_prediction.performance_latent_std[0]) if hasattr(two_stage_prediction.performance_latent_std, "__len__") else float(two_stage_prediction.performance_latent_std)
 
-    # 2. Stage A characterization summary
-    char_summary: dict[str, dict[str, float]] = {}
-    char_prop_var = 0.0
-    for char_col, stats_dict in two_stage_prediction.characterization_predictions.items():
-        m_val = float(stats_dict["mean"][0]) if hasattr(stats_dict["mean"], "__len__") else float(stats_dict["mean"])
-        s_val = float(stats_dict["latent_std"][0]) if hasattr(stats_dict["latent_std"], "__len__") else float(stats_dict["latent_std"])
-        obs_val = float(stats_dict["observation_std"][0]) if hasattr(stats_dict["observation_std"], "__len__") else float(stats_dict["observation_std"])
-        char_summary[char_col] = {
-            "mean": m_val,
-            "latent_std": s_val,
-            "observation_std": obs_val,
-        }
+        # 1. Model disagreement
+        disagreement = float(abs(dir_mean - e2e_mean))
+        pooled_std = float(np.sqrt(dir_std**2 + e2e_std**2))
+        disagreement_flag = "MODEL_DISAGREEMENT_HIGH" if (pooled_std > 1e-6 and disagreement > 2.0 * pooled_std) else None
 
-    if hasattr(two_stage_prediction, "characterization_propagation_variance"):
-        cpv = two_stage_prediction.characterization_propagation_variance
-        char_prop_var = float(cpv[0]) if hasattr(cpv, "__len__") else float(cpv)
+        # 2. Stage A characterization summary
+        char_summary: dict[str, dict[str, float]] = {}
+        char_prop_var = 0.0
+        if hasattr(two_stage_prediction, "characterization_predictions") and two_stage_prediction.characterization_predictions:
+            for char_col, stats_dict in two_stage_prediction.characterization_predictions.items():
+                m_val = float(stats_dict["mean"][0]) if hasattr(stats_dict["mean"], "__len__") else float(stats_dict["mean"])
+                s_val = float(stats_dict["latent_std"][0]) if hasattr(stats_dict["latent_std"], "__len__") else float(stats_dict["latent_std"])
+                obs_val = float(stats_dict["observation_std"][0]) if hasattr(stats_dict["observation_std"], "__len__") else float(stats_dict["observation_std"])
+                char_summary[char_col] = {
+                    "mean": m_val,
+                    "latent_std": s_val,
+                    "observation_std": obs_val,
+                }
+
+        if hasattr(two_stage_prediction, "characterization_propagation_variance"):
+            cpv = two_stage_prediction.characterization_propagation_variance
+            char_prop_var = float(cpv[0]) if hasattr(cpv, "__len__") else float(cpv)
+
+        perf_model_var = (
+            float(two_stage_prediction.performance_model_variance[0])
+            if hasattr(two_stage_prediction, "performance_model_variance")
+            else float(dir_std**2)
+        )
+        caveats = [
+            "Predicted characterization values are surrogate model estimates, not physically measured properties.",
+            "The model assumes independent Stage-A characterization errors; potential cross-channel physical correlations are unmodeled.",
+        ]
+        if disagreement_flag:
+            caveats.append(
+                "High model disagreement detected between the direct process->performance model and the two-stage model."
+            )
+    else:
+        # Two-stage model unavailable fallback
+        e2e_mean = float(dir_mean)
+        e2e_std = float(dir_std)
+        disagreement = 0.0
+        pooled_std = float(dir_std)
+        disagreement_flag = "TWO_STAGE_UNAVAILABLE"
+        char_summary = {}
+        char_prop_var = 0.0
+        perf_model_var = float(dir_std**2)
+        caveats = [
+            "Two-stage characterization model is unavailable due to insufficient observations; using direct performance model predictions.",
+        ]
 
     # 3. Nearest neighbor and distance
     nearest_exp_id: str | None = None
@@ -158,27 +195,15 @@ def generate_scientific_rationale(
             if "experiment_id" in observed_history.columns:
                 nearest_exp_id = str(observed_history["experiment_id"].iloc[min_idx])
 
-    # 4. Learning value components
-    # Uncertainty component: normalized by (1 + e2e_std)
-    u_comp = float(e2e_std / (1.0 + e2e_std))
-    # Novelty component: min_dist normalized
-    nov_comp = float(min_dist / (1.0 + min_dist)) if min_dist is not None else 0.5
-    # Disagreement component
-    dis_comp = float(disagreement / (1.0 + pooled_std))
+    # 4. Strictly Bounded Learning Value Components in [0, 1]
+    u_comp = float(np.clip(e2e_std / (1.0 + e2e_std), 0.0, 1.0))
+    nov_comp = float(np.clip(min_dist / (1.0 + min_dist) if min_dist is not None else 0.5, 0.0, 1.0))
+    r_dis = disagreement / max(pooled_std, 1e-6)
+    dis_comp = float(np.clip(r_dis / (1.0 + r_dis), 0.0, 1.0))
 
-    total_learning_val = float(0.4 * u_comp + 0.4 * nov_comp + 0.2 * dis_comp)
+    total_learning_val = float(np.clip(0.4 * u_comp + 0.4 * nov_comp + 0.2 * dis_comp, 0.0, 1.0))
 
-    # 5. Caveats list
-    caveats = [
-        "Predicted characterization values are surrogate model estimates, not physically measured properties.",
-        "The model assumes independent Stage-A characterization errors; potential cross-channel physical correlations are unmodeled.",
-    ]
-    if disagreement_flag:
-        caveats.append(
-            "High model disagreement detected between the direct process->performance model and the two-stage model."
-        )
-
-    # 6. Reason code
+    # 5. Reason code
     if min_dist is not None and min_dist > 1.0:
         reason_code = "REGION_EXPLORATION"
     elif incumbent_target is not None and e2e_mean > incumbent_target:
@@ -208,11 +233,7 @@ def generate_scientific_rationale(
         },
         uncertainty_sources={
             "characterization_propagation_variance": char_prop_var,
-            "performance_model_variance": (
-                float(two_stage_prediction.performance_model_variance[0])
-                if hasattr(two_stage_prediction, "performance_model_variance")
-                else 0.0
-            ),
+            "performance_model_variance": perf_model_var,
         },
         caveats=caveats,
         reason_code=reason_code,

@@ -4,7 +4,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
 from src.science.direct_baseline import DirectPerformanceModel
@@ -36,7 +35,7 @@ def _compute_uncertainty_calibration(
     y_pred: np.ndarray,
     y_std: np.ndarray,
 ) -> dict[str, Any]:
-    """Evaluates empirical coverage and calibration metrics."""
+    """Evaluates empirical coverage and calibration metrics against true measured observations."""
     std = np.maximum(y_std, 1e-8)
     z_scores = (y_true - y_pred) / std
 
@@ -85,34 +84,38 @@ def evaluate_two_stage_model(
     # 1. Direct Baseline Evaluation
     valid_direct = test_df[process_cols + [perf_col]].dropna()
     y_test_direct = valid_direct[perf_col].to_numpy(dtype=float)
-    dir_mean, dir_std = direct_model.predict(valid_direct[process_cols])
+    dir_mean, dir_latent_std, dir_obs_std = direct_model.predict_with_observation_std(valid_direct[process_cols])
     direct_metrics = _compute_metrics(y_test_direct, dir_mean)
-    direct_calib = _compute_uncertainty_calibration(y_test_direct, dir_mean, dir_std)
+    direct_obs_calib = _compute_uncertainty_calibration(y_test_direct, dir_mean, dir_obs_std)
+    direct_latent_calib = _compute_uncertainty_calibration(y_test_direct, dir_mean, dir_latent_std)
 
-    # 2. Stage A Evaluation per Characterization Channel
+    # 2. Stage A Evaluation per Characterization Channel (using robust boolean index masking)
     stage_a_metrics: dict[str, dict[str, float]] = {}
-    stage_a_preds = two_stage_model.predict_characterization(test_df[process_cols])
     for char_col in char_cols:
-        if char_col in test_df.columns and char_col in stage_a_preds:
-            valid_char = test_df[[char_col]].dropna()
-            if len(valid_char) > 0:
-                y_c_true = test_df[char_col].iloc[valid_char.index].to_numpy(dtype=float)
-                y_c_pred = stage_a_preds[char_col]["mean"][valid_char.index]
-                stage_a_metrics[char_col] = _compute_metrics(y_c_true, y_c_pred)
+        if char_col in test_df.columns:
+            valid_mask = test_df[process_cols + [char_col]].notna().all(axis=1)
+            if valid_mask.sum() > 0:
+                y_c_true = test_df.loc[valid_mask, char_col].to_numpy(dtype=float)
+                sub_preds = two_stage_model.predict_characterization(test_df.loc[valid_mask, process_cols])
+                if char_col in sub_preds:
+                    y_c_pred = sub_preds[char_col]["mean"]
+                    stage_a_metrics[char_col] = _compute_metrics(y_c_true, y_c_pred)
 
     # 3. Stage B Diagnostic Evaluation (Oracle Characterization Upper Bound)
     stage_b_diagnostic: dict[str, Any] = {}
     valid_stage_b = test_df[process_cols + char_cols + [perf_col]].dropna()
     if len(valid_stage_b) > 0:
         y_b_true = valid_stage_b[perf_col].to_numpy(dtype=float)
-        b_mean, b_std = two_stage_model.predict_performance_with_observed_characterization(
+        b_mean, b_latent_std, b_noise_var = two_stage_model.predict_performance_with_observed_characterization(
             valid_stage_b[process_cols],
             valid_stage_b[char_cols],
             target_name=perf_col,
         )
+        b_obs_std = np.sqrt(b_latent_std**2 + b_noise_var)
         stage_b_diagnostic = {
             "nature": "Diagnostic oracle-characterization upper bound (not achievable at proposal time)",
             "metrics": _compute_metrics(y_b_true, b_mean),
+            "calibration": _compute_uncertainty_calibration(y_b_true, b_mean, b_obs_std),
             "sample_count": len(valid_stage_b),
         }
 
@@ -126,7 +129,14 @@ def evaluate_two_stage_model(
         seed=seed,
     )
     e2e_metrics = _compute_metrics(y_test_e2e, e2e_pred.performance_mean)
-    e2e_calib = _compute_uncertainty_calibration(
+
+    # Observation predictive calibration evaluates measured observations against observation predictive std
+    e2e_obs_calib = _compute_uncertainty_calibration(
+        y_test_e2e,
+        e2e_pred.performance_mean,
+        e2e_pred.performance_observation_std,
+    )
+    e2e_latent_calib = _compute_uncertainty_calibration(
         y_test_e2e,
         e2e_pred.performance_mean,
         e2e_pred.performance_latent_std,
@@ -134,7 +144,7 @@ def evaluate_two_stage_model(
 
     # 5. Model Disagreement Summary on Test Set
     disagreement = np.abs(dir_mean - e2e_pred.performance_mean)
-    pooled_uncertainty = np.sqrt(dir_std**2 + e2e_pred.performance_latent_std**2)
+    pooled_uncertainty = np.sqrt(dir_latent_std**2 + e2e_pred.performance_latent_std**2)
     rel_disagreement = disagreement / np.maximum(pooled_uncertainty, 1e-6)
 
     disagreement_summary = {
@@ -146,11 +156,13 @@ def evaluate_two_stage_model(
 
     # 6. Uncertainty Decomposition Summary
     uncertainty_decomposition = {
-        "mean_total_variance": float(np.mean(e2e_pred.total_variance)),
+        "mean_total_predictive_variance": float(np.mean(e2e_pred.total_predictive_variance)),
+        "mean_total_latent_variance": float(np.mean(e2e_pred.total_latent_variance)),
         "mean_characterization_propagation_variance": float(np.mean(e2e_pred.characterization_propagation_variance)),
         "mean_performance_model_variance": float(np.mean(e2e_pred.performance_model_variance)),
+        "mean_observation_noise_variance": float(np.mean(e2e_pred.observation_noise_variance)),
         "mean_characterization_variance_fraction": float(
-            np.mean(e2e_pred.characterization_propagation_variance / np.maximum(e2e_pred.total_variance, 1e-12))
+            np.mean(e2e_pred.characterization_propagation_variance / np.maximum(e2e_pred.total_latent_variance, 1e-12))
         ),
     }
 
@@ -160,14 +172,20 @@ def evaluate_two_stage_model(
         "test_sample_count": len(valid_e2e),
         "direct_baseline": {
             "metrics": direct_metrics,
-            "calibration": direct_calib,
+            "observation_predictive_calibration": direct_obs_calib,
+            "latent_uncertainty_calibration_diagnostic": direct_latent_calib,
+            # Backward compatible key
+            "calibration": direct_obs_calib,
         },
         "stage_a_characterization": stage_a_metrics,
         "stage_b_diagnostic_upper_bound": stage_b_diagnostic,
         "two_stage_end_to_end": {
             "metrics": e2e_metrics,
-            "calibration": e2e_calib,
+            "observation_predictive_calibration": e2e_obs_calib,
+            "latent_uncertainty_calibration_diagnostic": e2e_latent_calib,
             "uncertainty_decomposition": uncertainty_decomposition,
+            # Backward compatible key
+            "calibration": e2e_obs_calib,
         },
         "model_disagreement_summary": disagreement_summary,
     }

@@ -71,6 +71,7 @@ class DirectPerformanceModel:
         X_process: pd.DataFrame | np.ndarray,
         return_std: bool = True,
     ) -> tuple[np.ndarray, np.ndarray]:
+        """Predicts latent performance mean and latent epistemic uncertainty."""
         if not self.is_fitted or self.gp is None or self.scaler is None:
             raise RuntimeError("DirectPerformanceModel is not fitted yet.")
 
@@ -81,3 +82,21 @@ class DirectPerformanceModel:
 
         X_scaled = self.scaler.transform(X_mat)
         return predict_latent_gp(self.gp, X_scaled, return_std=return_std)
+
+    def predict_with_observation_std(
+        self,
+        X_process: pd.DataFrame | np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Returns (latent_mean, latent_std, observation_predictive_std)."""
+        if not self.is_fitted or self.gp is None or self.scaler is None:
+            raise RuntimeError("DirectPerformanceModel is not fitted yet.")
+
+        if isinstance(X_process, pd.DataFrame):
+            X_mat = X_process[self.process_features].to_numpy(dtype=float)
+        else:
+            X_mat = np.asarray(X_process, dtype=float)
+
+        X_scaled = self.scaler.transform(X_mat)
+        latent_mean, latent_std = predict_latent_gp(self.gp, X_scaled, return_std=True)
+        _, noisy_std = self.gp.predict(X_scaled, return_std=True)
+        return latent_mean, latent_std, noisy_std
