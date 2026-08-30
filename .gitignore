@@ -31,3 +31,11 @@ data/external/attia_2020/*
 *.crdownload
 .DS_Store
 remi/
+
+# Real Materials Raw Datasets
+EDX_dataset/
+SECCM_dataset/
+XRD_dataset/
+# Test temporary directories and scratch
+outputs/test_tmp/
+scratch/
