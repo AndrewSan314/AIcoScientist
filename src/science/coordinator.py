@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,11 +16,12 @@ from src.optimization.closed_loop import ClosedLoopOptimizer, ExperimentProposal
 from src.optimization.search_space import ContinuousVariable, SearchSpace
 from src.optimization.trust_region import TrustRegionState
 from src.science.direct_baseline import DirectPerformanceModel
-from src.science.ledger import ExperimentLedger
+from src.science.ledger import ExperimentLedger, _canonical_json
 from src.science.model_bundle import ScientificModelBundle
 from src.science.provenance import (
     ScientificModelProvenance,
     compute_dataset_fingerprint,
+    compute_search_space_fingerprint,
     compute_spec_fingerprint,
 )
 from src.science.rationale import ScientificRationale, generate_scientific_rationale
@@ -31,6 +34,10 @@ logger = logging.getLogger(__name__)
 
 class PendingExperimentError(RuntimeError):
     """Raised when attempting to propose a new experiment while an unresolved experiment is already pending."""
+
+
+class ResumeStateMismatchError(ValueError):
+    """Raised when ledger optimizer snapshot schema/state mismatches the current DatasetSpec or SearchSpace."""
 
 
 def _build_fallback_search_space(spec: DatasetSpec, candidate_pool: pd.DataFrame) -> SearchSpace:
@@ -99,13 +106,18 @@ class ScientificClosedLoopCoordinator:
 
         Includes all records with required process features and valid characterization,
         regardless of whether downstream performance has arrived yet.
+        Excludes FAILED and CANCELLED records.
         """
         all_df = self.ledger.to_dataframe()
         if all_df.empty:
             return all_df
 
+        valid_stage_mask = ~all_df["stage"].isin([ExperimentStage.FAILED.value, ExperimentStage.CANCELLED.value])
+        all_df = all_df[valid_stage_mask].reset_index(drop=True)
+        if all_df.empty:
+            return all_df
+
         process_cols = self.two_stage_spec.process_features
-        # Must have process columns
         missing_proc = [c for c in process_cols if c not in all_df.columns]
         if missing_proc:
             return pd.DataFrame()
@@ -118,12 +130,10 @@ class ScientificClosedLoopCoordinator:
                 cols = ["experiment_id"] + cols
             return all_df[cols].dropna().reset_index(drop=True)
 
-        # Any characterization channel
         target_chars = [c for c in self.two_stage_spec.characterization_targets if c in all_df.columns]
         if not target_chars:
             return pd.DataFrame()
 
-        # Rows where at least one characterization channel is present
         valid_proc = all_df[process_cols].notna().all(axis=1)
         valid_char = all_df[target_chars].notna().any(axis=1)
         return all_df[valid_proc & valid_char].reset_index(drop=True)
@@ -133,8 +143,14 @@ class ScientificClosedLoopCoordinator:
 
         Includes all records with required process features and primary performance,
         even if characterization is pending or omitted.
+        Excludes FAILED and CANCELLED records.
         """
         all_df = self.ledger.to_dataframe()
+        if all_df.empty:
+            return all_df
+
+        valid_stage_mask = ~all_df["stage"].isin([ExperimentStage.FAILED.value, ExperimentStage.CANCELLED.value])
+        all_df = all_df[valid_stage_mask].reset_index(drop=True)
         if all_df.empty:
             return all_df
 
@@ -148,21 +164,45 @@ class ScientificClosedLoopCoordinator:
         return all_df[all_df[cols_needed].notna().all(axis=1)].reset_index(drop=True)
 
     def build_stage_b_training_frame(self, target_name: str | None = None) -> pd.DataFrame:
-        """Constructs the training view for Stage B (Process + Characterization -> Performance)."""
+        """Constructs the training view for Stage B (Process + Characterization -> Performance).
+
+        Excludes FAILED and CANCELLED records. Supports independent per-target missingness.
+        """
         all_df = self.ledger.to_dataframe()
         if all_df.empty:
             return all_df
 
-        target = target_name or self.spec.target_column
-        cols_needed = self.two_stage_spec.process_features + self.two_stage_spec.characterization_targets + [target]
-        missing = [c for c in cols_needed if c not in all_df.columns]
-        if missing:
+        valid_stage_mask = ~all_df["stage"].isin([ExperimentStage.FAILED.value, ExperimentStage.CANCELLED.value])
+        all_df = all_df[valid_stage_mask].reset_index(drop=True)
+        if all_df.empty:
+            return all_df
+
+        req_inputs = self.two_stage_spec.process_features + self.two_stage_spec.characterization_targets
+        missing_inputs = [c for c in req_inputs if c not in all_df.columns]
+        if missing_inputs:
             return pd.DataFrame()
 
-        return all_df[all_df[cols_needed].notna().all(axis=1)].reset_index(drop=True)
+        valid_inputs = all_df[req_inputs].notna().all(axis=1)
+
+        if target_name is not None:
+            if target_name not in all_df.columns:
+                return pd.DataFrame()
+            cols_needed = req_inputs + [target_name]
+            if "experiment_id" in all_df.columns:
+                cols_needed = ["experiment_id"] + cols_needed
+            return all_df[valid_inputs & all_df[target_name].notna()][cols_needed].reset_index(drop=True)
+
+        perf_targets = [t for t in self.two_stage_spec.performance_targets if t in all_df.columns]
+        if not perf_targets:
+            return pd.DataFrame()
+        valid_any_perf = all_df[perf_targets].notna().any(axis=1)
+        return all_df[valid_inputs & valid_any_perf].reset_index(drop=True)
 
     def build_optimizer_training_frame(self) -> pd.DataFrame:
-        """Constructs the training view for the Bayesian Optimizer (Completed valid experiments)."""
+        """Constructs the training view for the Bayesian Optimizer (Completed valid experiments).
+
+        Excludes FAILED and CANCELLED records.
+        """
         all_df = self.ledger.to_dataframe()
         if all_df.empty:
             return all_df
@@ -172,8 +212,6 @@ class ScientificClosedLoopCoordinator:
     def _refresh_model_provenance(self) -> None:
         """Refreshes the scientific model provenance capturing component-specific training datasets."""
         direct_df = self.build_direct_training_frame()
-        stage_a_df = self.build_stage_a_training_frame()
-        stage_b_df = self.build_stage_b_training_frame()
 
         direct_ids = list(direct_df["experiment_id"]) if ("experiment_id" in direct_df.columns and not direct_df.empty) else []
         stage_a_ids: dict[str, list[str]] = {}
@@ -216,16 +254,7 @@ class ScientificClosedLoopCoordinator:
         pre_experiment_context: Mapping[str, Any] | None = None,
         n_mc_samples: int = 64,
     ) -> tuple[ScientificExperimentRecord, ScientificRationale]:
-        """Proposes the next experiment transactionally without mutating active optimizer state on failure.
-
-        1. Pending experiment protection
-        2. Deep-clones optimizer state for prospective evaluation
-        3. Validates context merging and DatasetSpec information horizons
-        4. Evaluates direct and two-stage scientific surrogate models
-        5. Generates structured scientific rationale
-        6. Atomically allocates proposal sequence and commits to tamper-evident ledger
-        7. Anchors optimizer state snapshot into ledger and promotes prospective state
-        """
+        """Proposes the next experiment transactionally without mutating active optimizer state on failure."""
         # 1. Pending experiment protection
         pending_records = self.ledger.list_pending_records()
         if pending_records and not self.allow_parallel_experiments:
@@ -282,36 +311,29 @@ class ScientificClosedLoopCoordinator:
             logger.warning(f"Two-stage prediction unavailable: {exc}")
             e2e_pred = None
 
-        # 6. Generate structured, deterministic ScientificRationale
+        # 6. Compute prospective optimizer state hash and search space fingerprint
         history_df = self.ledger.to_dataframe()
         incumbent = self.optimizer_state.current_best
+        prospective_snap = prospective_opt_state.to_dict()
+        opt_state_hash = hashlib.sha256(_canonical_json(prospective_snap).encode("utf-8")).hexdigest()
+        search_space_fp = compute_search_space_fingerprint(self.search_space)
 
-        # 7. Atomic sequence allocation and record construction
-        proposal_seq = self.ledger.allocate_proposal_sequence(self.spec.name)
-        exp_id = f"EXP_{self.spec.name[:6].upper()}_{proposal_seq:03d}"
-
-        rationale = generate_scientific_rationale(
-            experiment_id=exp_id,
-            candidate_id=cand_id,
-            candidate_process=full_process,
-            direct_prediction=dir_pred,
-            two_stage_prediction=e2e_pred,
-            acquisition_method=prop.acquisition_method,
-            acquisition_score=prop.acquisition_score,
-            observed_history=history_df,
-            process_features=process_features,
-            incumbent_target=incumbent,
-        )
-
-        record = ScientificExperimentRecord(
-            experiment_id=exp_id,
-            candidate_id=cand_id,
-            dataset_name=self.spec.name,
-            stage=ExperimentStage.PROPOSED,
-            pre_experiment_features=full_process,
-            candidate_variables=cand_vars,
-            proposal_metadata={
-                "proposal_sequence": proposal_seq,
+        # 7. Atomic proposal transaction (sequence allocation + proposal record + optimizer snapshot)
+        def prop_metadata_builder(final_exp_id: str, final_seq: int) -> dict[str, Any]:
+            rationale = generate_scientific_rationale(
+                experiment_id=final_exp_id,
+                candidate_id=cand_id,
+                candidate_process=full_process,
+                direct_prediction=dir_pred,
+                two_stage_prediction=e2e_pred,
+                acquisition_method=prop.acquisition_method,
+                acquisition_score=prop.acquisition_score,
+                observed_history=history_df,
+                process_features=process_features,
+                incumbent_target=incumbent,
+            )
+            return {
+                "proposal_sequence": final_seq,
                 "optimizer_step": prospective_opt_state.step,
                 "strategy": prop.acquisition_method,
                 "acquisition_score": prop.acquisition_score,
@@ -320,16 +342,41 @@ class ScientificClosedLoopCoordinator:
                 "model_disagreement_flag": rationale.model_disagreement_flag,
                 "reason_code": prop.reason_code,
                 "rationale_reason_code": rationale.reason_code,
+                "optimizer_state_hash": opt_state_hash,
+                "search_space_fingerprint": search_space_fp,
                 "proposal": prop.to_dict(),
-            },
+                "rationale": rationale.to_dict(),
+            }
+
+        record = self.ledger.commit_proposal_transaction(
+            dataset_name=self.spec.name,
+            candidate_id=cand_id,
+            pre_experiment_features=full_process,
+            candidate_variables=cand_vars,
+            proposal_metadata_builder=prop_metadata_builder,
+            optimizer_snapshot=prospective_snap,
+            spec=self.spec,
         )
-        validate_record_against_spec(record, self.spec)
 
-        # 8. Commit proposal to ledger and anchor optimizer snapshot
-        self.ledger.record_proposal(record, spec=self.spec)
-        self.ledger.save_optimizer_snapshot(prospective_opt_state.to_dict(), experiment_id=exp_id)
+        # Reconstruct rationale object
+        rationale_data = record.proposal_metadata.get("rationale")
+        if rationale_data:
+            rationale = ScientificRationale(**rationale_data)
+        else:
+            rationale = generate_scientific_rationale(
+                experiment_id=record.experiment_id,
+                candidate_id=cand_id,
+                candidate_process=full_process,
+                direct_prediction=dir_pred,
+                two_stage_prediction=e2e_pred,
+                acquisition_method=prop.acquisition_method,
+                acquisition_score=prop.acquisition_score,
+                observed_history=history_df,
+                process_features=process_features,
+                incumbent_target=incumbent,
+            )
 
-        # 9. Promote prospective state to active coordinator state
+        # 8. Promote prospective state to active coordinator state
         self.optimizer_state = prospective_opt_state
         self._last_proposal = prop
 
@@ -413,6 +460,15 @@ class ScientificClosedLoopCoordinator:
         if current_rec is None:
             raise KeyError(f"Experiment {experiment_id!r} not found in ledger.")
 
+        if current_rec.stage == ExperimentStage.COMPLETED:
+            return self.record_additional_performance(
+                experiment_id=experiment_id,
+                performance=performance,
+                measurement_uncertainty=measurement_uncertainty,
+                quality_flags=quality_flags,
+                allow_measurement_revision=allow_measurement_revision,
+            )
+
         merged_perfs = dict(current_rec.performance)
         merged_perfs.update(dict(performance))
         has_primary_perf = self.spec.target_column in merged_perfs
@@ -450,6 +506,53 @@ class ScientificClosedLoopCoordinator:
         if rec.stage == ExperimentStage.COMPLETED:
             self._on_experiment_completed(rec)
 
+        return rec
+
+    def record_additional_performance(
+        self,
+        experiment_id: str,
+        performance: Mapping[str, Any],
+        measurement_uncertainty: Mapping[str, float] | None = None,
+        quality_flags: list[str] | None = None,
+        allow_measurement_revision: bool = False,
+    ) -> ScientificExperimentRecord:
+        """Records additional secondary performance measurements on an already COMPLETED experiment without re-triggering optimizer observation."""
+        current_rec = self.ledger.get_record(experiment_id)
+        if current_rec is None:
+            raise KeyError(f"Experiment {experiment_id!r} not found in ledger.")
+
+        if current_rec.stage != ExperimentStage.COMPLETED:
+            return self.record_performance(
+                experiment_id=experiment_id,
+                performance=performance,
+                measurement_uncertainty=measurement_uncertainty,
+                quality_flags=quality_flags,
+                allow_measurement_revision=allow_measurement_revision,
+            )
+
+        rec = self.ledger.append_transition(
+            experiment_id=experiment_id,
+            new_stage=ExperimentStage.COMPLETED,
+            event_type="ADDITIONAL_PERFORMANCE_RECORDED",
+            delta_payload={
+                "performance": dict(performance),
+                "measurement_uncertainty": dict(measurement_uncertainty or {}),
+                "quality_flags": list(quality_flags or []),
+                "allow_measurement_revision": allow_measurement_revision,
+            },
+            spec=self.spec,
+        )
+
+        # Refit Stage B & Direct models if new measurements arrived
+        stage_b_df = self.build_stage_b_training_frame()
+        if len(stage_b_df) >= 2:
+            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+        direct_df = self.build_direct_training_frame()
+        if len(direct_df) >= 2:
+            self.model_bundle.direct_model.fit(direct_df)
+
+        self._refresh_model_provenance()
         return rec
 
     def _on_experiment_completed(self, rec: ScientificExperimentRecord) -> None:
@@ -508,8 +611,8 @@ class ScientificClosedLoopCoordinator:
         failure_reason: str,
         quality_flags: list[str] | None = None,
     ) -> ScientificExperimentRecord:
-        """Records experimental failure in audit trail without fabricating fake low target numbers."""
-        return self.ledger.append_transition(
+        """Records experimental failure in audit trail without fabricating fake low target numbers and refits active models."""
+        rec = self.ledger.append_transition(
             experiment_id=experiment_id,
             new_stage=ExperimentStage.FAILED,
             event_type="EXPERIMENT_FAILED",
@@ -519,6 +622,51 @@ class ScientificClosedLoopCoordinator:
             },
             spec=self.spec,
         )
+
+        # Refit scientific models with updated training frames (excluding failed experiment)
+        direct_df = self.build_direct_training_frame()
+        if len(direct_df) >= 2:
+            self.model_bundle.direct_model.fit(direct_df)
+
+        stage_a_df = self.build_stage_a_training_frame()
+        if len(stage_a_df) >= 2:
+            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
+
+        stage_b_df = self.build_stage_b_training_frame()
+        if len(stage_b_df) >= 2:
+            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+        self._refresh_model_provenance()
+        return rec
+
+    def record_cancelled(
+        self,
+        experiment_id: str,
+        reason: str,
+    ) -> ScientificExperimentRecord:
+        """Records cancellation of an experiment and refits active models."""
+        rec = self.ledger.append_transition(
+            experiment_id=experiment_id,
+            new_stage=ExperimentStage.CANCELLED,
+            event_type="EXPERIMENT_CANCELLED",
+            delta_payload={"failure_reason": reason},
+            spec=self.spec,
+        )
+
+        direct_df = self.build_direct_training_frame()
+        if len(direct_df) >= 2:
+            self.model_bundle.direct_model.fit(direct_df)
+
+        stage_a_df = self.build_stage_a_training_frame()
+        if len(stage_a_df) >= 2:
+            self.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
+
+        stage_b_df = self.build_stage_b_training_frame()
+        if len(stage_b_df) >= 2:
+            self.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+        self._refresh_model_provenance()
+        return rec
 
     @classmethod
     def initialize_new(
@@ -533,13 +681,13 @@ class ScientificClosedLoopCoordinator:
         allow_parallel_experiments: bool = False,
         random_state: int = 42,
     ) -> ScientificClosedLoopCoordinator:
-        """Initializes a new coordinator from historical seed dataset and starts a fresh ledger."""
+        """Initializes a new coordinator from historical seed dataset supporting varying measurement completeness."""
         ledger = ExperimentLedger(db_path)
 
-        # 1. Ingest initial seed experiments into ledger
+        # 1. Ingest initial seed experiments into ledger respecting true information horizons
         for i, row in initial_data.iterrows():
-            eid = str(row.get("experiment_id", f"EXP_INIT_{i:03d}"))
-            cid = str(row.get("candidate_id", f"CAND_INIT_{i:03d}"))
+            eid = str(row[spec.id_column]) if spec.id_column in row and pd.notna(row[spec.id_column]) else str(row.get("experiment_id", f"EXP_INIT_{i:03d}"))
+            cid = str(row[spec.candidate_id_column]) if spec.candidate_id_column in row and pd.notna(row[spec.candidate_id_column]) else str(row.get("candidate_id", f"CAND_INIT_{i:03d}"))
             pre_feats = {k: float(row[k]) for k in spec.pre_experiment_features if k in row and pd.notna(row[k])}
             cand_feats = {k: float(row[k]) for k in spec.candidate_variables if k in row and pd.notna(row[k])} or pre_feats
             char_feats = {k: float(row[k]) for k in spec.post_experiment_characterization if k in row and pd.notna(row[k])}
@@ -555,45 +703,37 @@ class ScientificClosedLoopCoordinator:
             )
             ledger.record_proposal(rec, spec=spec)
             ledger.append_transition(eid, ExperimentStage.EXECUTED, "INIT_EXECUTED", {}, spec=spec)
-            if char_feats:
+
+            has_char = bool(char_feats)
+            required_chars = set(spec.post_experiment_characterization)
+            has_req_chars = required_chars.issubset(char_feats.keys()) if required_chars else True
+            has_primary_perf = spec.target_column in perf_feats
+
+            if has_char:
                 ledger.append_transition(eid, ExperimentStage.CHARACTERIZED, "INIT_CHAR", {"characterization": char_feats}, spec=spec)
+
             if perf_feats:
-                ledger.append_transition(eid, ExperimentStage.COMPLETED, "INIT_PERF", {"performance": perf_feats}, spec=spec)
-
-        # 2. Fit initial models
-        direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=random_state)
-        direct_model.fit(initial_data)
-
-        two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=random_state)
-        two_stage_model.fit(initial_data)
+                if has_primary_perf and (not required_chars or has_req_chars):
+                    target_stage = ExperimentStage.COMPLETED
+                else:
+                    target_stage = ExperimentStage.PERFORMANCE_MEASURED
+                ledger.append_transition(eid, target_stage, "INIT_PERF", {"performance": perf_feats}, spec=spec)
 
         resolved_space = search_space if search_space is not None else _build_fallback_search_space(spec, candidate_pool)
 
-        ds_fp = compute_dataset_fingerprint(
-            initial_data,
-            feature_cols=spec.feature_columns,
-            target_cols=spec.targets,
-            id_col=spec.id_column,
-        )
-        spec_fp = compute_spec_fingerprint(spec, two_stage_spec, resolved_space)
-        exp_ids = (
-            list(initial_data[spec.id_column])
-            if spec.id_column in initial_data.columns
-            else [f"EXP_INIT_{i:03d}" for i in range(len(initial_data))]
-        )
+        # 2. Fit initial models from component training views
+        direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=random_state)
+        two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=random_state)
 
         prov = ScientificModelProvenance.create(
             dataset_name=spec.name,
-            dataset_fingerprint=ds_fp,
-            spec_fingerprint=spec_fp,
-            training_experiment_ids=exp_ids,
+            dataset_fingerprint="ds_init",
+            spec_fingerprint="spec_init",
+            training_experiment_ids=[],
             feature_columns=spec.feature_columns,
             target_columns=spec.targets,
             random_seed=random_state,
             model_types={"direct": "GPR", "stage_a": "GPR", "stage_b": "GPR"},
-            direct_training_experiment_ids=exp_ids,
-            stage_a_training_experiment_ids_per_channel={c: exp_ids for c in two_stage_spec.characterization_targets},
-            stage_b_training_experiment_ids_per_target={t: exp_ids for t in two_stage_spec.performance_targets},
         )
 
         bundle = ScientificModelBundle(
@@ -604,7 +744,6 @@ class ScientificClosedLoopCoordinator:
             provenance=prov,
         )
 
-        # 3. Explicit or fallback SearchSpace
         candidate_cols = spec.candidate_columns or spec.candidate_variables or spec.pre_experiment_features
         optimizer = ClosedLoopOptimizer(
             search_space=resolved_space,
@@ -614,14 +753,13 @@ class ScientificClosedLoopCoordinator:
             objective=spec.objective,
             random_state=random_state,
         )
-        opt_state = optimizer.initialize(initial_data)
-        ledger.save_optimizer_snapshot(opt_state.to_dict())
 
-        return cls(
+        # 3. Instantiate coordinator
+        coord = cls(
             spec=spec,
             two_stage_spec=two_stage_spec,
             optimizer=optimizer,
-            optimizer_state=opt_state,
+            optimizer_state=None,  # type: ignore
             model_bundle=bundle,
             ledger=ledger,
             candidate_pool=candidate_pool,
@@ -629,6 +767,29 @@ class ScientificClosedLoopCoordinator:
             allow_parallel_experiments=allow_parallel_experiments,
             random_state=random_state,
         )
+
+        # 4. Refit models using coordinator's pure training frame methods
+        direct_df = coord.build_direct_training_frame()
+        if len(direct_df) >= 2:
+            coord.model_bundle.direct_model.fit(direct_df)
+
+        stage_a_df = coord.build_stage_a_training_frame()
+        if len(stage_a_df) >= 2:
+            coord.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
+
+        stage_b_df = coord.build_stage_b_training_frame()
+        if len(stage_b_df) >= 2:
+            coord.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+        coord._refresh_model_provenance()
+
+        # 5. Initialize optimizer from completed valid observations
+        opt_df = coord.build_optimizer_training_frame()
+        opt_state = optimizer.initialize(opt_df)
+        coord.optimizer_state = opt_state
+        ledger.save_optimizer_snapshot(opt_state.to_dict())
+
+        return coord
 
     @classmethod
     def resume_from_ledger(
@@ -649,33 +810,36 @@ class ScientificClosedLoopCoordinator:
             raise ValueError(f"Ledger integrity verification failed: {errors}")
 
         resolved_space = search_space if search_space is not None else _build_fallback_search_space(spec, candidate_pool)
+        candidate_cols = spec.candidate_columns or spec.candidate_variables or spec.pre_experiment_features
 
-        # Direct model refit
+        # Retrieve authoritative snapshot from verified event history
+        latest_snapshot = ledger.get_latest_verified_optimizer_snapshot()
+        if latest_snapshot is not None:
+            # Validate snapshot schema against current spec & candidate columns
+            snap_target = latest_snapshot.get("target_col")
+            if snap_target and snap_target != spec.target_column:
+                raise ResumeStateMismatchError(
+                    f"Snapshot target column {snap_target!r} does not match DatasetSpec target_column {spec.target_column!r}"
+                )
+            snap_obj = latest_snapshot.get("objective")
+            if snap_obj and snap_obj != spec.objective:
+                raise ResumeStateMismatchError(
+                    f"Snapshot objective {snap_obj!r} does not match DatasetSpec objective {spec.objective!r}"
+                )
+            snap_feats = latest_snapshot.get("feature_cols")
+            if snap_feats and list(snap_feats) != list(candidate_cols):
+                raise ResumeStateMismatchError(
+                    f"Snapshot feature columns {snap_feats} do not match coordinator candidate columns {candidate_cols}"
+                )
+
         direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=random_state)
-        # Two-stage model refit
         two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=random_state)
 
-        all_df = ledger.to_dataframe()
-        valid_completed = all_df[all_df["stage"] == ExperimentStage.COMPLETED.value].reset_index(drop=True)
-
-        if len(valid_completed) >= 2:
-            direct_model.fit(valid_completed)
-            two_stage_model.fit(valid_completed)
-
-        ds_fp = compute_dataset_fingerprint(
-            all_df,
-            feature_cols=spec.feature_columns,
-            target_cols=spec.targets,
-            id_col=spec.id_column,
-        )
-        spec_fp = compute_spec_fingerprint(spec, two_stage_spec, resolved_space)
-
-        completed_records = ledger.list_completed_records()
         prov = ScientificModelProvenance.create(
             dataset_name=spec.name,
-            dataset_fingerprint=ds_fp,
-            spec_fingerprint=spec_fp,
-            training_experiment_ids=[r.experiment_id for r in completed_records],
+            dataset_fingerprint="ds_resumed",
+            spec_fingerprint="spec_resumed",
+            training_experiment_ids=[],
             feature_columns=spec.feature_columns,
             target_columns=spec.targets,
             random_seed=random_state,
@@ -690,7 +854,6 @@ class ScientificClosedLoopCoordinator:
             provenance=prov,
         )
 
-        candidate_cols = spec.candidate_columns or spec.candidate_variables or spec.pre_experiment_features
         optimizer = ClosedLoopOptimizer(
             search_space=resolved_space,
             feature_cols=candidate_cols,
@@ -700,9 +863,37 @@ class ScientificClosedLoopCoordinator:
             random_state=random_state,
         )
 
-        # Restore optimizer state from snapshot if available, else initialize
-        opt_state = optimizer.initialize(valid_completed)
-        latest_snapshot = ledger.get_latest_optimizer_snapshot()
+        coord = cls(
+            spec=spec,
+            two_stage_spec=two_stage_spec,
+            optimizer=optimizer,
+            optimizer_state=None,  # type: ignore
+            model_bundle=bundle,
+            ledger=ledger,
+            candidate_pool=candidate_pool,
+            search_space=resolved_space,
+            allow_parallel_experiments=allow_parallel_experiments,
+            random_state=random_state,
+        )
+
+        # Refit models using the EXACT SAME component training-view semantics as runtime
+        direct_df = coord.build_direct_training_frame()
+        if len(direct_df) >= 2:
+            coord.model_bundle.direct_model.fit(direct_df)
+
+        stage_a_df = coord.build_stage_a_training_frame()
+        if len(stage_a_df) >= 2:
+            coord.model_bundle.two_stage_model.stage_a.fit(stage_a_df)
+
+        stage_b_df = coord.build_stage_b_training_frame()
+        if len(stage_b_df) >= 2:
+            coord.model_bundle.two_stage_model.stage_b.fit(stage_b_df)
+
+        coord._refresh_model_provenance()
+
+        # Restore optimizer state from authoritative snapshot
+        opt_df = coord.build_optimizer_training_frame()
+        opt_state = optimizer.initialize(opt_df)
         if latest_snapshot is not None:
             opt_state.step = int(latest_snapshot.get("step", opt_state.step))
             opt_state.current_best = float(latest_snapshot.get("current_best", opt_state.current_best))
@@ -712,18 +903,7 @@ class ScientificClosedLoopCoordinator:
                 opt_state.history = list(latest_snapshot["history"])
             optimizer._fit_surrogate(opt_state)
 
-        coord = cls(
-            spec=spec,
-            two_stage_spec=two_stage_spec,
-            optimizer=optimizer,
-            optimizer_state=opt_state,
-            model_bundle=bundle,
-            ledger=ledger,
-            candidate_pool=candidate_pool,
-            search_space=resolved_space,
-            allow_parallel_experiments=allow_parallel_experiments,
-            random_state=random_state,
-        )
+        coord.optimizer_state = opt_state
 
         # Restore pending proposal if any
         pending_records = ledger.list_pending_records()

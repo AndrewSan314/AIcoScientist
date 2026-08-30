@@ -296,6 +296,163 @@ class ExperimentLedger:
 
         return validated_record
 
+    def commit_proposal_transaction(
+        self,
+        dataset_name: str,
+        candidate_id: str,
+        pre_experiment_features: Mapping[str, Any],
+        candidate_variables: Mapping[str, Any],
+        proposal_metadata_builder: Any,
+        optimizer_snapshot: Mapping[str, Any],
+        spec: DatasetSpec | None = None,
+    ) -> ScientificExperimentRecord:
+        """Atomically allocates sequence, creates record, and anchors optimizer snapshot in ONE SQLite transaction."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        step = int(optimizer_snapshot.get("step", 0))
+        canon_snap_json = _canonical_json(optimizer_snapshot)
+
+        with self._conn:
+            # 1. Allocate sequence atomically within transaction
+            cursor = self._conn.execute(
+                "SELECT next_sequence FROM proposal_sequences WHERE dataset_name = ?",
+                (dataset_name,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                cnt_cursor = self._conn.execute(
+                    "SELECT COUNT(*) as cnt FROM experiments WHERE dataset_name = ? AND experiment_id != 'SYSTEM_OPTIMIZER'",
+                    (dataset_name,),
+                )
+                cnt_row = cnt_cursor.fetchone()
+                cur_seq = int(cnt_row["cnt"]) + 1 if cnt_row else 1
+                self._conn.execute(
+                    "INSERT INTO proposal_sequences (dataset_name, next_sequence) VALUES (?, ?)",
+                    (dataset_name, cur_seq + 1),
+                )
+            else:
+                cur_seq = int(row["next_sequence"])
+                self._conn.execute(
+                    "UPDATE proposal_sequences SET next_sequence = ? WHERE dataset_name = ?",
+                    (cur_seq + 1, dataset_name),
+                )
+
+            # 2. Build final experiment ID
+            exp_id = f"EXP_{dataset_name[:6].upper()}_{cur_seq:03d}"
+
+            # 3. Construct proposal metadata and record
+            if callable(proposal_metadata_builder):
+                prop_meta = dict(proposal_metadata_builder(exp_id, cur_seq))
+            else:
+                prop_meta = dict(proposal_metadata_builder)
+                prop_meta["proposal_sequence"] = cur_seq
+
+            record = ScientificExperimentRecord(
+                experiment_id=exp_id,
+                candidate_id=candidate_id,
+                dataset_name=dataset_name,
+                stage=ExperimentStage.PROPOSED,
+                created_at=now_iso,
+                updated_at=now_iso,
+                pre_experiment_features=dict(pre_experiment_features),
+                candidate_variables=dict(candidate_variables),
+                proposal_metadata=prop_meta,
+            )
+
+            # 4. Validate record against spec
+            if spec is not None:
+                validate_record_against_spec(record, spec)
+
+            # 5. Insert into experiments table
+            self._conn.execute(
+                """
+                INSERT INTO experiments (experiment_id, candidate_id, dataset_name, current_stage, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.experiment_id,
+                    record.candidate_id,
+                    record.dataset_name,
+                    record.stage.value,
+                    record.created_at,
+                    now_iso,
+                ),
+            )
+
+            # 6. Append PROPOSAL_CREATED event
+            prev_hash = self._get_latest_event_hash()
+            proposal_payload = record.to_dict()
+            prop_envelope = {
+                "experiment_id": exp_id,
+                "event_type": "PROPOSAL_CREATED",
+                "created_at": now_iso,
+                "payload": proposal_payload,
+            }
+            canon_prop_env = _canonical_json(prop_envelope)
+            hasher1 = hashlib.sha256()
+            hasher1.update(prev_hash.encode("utf-8"))
+            hasher1.update(canon_prop_env.encode("utf-8"))
+            prop_event_hash = hasher1.hexdigest()
+
+            self._conn.execute(
+                """
+                INSERT INTO experiment_events (experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash)
+                VALUES (?, 'PROPOSAL_CREATED', ?, ?, ?, ?)
+                """,
+                (
+                    exp_id,
+                    now_iso,
+                    _canonical_json(proposal_payload),
+                    prev_hash,
+                    prop_event_hash,
+                ),
+            )
+
+            # 7. Append OPTIMIZER_STATE_SNAPSHOT event chained to prop_event_hash
+            snap_payload = {
+                "event_type": "OPTIMIZER_STATE_SNAPSHOT",
+                "step": step,
+                "snapshot": dict(optimizer_snapshot),
+            }
+            snap_envelope = {
+                "experiment_id": exp_id,
+                "event_type": "OPTIMIZER_STATE_SNAPSHOT",
+                "created_at": now_iso,
+                "payload": snap_payload,
+            }
+            canon_snap_env = _canonical_json(snap_envelope)
+            hasher2 = hashlib.sha256()
+            hasher2.update(prop_event_hash.encode("utf-8"))
+            hasher2.update(canon_snap_env.encode("utf-8"))
+            snap_event_hash = hasher2.hexdigest()
+
+            self._conn.execute(
+                """
+                INSERT INTO experiment_events (experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash)
+                VALUES (?, 'OPTIMIZER_STATE_SNAPSHOT', ?, ?, ?, ?)
+                """,
+                (
+                    exp_id,
+                    now_iso,
+                    _canonical_json(snap_payload),
+                    prop_event_hash,
+                    snap_event_hash,
+                ),
+            )
+
+            # 8. Insert snapshot into cache table
+            self._conn.execute(
+                """
+                INSERT INTO optimizer_snapshots (step, created_at, snapshot_json)
+                VALUES (?, ?, ?)
+                """,
+                (step, now_iso, canon_snap_json),
+            )
+
+            # 9. Update head metadata to snap_event_hash
+            self._update_head_metadata(snap_event_hash)
+
+        return record
+
     def save_optimizer_snapshot(
         self,
         snapshot: Mapping[str, Any],
@@ -351,8 +508,28 @@ class ExperimentLedger:
             )
             self._update_head_metadata(event_hash)
 
+    def get_latest_verified_optimizer_snapshot(self) -> dict[str, Any] | None:
+        """Retrieves the latest optimizer state snapshot directly from the verified hash-chained event log."""
+        cursor = self._conn.execute(
+            """
+            SELECT payload_json
+            FROM experiment_events
+            WHERE event_type = 'OPTIMIZER_STATE_SNAPSHOT'
+            ORDER BY event_id DESC
+            LIMIT 1
+            """
+        )
+        row = cursor.fetchone()
+        if not row:
+            return None
+        payload = json.loads(row["payload_json"])
+        return payload.get("snapshot")
+
     def get_latest_optimizer_snapshot(self) -> dict[str, Any] | None:
-        """Retrieves the latest optimizer state snapshot for exact resume."""
+        """Retrieves the latest optimizer state snapshot from verified events first, falling back to cache table."""
+        snap = self.get_latest_verified_optimizer_snapshot()
+        if snap is not None:
+            return snap
         cursor = self._conn.execute(
             "SELECT snapshot_json FROM optimizer_snapshots ORDER BY snapshot_id DESC LIMIT 1"
         )
@@ -518,6 +695,33 @@ class ExperimentLedger:
                     )
             except Exception as exc:
                 errors.append(f"Projection error: failed to reconstruct experiment {exp_id}: {exc}")
+
+        # Verify optimizer_snapshots projection cache matches authoritative events
+        snap_events_cursor = self._conn.execute(
+            "SELECT event_id, payload_json FROM experiment_events WHERE event_type = 'OPTIMIZER_STATE_SNAPSHOT' ORDER BY event_id ASC"
+        )
+        snap_events = snap_events_cursor.fetchall()
+        cache_snaps_cursor = self._conn.execute(
+            "SELECT snapshot_id, snapshot_json FROM optimizer_snapshots ORDER BY snapshot_id ASC"
+        )
+        cache_snaps = cache_snaps_cursor.fetchall()
+
+        if len(snap_events) != len(cache_snaps):
+            errors.append(
+                f"Optimizer snapshot projection mismatch: {len(snap_events)} authoritative snapshot events vs {len(cache_snaps)} cache rows."
+            )
+        else:
+            for ev_row, c_row in zip(snap_events, cache_snaps):
+                try:
+                    ev_data = json.loads(ev_row["payload_json"]).get("snapshot", {})
+                    c_data = json.loads(c_row["snapshot_json"])
+                    if _canonical_json(ev_data) != _canonical_json(c_data):
+                        errors.append(
+                            f"Optimizer snapshot projection mismatch / tamper detected: cache snapshot {c_row['snapshot_id']} "
+                            f"differs from authoritative event {ev_row['event_id']}."
+                        )
+                except Exception as exc:
+                    errors.append(f"Snapshot JSON verification error: {exc}")
 
         is_valid = len(errors) == 0
         return is_valid, errors

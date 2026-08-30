@@ -149,7 +149,16 @@ def compute_dataset_fingerprint(
             if pd.isna(val):
                 row_repr.append("NaN")
             elif isinstance(val, (float, np.floating)):
-                row_repr.append(f"{float(val):.8e}")
+                f_val = float(val)
+                if np.isnan(f_val):
+                    row_repr.append("NaN")
+                elif np.isposinf(f_val):
+                    row_repr.append("+Inf")
+                elif np.isneginf(f_val):
+                    row_repr.append("-Inf")
+                else:
+                    # Deterministic IEEE 754 exact hex representation (no float rounding collapse)
+                    row_repr.append(f_val.hex())
             elif isinstance(val, (int, np.integer)):
                 row_repr.append(str(int(val)))
             else:
@@ -160,19 +169,48 @@ def compute_dataset_fingerprint(
 
 
 def compute_search_space_fingerprint(search_space: Any) -> str:
-    """Computes a deterministic SHA-256 fingerprint for a SearchSpace object."""
+    """Computes a deterministic SHA-256 fingerprint for a SearchSpace object.
+
+    Handles ContinuousVariable, DiscreteVariable, CategoricalVariable, DerivedVariable, and Constraints.
+    """
     if search_space is None:
         return "NONE"
     items = []
     variables = getattr(search_space, "variables", [])
     for v in variables:
-        items.append({
+        v_type = getattr(v, "var_type", None) or type(v).__name__
+        v_item: dict[str, Any] = {
             "name": getattr(v, "name", ""),
-            "lower": getattr(v, "lower", None),
-            "upper": getattr(v, "upper", None),
-            "categories": getattr(v, "categories", None),
-            "var_type": getattr(v, "var_type", None) or type(v).__name__,
-        })
+            "var_type": v_type,
+        }
+        if hasattr(v, "lower") and v.lower is not None:
+            v_item["lower"] = float(v.lower).hex() if isinstance(v.lower, (int, float, np.number)) else str(v.lower)
+        if hasattr(v, "upper") and v.upper is not None:
+            v_item["upper"] = float(v.upper).hex() if isinstance(v.upper, (int, float, np.number)) else str(v.upper)
+        if hasattr(v, "values") and v.values is not None:
+            v_item["values"] = [
+                float(val).hex() if isinstance(val, (int, float, np.number)) else str(val)
+                for val in v.values
+            ]
+        if hasattr(v, "categories") and v.categories is not None:
+            v_item["categories"] = [str(cat) for cat in v.categories]
+        if hasattr(v, "depends_on") and v.depends_on is not None:
+            v_item["depends_on"] = sorted(list(v.depends_on))
+        if hasattr(v, "provenance_id") and v.provenance_id is not None:
+            v_item["provenance_id"] = str(v.provenance_id)
+        items.append(v_item)
+
+    constraints = getattr(search_space, "constraints", [])
+    for c in constraints:
+        c_item: dict[str, Any] = {
+            "name": getattr(c, "name", ""),
+            "type": "constraint",
+            "description": getattr(c, "description", ""),
+        }
+        if hasattr(c, "provenance_id") and c.provenance_id is not None:
+            c_item["provenance_id"] = str(c.provenance_id)
+        items.append(c_item)
+
     canon = json.dumps(items, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canon.encode("utf-8")).hexdigest()[:16]
 

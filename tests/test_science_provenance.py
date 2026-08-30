@@ -6,10 +6,12 @@ from pathlib import Path
 import pandas as pd
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
+from src.optimization.search_space import ContinuousVariable, DiscreteVariable, SearchSpace
 from src.science.provenance import (
     ScientificModelProvenance,
     build_benchmark_run_manifest,
     compute_dataset_fingerprint,
+    compute_search_space_fingerprint,
     compute_spec_fingerprint,
     get_environment_provenance,
     get_git_provenance,
@@ -203,4 +205,28 @@ def test_component_training_set_provenance_sensitivity() -> None:
     assert prov1.model_run_id != prov2.model_run_id
     assert prov1.stage_a_training_experiment_ids_per_channel["z1"] == ["EXP_001"]
     assert prov2.stage_a_training_experiment_ids_per_channel["z1"] == ["EXP_001", "EXP_002"]
+
+
+def test_discrete_variable_values_change_search_space_fingerprint() -> None:
+    space1 = SearchSpace(
+        name="space1",
+        variables=[DiscreteVariable(name="rate", values=(1.0, 2.0, 3.0))],
+    )
+    space2 = SearchSpace(
+        name="space2",
+        variables=[DiscreteVariable(name="rate", values=(10.0, 20.0, 30.0))],
+    )
+    fp1 = compute_search_space_fingerprint(space1)
+    fp2 = compute_search_space_fingerprint(space2)
+    assert fp1 != fp2
+
+
+def test_very_small_float_value_change_changes_dataset_fingerprint() -> None:
+    df1 = pd.DataFrame({"exp_id": ["E1"], "x1": [1.000000000000001], "y": [50.0]})
+    df2 = pd.DataFrame({"exp_id": ["E1"], "x1": [1.000000000000002], "y": [50.0]})
+
+    fp1 = compute_dataset_fingerprint(df1, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
+    fp2 = compute_dataset_fingerprint(df2, feature_cols=["x1"], target_cols=["y"], id_col="exp_id")
+    assert fp1 != fp2
+
 

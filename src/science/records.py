@@ -59,7 +59,7 @@ VALID_STAGE_TRANSITIONS: dict[ExperimentStage, set[ExperimentStage]] = {
         ExperimentStage.FAILED,
         ExperimentStage.CANCELLED,
     },
-    ExperimentStage.COMPLETED: set(),
+    ExperimentStage.COMPLETED: {ExperimentStage.COMPLETED},
     ExperimentStage.FAILED: set(),
     ExperimentStage.CANCELLED: set(),
 }

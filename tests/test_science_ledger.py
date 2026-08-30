@@ -306,3 +306,95 @@ def test_atomic_proposal_sequence_survives_reopen(tmp_path: Path) -> None:
     assert seq3 == 3
     assert reopened.next_proposal_sequence("battery_ds") == 4
     reopened.close()
+
+
+def test_commit_proposal_transaction_atomic_rollback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    db_file = tmp_path / "rollback_ledger.db"
+    ledger = ExperimentLedger(db_file)
+
+    # Simulate failure in the middle of commit_proposal_transaction (e.g. invalid spec validation)
+    bad_spec = DatasetSpec(
+        name="battery_ds",
+        id_column="exp_id",
+        candidate_id_column="cand_id",
+        feature_columns=["x1"],
+        target_column="y",
+        pre_experiment_features=["x1"],
+        candidate_variables=["x1"],
+        targets=["y"],
+    )
+
+    with pytest.raises(InformationHorizonError):
+        ledger.commit_proposal_transaction(
+            dataset_name="battery_ds",
+            candidate_id="CAND_001",
+            pre_experiment_features={"x1": 1.0, "unexpected_feat": 99.0},  # Fails spec validation
+            candidate_variables={"x1": 1.0},
+            proposal_metadata_builder=lambda eid, seq: {"step": 1},
+            optimizer_snapshot={"step": 1, "current_best": 100.0},
+            spec=bad_spec,
+        )
+
+    # Assert complete rollback: sequence was NOT consumed, no experiments, no events, no snapshots
+    assert ledger.next_proposal_sequence("battery_ds") == 1
+    cursor = ledger._conn.execute("SELECT COUNT(*) as cnt FROM experiments WHERE experiment_id != 'SYSTEM_OPTIMIZER'")
+    assert cursor.fetchone()["cnt"] == 0
+    cursor = ledger._conn.execute("SELECT COUNT(*) as cnt FROM experiment_events")
+    assert cursor.fetchone()["cnt"] == 0
+    cursor = ledger._conn.execute("SELECT COUNT(*) as cnt FROM optimizer_snapshots")
+    assert cursor.fetchone()["cnt"] == 0
+
+    valid, errors = ledger.verify_integrity()
+    assert valid
+
+    # Now make valid proposal transaction
+    rec = ledger.commit_proposal_transaction(
+        dataset_name="battery_ds",
+        candidate_id="CAND_001",
+        pre_experiment_features={"x1": 1.0},
+        candidate_variables={"x1": 1.0},
+        proposal_metadata_builder=lambda eid, seq: {"step": 1, "proposal_sequence": seq},
+        optimizer_snapshot={"step": 1, "current_best": 100.0},
+        spec=bad_spec,
+    )
+    assert rec.experiment_id == "EXP_BATTER_001"
+    assert ledger.next_proposal_sequence("battery_ds") == 2
+    valid, errors = ledger.verify_integrity()
+    assert valid
+    assert len(errors) == 0
+
+    ledger.close()
+
+
+def test_cache_snapshot_tamper_detected_in_verify_integrity(tmp_path: Path) -> None:
+    db_file = tmp_path / "cache_tamper.db"
+    ledger = ExperimentLedger(db_file)
+
+    rec = ledger.commit_proposal_transaction(
+        dataset_name="synth_ds",
+        candidate_id="CAND_001",
+        pre_experiment_features={"x": 5.0},
+        candidate_variables={"x": 5.0},
+        proposal_metadata_builder=lambda eid, seq: {},
+        optimizer_snapshot={"step": 1, "current_best": 42.0},
+    )
+    valid, errors = ledger.verify_integrity()
+    assert valid
+    ledger.close()
+
+    # Tamper ONLY the optimizer_snapshots cache table
+    conn = sqlite3.connect(db_file)
+    with conn:
+        conn.execute("UPDATE optimizer_snapshots SET snapshot_json = '{\"step\": 1, \"current_best\": 99999.0}'")
+    conn.close()
+
+    tampered_ledger = ExperimentLedger(db_file)
+    valid, errors = tampered_ledger.verify_integrity()
+    assert not valid
+    assert any("projection mismatch" in err.lower() or "tamper detected" in err.lower() for err in errors)
+
+    # Authoritative snapshot from hash-chained events remains untampered
+    authoritative_snap = tampered_ledger.get_latest_verified_optimizer_snapshot()
+    assert authoritative_snap["current_best"] == 42.0
+    tampered_ledger.close()
+
