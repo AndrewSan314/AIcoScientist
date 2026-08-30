@@ -1,0 +1,127 @@
+{
+  "dataset_provenance": {
+    "source": "NIST REMI Combinatorial Library",
+    "paper": "Wang et al., 'Benchmarking Active Learning Strategies for Materials Optimization and Discovery', Oxford Open Materials Science, 2022 (arXiv:2204.05838)",
+    "original_material_study": "Yoo et al., 'Identification of amorphous phases in the Fe–Ni–Co ternary alloy system using continuous phase diagram material chips', Intermetallics 14, 241–247 (2006)",
+    "mat_filename": "FeCoNi_benchmark_dataset_220501a.mat",
+    "sha256": "aaee4ddb6cf711e789e1edd6358145746611b273cecf2257699ea057d5feb1dc"
+  },
+  "keys_present": [
+    "C",
+    "Coer",
+    "Kerr",
+    "TTH",
+    "XRD"
+  ],
+  "arrays": {
+    "C": {
+      "shape": [921, 3],
+      "dtype": "float64",
+      "nan_count": 0,
+      "inf_count": 0,
+      "min": 3.6,
+      "max": 91.7,
+      "mean": 33.33445530220775,
+      "std": 21.12856376966872
+    },
+    "Coer": {
+      "shape": [921, 1],
+      "dtype": "float64",
+      "units": "mT",
+      "nan_count": 0,
+      "inf_count": 0,
+      "min": 1.2791,
+      "max": 10.9340,
+      "mean": 3.6307782844733985,
+      "std": 2.1767865155932764
+    },
+    "Kerr": {
+      "shape": [921, 1],
+      "dtype": "float64",
+      "units": "mrad",
+      "nan_count": 0,
+      "inf_count": 0,
+      "min": 0.013215,
+      "max": 0.82504,
+      "mean": 0.36827410640608027,
+      "std": 0.17252413285056967
+    },
+    "TTH": {
+      "shape": [1, 89],
+      "dtype": "float64",
+      "units": "deg_2theta",
+      "nan_count": 0,
+      "inf_count": 0,
+      "min": 42.6,
+      "max": 47.0,
+      "mean": 44.8,
+      "std": 1.284523257866513
+    },
+    "XRD": {
+      "shape": [921, 89],
+      "dtype": "float64",
+      "nan_count": 0,
+      "inf_count": 0,
+      "min": 121.0,
+      "max": 36186.0,
+      "mean": 3732.5775515011774,
+      "std": 5978.190040503023
+    }
+  },
+  "sample_count": 921,
+  "composition_row_sums": {
+    "min": 99.9,
+    "max": 100.1,
+    "mean": 100.00336590662324,
+    "std": 0.04931193988553442
+  },
+  "duplicates": {
+    "duplicate_compositions": 0,
+    "duplicate_xrd_rows": 0,
+    "duplicate_targets": 0
+  },
+  "global_optima": {
+    "kerr": {
+      "sample_index": 760,
+      "candidate_id": "FECONI_760",
+      "value": 0.82504,
+      "units": "mrad",
+      "composition": {
+        "column_0_Co": 39.8,
+        "column_1_Fe": 55.8,
+        "column_2_Ni": 4.4
+      }
+    },
+    "coercivity": {
+      "sample_index": 64,
+      "candidate_id": "FECONI_064",
+      "value": 10.9340,
+      "units": "mT",
+      "composition": {
+        "column_0_Co": 53.9,
+        "column_1_Fe": 5.9,
+        "column_2_Ni": 40.2
+      }
+    }
+  },
+  "composition_nearest_neighbor_spacing": {
+    "min": 2.6870057685088735,
+    "max": 2.8284271247461903,
+    "mean": 2.698684474578406,
+    "median": 2.68700576850888,
+    "std": 0.026790704519039164
+  },
+  "composition_column_mapping": {
+    "column_0": "Co",
+    "column_1": "Fe",
+    "column_2": "Ni",
+    "evidence": [
+      "Kerr rotation max (0.82504 mrad) at C=[39.8, 55.8, 4.4] aligns with Fe-Co binary (column 2 / Ni = 4.4%)",
+      "Coercivity global max (10.9340 mT) at C=[53.9, 5.9, 40.2] aligns with Co-Ni binary (column 1 / Fe = 5.9%) as described in Wang et al. (2022) Figure 4(c)",
+      "High-Ni region (C[:,2] > 85%) shows near-zero Kerr rotation (~0.0228 mrad), matching physical properties of elemental Ni",
+      "Fe-rich corner (C[:,1] > 85%) has mean Kerr = 0.578 mrad, Co-rich corner (C[:,0] > 85%) has mean Kerr = 0.473 mrad"
+    ],
+    "confidence": "HIGH"
+  },
+  "is_cleaned_921_benchmark": true
+}

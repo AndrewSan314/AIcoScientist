@@ -5,7 +5,15 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .base import DatasetAdapter
 
-AVAILABLE_DATASETS = ("si_mxene", "severson", "dynamic_cycling", "attia")
+AVAILABLE_DATASETS = (
+    "si_mxene",
+    "severson",
+    "dynamic_cycling",
+    "attia",
+    "feconi",
+    "feconi_kerr",
+    "feconi_coercivity",
+)
 
 
 def get_dataset_adapter(name: str) -> DatasetAdapter:
@@ -23,6 +31,12 @@ def get_dataset_adapter(name: str) -> DatasetAdapter:
     elif dataset_key == "attia":
         from .attia import AttiaAdapter
         return AttiaAdapter()
+    elif dataset_key in {"feconi", "feconi_kerr"}:
+        from .feconi import FeCoNiAdapter
+        return FeCoNiAdapter(target="Kerr")
+    elif dataset_key in {"feconi_coer", "feconi_coercivity"}:
+        from .feconi import FeCoNiAdapter
+        return FeCoNiAdapter(target="Coer")
     else:
         available = ", ".join(sorted(AVAILABLE_DATASETS))
         raise ValueError(f"Unknown dataset {name!r}; available datasets: {available}")

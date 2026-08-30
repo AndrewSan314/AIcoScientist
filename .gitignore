@@ -30,3 +30,4 @@ data/external/attia_2020/*
 *.zip
 *.crdownload
 .DS_Store
+remi/

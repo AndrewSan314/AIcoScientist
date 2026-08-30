@@ -1,0 +1,123 @@
+{
+  "target": "Kerr",
+  "global_best": 0.82504,
+  "total_seeds": 100,
+  "total_budget": 100,
+  "strategies": {
+    "random": {
+      "mean_auc": 0.7088557293939394,
+      "auc_95_ci": [
+        0.7009179816994948,
+        0.7162453655643938
+      ],
+      "mean_final_regret": 0.06375939999999998,
+      "final_regret_95_ci": [
+        0.05682872749999999,
+        0.0709611025
+      ],
+      "mean_final_best": 0.7612805999999999,
+      "success_rate_10pct": 0.74,
+      "success_rate_5pct": 0.2,
+      "success_rate_1pct": 0.08,
+      "success_rate_0.1pct": 0.08,
+      "mean_steps_to_10pct": 58.31,
+      "median_steps_to_10pct": 62.5,
+      "mean_steps_to_5pct": 90.09,
+      "median_steps_to_5pct": 101.0,
+      "mean_steps_to_1pct": 96.3,
+      "median_steps_to_1pct": 101.0
+    },
+    "greedy": {
+      "mean_auc": 0.7861131025252525,
+      "auc_95_ci": [
+        0.7825453062537876,
+        0.7895475001729798
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250399999999998,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 14.55,
+      "median_steps_to_10pct": 15.0,
+      "mean_steps_to_5pct": 16.54,
+      "median_steps_to_5pct": 17.0,
+      "mean_steps_to_1pct": 16.91,
+      "median_steps_to_1pct": 17.0
+    },
+    "gp_ucb": {
+      "mean_auc": 0.8053674207070707,
+      "auc_95_ci": [
+        0.8039872985441916,
+        0.8068966778118684
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250399999999998,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.49,
+      "median_steps_to_10pct": 8.0,
+      "mean_steps_to_5pct": 10.41,
+      "median_steps_to_5pct": 10.0,
+      "mean_steps_to_1pct": 10.73,
+      "median_steps_to_1pct": 10.0
+    },
+    "thompson_sampling": {
+      "mean_auc": 0.8004916358585858,
+      "auc_95_ci": [
+        0.7983568426729796,
+        0.8026265579734846
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250399999999998,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 10.12,
+      "median_steps_to_10pct": 10.0,
+      "mean_steps_to_5pct": 13.34,
+      "median_steps_to_5pct": 13.0,
+      "mean_steps_to_1pct": 14.4,
+      "median_steps_to_1pct": 14.0
+    },
+    "expected_improvement": {
+      "mean_auc": 0.8045739873737371,
+      "auc_95_ci": [
+        0.8029979280845957,
+        0.8062558398030304
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250399999999998,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.61,
+      "median_steps_to_10pct": 8.0,
+      "mean_steps_to_5pct": 11.01,
+      "median_steps_to_5pct": 11.0,
+      "mean_steps_to_1pct": 11.17,
+      "median_steps_to_1pct": 11.0
+    }
+  }
+}

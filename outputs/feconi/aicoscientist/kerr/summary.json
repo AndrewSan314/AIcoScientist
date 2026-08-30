@@ -1,0 +1,146 @@
+{
+  "target": "Kerr",
+  "global_best": 0.82504,
+  "total_seeds": 30,
+  "total_budget": 100,
+  "strategies": {
+    "random": {
+      "mean_auc": 0.7063262712121212,
+      "auc_95_ci": [
+        0.6918821285606059,
+        0.7194791124368688
+      ],
+      "mean_final_regret": 0.06389666666666666,
+      "final_regret_95_ci": [
+        0.05328851666666666,
+        0.0752564333333333
+      ],
+      "mean_final_best": 0.7611433333333334,
+      "success_rate_10pct": 0.7666666666666667,
+      "success_rate_5pct": 0.16666666666666666,
+      "success_rate_1pct": 0.03333333333333333,
+      "success_rate_0.1pct": 0.03333333333333333,
+      "mean_steps_to_10pct": 60.766666666666666,
+      "median_steps_to_10pct": 67.0,
+      "mean_steps_to_5pct": 97.23333333333333,
+      "median_steps_to_5pct": 101.0,
+      "mean_steps_to_1pct": 100.63333333333334,
+      "median_steps_to_1pct": 101.0
+    },
+    "greedy": {
+      "mean_auc": 0.7857282082491582,
+      "auc_95_ci": [
+        0.778603643198653,
+        0.79248043141835
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250400000000002,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 14.566666666666666,
+      "median_steps_to_10pct": 14.0,
+      "mean_steps_to_5pct": 16.8,
+      "median_steps_to_5pct": 17.0,
+      "mean_steps_to_1pct": 16.966666666666665,
+      "median_steps_to_1pct": 17.0
+    },
+    "gp_ucb": {
+      "mean_auc": 0.8055348479797979,
+      "auc_95_ci": [
+        0.8031999783249155,
+        0.8076738157533667
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250400000000002,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.566666666666666,
+      "median_steps_to_10pct": 9.0,
+      "mean_steps_to_5pct": 10.733333333333333,
+      "median_steps_to_5pct": 10.0,
+      "mean_steps_to_1pct": 10.8,
+      "median_steps_to_1pct": 10.0
+    },
+    "expected_improvement": {
+      "mean_auc": 0.8058471779461277,
+      "auc_95_ci": [
+        0.8035567751978113,
+        0.80813641898569
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250400000000002,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.233333333333333,
+      "median_steps_to_10pct": 8.0,
+      "mean_steps_to_5pct": 10.466666666666667,
+      "median_steps_to_5pct": 10.5,
+      "mean_steps_to_1pct": 10.466666666666667,
+      "median_steps_to_1pct": 10.5
+    },
+    "noisy_expected_improvement": {
+      "mean_auc": 0.8058154708754207,
+      "auc_95_ci": [
+        0.8035272747474747,
+        0.8081227362121209
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250400000000002,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.266666666666667,
+      "median_steps_to_10pct": 8.0,
+      "mean_steps_to_5pct": 10.4,
+      "median_steps_to_5pct": 10.5,
+      "mean_steps_to_1pct": 10.4,
+      "median_steps_to_1pct": 10.5
+    },
+    "turbo_nei": {
+      "mean_auc": 0.799825777272727,
+      "auc_95_ci": [
+        0.7945599786195284,
+        0.8042341557659931
+      ],
+      "mean_final_regret": 0.0,
+      "final_regret_95_ci": [
+        0.0,
+        0.0
+      ],
+      "mean_final_best": 0.8250400000000002,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 1.0,
+      "success_rate_1pct": 1.0,
+      "success_rate_0.1pct": 1.0,
+      "mean_steps_to_10pct": 8.533333333333333,
+      "median_steps_to_10pct": 7.5,
+      "mean_steps_to_5pct": 12.466666666666667,
+      "median_steps_to_5pct": 12.5,
+      "mean_steps_to_1pct": 12.466666666666667,
+      "median_steps_to_1pct": 12.5
+    }
+  }
+}

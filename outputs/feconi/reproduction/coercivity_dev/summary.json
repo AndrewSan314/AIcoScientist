@@ -1,0 +1,123 @@
+{
+  "target": "Coer",
+  "global_best": 10.934000000000001,
+  "total_seeds": 5,
+  "total_budget": 50,
+  "strategies": {
+    "random": {
+      "mean_auc": 8.314363469387754,
+      "auc_95_ci": [
+        7.967305045918366,
+        8.627850408163264
+      ],
+      "mean_final_regret": 1.6052000000000006,
+      "final_regret_95_ci": [
+        1.0210200000000005,
+        2.1893800000000008
+      ],
+      "mean_final_best": 9.3288,
+      "success_rate_10pct": 0.4,
+      "success_rate_5pct": 0.0,
+      "success_rate_1pct": 0.0,
+      "success_rate_0.1pct": 0.0,
+      "mean_steps_to_10pct": 45.8,
+      "median_steps_to_10pct": 51.0,
+      "mean_steps_to_5pct": 51.0,
+      "median_steps_to_5pct": 51.0,
+      "mean_steps_to_1pct": 51.0,
+      "median_steps_to_1pct": 51.0
+    },
+    "greedy": {
+      "mean_auc": 6.297380000000001,
+      "auc_95_ci": [
+        4.404823673469389,
+        8.293806938775509
+      ],
+      "mean_final_regret": 3.863340000000001,
+      "final_regret_95_ci": [
+        1.2877800000000001,
+        6.438900000000001
+      ],
+      "mean_final_best": 7.070660000000001,
+      "success_rate_10pct": 0.4,
+      "success_rate_5pct": 0.4,
+      "success_rate_1pct": 0.4,
+      "success_rate_0.1pct": 0.4,
+      "mean_steps_to_10pct": 40.8,
+      "median_steps_to_10pct": 51.0,
+      "mean_steps_to_5pct": 42.0,
+      "median_steps_to_5pct": 51.0,
+      "mean_steps_to_1pct": 42.0,
+      "median_steps_to_1pct": 51.0
+    },
+    "gp_ucb": {
+      "mean_auc": 8.774605510204081,
+      "auc_95_ci": [
+        8.380326938775513,
+        9.049177959183675
+      ],
+      "mean_final_regret": 0.12340000000000018,
+      "final_regret_95_ci": [
+        0.0,
+        0.37020000000000053
+      ],
+      "mean_final_best": 10.8106,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 0.8,
+      "success_rate_1pct": 0.8,
+      "success_rate_0.1pct": 0.8,
+      "mean_steps_to_10pct": 32.2,
+      "median_steps_to_10pct": 33.0,
+      "mean_steps_to_5pct": 40.0,
+      "median_steps_to_5pct": 40.0,
+      "mean_steps_to_1pct": 40.0,
+      "median_steps_to_1pct": 40.0
+    },
+    "thompson_sampling": {
+      "mean_auc": 8.866974285714285,
+      "auc_95_ci": [
+        8.697153061224489,
+        9.036795510204081
+      ],
+      "mean_final_regret": 0.6729000000000006,
+      "final_regret_95_ci": [
+        0.07340000000000017,
+        1.272400000000001
+      ],
+      "mean_final_best": 10.261099999999999,
+      "success_rate_10pct": 0.6,
+      "success_rate_5pct": 0.6,
+      "success_rate_1pct": 0.4,
+      "success_rate_0.1pct": 0.4,
+      "mean_steps_to_10pct": 35.2,
+      "median_steps_to_10pct": 29.0,
+      "mean_steps_to_5pct": 37.4,
+      "median_steps_to_5pct": 32.0,
+      "mean_steps_to_1pct": 43.2,
+      "median_steps_to_1pct": 51.0
+    },
+    "expected_improvement": {
+      "mean_auc": 8.736122040816326,
+      "auc_95_ci": [
+        8.418936326530613,
+        9.124055117346936
+      ],
+      "mean_final_regret": 0.4262200000000007,
+      "final_regret_95_ci": [
+        0.07340000000000017,
+        0.7790400000000013
+      ],
+      "mean_final_best": 10.50778,
+      "success_rate_10pct": 1.0,
+      "success_rate_5pct": 0.6,
+      "success_rate_1pct": 0.4,
+      "success_rate_0.1pct": 0.4,
+      "mean_steps_to_10pct": 28.8,
+      "median_steps_to_10pct": 27.0,
+      "mean_steps_to_5pct": 42.2,
+      "median_steps_to_5pct": 44.0,
+      "mean_steps_to_1pct": 44.8,
+      "median_steps_to_1pct": 51.0
+    }
+  }
+}
