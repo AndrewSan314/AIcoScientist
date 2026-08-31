@@ -3,13 +3,18 @@ from __future__ import annotations
 import copy
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
-from src.optimization.backend import OptimizerBackend
+from src.optimization.backend import (
+    AcquisitionEvaluationError,
+    OptimizerBackend,
+    UnsupportedStrategyError,
+)
 from src.optimization.botorch_backend import BoTorchBackend
 from src.optimization.finite_pool import FiniteCandidatePool
 from src.optimization.objective import OptimizationObjective
@@ -20,6 +25,7 @@ from src.science.coordinator import (
 )
 from src.science.records import ExperimentStage, ScientificExperimentRecord
 from src.science.synthetic import SyntheticExperimentOracle, SyntheticScienceAdapter
+
 
 
 @pytest.fixture
@@ -533,3 +539,131 @@ def test_finite_candidate_pool_identity_preservation() -> None:
     assert len(unseen) == 2
     assert unseen.get_candidate_id(0) == "C1"
     assert unseen.get_candidate_id(1) == "C3"
+
+
+# ---------------------------------------------------------------------------
+# Requirement 21: Rejection of fake turbo strategies and unsupported strategies
+# ---------------------------------------------------------------------------
+def test_rejection_of_unsupported_and_fake_turbo_strategies(sample_candidate_pool: pd.DataFrame) -> None:
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:8].copy()
+
+    for fake_strat in ["turbo_nei", "turbo_ei", "adaptive_turbo", "unsupported_xyz"]:
+        with pytest.raises(UnsupportedStrategyError) as excinfo:
+            backend.propose(
+                observations=obs_df,
+                candidate_pool=cand_pool,
+                objective="target",
+                strategy=fake_strat,
+                seed=42,
+            )
+        assert fake_strat in str(excinfo.value) or "Unsupported" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# Requirement 22: Fail-closed NEI evaluation (AcquisitionEvaluationError)
+# ---------------------------------------------------------------------------
+def test_fail_closed_nei_raises_acquisition_evaluation_error(sample_candidate_pool: pd.DataFrame) -> None:
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:8].copy()
+
+    # Simulate BoTorch acquisition computation failure
+    with patch("src.optimization.botorch_backend.qLogNoisyExpectedImprovement", side_effect=RuntimeError("Simulated BoTorch MC error")):
+        with pytest.raises(AcquisitionEvaluationError) as excinfo:
+            backend.propose(
+                observations=obs_df,
+                candidate_pool=cand_pool,
+                objective="target",
+                strategy="nei",
+                seed=42,
+            )
+        assert "Failed to evaluate NEI acquisition function" in str(excinfo.value)
+        assert "nei" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# Requirement 23: Strict physical identity with duplicate coordinates
+# ---------------------------------------------------------------------------
+def test_strict_physical_identity_preserves_distinct_ids_with_identical_coordinates() -> None:
+    # Two distinct candidate IDs with identical physical design coordinates (e.g. duplicate batch preparation)
+    df = pd.DataFrame(
+        {
+            "candidate_id": ["ID_BATCH_A", "ID_BATCH_B", "ID_BATCH_C"],
+            "temp": [100.0, 100.0, 200.0],
+            "pressure": [1.0, 1.0, 2.0],
+        }
+    )
+    pool = FiniteCandidatePool(df, feature_columns=["temp", "pressure"], id_column="candidate_id", strict_identity=True)
+    assert len(pool) == 3
+
+    # Only ID_BATCH_A has been observed; ID_BATCH_B has exact same coords but different ID
+    observed = [{"candidate_id": "ID_BATCH_A", "temp": 100.0, "pressure": 1.0, "target": 50.0}]
+    unseen = pool.filter_unseen(observed)
+
+    # In strict identity mode, ID_BATCH_B must NOT be filtered out just because of matching coordinates
+    assert len(unseen) == 2
+    assert unseen.get_candidate_id(0) == "ID_BATCH_B"
+    assert unseen.get_candidate_id(1) == "ID_BATCH_C"
+
+
+# ---------------------------------------------------------------------------
+# Requirement 24: Direct positive affine transformation invariance across strategies
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("strategy", ["greedy", "gp_ucb", "ei", "nei"])
+@pytest.mark.parametrize("scale_a, shift_b", [(100.0, 50.0), (0.01, -1000.0), (2.5, 10.0)])
+def test_multi_strategy_scale_invariance(
+    sample_candidate_pool: pd.DataFrame, strategy: str, scale_a: float, shift_b: float
+) -> None:
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_orig = sample_candidate_pool.iloc[:8].copy()
+
+    obs_scaled = obs_orig.copy()
+    obs_scaled["target"] = scale_a * obs_orig["target"] + shift_b
+
+    p_orig = backend.propose(
+        observations=obs_orig,
+        candidate_pool=cand_pool,
+        objective="target",
+        strategy=strategy,
+        n=3,
+        seed=101,
+    )
+    p_scaled = backend.propose(
+        observations=obs_scaled,
+        candidate_pool=cand_pool,
+        objective="target",
+        strategy=strategy,
+        n=3,
+        seed=101,
+    )
+
+    cids_orig = [p.candidate_id for p in p_orig]
+    cids_scaled = [p.candidate_id for p in p_scaled]
+    assert cids_orig == cids_scaled, f"Strategy {strategy} changed top ranking under affine scaling a={scale_a}, b={shift_b}"
+
+
+# ---------------------------------------------------------------------------
+# Requirement 25: Batch semantics metadata transparency
+# ---------------------------------------------------------------------------
+def test_batch_proposal_semantics_metadata(sample_candidate_pool: pd.DataFrame) -> None:
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:6].copy()
+
+    props = backend.propose(
+        observations=obs_df,
+        candidate_pool=cand_pool,
+        objective="target",
+        strategy="nei",
+        n=4,
+        seed=42,
+    )
+    assert len(props) == 4
+    for p in props:
+        assert p.metadata.get("batch_semantics") == "top_n_individual_scores"
+        assert p.metadata.get("batch_requested") == 4
+
+
