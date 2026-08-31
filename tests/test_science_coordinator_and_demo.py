@@ -289,12 +289,12 @@ def test_coordinator_pending_proposal_crash_and_exact_resume(tmp_path: Path) -> 
     assert rat_a4.acquisition_score == pytest.approx(rat_b4.acquisition_score, rel=1e-5)
 
 
-def test_turbo_proposal_reason_code_survives_resume(tmp_path: Path) -> None:
+def test_proposal_reason_code_survives_resume(tmp_path: Path) -> None:
     adapter = SyntheticScienceAdapter()
     init_df = adapter.load_initial_dataset(n_samples=8, seed=42)
     cand_pool = adapter.candidate_space(observed=init_df, n_candidates=40, seed=42)
 
-    db_path = tmp_path / "turbo_test.db"
+    db_path = tmp_path / "reason_code_test.db"
     coord = ScientificClosedLoopCoordinator.initialize_new(
         spec=adapter.spec,
         two_stage_spec=adapter.two_stage_spec,
@@ -302,7 +302,7 @@ def test_turbo_proposal_reason_code_survives_resume(tmp_path: Path) -> None:
         candidate_pool=cand_pool,
         search_space=adapter.search_space,
         db_path=db_path,
-        strategy="turbo_nei",
+        strategy="expected_improvement",
         random_state=42,
     )
 
@@ -318,7 +318,7 @@ def test_turbo_proposal_reason_code_survives_resume(tmp_path: Path) -> None:
         two_stage_spec=adapter.two_stage_spec,
         candidate_pool=cand_pool,
         search_space=adapter.search_space,
-        strategy="turbo_nei",
+        strategy="expected_improvement",
         random_state=42,
     )
     assert resumed._last_proposal is not None
@@ -1492,12 +1492,12 @@ def test_uninterrupted_control_vs_crash_reconciliation_exact_match(tmp_path: Pat
     resumed.ledger.close()
 
 
-def test_turbo_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> None:
+def test_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> None:
     adapter = SyntheticScienceAdapter()
     init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
     cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
 
-    db_path = tmp_path / "turbo_inv.db"
+    db_path = tmp_path / "inv_replay.db"
     coord = ScientificClosedLoopCoordinator.initialize_new(
         spec=adapter.spec,
         two_stage_spec=adapter.two_stage_spec,
@@ -1505,7 +1505,7 @@ def test_turbo_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> 
         candidate_pool=cand_pool,
         search_space=adapter.search_space,
         db_path=db_path,
-        strategy="turbo_nei",
+        strategy="expected_improvement",
         random_state=42,
     )
 
@@ -1527,7 +1527,6 @@ def test_turbo_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> 
 
     assert len(coord.optimizer_state.history) == 1
     assert coord.optimizer_state.history[0]["reason_code"] == orig_reason_code_1
-    assert coord.optimizer_state.trust_region is not None
 
     coord.ledger.close()
 

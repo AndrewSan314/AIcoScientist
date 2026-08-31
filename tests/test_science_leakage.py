@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from src.datasets.base import DatasetSpec
-from src.optimization.closed_loop import ClosedLoopOptimizer
 from src.science.coordinator import ScientificClosedLoopCoordinator
 from src.science.direct_baseline import DirectPerformanceModel
 from src.science.records import ExperimentStage, ScientificExperimentRecord

@@ -7,6 +7,14 @@ from src.optimization.objective import OptimizationObjective
 from src.optimization.proposal import CandidateProposal
 
 
+class UnsupportedStrategyError(ValueError):
+    """Raised when an unrecognized or retired optimization strategy is requested."""
+
+
+class AcquisitionEvaluationError(RuntimeError):
+    """Raised when evaluation of an acquisition function fails on the optimization backend."""
+
+
 @runtime_checkable
 class OptimizerBackend(Protocol):
     """Protocol defining the clean boundary between AIcoScientist and generic optimization engines.

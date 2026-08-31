@@ -23,6 +23,7 @@ class FiniteCandidatePool:
         feature_columns: Sequence[str],
         id_column: str = "candidate_id",
         metadata_columns: Sequence[str] | None = None,
+        strict_identity: bool = True,
     ) -> None:
         if candidate_pool.empty:
             raise ValueError("Candidate pool dataframe cannot be empty.")
@@ -31,17 +32,31 @@ class FiniteCandidatePool:
 
         self.id_column = id_column
         self.feature_columns = list(feature_columns)
+        self.strict_identity = strict_identity
 
-        # Detect or construct candidate ID column if not explicitly present
         pool = candidate_pool.copy().reset_index(drop=True)
-        if self.id_column not in pool.columns:
-            # Check common alternative ID names
-            alt_ids = ["candidate_id", "sample_id", "policy_id", "sample_index", "id"]
-            found_id = next((c for c in alt_ids if c in pool.columns), None)
-            if found_id:
-                self.id_column = found_id
-            else:
-                pool[self.id_column] = [f"CAND_{i:04d}" for i in range(len(pool))]
+
+        if self.strict_identity:
+            if self.id_column not in pool.columns:
+                raise ValueError(
+                    f"Strict candidate identity requires explicit ID column {self.id_column!r} in candidate pool."
+                )
+            if pool[self.id_column].isna().any():
+                raise ValueError(f"Candidate IDs in column {self.id_column!r} must be non-null under strict identity.")
+            # Check uniqueness
+            id_series = pool[self.id_column].astype(str)
+            if id_series.duplicated().any():
+                dupes = id_series[id_series.duplicated()].unique().tolist()
+                raise ValueError(f"Duplicate candidate IDs found in candidate pool under strict identity: {dupes}")
+        else:
+            # Synthetic / demo mode only: Detect or construct candidate ID column if not explicitly present
+            if self.id_column not in pool.columns:
+                alt_ids = ["candidate_id", "sample_id", "policy_id", "sample_index", "id"]
+                found_id = next((c for c in alt_ids if c in pool.columns), None)
+                if found_id:
+                    self.id_column = found_id
+                else:
+                    pool[self.id_column] = [f"CAND_{i:04d}" for i in range(len(pool))]
 
         # Verify all feature columns exist and are numeric
         missing = [c for c in self.feature_columns if c not in pool.columns]
@@ -108,8 +123,13 @@ class FiniteCandidatePool:
                 cand_id_col = next((c for c in [self.id_column, "candidate_id", "sample_id", "policy_id"] if c in observed.columns), None)
                 if cand_id_col:
                     seen_ids.update(str(x) for x in observed[cand_id_col].dropna())
+                elif self.strict_identity:
+                    raise ValueError(
+                        f"Observed dataframe does not contain candidate ID column ({self.id_column!r}) "
+                        "under strict candidate identity mode."
+                    )
                 elif all(c in observed.columns for c in self.feature_columns):
-                    # Coordinate match fallback
+                    # Coordinate match fallback for non-strict synthetic mode only
                     obs_coords = set(tuple(np.round(row, 6)) for row in observed[self.feature_columns].to_numpy(dtype=float))
                     mask = [
                         tuple(np.round(row, 6)) not in obs_coords
@@ -123,6 +143,7 @@ class FiniteCandidatePool:
                         feature_columns=self.feature_columns,
                         id_column=self.id_column,
                         metadata_columns=self.metadata_columns,
+                        strict_identity=self.strict_identity,
                     )
 
         mask = [cid not in seen_ids for cid in self._candidate_ids]
@@ -135,4 +156,5 @@ class FiniteCandidatePool:
             feature_columns=self.feature_columns,
             id_column=self.id_column,
             metadata_columns=self.metadata_columns,
+            strict_identity=self.strict_identity,
         )

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.optimization.closed_loop import (
+from src.legacy.native_optimizer.closed_loop import (
     ClosedLoopOptimizer,
     ExperimentOracle,
     ExperimentProposal,

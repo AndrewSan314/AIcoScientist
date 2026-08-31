@@ -43,6 +43,31 @@ class CandidateProposal:
         """Alias for acquisition_name for compatibility."""
         return self.acquisition_name
 
+    @property
+    def requested_strategy(self) -> str:
+        """Returns the requested strategy name."""
+        return str(self.metadata.get("requested_strategy", self.acquisition_name))
+
+    @property
+    def actual_strategy(self) -> str:
+        """Returns the actual strategy executed."""
+        return str(self.metadata.get("actual_strategy", self.acquisition_name))
+
+    @property
+    def model_class(self) -> str:
+        """Returns the surrogate model class name."""
+        return str(self.metadata.get("model_class", "SingleTaskGP"))
+
+    @property
+    def acquisition_class(self) -> str:
+        """Returns the exact acquisition class evaluated."""
+        return str(self.metadata.get("acquisition_class", self.acquisition_name))
+
+    @property
+    def batch_semantics(self) -> str:
+        """Returns batch proposal semantics."""
+        return str(self.metadata.get("batch_semantics", "top_n_individual_scores"))
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "candidate_id": self.candidate_id,

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .backend import OptimizerBackend
-from .botorch_backend import BoTorchBackend
+from .backend import AcquisitionEvaluationError, OptimizerBackend, UnsupportedStrategyError
+from .botorch_backend import SUPPORTED_STRATEGIES, BoTorchBackend
 from .candidates import normalize_candidate_schema, remove_observed
 from .constraints import apply_constraints
 from .finite_pool import FiniteCandidatePool
@@ -19,6 +19,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "AcquisitionEvaluationError",
     "apply_constraints",
     "BoTorchBackend",
     "CandidateProposal",
@@ -29,4 +30,7 @@ __all__ = [
     "OptimizerBackend",
     "recommend",
     "remove_observed",
+    "SUPPORTED_STRATEGIES",
+    "UnsupportedStrategyError",
 ]
+

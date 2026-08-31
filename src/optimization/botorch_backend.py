@@ -30,12 +30,37 @@ from botorch.models.transforms.input import Normalize
 from botorch.models.transforms.outcome import Standardize
 from gpytorch.mlls import ExactMarginalLogLikelihood
 
-from src.optimization.backend import OptimizerBackend
+from src.optimization.backend import (
+    AcquisitionEvaluationError,
+    OptimizerBackend,
+    UnsupportedStrategyError,
+)
 from src.optimization.finite_pool import FiniteCandidatePool
 from src.optimization.objective import OptimizationObjective
 from src.optimization.proposal import CandidateProposal
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_STRATEGIES: set[str] = {
+    "random",
+    "uniform",
+    "greedy",
+    "posterior_mean",
+    "gp_ucb",
+    "ucb",
+    "upper_confidence_bound",
+    "ei",
+    "expected_improvement",
+    "log_ei",
+    "log_expected_improvement",
+    "nei",
+    "noisy_expected_improvement",
+    "log_nei",
+    "log_noisy_expected_improvement",
+    "thompson",
+    "ts",
+    "thompson_sampling",
+}
 
 
 class BoTorchBackend(OptimizerBackend):
@@ -59,9 +84,18 @@ class BoTorchBackend(OptimizerBackend):
         objective: OptimizationObjective | str,
         feature_columns: Sequence[str] | None,
         candidate_id_column: str | None,
+        strict_identity: bool = True,
     ) -> tuple[FiniteCandidatePool, FiniteCandidatePool, np.ndarray, np.ndarray, OptimizationObjective, list[str]]:
         """Prepares and validates finite candidate pools, feature matrices, and target tensors."""
         obj = OptimizationObjective.create(objective) if isinstance(objective, str) else objective
+
+        # Validate objective capabilities
+        if obj.constraints:
+            raise NotImplementedError("Objective constraints are not currently supported by BoTorchBackend.")
+        if obj.is_multiobjective:
+            raise NotImplementedError("Multi-objective optimization is not currently supported by BoTorchBackend.")
+        if obj.threshold is not None:
+            raise NotImplementedError("Objective threshold semantics are not currently supported by BoTorchBackend.")
 
         # Inferred feature columns
         if feature_columns is not None:
@@ -89,7 +123,12 @@ class BoTorchBackend(OptimizerBackend):
 
         id_col = candidate_id_column or "candidate_id"
 
-        full_pool = FiniteCandidatePool(candidate_pool, feature_columns=feat_cols, id_column=id_col)
+        full_pool = FiniteCandidatePool(
+            candidate_pool,
+            feature_columns=feat_cols,
+            id_column=id_col,
+            strict_identity=strict_identity,
+        )
         unseen_pool = full_pool.filter_unseen(observations)
 
         # Parse observed X and y
@@ -123,18 +162,43 @@ class BoTorchBackend(OptimizerBackend):
         n: int = 1,
         seed: int | None = None,
         strategy: str | None = None,
+        strict_identity: bool = True,
         **kwargs: Any,
     ) -> list[CandidateProposal]:
         """Proposes next candidate(s) from finite pool using BoTorch surrogate and acquisition functions."""
+        requested_strat = (strategy or self._default_strategy).strip().lower()
+
+        # Validate strategy against retired / supported sets
+        if requested_strat in {"turbo_nei", "turbo_ei", "turbo"}:
+            raise UnsupportedStrategyError(
+                f"Strategy {strategy!r} is not supported. "
+                "TuRBO is not part of the current production backend. "
+                "Use 'nei' for global noisy expected improvement or explicitly use a legacy/reference benchmark."
+            )
+        if requested_strat not in SUPPORTED_STRATEGIES:
+            raise UnsupportedStrategyError(
+                f"Optimization strategy {strategy!r} is not supported by BoTorchBackend. "
+                f"Supported strategies: {sorted(SUPPORTED_STRATEGIES)}"
+            )
+
         full_pool, unseen_pool, X_obs, y_obs, obj, feat_cols = self._prepare_data(
-            observations, candidate_pool, objective, feature_columns, candidate_id_column
+            observations,
+            candidate_pool,
+            objective,
+            feature_columns,
+            candidate_id_column,
+            strict_identity=strict_identity,
         )
 
-        strat = (strategy or self._default_strategy).strip().lower()
-
         # Handle purely random strategy or cold start without observations
-        if strat in {"random", "uniform"} or len(y_obs) == 0:
-            return self._propose_random(unseen_pool, obj, n=n, seed=seed, strat_name=strat)
+        if requested_strat in {"random", "uniform"} or len(y_obs) == 0:
+            return self._propose_random(
+                unseen_pool,
+                obj,
+                n=n,
+                seed=seed,
+                requested_strat=requested_strat,
+            )
 
         # Build PyTorch tensors with double precision (ensuring writable contiguous buffers)
         train_X = torch.as_tensor(np.ascontiguousarray(X_obs), dtype=torch.float64)
@@ -181,12 +245,12 @@ class BoTorchBackend(OptimizerBackend):
             user_post_mean = -post_mean_int if obj.minimize else post_mean_int
 
         # 2. Evaluate strategy acquisition values over discrete candidates
-        scores = self._compute_acquisition_scores(
+        scores, actual_strat_name, acq_class_name = self._compute_acquisition_scores(
             model=model,
             train_X=train_X,
             train_Y=train_Y,
             X_unseen=X_unseen,
-            strategy=strat,
+            strategy=requested_strat,
             seed=seed,
             **kwargs,
         )
@@ -210,21 +274,35 @@ class BoTorchBackend(OptimizerBackend):
             else:
                 min_dist = 0.0
 
+            prop_meta = {
+                "rank": rank,
+                "requested_strategy": requested_strat,
+                "actual_strategy": actual_strat_name,
+                "backend_name": self.name,
+                "backend_version": self.version,
+                "model_class": "SingleTaskGP",
+                "acquisition_class": acq_class_name,
+                "batch_semantics": "top_n_individual_scores",
+                "batch_requested": n,
+                "seed": seed,
+                "full_metadata": meta,
+            }
+
             prop = CandidateProposal(
                 candidate_id=cid,
                 design_variables=d_vars,
                 predicted_mean=float(user_post_mean[idx]),
                 predicted_std=float(post_std[idx]),
-                acquisition_name=strat,
+                acquisition_name=requested_strat,
                 acquisition_value=float(scores[idx]),
                 backend_name=self.name,
                 backend_version=self.version,
                 seed=seed,
                 reason_code="BALANCED_EXPLORATION_EXPLOITATION",
-                recommendation_reason=f"BoTorch {strat} acquisition score = {scores[idx]:.4f}",
+                recommendation_reason=f"BoTorch {actual_strat_name} acquisition score = {scores[idx]:.4f}",
                 distance_to_nearest_observed=min_dist,
                 step=len(y_obs) + rank + 1,
-                metadata={"rank": rank, "full_metadata": meta},
+                metadata=prop_meta,
             )
             proposals.append(prop)
 
@@ -236,7 +314,7 @@ class BoTorchBackend(OptimizerBackend):
         obj: OptimizationObjective,
         n: int,
         seed: int | None,
-        strat_name: str,
+        requested_strat: str,
     ) -> list[CandidateProposal]:
         """Proposes random candidates uniformly from unseen pool."""
         rng = np.random.default_rng(seed)
@@ -249,12 +327,25 @@ class BoTorchBackend(OptimizerBackend):
             cid = unseen_pool.get_candidate_id(idx)
             d_vars = unseen_pool.get_design_variables(idx)
             meta = unseen_pool.get_metadata(idx)
+            prop_meta = {
+                "rank": i,
+                "requested_strategy": requested_strat,
+                "actual_strategy": "uniform_random",
+                "backend_name": self.name,
+                "backend_version": self.version,
+                "model_class": "None",
+                "acquisition_class": "UniformRandom",
+                "batch_semantics": "top_n_individual_scores",
+                "batch_requested": n,
+                "seed": seed,
+                "full_metadata": meta,
+            }
             prop = CandidateProposal(
                 candidate_id=cid,
                 design_variables=d_vars,
                 predicted_mean=0.0,
                 predicted_std=1.0,
-                acquisition_name=strat_name,
+                acquisition_name=requested_strat,
                 acquisition_value=0.0,
                 backend_name=self.name,
                 backend_version=self.version,
@@ -263,7 +354,7 @@ class BoTorchBackend(OptimizerBackend):
                 recommendation_reason="Uniform stochastic selection from candidate pool",
                 distance_to_nearest_observed=0.0,
                 step=i + 1,
-                metadata={"full_metadata": meta},
+                metadata=prop_meta,
             )
             proposals.append(prop)
         return proposals
@@ -277,14 +368,20 @@ class BoTorchBackend(OptimizerBackend):
         strategy: str,
         seed: int | None,
         **kwargs: Any,
-    ) -> np.ndarray:
-        """Computes discrete acquisition function scores across candidate tensor using BoTorch primitives."""
+    ) -> tuple[np.ndarray, str, str]:
+        """Computes discrete acquisition function scores across candidate tensor using BoTorch primitives.
+
+        Returns:
+            scores: numpy array of acquisition scores
+            actual_strategy: canonical algorithm name
+            acquisition_class: exact BoTorch acquisition class evaluated
+        """
         # 1. Greedy / Posterior Mean
         if strategy in {"greedy", "posterior_mean"}:
             acq_func = PosteriorMean(model=model)
             with torch.no_grad():
                 scores = acq_func(X_unseen.unsqueeze(1))
-            return scores.cpu().numpy().astype(float)
+            return scores.cpu().numpy().astype(float), "posterior_mean", "PosteriorMean"
 
         # 2. GP-UCB
         elif strategy in {"gp_ucb", "ucb", "upper_confidence_bound"}:
@@ -292,7 +389,7 @@ class BoTorchBackend(OptimizerBackend):
             acq_func = UpperConfidenceBound(model=model, beta=beta)
             with torch.no_grad():
                 scores = acq_func(X_unseen.unsqueeze(1))
-            return scores.cpu().numpy().astype(float)
+            return scores.cpu().numpy().astype(float), "gp_ucb", "UpperConfidenceBound"
 
         # 3. Expected Improvement (LogEI or analytic EI)
         elif strategy in {"ei", "expected_improvement", "log_ei", "log_expected_improvement"}:
@@ -301,16 +398,17 @@ class BoTorchBackend(OptimizerBackend):
                 acq_func = LogExpectedImprovement(model=model, best_f=best_f)
                 with torch.no_grad():
                     scores = acq_func(X_unseen.unsqueeze(1))
+                return scores.cpu().numpy().astype(float), "log_expected_improvement", "LogExpectedImprovement"
             except Exception:
                 acq_func = ExpectedImprovement(model=model, best_f=best_f)
                 with torch.no_grad():
                     scores = acq_func(X_unseen.unsqueeze(1))
-            return scores.cpu().numpy().astype(float)
+                return scores.cpu().numpy().astype(float), "expected_improvement", "ExpectedImprovement"
 
-        # 4. Noisy Expected Improvement (LogNEI / qLogNEI)
-        elif strategy in {"nei", "noisy_expected_improvement", "log_nei", "log_noisy_expected_improvement", "turbo_nei", "turbo_ei"}:
-            with torch.no_grad():
-                try:
+        # 4. Noisy Expected Improvement (qLogNEI) - FAILS CLOSED ON ERROR
+        elif strategy in {"nei", "noisy_expected_improvement", "log_nei", "log_noisy_expected_improvement"}:
+            try:
+                with torch.no_grad():
                     if seed is not None:
                         torch.manual_seed(seed)
                     acq_func = qLogNoisyExpectedImprovement(
@@ -322,13 +420,13 @@ class BoTorchBackend(OptimizerBackend):
                     for chunk in torch.split(X_unseen.unsqueeze(1), 128):
                         scores_list.append(acq_func(chunk))
                     scores = torch.cat(scores_list, dim=0)
-                except Exception as exc:
-                    logger.warning(f"qLogNEI fallback: {exc}; evaluating standard EI")
-                    best_f = train_Y.max()
-                    acq_func = LogExpectedImprovement(model=model, best_f=best_f)
-                    scores = acq_func(X_unseen.unsqueeze(1))
-
-            return scores.cpu().numpy().astype(float)
+                return scores.cpu().numpy().astype(float), "qLogNoisyExpectedImprovement", "qLogNoisyExpectedImprovement"
+            except Exception as exc:
+                raise AcquisitionEvaluationError(
+                    f"Failed to evaluate NEI acquisition function {strategy!r} on BoTorch backend: {exc}. "
+                    f"Context: backend=botorch, botorch_version={botorch.__version__}, torch_version={torch.__version__}, "
+                    f"n_candidates={len(X_unseen)}, n_observations={len(train_X)}."
+                ) from exc
 
         # 5. Joint Thompson Sampling (discrete posterior joint draws)
         elif strategy in {"thompson", "ts", "thompson_sampling"}:
@@ -338,7 +436,7 @@ class BoTorchBackend(OptimizerBackend):
                 posterior = model.posterior(X_unseen)
                 joint_sample = posterior.rsample(sample_shape=torch.Size([1]))
                 scores = joint_sample.squeeze(0).squeeze(-1)
-            return scores.cpu().numpy().astype(float)
+            return scores.cpu().numpy().astype(float), "thompson_sampling", "JointPosteriorSampling"
 
         else:
-            raise ValueError(f"Unsupported optimization strategy {strategy!r} for BoTorch backend.")
+            raise UnsupportedStrategyError(f"Unsupported optimization strategy {strategy!r} for BoTorch backend.")
