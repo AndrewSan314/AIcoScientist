@@ -139,11 +139,26 @@ with st.sidebar:
     engine.policy.w_cost = w_cost
 
     st.divider()
+    st.subheader("Scientific Decision Mode")
+    formal_mode = st.toggle(
+        "⚡ Formal Falsification (HIG)",
+        value=True,
+        help="When enabled, uses formal HypothesisEnsemble, Expected Hypothesis Information Gain (HIG), and FalsificationFirstPolicy.",
+    )
+    st.session_state.formal_falsification_mode = formal_mode
+    if formal_mode:
+        st.caption("Active: **Formal Bayesian Hypothesis Discrimination Engine**")
+    else:
+        st.caption("Active: **Heuristic Multi-Objective Policy**")
+
+    st.divider()
     st.subheader("Normalized Action Costs")
     cost_xrd = st.number_input("XRD Characterization Cost", value=1.0, step=0.5)
     cost_prop = st.number_input("SECCM Property Test Cost", value=5.0, step=1.0)
     engine.policy.cost_xrd = cost_xrd
     engine.policy.cost_property = cost_prop
+    engine.falsification_policy.cost_xrd = cost_xrd
+    engine.falsification_policy.cost_property = cost_prop
 
     st.caption("Illustrative normalized demo cost units.")
 
@@ -308,7 +323,8 @@ with col_action:
     col_btn_ask, col_btn_run = st.columns(2)
     with col_btn_ask:
         if st.button("💡 Ask AI Scientist", use_container_width=True, type="primary"):
-            rec, perspectives = engine.propose_next_experiment()
+            use_formal = st.session_state.get("formal_falsification_mode", True)
+            rec, perspectives = engine.propose_next_experiment(use_falsification_first=use_formal)
             st.session_state.last_rec = rec
             st.session_state.last_perspectives = perspectives
             st.rerun()
