@@ -87,7 +87,7 @@ Each benchmark was executed across **30 independent seeds** with a query budget 
 
 ---
 
-### 4.3. Au-Ir-Rh Ternary Dataset: Kinetic Rate Constant ($k_0$, cm/s) — Global Optimum = 0.03816 cm/s
+### 4.3. Au-Ir-Rh Ternary Dataset: Kinetic Rate Constant ($k_0$, cm/s) — Global Optimum = 0.0142014497462072 cm/s (Candidate AUIRH_Au-rich_170)
 
 | Strategy | Backend | Mean Final % Dev | Std % Dev | 95% Bootstrap CI | Characterization |
 | :--- | :---: | :---: | :---: | :---: | :--- |

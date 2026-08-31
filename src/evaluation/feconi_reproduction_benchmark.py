@@ -1,3 +1,9 @@
+"""HISTORICAL REPRODUCTION BENCHMARK ONLY.
+
+This module intentionally imports legacy native optimizer components from `src.legacy.native_optimizer`
+strictly to reproduce superseded baseline benchmarks and preserve historical auditability.
+This module is NOT part of the production BoTorch optimizer path.
+"""
 from __future__ import annotations
 
 import json

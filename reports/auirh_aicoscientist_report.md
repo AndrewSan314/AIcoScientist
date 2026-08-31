@@ -1,5 +1,10 @@
 # Stage 1 AIcoScientist Benchmark Report: Au-Ir-Rh Autonomous SECCM Dataset
 
+> [!WARNING]
+> **LEGACY NATIVE OPTIMIZER RESULT**  
+> Historical only. Superseded for production optimizer evaluation by BoTorchBackend migration.  
+> Do not use this report as evidence of current production optimizer performance.
+
 **Dataset**: Au-Ir-Rh Autonomous Scanning Electrochemical Cell Microscopy (SECCM)  
 **System Under Test**: AIcoScientist Bayesian Optimization Core (Scale-Invariant Freeze)  
 **Primary Target**: $k^0$ (`k^0 [cm/s]`, maximization)  

@@ -1,5 +1,10 @@
 # NIST Fe-Co-Ni Combinatorial Benchmark: AIcoScientist Optimizer Benchmark Report
 
+> [!WARNING]
+> **LEGACY NATIVE OPTIMIZER RESULT**  
+> Historical only. Superseded for production optimizer evaluation by BoTorchBackend migration.  
+> Do not use this report as evidence of current production optimizer performance.
+
 **Dataset**: NIST Fe-Co-Ni Combinatorial Thin-Film Dataset ($N=921$ measured experimental compositions, Wang et al., *Benchmarking Active Learning Strategies for Materials Optimization and Discovery*, 2022).  
 **Evaluation Scope**: Stage D — AIcoScientist Optimizer Suite vs. Baselines (Scale-Invariant Freeze).  
 **Seeds**: 30 Independent Seeds with Identical Random Initializations per Seed.  
