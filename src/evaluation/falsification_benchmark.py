@@ -9,7 +9,6 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
-from src.datasets.base import OptimizationObjective
 from src.optimization.botorch_backend import BoTorchBackend
 from src.science.actions import ExperimentActionType, ScientificAction
 from src.science.falsification.policy import FalsificationFirstPolicy, FalsificationPolicyMode
@@ -108,6 +107,7 @@ def run_single_falsification_trajectory(
             compositions=comps,
             property_targets=props,
             xrd_embeddings=xrd_embs,
+            xrd_compositions=xrd_comps,
             candidate_ids=rev_prop_cids,
             observed_xrd_ids=observed_xrd_ids,
             observed_property_ids=observed_prop_ids,

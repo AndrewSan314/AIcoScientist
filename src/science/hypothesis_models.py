@@ -91,6 +91,7 @@ class ScientificHypothesisModel(Protocol):
         compositions: np.ndarray,
         property_targets: np.ndarray | None = None,
         xrd_embeddings: np.ndarray | None = None,
+        xrd_compositions: np.ndarray | None = None,
         candidate_ids: Sequence[str] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
@@ -156,7 +157,7 @@ class CompositionSufficientHypothesis:
             + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-6, 1e-1)),
             alpha=1e-6,
             normalize_y=True,
-            n_restarts_optimizer=2,
+            n_restarts_optimizer=1,
             random_state=random_state,
         )
         self._struct_gps: list[GaussianProcessRegressor] = []
@@ -187,11 +188,12 @@ class CompositionSufficientHypothesis:
         compositions: np.ndarray,
         property_targets: np.ndarray | None = None,
         xrd_embeddings: np.ndarray | None = None,
+        xrd_compositions: np.ndarray | None = None,
         candidate_ids: Sequence[str] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
     ) -> None:
-        comps = np.atleast_2d(compositions)
+        comps = np.atleast_2d(compositions) if len(compositions) > 0 else np.empty((0, 3))
         n_obs = len(comps)
 
         # Fit property GP if targets available
@@ -203,18 +205,20 @@ class CompositionSufficientHypothesis:
 
         # Fit structure GPs if embeddings available
         if xrd_embeddings is not None and len(xrd_embeddings) > 0:
-            self._emb_dim = xrd_embeddings.shape[1]
-            self._struct_gps = []
-            for d in range(self._emb_dim):
-                gp = GaussianProcessRegressor(
-                    kernel=ConstantKernel(1.0, (1e-3, 1e2)) * RBF(length_scale=[10.0, 10.0, 10.0], length_scale_bounds=(1.0, 100.0))
-                    + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
-                    alpha=1e-5,
-                    normalize_y=True,
-                    random_state=self.random_state + d,
-                )
-                gp.fit(comps, xrd_embeddings[:, d])
-                self._struct_gps.append(gp)
+            x_comps = np.atleast_2d(xrd_compositions) if xrd_compositions is not None and len(xrd_compositions) == len(xrd_embeddings) else comps
+            if len(x_comps) == len(xrd_embeddings):
+                self._emb_dim = xrd_embeddings.shape[1]
+                self._struct_gps = []
+                for d in range(self._emb_dim):
+                    gp = GaussianProcessRegressor(
+                        kernel=ConstantKernel(1.0, (1e-3, 1e2)) * RBF(length_scale=[10.0, 10.0, 10.0], length_scale_bounds=(1.0, 100.0))
+                        + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
+                        alpha=1e-5,
+                        normalize_y=True,
+                        random_state=self.random_state + d,
+                    )
+                    gp.fit(x_comps, xrd_embeddings[:, d])
+                    self._struct_gps.append(gp)
 
         self.is_fitted = True
 
@@ -314,7 +318,7 @@ class StructureInformedHypothesis:
             + WhiteKernel(noise_level=1e-5, noise_level_bounds=(1e-6, 1e-1)),
             alpha=1e-6,
             normalize_y=True,
-            n_restarts_optimizer=2,
+            n_restarts_optimizer=1,
             random_state=random_state,
         )
         self._comp_gp = GaussianProcessRegressor(
@@ -353,27 +357,30 @@ class StructureInformedHypothesis:
         compositions: np.ndarray,
         property_targets: np.ndarray | None = None,
         xrd_embeddings: np.ndarray | None = None,
+        xrd_compositions: np.ndarray | None = None,
         candidate_ids: Sequence[str] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
     ) -> None:
-        comps = np.atleast_2d(compositions)
+        comps = np.atleast_2d(compositions) if len(compositions) > 0 else np.empty((0, 3))
         n_obs = len(comps)
 
         # 1. Fit structure surrogate
         if xrd_embeddings is not None and len(xrd_embeddings) > 0:
-            self._emb_dim = xrd_embeddings.shape[1]
-            self._struct_gps = []
-            for d in range(self._emb_dim):
-                gp = GaussianProcessRegressor(
-                    kernel=ConstantKernel(1.0, (1e-3, 1e2)) * RBF(length_scale=[10.0, 10.0, 10.0], length_scale_bounds=(1.0, 100.0))
-                    + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
-                    alpha=1e-5,
-                    normalize_y=True,
-                    random_state=self.random_state + d,
-                )
-                gp.fit(comps, xrd_embeddings[:, d])
-                self._struct_gps.append(gp)
+            x_comps = np.atleast_2d(xrd_compositions) if xrd_compositions is not None and len(xrd_compositions) == len(xrd_embeddings) else comps
+            if len(x_comps) == len(xrd_embeddings):
+                self._emb_dim = xrd_embeddings.shape[1]
+                self._struct_gps = []
+                for d in range(self._emb_dim):
+                    gp = GaussianProcessRegressor(
+                        kernel=ConstantKernel(1.0, (1e-3, 1e2)) * RBF(length_scale=[10.0, 10.0, 10.0], length_scale_bounds=(1.0, 100.0))
+                        + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
+                        alpha=1e-5,
+                        normalize_y=True,
+                        random_state=self.random_state + d,
+                    )
+                    gp.fit(x_comps, xrd_embeddings[:, d])
+                    self._struct_gps.append(gp)
 
         # 2. Fit property model
         if property_targets is not None and len(property_targets) > 0 and len(comps) == len(property_targets):
@@ -385,6 +392,7 @@ class StructureInformedHypothesis:
                 and observed_property_ids is not None
                 and candidate_ids is not None
                 and xrd_embeddings is not None
+                and len(xrd_embeddings) == len(comps)
             ):
                 joint_indices = [
                     i for i, cid in enumerate(candidate_ids)
@@ -562,11 +570,12 @@ class LocalStructuralRegimeHypothesis:
         compositions: np.ndarray,
         property_targets: np.ndarray | None = None,
         xrd_embeddings: np.ndarray | None = None,
+        xrd_compositions: np.ndarray | None = None,
         candidate_ids: Sequence[str] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
     ) -> None:
-        comps = np.atleast_2d(compositions)
+        comps = np.atleast_2d(compositions) if len(compositions) > 0 else np.empty((0, 3))
         n_obs = len(comps)
 
         if n_obs >= self.n_regimes:
@@ -596,18 +605,20 @@ class LocalStructuralRegimeHypothesis:
 
         # Fit structure surrogate with sharper localized length scales
         if xrd_embeddings is not None and len(xrd_embeddings) > 0:
-            self._emb_dim = xrd_embeddings.shape[1]
-            self._struct_gps = []
-            for d in range(self._emb_dim):
-                gp = GaussianProcessRegressor(
-                    kernel=ConstantKernel(1.0, (1e-3, 1e2)) * Matern(length_scale=[5.0, 5.0, 5.0], nu=1.5, length_scale_bounds=(0.5, 50.0))
-                    + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
-                    alpha=1e-5,
-                    normalize_y=True,
-                    random_state=self.random_state + 10 + d,
-                )
-                gp.fit(comps, xrd_embeddings[:, d])
-                self._struct_gps.append(gp)
+            x_comps = np.atleast_2d(xrd_compositions) if xrd_compositions is not None and len(xrd_compositions) == len(xrd_embeddings) else comps
+            if len(x_comps) == len(xrd_embeddings):
+                self._emb_dim = xrd_embeddings.shape[1]
+                self._struct_gps = []
+                for d in range(self._emb_dim):
+                    gp = GaussianProcessRegressor(
+                        kernel=ConstantKernel(1.0, (1e-3, 1e2)) * Matern(length_scale=[5.0, 5.0, 5.0], nu=1.5, length_scale_bounds=(0.5, 50.0))
+                        + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-5, 1e-1)),
+                        alpha=1e-5,
+                        normalize_y=True,
+                        random_state=self.random_state + 10 + d,
+                    )
+                    gp.fit(x_comps, xrd_embeddings[:, d])
+                    self._struct_gps.append(gp)
 
         self.is_fitted = True
 
@@ -743,6 +754,7 @@ class HypothesisEnsemble:
         compositions: np.ndarray,
         property_targets: np.ndarray | None = None,
         xrd_embeddings: np.ndarray | None = None,
+        xrd_compositions: np.ndarray | None = None,
         candidate_ids: Sequence[str] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
@@ -753,6 +765,7 @@ class HypothesisEnsemble:
                 compositions=compositions,
                 property_targets=property_targets,
                 xrd_embeddings=xrd_embeddings,
+                xrd_compositions=xrd_compositions,
                 candidate_ids=candidate_ids,
                 observed_xrd_ids=observed_xrd_ids,
                 observed_property_ids=observed_property_ids,

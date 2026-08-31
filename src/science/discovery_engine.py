@@ -245,6 +245,7 @@ class AutonomousDiscoveryEngine:
             compositions=prop_comps if len(prop_comps) > 0 else xrd_comps,
             property_targets=prop_targets if len(prop_targets) > 0 else None,
             xrd_embeddings=xrd_embs if len(xrd_embs) > 0 else None,
+            xrd_compositions=xrd_comps if len(xrd_embs) > 0 else None,
             candidate_ids=revealed_prop_cids,
             observed_xrd_ids=set(revealed_xrd_cids),
             observed_property_ids=set(revealed_prop_cids),
