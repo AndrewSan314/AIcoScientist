@@ -191,6 +191,12 @@ class AutonomousDiscoveryEngine:
         """Refits surrogate models on revealed data and returns current structural predictive advantage."""
         cand_df = self.oracle.get_candidate_pool()
 
+        # Build candidate_id keyed composition dictionary from full candidate pool
+        comp_by_id: dict[str, np.ndarray] = {
+            str(row["candidate_id"]): row[["Au", "Ir", "Rh"]].to_numpy(dtype=np.float64)
+            for _, row in cand_df.iterrows()
+        }
+
         # 1. Fit XRD Representation Extractor on revealed spectra
         revealed_xrd_map = self.oracle.get_revealed_xrd()
         revealed_spectra = [
@@ -199,31 +205,41 @@ class AutonomousDiscoveryEngine:
         self.xrd_extractor.fit(revealed_spectra)
 
         # 2. Extract embeddings for candidates with revealed XRD
-        revealed_xrd_cids = list(revealed_xrd_map.keys())
-        if revealed_xrd_cids:
-            xrd_comps = cand_df[cand_df["candidate_id"].isin(revealed_xrd_cids)][["Au", "Ir", "Rh"]].to_numpy()
-            xrd_embs = np.array(
-                [self.xrd_extractor.transform(revealed_xrd_map[cid].revealed_data["normalized_intensity"]) for cid in revealed_xrd_cids]
-            )
+        observed_xrd_ids = set(revealed_xrd_map.keys())
+        xrd_embedding_by_id: dict[str, np.ndarray] = {
+            cid: self.xrd_extractor.transform(out.revealed_data["normalized_intensity"])
+            for cid, out in revealed_xrd_map.items()
+        }
+
+        ordered_xrd_cids = sorted(observed_xrd_ids)
+        if ordered_xrd_cids:
+            xrd_comps = np.array([comp_by_id[cid] for cid in ordered_xrd_cids], dtype=np.float64)
+            xrd_embs = np.array([xrd_embedding_by_id[cid] for cid in ordered_xrd_cids], dtype=np.float64)
             self.structure_model.fit(xrd_comps, xrd_embs)
         else:
-            xrd_comps = np.empty((0, 3))
-            xrd_embs = np.empty((0, 8))
+            xrd_comps = np.empty((0, 3), dtype=np.float64)
+            xrd_embs = np.empty((0, 8), dtype=np.float64)
             self.structure_model.fit(xrd_comps, xrd_embs)
 
         # 3. Fit Property Model on revealed properties
         revealed_prop_map = self.oracle.get_revealed_properties()
-        revealed_prop_cids = list(revealed_prop_map.keys())
-        if revealed_prop_cids:
-            prop_comps = cand_df[cand_df["candidate_id"].isin(revealed_prop_cids)][["Au", "Ir", "Rh"]].to_numpy()
-            prop_targets = np.array([revealed_prop_map[cid].revealed_data["k0"] for cid in revealed_prop_cids])
+        observed_property_ids = set(revealed_prop_map.keys())
+        property_by_id: dict[str, float] = {
+            cid: float(out.revealed_data["k0"])
+            for cid, out in revealed_prop_map.items()
+        }
+
+        ordered_prop_cids = sorted(observed_property_ids)
+        if ordered_prop_cids:
+            prop_comps = np.array([comp_by_id[cid] for cid in ordered_prop_cids], dtype=np.float64)
+            prop_targets = np.array([property_by_id[cid] for cid in ordered_prop_cids], dtype=np.float64)
 
             # If candidates have both XRD and property, evaluate structural predictive advantage via LOO-CV
-            joint_cids = [cid for cid in revealed_prop_cids if cid in revealed_xrd_map]
+            joint_cids = sorted([cid for cid in ordered_prop_cids if cid in xrd_embedding_by_id])
             if len(joint_cids) >= 3:
-                joint_comps = cand_df[cand_df["candidate_id"].isin(joint_cids)][["Au", "Ir", "Rh"]].to_numpy()
-                joint_targets = np.array([revealed_prop_map[cid].revealed_data["k0"] for cid in joint_cids])
-                joint_embs = np.array([self.xrd_extractor.transform(revealed_xrd_map[cid].revealed_data["normalized_intensity"]) for cid in joint_cids])
+                joint_comps = np.array([comp_by_id[cid] for cid in joint_cids], dtype=np.float64)
+                joint_targets = np.array([property_by_id[cid] for cid in joint_cids], dtype=np.float64)
+                joint_embs = np.array([xrd_embedding_by_id[cid] for cid in joint_cids], dtype=np.float64)
                 self.property_model.fit(prop_comps, prop_targets, embeddings=None)
                 eval_dict = self.property_model.evaluate_structure_predictive_advantage(
                     compositions=joint_comps,
@@ -235,20 +251,18 @@ class AutonomousDiscoveryEngine:
                 self.property_model.fit(prop_comps, prop_targets)
                 struct_adv = 0.0
         else:
-            prop_comps = np.empty((0, 3))
-            prop_targets = np.empty((0,))
+            prop_comps = np.empty((0, 3), dtype=np.float64)
+            prop_targets = np.empty((0,), dtype=np.float64)
             self.property_model.fit(prop_comps, prop_targets)
             struct_adv = 0.0
 
-        # 4. Fit formal hypothesis models in ensemble
+        # 4. Fit formal hypothesis models in ensemble using candidate_id as the ONLY join key
         self.ensemble.fit_all(
-            compositions=prop_comps if len(prop_comps) > 0 else xrd_comps,
-            property_targets=prop_targets if len(prop_targets) > 0 else None,
-            xrd_embeddings=xrd_embs if len(xrd_embs) > 0 else None,
-            xrd_compositions=xrd_comps if len(xrd_embs) > 0 else None,
-            candidate_ids=revealed_prop_cids,
-            observed_xrd_ids=set(revealed_xrd_cids),
-            observed_property_ids=set(revealed_prop_cids),
+            composition_by_id=comp_by_id,
+            property_by_id=property_by_id,
+            xrd_embedding_by_id=xrd_embedding_by_id,
+            observed_xrd_ids=observed_xrd_ids,
+            observed_property_ids=observed_property_ids,
         )
 
         # Synchronize legacy hypothesis engine

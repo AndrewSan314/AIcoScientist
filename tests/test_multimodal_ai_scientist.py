@@ -388,14 +388,20 @@ def test_reveal_mutation_changes_downstream_state() -> None:
     engine_a.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
     engine_b.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
 
-    rec_a, _ = engine_a.propose_next_experiment()
-    target_cid = rec_a.action.candidate_id
-
-    # Mutate only after initial proposal
+    # Pick an unrevealed candidate for property action
+    target_cid = "AUIRH_Au-rich_099"
     oracle_b._ground_truth_map[target_cid]["k0"] = 0.50000
 
-    out_a = engine_a.execute_experiment(rec_a.action)
-    out_b = engine_b.execute_experiment(rec_a.action)
+    act = ScientificAction(
+        action_id=f"test_act_{target_cid}",
+        candidate_id=target_cid,
+        action_type=ExperimentActionType.PROPERTY,
+        estimated_cost=5.0,
+        requested_at_step=1,
+    )
+
+    out_a = engine_a.execute_experiment(act)
+    out_b = engine_b.execute_experiment(act)
 
     assert out_a["outcome"]["revealed_data"]["k0"] != out_b["outcome"]["revealed_data"]["k0"]
     assert out_b["outcome"]["revealed_data"]["k0"] == 0.50000
@@ -442,12 +448,12 @@ def test_deterministic_default_demo_trajectory() -> None:
     assert rec1.action.candidate_id == "AUIRH_Au-rich_127"
     assert rec1.action.action_type == ExperimentActionType.PROPERTY
     assert rec1.hypothesis_id == "H2"
-    assert np.isclose(rec1.total_value, 0.9326, atol=1e-3)
+    assert np.isclose(rec1.total_value, 0.8874, atol=1e-3)
 
     engine.execute_experiment(rec1.action)
 
     rec2, _ = engine.propose_next_experiment()
-    assert rec2.action.candidate_id == "AUIRH_Ir-rich_177"
+    assert rec2.action.candidate_id == "AUIRH_Rh-rich_289"
     assert rec2.action.action_type == ExperimentActionType.PROPERTY
     assert rec2.hypothesis_id == "H1"
-    assert np.isclose(rec2.total_value, 0.9898, atol=1e-3)
+    assert np.isclose(rec2.total_value, 0.9800, atol=1e-3)

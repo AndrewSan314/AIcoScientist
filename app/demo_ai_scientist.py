@@ -138,6 +138,10 @@ with st.sidebar:
     engine.policy.w_disc = w_disc
     engine.policy.w_cost = w_cost
 
+    engine.falsification_policy.w_hig = w_info
+    engine.falsification_policy.w_disc = w_disc
+    engine.falsification_policy.w_cost = w_cost
+
     st.divider()
     st.subheader("Scientific Decision Mode")
     formal_mode = st.toggle(

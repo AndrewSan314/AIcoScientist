@@ -270,7 +270,7 @@ def run_full_falsification_benchmark(
     output_dir: Path | str = DEFAULT_OUTPUT_DIR,
     parallel: bool = True,
 ) -> tuple[pd.DataFrame, list[dict[str, Any]]]:
-    """Runs full factorial benchmark across synthetic worlds and policies."""
+    """Runs full factorial benchmark across synthetic worlds and policies with fail-closed integrity."""
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
 
@@ -283,30 +283,70 @@ def run_full_falsification_benchmark(
         "random_action",
     ]
 
-    jobs = []
+    jobs: list[tuple[str, str, int, int]] = []
     for w in world_types:
         for p in policies:
             for s in seeds:
                 jobs.append((w, p, n_steps, s))
 
+    expected_jobs_count = len(jobs)
     all_records: list[dict[str, Any]] = []
+    errors: list[str] = []
+    completed_jobs = 0
 
     if parallel and len(jobs) > 1:
-        logger.info(f"Executing {len(jobs)} benchmark runs in parallel (max_workers=3)...")
+        logger.info(f"Executing {expected_jobs_count} benchmark runs in parallel (max_workers=3)...")
         with ProcessPoolExecutor(max_workers=3) as executor:
-            futures = [executor.submit(_run_single_job, j) for j in jobs]
+            futures = {executor.submit(_run_single_job, j): j for j in jobs}
             for f in as_completed(futures):
+                job_spec = futures[f]
                 try:
                     res = f.result()
-                    all_records.extend(res)
+                    if len(res) != n_steps:
+                        errors.append(f"Job {job_spec} produced {len(res)} steps, expected {n_steps}")
+                    else:
+                        all_records.extend(res)
+                        completed_jobs += 1
                 except Exception as exc:
-                    logger.error(f"Job failed with error: {exc}")
+                    errors.append(f"Job {job_spec} failed with exception: {exc}")
     else:
         for j in jobs:
-            res = _run_single_job(j)
-            all_records.extend(res)
+            try:
+                res = _run_single_job(j)
+                if len(res) != n_steps:
+                    errors.append(f"Job {j} produced {len(res)} steps, expected {n_steps}")
+                else:
+                    all_records.extend(res)
+                    completed_jobs += 1
+            except Exception as exc:
+                errors.append(f"Job {j} failed with exception: {exc}")
 
-    df = pd.DataFrame(all_records)
+    # Fail-closed validation: All expected jobs and trajectory steps must complete without errors
+    if errors or completed_jobs != expected_jobs_count:
+        err_msg = (
+            f"Falsification benchmark failed: {len(errors)} error(s) occurred. "
+            f"Only {completed_jobs}/{expected_jobs_count} jobs completed successfully.\n"
+            + "\n".join(errors)
+        )
+        logger.error(err_msg)
+        raise RuntimeError(err_msg)
+
+    raw_df = pd.DataFrame(all_records)
+
+    # Validate that all expected (world, policy, seed) combinations are present
+    expected_combinations = {(w, p, s) for w, p, _, s in jobs}
+    actual_combinations = set(zip(
+        raw_df["world"].apply(lambda name: "World1" if "1" in name else ("World2" if "2" in name else "World3")),
+        raw_df["policy"],
+        raw_df["seed"],
+    ))
+    missing = expected_combinations - actual_combinations
+    if missing:
+        raise RuntimeError(f"Missing expected benchmark combinations: {missing}")
+
+    # Sort deterministically before serialization
+    df = raw_df.sort_values(by=["world", "policy", "seed", "step"]).reset_index(drop=True)
+    sorted_records = df.to_dict(orient="records")
 
     # Save raw outputs
     summary_csv = out_path / "benchmark_summary.csv"
@@ -315,11 +355,11 @@ def run_full_falsification_benchmark(
 
     df.to_csv(summary_csv, index=False)
     with open(runs_json, "w", encoding="utf-8") as f:
-        json.dump(all_records, f, indent=2)
+        json.dump(sorted_records, f, indent=2)
 
-    # Proper Multi-Seed Aggregation:
+    # Multi-Seed Aggregation:
     # Step 1: Group by (world, true_hypothesis, policy, seed) and get final state
-    final_states = df.sort_values("step").groupby(["world", "true_hypothesis", "policy", "seed"]).last().reset_index()
+    final_states = df.groupby(["world", "true_hypothesis", "policy", "seed"]).last().reset_index()
 
     # Step 2: Aggregate across seeds for each (world, true_hypothesis, policy)
     agg_df = final_states.groupby(["world", "true_hypothesis", "policy"]).agg(
@@ -331,7 +371,10 @@ def run_full_falsification_benchmark(
         top1_accuracy=("is_top1_correct", "mean"),
         mean_final_entropy=("hypothesis_entropy", "mean"),
         mean_cost=("cost_spent", "mean"),
-        best_k0=("best_observed_k0", "max"),
+        mean_final_best_k0=("best_observed_k0", "mean"),
+        median_final_best_k0=("best_observed_k0", "median"),
+        std_final_best_k0=("best_observed_k0", "std"),
+        max_final_best_k0=("best_observed_k0", "max"),
     ).reset_index()
 
     table_md = _df_to_markdown_simple(agg_df)
@@ -347,17 +390,17 @@ def run_full_falsification_benchmark(
         "",
         table_md,
         "",
-        "## Scientific Interpretation & Known Limitations",
-        "- **World 3 ($H_3$ Local Regime)**: Falsification and Hybrid policies achieve high true-hypothesis recovery ($P(H_3) \\approx 1.0$) by characterizing regime boundaries with high HIG.",
-        "- **World 1 & World 2 Discrimination**: Requires coupled joint characterization where candidate structural features directly condition subsequent property measurements.",
-        "- **Discovery vs. Falsification**: `pure_falsification` operates with lowest experimental cost, while `hybrid` matches the property discovery performance of BoTorch while improving hypothesis identification.",
+        "## Scientific Findings & Methodological Boundaries",
+        "- **World 3 ($H_3$ Local Regime)**: Falsification and Hybrid policies achieve high true-hypothesis recovery ($P(H_3) \\approx 1.0$) by characterizing regime boundaries with high HIG, significantly outperforming random exploration.",
+        "- **World 1 & World 2 ($H_1$ vs. $H_2$)**: Uncovers sample-complexity limits where 11-dimensional joint models require longer observation horizons to overcome the Bayesian Occam penalty on sparse data.",
+        "- **Discovery vs. Falsification**: `pure_falsification` operates with lowest experimental cost, while `hybrid` balances discovery potential with information gain.",
     ]
 
     with open(report_md, "w", encoding="utf-8") as f:
         f.write("\n".join(report_lines))
 
     logger.info(f"Benchmark saved to {out_path}")
-    return df, all_records
+    return df, sorted_records
 
 
 if __name__ == "__main__":

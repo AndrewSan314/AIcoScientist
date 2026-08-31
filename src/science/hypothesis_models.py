@@ -50,29 +50,33 @@ class PredictiveDistribution:
         return gen.normal(loc=self.mean, scale=std, size=(n_samples, len(self.mean)))
 
     def log_pdf(self, observation: np.ndarray | float) -> float:
-        """Computes calibrated log-predictive density of a realized measurement.
+        """Computes exact multivariate diagonal Gaussian log-predictive density.
 
-        For scalar property (D=1), computes standard 1D Gaussian log-density.
-        For multivariate characterization embeddings (D > 1), computes the normalized
-        log-density per dimension to prevent multidimensional embeddings from artificially
-        dominating scalar property observations by an arbitrary factor of D:
-            log_pdf = -0.5 * [ log(2*pi) + 1/D * sum(log(var_d)) + 1/D * sum(diff_d^2 / var_d) ]
+        Mathematical definition:
+            log p(y) = -0.5 * [ D * log(2*pi) + sum(log(var_d)) + sum((y_d - mu_d)^2 / var_d) ]
+
+        Parameters
+        ----------
+        observation : np.ndarray | float
+            Realized measurement observation (scalar float for 1D property, D-dimensional array for XRD embedding).
+
+        Returns
+        -------
+        float
+            Mathematically exact probability log-density.
         """
         obs = np.atleast_1d(np.asarray(observation, dtype=np.float64))
         dim = len(self.mean)
+        if len(obs) != dim:
+            raise ValueError(f"Observation dimension mismatch: expected {dim}, got {len(obs)}")
+
+        min_var = 1e-10 if dim == 1 else 1e-8
+        var = np.maximum(self.variance, min_var)
         diff = obs - self.mean
 
-        if dim == 1:
-            var = np.maximum(self.variance, 1e-10)
-            quad = float((diff[0] ** 2) / var[0])
-            log_det = float(np.log(var[0]))
-            log_prob = -0.5 * (np.log(2.0 * np.pi) + log_det + quad)
-        else:
-            var = np.maximum(self.variance, 1e-5)
-            # Dimension-normalized log-density rate
-            quad = float(np.mean((diff**2) / var))
-            log_det = float(np.mean(np.log(var)))
-            log_prob = -0.5 * (np.log(2.0 * np.pi) + log_det + quad)
+        quad = float(np.sum((diff**2) / var))
+        log_det = float(np.sum(np.log(var)))
+        log_prob = -0.5 * (dim * np.log(2.0 * np.pi) + log_det + quad)
 
         return float(log_prob)
 
@@ -158,35 +162,61 @@ def _build_candidate_maps(
     property_by_id: Mapping[str, float] | None = None,
     xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
 ) -> tuple[dict[str, np.ndarray], dict[str, float], dict[str, np.ndarray]]:
-    """Helper to safely build candidate ID maps from either explicit maps or legacy arrays."""
+    """Helper to safely build candidate ID maps from explicit mappings or validated legacy arrays.
+
+    Explicit candidate-ID keyed dictionaries take absolute precedence.
+    Legacy positional arrays are validated for exact length match and unique candidate IDs
+    to prevent silent identity cross-contamination.
+    """
     comp_map: dict[str, np.ndarray] = {k: np.asarray(v, dtype=np.float64) for k, v in (composition_by_id or {}).items()}
     prop_map: dict[str, float] = {k: float(v) for k, v in (property_by_id or {}).items()}
     xrd_map: dict[str, np.ndarray] = {k: np.asarray(v, dtype=np.float64) for k, v in (xrd_embedding_by_id or {}).items()}
 
-    # Populate comp_map from legacy positional lists if not provided
-    if candidate_ids is not None and compositions is not None and len(candidate_ids) == len(compositions):
-        for cid, c in zip(candidate_ids, compositions):
+    # Legacy composition resolution
+    if not comp_map and compositions is not None:
+        cids = candidate_ids or property_candidate_ids or xrd_candidate_ids
+        if cids is None:
+            raise ValueError("Candidate IDs must be provided when passing positional compositions array.")
+        if len(cids) != len(compositions):
+            raise ValueError(f"Length mismatch: {len(cids)} candidate IDs vs {len(compositions)} compositions.")
+        if len(cids) != len(set(cids)):
+            raise ValueError("Duplicate candidate IDs detected in compositions mapping.")
+        for cid, c in zip(cids, compositions):
             comp_map[cid] = np.asarray(c, dtype=np.float64)
-    if property_candidate_ids is not None and compositions is not None and len(property_candidate_ids) == len(compositions):
-        for cid, c in zip(property_candidate_ids, compositions):
-            comp_map[cid] = np.asarray(c, dtype=np.float64)
-    if xrd_candidate_ids is not None and xrd_compositions is not None and len(xrd_candidate_ids) == len(xrd_compositions):
+
+    if xrd_compositions is not None and xrd_candidate_ids is not None:
+        if len(xrd_candidate_ids) != len(xrd_compositions):
+            raise ValueError(f"Length mismatch: {len(xrd_candidate_ids)} XRD candidate IDs vs {len(xrd_compositions)} XRD compositions.")
+        if len(xrd_candidate_ids) != len(set(xrd_candidate_ids)):
+            raise ValueError("Duplicate candidate IDs detected in XRD candidate IDs.")
         for cid, c in zip(xrd_candidate_ids, xrd_compositions):
             comp_map[cid] = np.asarray(c, dtype=np.float64)
 
-    # Populate prop_map from legacy targets
+    # Legacy property targets resolution
     if not prop_map and property_targets is not None:
-        p_cids = property_candidate_ids or candidate_ids
-        if p_cids is not None and len(p_cids) == len(property_targets):
-            for cid, y in zip(p_cids, property_targets):
-                prop_map[cid] = float(y)
+        p_cids = property_candidate_ids if property_candidate_ids is not None else candidate_ids
+        if p_cids is None:
+            raise ValueError("Property candidate IDs must be provided when passing property_targets array.")
+        if len(p_cids) != len(property_targets):
+            raise ValueError(f"Length mismatch: {len(p_cids)} property candidate IDs vs {len(property_targets)} property targets.")
+        if len(p_cids) != len(set(p_cids)):
+            raise ValueError("Duplicate candidate IDs detected in property candidate IDs.")
+        for cid, y in zip(p_cids, property_targets):
+            prop_map[cid] = float(y)
 
-    # Populate xrd_map from legacy embeddings
+    # Legacy XRD embeddings resolution
     if not xrd_map and xrd_embeddings is not None:
-        x_cids = xrd_candidate_ids or candidate_ids
-        if x_cids is not None and len(x_cids) == len(xrd_embeddings):
-            for cid, emb in zip(x_cids, xrd_embeddings):
-                xrd_map[cid] = np.asarray(emb, dtype=np.float64)
+        x_cids = xrd_candidate_ids if xrd_candidate_ids is not None else (
+            candidate_ids if (property_targets is None or len(candidate_ids) == len(xrd_embeddings)) else None
+        )
+        if x_cids is None:
+            raise ValueError("XRD candidate IDs must be provided when passing xrd_embeddings array with distinct property targets.")
+        if len(x_cids) != len(xrd_embeddings):
+            raise ValueError(f"Length mismatch: {len(x_cids)} XRD candidate IDs vs {len(xrd_embeddings)} XRD embeddings.")
+        if len(x_cids) != len(set(x_cids)):
+            raise ValueError("Duplicate candidate IDs detected in XRD candidate IDs.")
+        for cid, emb in zip(x_cids, xrd_embeddings):
+            xrd_map[cid] = np.asarray(emb, dtype=np.float64)
 
     return comp_map, prop_map, xrd_map
 
