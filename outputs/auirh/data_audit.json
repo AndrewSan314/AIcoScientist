@@ -103,13 +103,18 @@
     }
   },
   "xrd_summary": {
-    "total_files": 1026,
+    "total_spectra": 1026,
     "libraries": {
       "Au-rich": 342,
       "Ir-rich": 342,
       "Rh-rich": 342
     },
-    "format": "Two-column XY diffractogram with metadata header",
+    "points_per_spectrum": 4500,
+    "two_theta_min_degrees": 10.0,
+    "two_theta_max_degrees": 99.98,
+    "step_size_degrees": 0.02,
+    "grid_consistency": true,
+    "format": "Two-column XY diffractogram with single-line metadata header ('Id: ...)",
     "stage_1_policy": "EXCLUDED from optimizer features; characterization/audit only"
   },
   "finite_pool_verification": {

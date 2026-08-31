@@ -1,0 +1,63 @@
+{
+  "dataset": "AuIrRh",
+  "target": "k0",
+  "n_seeds": 30,
+  "total_budget": 50,
+  "backend": "botorch",
+  "summary": [
+    {
+      "strategy": "random",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 9.111277296249275,
+      "final_pct_deviation_std": 4.204463700629567,
+      "final_pct_deviation_ci_95_lower": 7.652300360457046,
+      "final_pct_deviation_ci_95_upper": 10.58595813478999
+    },
+    {
+      "strategy": "greedy",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 15.938144237969466,
+      "final_pct_deviation_std": 6.694784511371782,
+      "final_pct_deviation_ci_95_lower": 13.646166771203644,
+      "final_pct_deviation_ci_95_upper": 18.306966509628293
+    },
+    {
+      "strategy": "gp_ucb",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 9.841721994887317,
+      "final_pct_deviation_std": 9.644060890298713,
+      "final_pct_deviation_ci_95_lower": 6.597506426356175,
+      "final_pct_deviation_ci_95_upper": 13.552165275236717
+    },
+    {
+      "strategy": "expected_improvement",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 6.600729607289396,
+      "final_pct_deviation_std": 4.941928541007497,
+      "final_pct_deviation_ci_95_lower": 4.854730311137784,
+      "final_pct_deviation_ci_95_upper": 8.251783142565975
+    },
+    {
+      "strategy": "noisy_expected_improvement",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 6.43730018683147,
+      "final_pct_deviation_std": 5.199570709808171,
+      "final_pct_deviation_ci_95_lower": 4.740226278364755,
+      "final_pct_deviation_ci_95_upper": 8.361735119512902
+    },
+    {
+      "strategy": "thompson",
+      "target": "k0",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 3.633229040847875,
+      "final_pct_deviation_std": 4.189347312310644,
+      "final_pct_deviation_ci_95_lower": 2.297983086881802,
+      "final_pct_deviation_ci_95_upper": 5.255295206151946
+    }
+  ]
+}

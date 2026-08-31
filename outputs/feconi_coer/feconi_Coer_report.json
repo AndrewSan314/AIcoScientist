@@ -1,0 +1,63 @@
+{
+  "dataset": "FeCoNi",
+  "target": "Coer",
+  "n_seeds": 30,
+  "total_budget": 50,
+  "backend": "botorch",
+  "summary": [
+    {
+      "strategy": "random",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 12.967532467532473,
+      "final_pct_deviation_std": 6.0008037484263905,
+      "final_pct_deviation_ci_95_lower": 10.867071367599545,
+      "final_pct_deviation_ci_95_upper": 15.100882568136093
+    },
+    {
+      "strategy": "greedy",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 27.971983415645393,
+      "final_pct_deviation_std": 29.681522459104954,
+      "final_pct_deviation_ci_95_lower": 17.941469270166458,
+      "final_pct_deviation_ci_95_upper": 38.01619337235533
+    },
+    {
+      "strategy": "gp_ucb",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 26.970672519968296,
+      "final_pct_deviation_std": 28.57493371856115,
+      "final_pct_deviation_ci_95_lower": 16.943517925736238,
+      "final_pct_deviation_ci_95_upper": 37.59340893847936
+    },
+    {
+      "strategy": "expected_improvement",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 3.0757880617035602,
+      "final_pct_deviation_std": 3.6249356421449113,
+      "final_pct_deviation_ci_95_lower": 1.874259953661366,
+      "final_pct_deviation_ci_95_upper": 4.446824126577654
+    },
+    {
+      "strategy": "noisy_expected_improvement",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 2.8384549722577934,
+      "final_pct_deviation_std": 4.017119811858887,
+      "final_pct_deviation_ci_95_lower": 1.5112889457959902,
+      "final_pct_deviation_ci_95_upper": 4.326343668069026
+    },
+    {
+      "strategy": "thompson",
+      "target": "Coer",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 4.4543015669776285,
+      "final_pct_deviation_std": 10.653141498726324,
+      "final_pct_deviation_ci_95_lower": 1.8434691482226726,
+      "final_pct_deviation_ci_95_upper": 8.832007956831905
+    }
+  ]
+}

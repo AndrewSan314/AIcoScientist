@@ -99,9 +99,12 @@ $$\arg\max_{x} \alpha(x \mid \mathcal{D}') = \arg\max_{x} \alpha(x \mid \mathcal
 
 ---
 
-## Legacy Archival
+## Legacy Archival & Codebase Freeze
 
 All custom Gaussian Process plumbing, bespoke analytical acquisition functions, custom TuRBO trust region implementations, and heuristic controllers have been retired from active production and archived in:
 `src/legacy/native_optimizer/`
 
 Production pipelines, science coordinators, and active benchmarks import exclusively from `src.optimization`.
+
+For full operational standards, strategy mapping matrix, and ledger authority rules, see [OPTIMIZER_INFRASTRUCTURE_FREEZE.md](file:///f:/AI/GTIP/docs/architecture/OPTIMIZER_INFRASTRUCTURE_FREEZE.md).
+

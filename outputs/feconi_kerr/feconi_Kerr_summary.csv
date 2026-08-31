@@ -1,0 +1,7 @@
+strategy,target,n_seeds,final_pct_deviation_mean,final_pct_deviation_std,final_pct_deviation_ci_95_lower,final_pct_deviation_ci_95_upper
+random,Kerr,30,11.024637189307992,6.020319536633046,8.856285755842139,13.109032087333139
+greedy,Kerr,30,0.0,0.0,0.0,0.0
+gp_ucb,Kerr,30,0.0,0.0,0.0,0.0
+expected_improvement,Kerr,30,0.0,0.0,0.0,0.0
+noisy_expected_improvement,Kerr,30,0.0,0.0,0.0,0.0
+thompson,Kerr,30,0.0,0.0,0.0,0.0

@@ -17,6 +17,12 @@ outputs/*.db
 *.backup-*.pptx
 
 # External raw datasets and large archives
+data/external/**/*.csv
+data/external/**/*.jsonl.gz
+data/external/**/*.json
+!data/external/**/manifest.json
+!data/external/**/metadata.json
+!data/external/aicoscientist_datasets_manifest.json
 data/external/**/raw/
 data/external/**/paper_code/
 data/external/**/processed/
@@ -38,4 +44,7 @@ SECCM_dataset/
 XRD_dataset/
 # Test temporary directories and scratch
 outputs/test_tmp/
+outputs/**/*trajectories.csv
+outputs/**/*per_step.csv
 scratch/
+

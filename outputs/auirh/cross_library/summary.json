@@ -2,49 +2,69 @@
   "Au-rich->Ir-rich": {
     "source_library": "Au-rich",
     "destination_library": "Ir-rich",
-    "prior_samples_from_source": 3,
-    "budget_in_destination": 5,
-    "mean_regret_cold_start": 0.0035649608930300508,
-    "std_regret_cold_start": 0.0015602870468613495,
-    "mean_regret_warm_prior": 0.0021085136858988007,
-    "std_regret_warm_prior": 0.00010383983973009936,
-    "regret_delta": -0.0014564472071312501,
-    "transfer_impact": "helpful"
+    "prior_samples_from_source": 5,
+    "budget_in_destination": 30,
+    "n_seeds": 10,
+    "mean_regret_cold_start": 9.125497287544998e-05,
+    "std_regret_cold_start": 0.00027376491862634997,
+    "mean_regret_warm_prior": 0.00034491478853151004,
+    "std_regret_warm_prior": 0.0005579753755571949,
+    "paired_regret_delta_mean": 0.00025365981565606005,
+    "paired_regret_delta_95ci": [
+      -0.00011136007584573986,
+      0.0006898295770630201
+    ],
+    "transfer_impact": "inconclusive / neutral"
   },
   "Au-rich->Rh-rich": {
     "source_library": "Au-rich",
     "destination_library": "Rh-rich",
-    "prior_samples_from_source": 3,
-    "budget_in_destination": 5,
-    "mean_regret_cold_start": 0.00228832061058765,
-    "std_regret_cold_start": 0.0006992162852693497,
-    "mean_regret_warm_prior": 0.00287743103611515,
-    "std_regret_warm_prior": 0.00015581606280104998,
-    "regret_delta": 0.0005891104255275003,
-    "transfer_impact": "neutral/unhelpful"
+    "prior_samples_from_source": 5,
+    "budget_in_destination": 30,
+    "n_seeds": 10,
+    "mean_regret_cold_start": 0.0,
+    "std_regret_cold_start": 0.0,
+    "mean_regret_warm_prior": 3.644906498241002e-05,
+    "std_regret_warm_prior": 0.00010934719494723007,
+    "paired_regret_delta_mean": 3.644906498241002e-05,
+    "paired_regret_delta_95ci": [
+      0.0,
+      0.00010934719494723007
+    ],
+    "transfer_impact": "inconclusive / neutral"
   },
   "Ir-rich->Rh-rich": {
     "source_library": "Ir-rich",
     "destination_library": "Rh-rich",
-    "prior_samples_from_source": 3,
-    "budget_in_destination": 5,
-    "mean_regret_cold_start": 0.00228832061058765,
-    "std_regret_cold_start": 0.0006992162852693497,
-    "mean_regret_warm_prior": 0.0030361879402257498,
-    "std_regret_warm_prior": 2.940841309549691e-06,
-    "regret_delta": 0.0007478673296381,
-    "transfer_impact": "neutral/unhelpful"
+    "prior_samples_from_source": 5,
+    "budget_in_destination": 30,
+    "n_seeds": 10,
+    "mean_regret_cold_start": 0.0,
+    "std_regret_cold_start": 0.0,
+    "mean_regret_warm_prior": 0.0007152137696361399,
+    "std_regret_warm_prior": 0.00069774322170144,
+    "paired_regret_delta_mean": 0.0007152137696361399,
+    "paired_regret_delta_95ci": [
+      0.0003190943190786,
+      0.0012020643415180633
+    ],
+    "transfer_impact": "harmful"
   },
   "Rh-rich->Ir-rich": {
     "source_library": "Rh-rich",
     "destination_library": "Ir-rich",
-    "prior_samples_from_source": 3,
-    "budget_in_destination": 5,
-    "mean_regret_cold_start": 0.0035649608930300508,
-    "std_regret_cold_start": 0.0015602870468613495,
-    "mean_regret_warm_prior": 0.0024478089437921504,
-    "std_regret_warm_prior": 0.00023545541816325042,
-    "regret_delta": -0.0011171519492379003,
-    "transfer_impact": "helpful"
+    "prior_samples_from_source": 5,
+    "budget_in_destination": 30,
+    "n_seeds": 10,
+    "mean_regret_cold_start": 9.125497287544998e-05,
+    "std_regret_cold_start": 0.00027376491862634997,
+    "mean_regret_warm_prior": 0.0013041224358760002,
+    "std_regret_warm_prior": 0.0014381145421010822,
+    "paired_regret_delta_mean": 0.00121286746300055,
+    "paired_regret_delta_95ci": [
+      0.00040182735725755384,
+      0.0020816540678511505
+    ],
+    "transfer_impact": "harmful"
   }
 }

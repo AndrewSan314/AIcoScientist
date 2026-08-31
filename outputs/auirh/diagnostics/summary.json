@@ -1,0 +1,70 @@
+{
+  "Au-rich->Ir-rich": {
+    "source_library": "Au-rich",
+    "destination_library": "Ir-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "n_seeds": 2,
+    "mean_regret_cold_start": 0.0029952736783950503,
+    "std_regret_cold_start": 0.0007829201527661503,
+    "mean_regret_warm_prior": 0.002488697599016,
+    "std_regret_warm_prior": 0.0002763440733871002,
+    "paired_regret_delta_mean": -0.0005065760793790501,
+    "paired_regret_delta_95ci": [
+      -0.0010131521587581002,
+      0.0
+    ],
+    "transfer_impact": "inconclusive / neutral"
+  },
+  "Au-rich->Rh-rich": {
+    "source_library": "Au-rich",
+    "destination_library": "Rh-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "n_seeds": 2,
+    "mean_regret_cold_start": 0.0018667883175691995,
+    "std_regret_cold_start": 0.0011207485782878,
+    "mean_regret_warm_prior": 0.00210098422718805,
+    "std_regret_warm_prior": 0.0009381445543472497,
+    "paired_regret_delta_mean": 0.00023419590961885027,
+    "paired_regret_delta_95ci": [
+      -0.0018246972230161994,
+      0.0022930890422539
+    ],
+    "transfer_impact": "inconclusive / neutral"
+  },
+  "Ir-rich->Rh-rich": {
+    "source_library": "Ir-rich",
+    "destination_library": "Rh-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "n_seeds": 2,
+    "mean_regret_cold_start": 0.0018667883175691995,
+    "std_regret_cold_start": 0.0011207485782878,
+    "mean_regret_warm_prior": 0.0020980433858785,
+    "std_regret_warm_prior": 0.0009352037130377,
+    "paired_regret_delta_mean": 0.00023125506830930058,
+    "paired_regret_delta_95ci": [
+      4.571020305920055e-05,
+      0.0004167999335594006
+    ],
+    "transfer_impact": "harmful"
+  },
+  "Rh-rich->Ir-rich": {
+    "source_library": "Rh-rich",
+    "destination_library": "Ir-rich",
+    "prior_samples_from_source": 3,
+    "budget_in_destination": 5,
+    "n_seeds": 2,
+    "mean_regret_cold_start": 0.0029952736783950503,
+    "std_regret_cold_start": 0.0007829201527661503,
+    "mean_regret_warm_prior": 0.0019361748386135004,
+    "std_regret_warm_prior": 0.0002761786870153996,
+    "paired_regret_delta_mean": -0.00105909883978155,
+    "paired_regret_delta_95ci": [
+      -0.0021181976795631,
+      0.0
+    ],
+    "transfer_impact": "inconclusive / neutral"
+  }
+}

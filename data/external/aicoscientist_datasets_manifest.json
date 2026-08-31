@@ -1,0 +1,63 @@
+{
+  "downloaded_at": "2026-08-31",
+  "purpose": "AIcoScientist benchmark and science-mode datasets",
+  "datasets": {
+    "al_anode_free_2025": {
+      "local_dir": "data/external/al_anode_free_2025",
+      "source": "https://github.com/AmanchukwuLab/AL-anode-free",
+      "paper": "https://doi.org/10.1038/s41467-025-63303-7",
+      "license": "See source repository and paper terms",
+      "files": {
+        "in-house_label_data.csv": {"data_rows": 58, "size_bytes": 29927, "sha256": "97cfa251757f6fb6e14311207d24d3f51a13ed840a07b9162af48a93961c5db3"},
+        "label_all_batches_feat.csv": {"data_rows": 208, "size_bytes": 85073, "sha256": "9aabe70c17401a2e0f1202d97059e6103be4ab7002cb5a65a221f76cf8bf9357"},
+        "label_batch1-6_feat.csv": {"data_rows": 199, "size_bytes": 83263, "sha256": "52eee47d3eb0c3fadfb041673fa790b8afe57ed423cf0440f430bd388e3b3896"},
+        "label_unlabel_all_uniq_solvents.csv": {"data_rows": 388013, "size_bytes": 11460424, "sha256": "511a206d72a78427ff8840ae9fd00e983c57d30b9218e4407c1e2121cf783904"},
+        "label_unlabel_all_uniq_solvents_fgrp_class.csv": {"data_rows": 388013, "size_bytes": 19530939, "sha256": "e3d9c659ff8413c7b6b1b4adf354b51d3bd0e53d9c4fe4d43746eaf3806991f5"},
+        "label_unlabel_all_uniq_solvents_fgrp_class_tsne.csv": {"data_rows": 388013, "size_bytes": 29142173, "sha256": "812e8d01d28d9bf83a952e1ca47ab7251e14445e786921097a52899cc24f87be"},
+        "virtual_search_space_1million.csv": {"candidate_rows": 999999, "size_bytes": 479621408, "sha256": "68825ce89aacb09bf76a2ebcfeedc53a7eabb25aa2a7f4db3159180db04bb16c"}
+      },
+      "notes": [
+        "The virtual search CSV has 999,999 data rows plus a header and represents the approximately 1M-member chemical space.",
+        "Per-batch virtual-space CSVs were not downloaded because they are derived snapshots duplicating the base search space."
+      ]
+    },
+    "perovskite_nomad_2026": {
+      "local_dir": "data/external/perovskite_nomad_2026",
+      "source": "https://nomad-lab.eu/prod/v1/gui/search/perovskite-solar-cells-database",
+      "tutorial": "https://fairmat-nfdi.github.io/nomad-perovskite-solar-cells-database/notebooks/perla_notebooks/query-perovskite-database.html",
+      "paper": "https://doi.org/10.1038/s41560-021-00941-3",
+      "license": "See NOMAD and Perovskite Solar Cells Database terms",
+      "api_snapshot": {
+        "endpoint": "https://nomad-lab.eu/prod/v1/api/v1/entries/archive/query",
+        "entries": 48862,
+        "required": {"results": "*", "data": "*"},
+        "query": {
+          "and": [
+            {"results.properties.optoelectronic.solar_cell.illumination_intensity": {"gte": 600.0, "lte": 1200.0}},
+            {"section_defs.definition_qualified_name:all": ["perovskite_solar_cell_database.schema.PerovskiteSolarCell"]}
+          ]
+        }
+      },
+      "files": {
+        "perovskite_one_sun.jsonl.gz": {"entries": 48862, "size_bytes": 99834398, "sha256": "79534b41c375fd6a0d7a46d82c81ba90607f012ff614d6370c10809f4c64e71e"}
+      },
+      "notes": ["Each JSONL row preserves entry_id, upload_id, parser_name, and the NOMAD archive results/data payload."]
+    },
+    "precursor_genome_2026": {
+      "local_dir": "data/external/precursor_genome_2026",
+      "source": "https://github.com/lauren-walters/precursor-genome",
+      "zenodo": "https://doi.org/10.5281/zenodo.21285546",
+      "license": "CC BY 4.0",
+      "ledger": {"samples": 1035},
+      "files": {
+        "ledger_precursor_genome.json": {"size_bytes": 31165664, "sha256": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac"},
+        "raw_scans.zip": {"size_bytes": 23008523, "members": 1419, "md5": "e22405e733fc79ff4b14b679f87a33d5"},
+        "refinement_pkls.zip": {"size_bytes": 291408941, "members": 2964, "md5": "49447823b4e017524fd963ec3734af74"},
+        "sem.zip": {"size_bytes": 408187670, "members": 342, "md5": "74978777f9f26817c1b737af175a80d1"},
+        "eds.zip": {"size_bytes": 358569, "members": 242, "md5": "7c783bdc7d885bc25a7180286529611f"},
+        "plotted_xrd_refinements.zip": {"size_bytes": 6881933811, "members": 4909, "md5": "214ea8ba985c591bcc3e3f05ce5eb9e7"}
+      },
+      "notes": ["Archives remain compressed to avoid duplicating several gigabytes of raw data."]
+    }
+  }
+}

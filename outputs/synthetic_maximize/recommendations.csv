@@ -1,3 +1,3 @@
-rank,x1,x2,predicted_mean,predicted_std,acquisition_score,final_score,nearest_distance,confidence,predicted_target,recommendation_reason
-1,0,2,-9.0,2.9154759609419396,-6.08452403905806,-6.08452403905806,1.0,medium,-9.0,Recommended for high predicted target (mean=-9.00) with epistemic uncertainty (std=2.92) and novelty distance (1.00).
-2,0,3,-9.0,2.9154759609419396,-6.08452403905806,-6.08452403905806,2.0,low,-9.0,Recommended for high predicted target (mean=-9.00) with epistemic uncertainty (std=2.92) and novelty distance (2.00).
+rank,x1,x2,candidate_id,predicted_mean,predicted_std,acquisition_score,final_score,nearest_distance,confidence,predicted_target,recommendation_reason
+1,1,2,CAND_0003,-7.334997872283632,3.0548104360078927,-4.28018743627574,-4.28018743627574,1.0,medium,-7.334997872283632,Recommended for high predicted target (mean=-7.33) with epistemic uncertainty (std=3.05) and novelty distance (1.00).
+2,1,3,CAND_0004,-8.895234919621696,3.3652986241287826,-5.529936295492914,-5.529936295492914,2.0,low,-8.895234919621696,Recommended for high predicted target (mean=-8.90) with epistemic uncertainty (std=3.37) and novelty distance (2.00).

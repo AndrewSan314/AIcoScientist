@@ -1,0 +1,63 @@
+{
+  "dataset": "FeCoNi",
+  "target": "Kerr",
+  "n_seeds": 30,
+  "total_budget": 50,
+  "backend": "botorch",
+  "summary": [
+    {
+      "strategy": "random",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 11.024637189307992,
+      "final_pct_deviation_std": 6.020319536633046,
+      "final_pct_deviation_ci_95_lower": 8.856285755842139,
+      "final_pct_deviation_ci_95_upper": 13.109032087333139
+    },
+    {
+      "strategy": "greedy",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 0.0,
+      "final_pct_deviation_std": 0.0,
+      "final_pct_deviation_ci_95_lower": 0.0,
+      "final_pct_deviation_ci_95_upper": 0.0
+    },
+    {
+      "strategy": "gp_ucb",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 0.0,
+      "final_pct_deviation_std": 0.0,
+      "final_pct_deviation_ci_95_lower": 0.0,
+      "final_pct_deviation_ci_95_upper": 0.0
+    },
+    {
+      "strategy": "expected_improvement",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 0.0,
+      "final_pct_deviation_std": 0.0,
+      "final_pct_deviation_ci_95_lower": 0.0,
+      "final_pct_deviation_ci_95_upper": 0.0
+    },
+    {
+      "strategy": "noisy_expected_improvement",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 0.0,
+      "final_pct_deviation_std": 0.0,
+      "final_pct_deviation_ci_95_lower": 0.0,
+      "final_pct_deviation_ci_95_upper": 0.0
+    },
+    {
+      "strategy": "thompson",
+      "target": "Kerr",
+      "n_seeds": 30,
+      "final_pct_deviation_mean": 0.0,
+      "final_pct_deviation_std": 0.0,
+      "final_pct_deviation_ci_95_lower": 0.0,
+      "final_pct_deviation_ci_95_upper": 0.0
+    }
+  ]
+}
