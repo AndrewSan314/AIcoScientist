@@ -18,7 +18,9 @@ from src.science.actions import (
     ScientificAction,
 )
 from src.science.agents import AgentPerspective, MultiAgentPresentationLayer
+from src.science.falsification.policy import FalsificationFirstPolicy, FalsificationPolicyMode
 from src.science.hypotheses import HypothesisEngine, get_default_hypotheses
+from src.science.hypothesis_models import HypothesisEnsemble, PredictiveDistribution
 from src.science.ledger import ExperimentLedger
 from src.science.records import ExperimentStage, ScientificExperimentRecord
 from src.science.experiment_policy import NextBestExperimentPolicy
@@ -29,15 +31,16 @@ logger = logging.getLogger(__name__)
 
 
 class AutonomousDiscoveryEngine:
-    """Unified Multimodal Discovery Engine for the AI Scientist Discovery Console.
+    """Unified Falsification-First Multimodal Discovery Engine for the AI Scientist Discovery Console.
 
     Orchestrates the complete closed-loop scientific decision workflow:
     1. Observable candidate landscape & strict offline-oracle firewall.
     2. Dynamic XRD representation & ephemeral surrogate projections.
-    3. Structured scientific hypothesis belief updates from event-driven evidence.
-    4. Adaptive Next-Best-Experiment policy scoring with contrastive counterfactuals.
-    5. Multi-agent role-based reasoning layer.
-    6. Authoritative tamper-evident ledger event logging.
+    3. Formal competing scientific hypotheses (H1, H2, H3) & predictive distributions.
+    4. Expected Hypothesis Information Gain (HIG) Monte Carlo estimation.
+    5. Adaptive multi-mode experiment selection policy with contrastive counterfactuals.
+    6. Multi-agent role-based presentation layer.
+    7. Authoritative tamper-evident ledger event logging with pre-registered predictions.
     """
 
     def __init__(
@@ -51,6 +54,7 @@ class AutonomousDiscoveryEngine:
         w_info: float = 1.0,
         w_disc: float = 0.8,
         w_cost: float = 0.8,
+        policy_mode: FalsificationPolicyMode | str = FalsificationPolicyMode.HYBRID,
     ) -> None:
         self.seed = seed
         self._db_path = str(db_path)
@@ -73,10 +77,20 @@ class AutonomousDiscoveryEngine:
         self.structure_model = StructureSurrogateModel(random_state=seed)
         self.property_model = PropertySurrogateModel(random_state=seed)
         self.hypothesis_engine = HypothesisEngine(get_default_hypotheses())
+        self.ensemble = HypothesisEnsemble()
+
         self.policy = NextBestExperimentPolicy(
             cost_xrd=cost_xrd,
             cost_property=cost_property,
             w_info=w_info,
+            w_disc=w_disc,
+            w_cost=w_cost,
+        )
+        self.falsification_policy = FalsificationFirstPolicy(
+            mode=policy_mode,
+            cost_xrd=cost_xrd,
+            cost_property=cost_property,
+            w_hig=w_info,
             w_disc=w_disc,
             w_cost=w_cost,
         )
@@ -88,10 +102,11 @@ class AutonomousDiscoveryEngine:
         self._last_recommendation: ActionRecommendation | None = None
         self._last_perspectives: list[AgentPerspective] = []
 
-        # Pre-measurement predictions for event-driven residual computation
+        # Pre-measurement predictions for event-driven residual computation and pre-registration
         self._pre_pred_emb: np.ndarray | None = None
         self._pre_pred_mean: float | None = None
         self._pre_pred_std: float | None = None
+        self._pre_predictions: dict[str, PredictiveDistribution] = {}
 
     def initialize_curated_scenario(
         self,
@@ -192,7 +207,9 @@ class AutonomousDiscoveryEngine:
             )
             self.structure_model.fit(xrd_comps, xrd_embs)
         else:
-            self.structure_model.fit(np.empty((0, 3)), np.empty((0, 8)))
+            xrd_comps = np.empty((0, 3))
+            xrd_embs = np.empty((0, 8))
+            self.structure_model.fit(xrd_comps, xrd_embs)
 
         # 3. Fit Property Model on revealed properties
         revealed_prop_map = self.oracle.get_revealed_properties()
@@ -218,10 +235,22 @@ class AutonomousDiscoveryEngine:
                 self.property_model.fit(prop_comps, prop_targets)
                 struct_adv = 0.0
         else:
-            self.property_model.fit(np.empty((0, 3)), np.empty((0,)))
+            prop_comps = np.empty((0, 3))
+            prop_targets = np.empty((0,))
+            self.property_model.fit(prop_comps, prop_targets)
             struct_adv = 0.0
 
-        # Recalculate hypothesis beliefs without adding fake events
+        # 4. Fit formal hypothesis models in ensemble
+        self.ensemble.fit_all(
+            compositions=prop_comps if len(prop_comps) > 0 else xrd_comps,
+            property_targets=prop_targets if len(prop_targets) > 0 else None,
+            xrd_embeddings=xrd_embs if len(xrd_embs) > 0 else None,
+            candidate_ids=revealed_prop_cids,
+            observed_xrd_ids=set(revealed_xrd_cids),
+            observed_property_ids=set(revealed_prop_cids),
+        )
+
+        # Synchronize legacy hypothesis engine
         self.hypothesis_engine.recalculate_current_scores(structure_advantage_ratio=struct_adv)
         return struct_adv
 
@@ -261,12 +290,17 @@ class AutonomousDiscoveryEngine:
             delta_payload=delta,
         )
 
-    def propose_next_experiment(self) -> tuple[ActionRecommendation, list[AgentPerspective]]:
+    def propose_next_experiment(
+        self,
+        use_falsification_first: bool = False,
+        fast_mode: bool = True,
+    ) -> tuple[ActionRecommendation, list[AgentPerspective]]:
         """Evaluates policy and multi-agent layer to recommend the next scientific experiment."""
         cand_df = self.oracle.get_candidate_pool()
         observed_xrd = set(self.oracle.get_revealed_xrd_ids())
         observed_prop = set(self.oracle.get_revealed_property_ids())
         revealed_props = self.oracle.get_revealed_properties()
+        revealed_xrds = self.oracle.get_revealed_xrd()
 
         # Build observations DataFrame for production optimizer backend
         if revealed_props:
@@ -294,16 +328,33 @@ class AutonomousDiscoveryEngine:
             logger.warning(f"Optimizer scoring fallback: {exc}")
             property_discovery_scores = {}
 
-        recommendation = self.policy.recommend_next_experiment(
-            candidate_pool_df=cand_df,
-            observed_xrd_ids=observed_xrd,
-            observed_property_ids=observed_prop,
-            structure_model=self.structure_model,
-            property_model=self.property_model,
-            hypothesis_engine=self.hypothesis_engine,
-            property_discovery_scores=property_discovery_scores,
-            step=self.current_step,
-        )
+        if use_falsification_first:
+            xrd_embs_map = {
+                cid: self.xrd_extractor.transform(revealed_xrds[cid].revealed_data["normalized_intensity"])
+                for cid in revealed_xrds
+            }
+            recommendation = self.falsification_policy.recommend_next_experiment(
+                candidate_pool_df=cand_df,
+                observed_xrd_ids=observed_xrd,
+                observed_property_ids=observed_prop,
+                ensemble=self.ensemble,
+                property_discovery_scores=property_discovery_scores,
+                observed_xrd_embeddings_map=xrd_embs_map,
+                fast_mode=fast_mode,
+                seed=self.seed + self.current_step,
+                step=self.current_step,
+            )
+        else:
+            recommendation = self.policy.recommend_next_experiment(
+                candidate_pool_df=cand_df,
+                observed_xrd_ids=observed_xrd,
+                observed_property_ids=observed_prop,
+                structure_model=self.structure_model,
+                property_model=self.property_model,
+                hypothesis_engine=self.hypothesis_engine,
+                property_discovery_scores=property_discovery_scores,
+                step=self.current_step,
+            )
 
         perspectives = self.agent_layer.generate_perspectives(
             recommendation=recommendation,
@@ -313,7 +364,7 @@ class AutonomousDiscoveryEngine:
             total_candidates=len(cand_df),
         )
 
-        # Store pre-measurement prediction for subsequent empirical residual calculation
+        # Pre-register predictions across all hypotheses before execution
         rec_cid = recommendation.action.candidate_id
         cand_row = cand_df[cand_df["candidate_id"] == rec_cid].iloc[0]
         cand_comp = np.array([[cand_row["Au"], cand_row["Ir"], cand_row["Rh"]]], dtype=np.float64)
@@ -332,6 +383,13 @@ class AutonomousDiscoveryEngine:
             self._pre_pred_mean = None
             self._pre_pred_std = None
 
+        # Pre-register predictions in ensemble
+        self._pre_predictions = self.ensemble.predict_all(
+            candidate_id=rec_cid,
+            action_type=recommendation.action.action_type,
+            composition=cand_comp[0],
+        )
+
         self._last_recommendation = recommendation
         self._last_perspectives = perspectives
         return recommendation, perspectives
@@ -345,7 +403,7 @@ class AutonomousDiscoveryEngine:
         3. Derive empirical event metrics (residual/novelty) using pre-measurement predictions.
         4. Refit models on newly revealed observation.
         5. Compute current LOO-CV structural predictive advantage.
-        6. Record EXACTLY ONE EvidenceEvent in HypothesisEngine.
+        6. Record EXACTLY ONE EvidenceEvent in HypothesisEngine & update HypothesisEnsemble.
         7. Recompute beliefs once from event history.
         """
         act = action or (self._last_recommendation.action if self._last_recommendation else None)
@@ -354,12 +412,13 @@ class AutonomousDiscoveryEngine:
 
         # Capture pre-measurement prediction if not cached
         cand_df = self.oracle.get_candidate_pool()
+        cand_row = cand_df[cand_df["candidate_id"] == act.candidate_id].iloc[0]
+        cand_comp = np.array([[cand_row["Au"], cand_row["Ir"], cand_row["Rh"]]], dtype=np.float64)
+
         if (
             (act.action_type == ExperimentActionType.XRD and self._pre_pred_emb is None)
             or (act.action_type == ExperimentActionType.PROPERTY and self._pre_pred_mean is None)
         ):
-            cand_row = cand_df[cand_df["candidate_id"] == act.candidate_id].iloc[0]
-            cand_comp = np.array([[cand_row["Au"], cand_row["Ir"], cand_row["Rh"]]], dtype=np.float64)
             if self.structure_model.is_fitted:
                 p_emb, _ = self.structure_model.predict(cand_comp)
                 self._pre_pred_emb = p_emb[0]
@@ -367,6 +426,13 @@ class AutonomousDiscoveryEngine:
                 p_m, p_s = self.property_model.predict(cand_comp)
                 self._pre_pred_mean = float(p_m[0])
                 self._pre_pred_std = float(p_s[0])
+
+        if not self._pre_predictions:
+            self._pre_predictions = self.ensemble.predict_all(
+                candidate_id=act.candidate_id,
+                action_type=act.action_type,
+                composition=cand_comp[0],
+            )
 
         before_beliefs = {hid: h.belief_score for hid, h in self.hypothesis_engine.hypotheses.items()}
 
@@ -400,6 +466,7 @@ class AutonomousDiscoveryEngine:
                 struct_nov = None
 
             prop_res = None
+            obs_for_ensemble = actual_emb
 
         elif act.action_type == ExperimentActionType.PROPERTY:
             y_obs = float(outcome.revealed_data["k0"])
@@ -411,11 +478,21 @@ class AutonomousDiscoveryEngine:
 
             struct_res = None
             struct_nov = None
+            obs_for_ensemble = y_obs
 
-        # 2. Refit models and compute current LOO-CV structural advantage
+        # 2. Update sequential predictive evidence in ensemble
+        ensemble_update = self.ensemble.record_observation_and_update(
+            action_id=act.action_id,
+            candidate_id=act.candidate_id,
+            action_type=act.action_type,
+            observation=obs_for_ensemble,
+            pre_predictions=self._pre_predictions,
+        )
+
+        # 3. Refit models and compute current LOO-CV structural advantage
         struct_adv = self._refit_models()
 
-        # 3. Record EXACTLY ONE evidence event (triggers single belief update)
+        # 4. Record EXACTLY ONE evidence event in legacy HypothesisEngine
         self.hypothesis_engine.record_evidence_event(
             event_id=act.action_id,
             action_type=act.action_type.value,
@@ -430,6 +507,7 @@ class AutonomousDiscoveryEngine:
         self._pre_pred_emb = None
         self._pre_pred_mean = None
         self._pre_pred_std = None
+        self._pre_predictions.clear()
 
         after_beliefs = {hid: h.belief_score for hid, h in self.hypothesis_engine.hypotheses.items()}
         belief_deltas = {hid: after_beliefs[hid] - before_beliefs[hid] for hid in after_beliefs}
@@ -442,6 +520,8 @@ class AutonomousDiscoveryEngine:
             "before_beliefs": before_beliefs,
             "after_beliefs": after_beliefs,
             "belief_deltas": belief_deltas,
+            "ensemble_beliefs": self.ensemble.get_beliefs(),
+            "realized_entropy_reduction": ensemble_update["realized_entropy_reduction"],
             "best_observed_k0": self.oracle.get_revealed_state_summary()["best_observed_k0"],
         }
 
@@ -507,6 +587,71 @@ class AutonomousDiscoveryEngine:
         cand_df["measured_k0"] = measured_k0s
         return cand_df
 
+    def get_disagreement_landscape(self, fast_mode: bool = True) -> pd.DataFrame:
+        """Computes hypothesis disagreement and Expected Information Gain landscape across all candidates."""
+        cand_df = self.get_landscape_dataframe()
+        comp_cols = ["Au", "Ir", "Rh"]
+        comps = cand_df[comp_cols].to_numpy(dtype=np.float64)
+        cids = cand_df["candidate_id"].tolist()
+
+        prop_disagreements: list[float] = []
+        struct_disagreements: list[float] = []
+        max_higs: list[float] = []
+        best_actions: list[str] = []
+
+        beliefs = self.ensemble.get_beliefs()
+        dominant_h = max(beliefs.keys(), key=lambda h: beliefs[h])
+
+        for i, cid in enumerate(cids):
+            has_xrd = self.oracle.is_xrd_observed(cid)
+            has_prop = self.oracle.is_property_observed(cid)
+
+            eval_prop = self.falsification_policy.hig_estimator.evaluate_action_discrimination(
+                candidate_id=cid,
+                action_type=ExperimentActionType.PROPERTY,
+                composition=comps[i],
+                ensemble=self.ensemble,
+                fast_mode=fast_mode,
+                seed=self.seed,
+            )
+
+            eval_xrd = self.falsification_policy.hig_estimator.evaluate_action_discrimination(
+                candidate_id=cid,
+                action_type=ExperimentActionType.XRD,
+                composition=comps[i],
+                ensemble=self.ensemble,
+                fast_mode=fast_mode,
+                seed=self.seed,
+            )
+
+            prop_disagreements.append(eval_prop.property_disagreement)
+            struct_disagreements.append(eval_xrd.structure_disagreement)
+
+            # Determine best unobserved action
+            if not has_prop and not has_xrd:
+                if eval_prop.hypothesis_information_gain >= eval_xrd.hypothesis_information_gain:
+                    max_higs.append(eval_prop.hypothesis_information_gain)
+                    best_actions.append("PROPERTY")
+                else:
+                    max_higs.append(eval_xrd.hypothesis_information_gain)
+                    best_actions.append("XRD")
+            elif not has_prop:
+                max_higs.append(eval_prop.hypothesis_information_gain)
+                best_actions.append("PROPERTY")
+            elif not has_xrd:
+                max_higs.append(eval_xrd.hypothesis_information_gain)
+                best_actions.append("XRD")
+            else:
+                max_higs.append(0.0)
+                best_actions.append("COMPLETED")
+
+        cand_df["property_disagreement"] = prop_disagreements
+        cand_df["structure_disagreement"] = struct_disagreements
+        cand_df["hypothesis_information_gain"] = max_higs
+        cand_df["best_action"] = best_actions
+        cand_df["dominant_hypothesis"] = dominant_h
+        return cand_df
+
     def close(self) -> None:
         """Closes underlying ledger database connection."""
         if hasattr(self, "ledger") and self.ledger is not None:
@@ -525,6 +670,7 @@ class AutonomousDiscoveryEngine:
         self.structure_model = StructureSurrogateModel(random_state=self.seed)
         self.property_model = PropertySurrogateModel(random_state=self.seed)
         self.hypothesis_engine = HypothesisEngine(get_default_hypotheses())
+        self.ensemble = HypothesisEnsemble()
         self.current_step = 0
         self.total_budget_spent = 0.0
         self.timeline.clear()
@@ -533,3 +679,4 @@ class AutonomousDiscoveryEngine:
         self._pre_pred_emb = None
         self._pre_pred_mean = None
         self._pre_pred_std = None
+        self._pre_predictions.clear()
