@@ -11,9 +11,9 @@ import numpy as np
 import pandas as pd
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
-from src.optimization.backend import OptimizerBackend
+from src.optimization.backend import OptimizerBackend, resolve_strategy
 from src.optimization.botorch_backend import BoTorchBackend
-from src.optimization.finite_pool import FiniteCandidatePool
+from src.optimization.finite_pool import FiniteCandidatePool, compute_candidate_pool_fingerprint
 from src.optimization.objective import OptimizationObjective
 from src.optimization.proposal import CandidateProposal, ExperimentProposal
 from src.optimization.search_space import ContinuousVariable, SearchSpace
@@ -172,7 +172,9 @@ class ScientificClosedLoopCoordinator:
             target_val = float(r.performance.get(self.spec.target_column, 0.0))
             row_dict = {
                 "candidate_id": r.candidate_id,
+                self.spec.candidate_id_column: r.candidate_id,
                 "experiment_id": r.experiment_id,
+                self.spec.id_column: r.experiment_id,
                 **{k: float(r.pre_experiment_features[k]) for k in candidate_cols if k in r.pre_experiment_features},
                 self.spec.target_column: target_val,
             }
@@ -210,6 +212,12 @@ class ScientificClosedLoopCoordinator:
             id_col=self.spec.id_column,
         )
         candidate_cols = self.spec.candidate_columns or self.spec.candidate_variables or self.spec.pre_experiment_features
+        id_col = self.spec.candidate_id_column or self.spec.id_column
+        pool_fp = compute_candidate_pool_fingerprint(
+            self.candidate_pool,
+            id_column=id_col,
+            feature_columns=candidate_cols,
+        )
         return {
             "backend_name": self.backend.name,
             "backend_version": self.backend.version,
@@ -222,7 +230,7 @@ class ScientificClosedLoopCoordinator:
             "completed_experiment_ids": [r.experiment_id for r in completed],
             "feature_cols": list(candidate_cols),
             "target_col": self.spec.target_column,
-            "candidate_pool_fingerprint": hashlib.sha256(str(len(self.candidate_pool)).encode("utf-8")).hexdigest(),
+            "candidate_pool_fingerprint": pool_fp,
             "dataset_fingerprint": ds_fp,
         }
 
@@ -897,11 +905,11 @@ class ScientificClosedLoopCoordinator:
         two_stage_spec: TwoStageModelSpec,
         candidate_pool: pd.DataFrame,
         search_space: SearchSpace | None = None,
-        strategy: str = "expected_improvement",
+        strategy: str | None = None,
         backend: OptimizerBackend | None = None,
         objective: OptimizationObjective | str | None = None,
         allow_parallel_experiments: bool = False,
-        random_state: int = 42,
+        random_state: int | None = None,
         **kwargs: Any,
     ) -> ScientificClosedLoopCoordinator:
         """Recovers and reconstructs coordinator state deterministically from an existing SQLite ledger."""
@@ -912,11 +920,31 @@ class ScientificClosedLoopCoordinator:
 
         resolved_space = search_space if search_space is not None else _build_fallback_search_space(spec, candidate_pool)
         candidate_cols = spec.candidate_columns or spec.candidate_variables or spec.pre_experiment_features
+        id_col = spec.candidate_id_column or spec.id_column
 
         # Retrieve authoritative snapshot from verified event history
         latest_snapshot = ledger.get_latest_verified_optimizer_snapshot()
+
+        final_strategy: str
+        final_random_state: int
+        final_backend: OptimizerBackend
+        final_objective: OptimizationObjective | str | None = objective
+
         if latest_snapshot is not None:
-            # Validate snapshot schema against current spec & candidate columns
+            # 1. Candidate pool content fingerprint validation
+            curr_pool_fp = compute_candidate_pool_fingerprint(
+                candidate_pool,
+                id_column=id_col,
+                feature_columns=candidate_cols,
+            )
+            snap_pool_fp = latest_snapshot.get("candidate_pool_fingerprint")
+            if snap_pool_fp and curr_pool_fp != snap_pool_fp:
+                raise ResumeStateMismatchError(
+                    f"Candidate pool content fingerprint {curr_pool_fp!r} does not match "
+                    f"snapshot candidate pool fingerprint {snap_pool_fp!r}."
+                )
+
+            # 2. Target and feature columns validation
             snap_target = latest_snapshot.get("target_col")
             if snap_target and snap_target != spec.target_column:
                 raise ResumeStateMismatchError(
@@ -939,8 +967,53 @@ class ScientificClosedLoopCoordinator:
                     f"Snapshot feature columns {snap_feats} do not match coordinator candidate columns {candidate_cols}"
                 )
 
-        direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=random_state)
-        two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=random_state)
+            # 3. Strategy restoration or conflict validation
+            snap_strat = latest_snapshot.get("strategy")
+            if strategy is None:
+                final_strategy = snap_strat or "expected_improvement"
+            else:
+                if snap_strat and resolve_strategy(strategy) != resolve_strategy(snap_strat):
+                    raise ResumeStateMismatchError(
+                        f"Supplied strategy {strategy!r} does not match snapshot strategy {snap_strat!r}"
+                    )
+                final_strategy = strategy
+
+            # 4. Random state restoration or conflict validation
+            snap_rand = latest_snapshot.get("random_state")
+            if random_state is None:
+                final_random_state = int(snap_rand) if snap_rand is not None else 42
+            else:
+                if snap_rand is not None and random_state != snap_rand:
+                    raise ResumeStateMismatchError(
+                        f"Supplied random_state {random_state} does not match snapshot random_state {snap_rand}"
+                    )
+                final_random_state = random_state
+
+            # 5. Backend restoration or conflict validation
+            snap_bname = latest_snapshot.get("backend_name")
+            snap_bver = latest_snapshot.get("backend_version")
+            if backend is None:
+                final_backend = BoTorchBackend(default_strategy=final_strategy)
+            else:
+                if snap_bname and backend.name != snap_bname:
+                    raise ResumeStateMismatchError(
+                        f"Supplied backend name {backend.name!r} does not match snapshot backend name {snap_bname!r}"
+                    )
+                if snap_bver and backend.version != snap_bver:
+                    logger.warning(
+                        "Resumed backend version %r differs from persisted snapshot version %r.",
+                        backend.version,
+                        snap_bver,
+                    )
+                final_backend = backend
+
+        else:
+            final_strategy = strategy or "expected_improvement"
+            final_random_state = random_state if random_state is not None else 42
+            final_backend = backend or BoTorchBackend(default_strategy=final_strategy)
+
+        direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=final_random_state)
+        two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=final_random_state)
 
         prov = ScientificModelProvenance.create(
             dataset_name=spec.name,
@@ -949,7 +1022,7 @@ class ScientificClosedLoopCoordinator:
             training_experiment_ids=[],
             feature_columns=spec.feature_columns,
             target_columns=spec.targets,
-            random_seed=random_state,
+            random_seed=final_random_state,
             model_types={"direct": "GPR", "stage_a": "GPR", "stage_b": "GPR"},
         )
 
@@ -964,15 +1037,15 @@ class ScientificClosedLoopCoordinator:
         coord = cls(
             spec=spec,
             two_stage_spec=two_stage_spec,
-            backend=backend,
-            objective=objective,
+            backend=final_backend,
+            objective=final_objective,
             model_bundle=bundle,
             ledger=ledger,
             candidate_pool=candidate_pool,
             search_space=resolved_space,
-            strategy=strategy,
+            strategy=final_strategy,
             allow_parallel_experiments=allow_parallel_experiments,
-            random_state=random_state,
+            random_state=final_random_state,
         )
 
         # Refit models using the pure refit helpers

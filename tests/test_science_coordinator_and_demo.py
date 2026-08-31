@@ -1531,4 +1531,76 @@ def test_invalidation_and_replay_preserves_reason_code(tmp_path: Path) -> None:
     coord.ledger.close()
 
 
+def test_resume_authoritative_snapshot_restoration_and_conflict_rejection(tmp_path: Path) -> None:
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=20, seed=42)
+
+    db_path = tmp_path / "resume_authoritative.db"
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="gp_ucb",
+        random_state=99,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 650.0})
+    coord.ledger.close()
+
+    # 1. Authoritative restoration: caller passes None/omits strategy, random_state, backend
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+    )
+    assert resumed.strategy == "gp_ucb"
+    assert resumed.random_state == 99
+    assert resumed.backend.name == "botorch"
+    resumed.ledger.close()
+
+    # 2. Conflicting strategy rejection
+    with pytest.raises(ResumeStateMismatchError, match="Supplied strategy 'random' does not match snapshot strategy 'gp_ucb'"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+            strategy="random",
+        )
+
+    # 3. Conflicting random_state rejection
+    with pytest.raises(ResumeStateMismatchError, match="Supplied random_state 123 does not match snapshot random_state 99"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+            random_state=123,
+        )
+
+    # 4. Modified candidate pool (same shape, modified coordinate) content fingerprint rejection
+    modified_cand_pool = cand_pool.copy()
+    first_num_col = adapter.spec.candidate_variables[0]
+    modified_cand_pool.loc[0, first_num_col] = float(modified_cand_pool.loc[0, first_num_col]) + 999.0
+    with pytest.raises(ResumeStateMismatchError, match="Candidate pool content fingerprint .* does not match"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=modified_cand_pool,
+            search_space=adapter.search_space,
+        )
+
+
 
