@@ -51,7 +51,7 @@ def test_selected_candidates_always_belong_to_finite_pool(
 ):
     """Test 11 & 12: Candidates selected along trajectory strictly belong to the pool without duplicates."""
     pool, oracle = synthetic_pool_and_oracle
-    strategies = ["random", "greedy", "gp_ucb", "expected_improvement", "true_nei", "turbo_nei"]
+    strategies = ["random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "thompson"]
 
     for strat in strategies:
         oracle.reset()
@@ -78,7 +78,8 @@ def test_deterministic_and_identical_initialization_across_methods(
 ):
     """Tests 13 & 14: Same seed yields identical initial sample and deterministic trajectories."""
     pool, oracle = synthetic_pool_and_oracle
-    strategies = ["random", "greedy", "gp_ucb", "expected_improvement", "true_nei", "turbo_nei"]
+    strategies = ["random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "thompson"]
+
 
     init_ids = []
     for strat in strategies:
@@ -99,12 +100,12 @@ def test_deterministic_and_identical_initialization_across_methods(
     assert init_ids[0] == pool.iloc[3][AUIRH_CANDIDATE_ID_COLUMN]
 
 
-def test_botorch_nei_and_turbo_runs_seamlessly(
+def test_botorch_nei_and_thompson_runs_seamlessly(
     synthetic_pool_and_oracle: tuple[pd.DataFrame, AuIrRhExperimentOracle],
 ):
-    """Test 17 & 18: NEI and Turbo-NEI strategies run properly via BoTorchBackend."""
+    """Test 17 & 18: NEI and Thompson strategies run properly via BoTorchBackend."""
     pool, oracle = synthetic_pool_and_oracle
-    for strat in ["true_nei", "turbo_nei"]:
+    for strat in ["noisy_expected_improvement", "thompson"]:
         oracle.reset()
         traj = run_single_aicoscientist_trajectory(
             candidate_pool=pool,
@@ -117,6 +118,7 @@ def test_botorch_nei_and_turbo_runs_seamlessly(
         )
         assert len(traj) == 4
         assert traj[-1]["selected_sample_id"] is not None
+
 
 
 @pytest.mark.external_data

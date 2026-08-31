@@ -114,16 +114,14 @@ def run_single_aicoscientist_trajectory(
 
     # Map strategy name to BoTorchBackend strategy
     strat_key = strategy.lower().strip()
-    if strat_key == "noisy_expected_improvement":
+    if strat_key in {"noisy_expected_improvement", "nei"}:
         backend_strat = "nei"
-    elif strat_key == "expected_improvement":
+    elif strat_key in {"expected_improvement", "ei"}:
         backend_strat = "ei"
     elif strat_key in {"thompson_sampling", "thompson"}:
         backend_strat = "thompson"
     elif strat_key in {"gp_ucb_1", "gp_ucb_2", "gp_ucb", "ucb"}:
         backend_strat = "gp_ucb"
-    elif strat_key in {"turbo_nei", "turbo_ei"}:
-        backend_strat = "nei"
     else:
         backend_strat = strat_key
 
@@ -204,16 +202,37 @@ def run_single_aicoscientist_trajectory(
     return trajectory
 
 
+def _run_single_seed_strat_feconi(
+    cand_pool: pd.DataFrame,
+    df: pd.DataFrame,
+    target_name: str,
+    strat: str,
+    init_idx: int,
+    total_budget: int,
+    seed: int,
+) -> list[dict[str, Any]]:
+    oracle = FeCoNiExperimentOracle(df, target_column=target_name, allow_duplicate_queries=False)
+    return run_single_aicoscientist_trajectory(
+        candidate_pool=cand_pool,
+        oracle=oracle,
+        target_name=target_name,
+        strategy=strat,
+        init_sample_index=init_idx,
+        total_budget=total_budget,
+        seed=seed,
+    )
+
+
 def run_feconi_benchmark_suite(
     target_name: str = "Kerr",
     n_seeds: int = 30,
     total_budget: int = 50,
     output_dir: Path | str = "outputs/feconi",
+    n_jobs: int = -1,
 ) -> dict[str, Any]:
     """Runs full Fe-Co-Ni benchmark comparing strategies across n_seeds with summary statistics and statistical test."""
     adapter = FeCoNiAdapter()
     df = adapter.load()
-    oracle = FeCoNiExperimentOracle(df, target_column=target_name, allow_duplicate_queries=False)
     cand_pool = adapter.candidate_space(observed=None)
 
     out_p = Path(output_dir)
@@ -225,29 +244,52 @@ def run_feconi_benchmark_suite(
         "gp_ucb",
         "expected_improvement",
         "noisy_expected_improvement",
-        "turbo_nei",
         "thompson",
     ]
 
-    all_trajectories: list[dict[str, Any]] = []
-
+    tasks: list[tuple[str, int, int]] = []
     for seed in range(n_seeds):
         rng = np.random.default_rng(seed)
         init_idx = int(rng.integers(0, len(cand_pool)))
         for strat in strategies:
-            traj = run_single_aicoscientist_trajectory(
-                candidate_pool=cand_pool,
-                oracle=oracle,
+            tasks.append((strat, init_idx, seed))
+
+    if n_jobs == 1:
+        nested_trajectories = [
+            _run_single_seed_strat_feconi(
+                cand_pool=cand_pool,
+                df=df,
                 target_name=target_name,
-                strategy=strat,
-                init_sample_index=init_idx,
+                strat=strat,
+                init_idx=init_idx,
                 total_budget=total_budget,
                 seed=seed,
             )
-            all_trajectories.extend(traj)
+            for strat, init_idx, seed in tasks
+        ]
+    else:
+        from joblib import Parallel, delayed
+
+        nested_trajectories = Parallel(n_jobs=n_jobs, verbose=0)(
+            delayed(_run_single_seed_strat_feconi)(
+                cand_pool=cand_pool,
+                df=df,
+                target_name=target_name,
+                strat=strat,
+                init_idx=init_idx,
+                total_budget=total_budget,
+                seed=seed,
+            )
+            for strat, init_idx, seed in tasks
+        )
+
+    all_trajectories: list[dict[str, Any]] = []
+    for traj in nested_trajectories:
+        all_trajectories.extend(traj)
 
     trajs_df = pd.DataFrame(all_trajectories)
     trajs_df.to_csv(out_p / f"feconi_{target_name}_trajectories.csv", index=False)
+
 
     summary_rows = []
     for strat in strategies:

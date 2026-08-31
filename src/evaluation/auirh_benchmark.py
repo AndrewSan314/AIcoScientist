@@ -127,8 +127,6 @@ def run_single_aicoscientist_trajectory(
         backend_strat = "thompson"
     elif strat_key in {"gp_ucb", "ucb"}:
         backend_strat = "gp_ucb"
-    elif strat_key in {"turbo_nei", "turbo"}:
-        backend_strat = "nei"
     else:
         backend_strat = strat_key
 
@@ -409,3 +407,128 @@ def run_cross_library_diagnostic(
 
     logger.info("Saved cross-library diagnostic summary to %s and per-seed to %s", out_file, per_seed_file)
     return results
+
+
+def _run_single_seed_strat_auirh(
+    cand_pool: pd.DataFrame,
+    adapter: AuIrRhAdapter,
+    target_name: str,
+    strat: str,
+    init_idx: int,
+    total_budget: int,
+    seed: int,
+) -> list[dict[str, Any]]:
+    oracle = adapter.create_oracle()
+    return run_single_aicoscientist_trajectory(
+        candidate_pool=cand_pool,
+        oracle=oracle,
+        target_name=target_name,
+        strategy=strat,
+        init_sample_index=init_idx,
+        total_budget=total_budget,
+        seed=seed,
+    )
+
+
+def run_auirh_benchmark_suite(
+    target_name: str = "k0",
+    n_seeds: int = 30,
+    total_budget: int = 50,
+    output_dir: Path | str = "outputs/auirh",
+    n_jobs: int = -1,
+) -> dict[str, Any]:
+    """Runs full Au-Ir-Rh pooled benchmark comparing strategies across n_seeds with summary statistics."""
+    adapter = AuIrRhAdapter(target=target_name, library=None)
+    cand_pool = adapter.get_candidate_pool()
+
+    out_p = Path(output_dir)
+    out_p.mkdir(parents=True, exist_ok=True)
+
+    strategies = [
+        "random",
+        "greedy",
+        "gp_ucb",
+        "expected_improvement",
+        "noisy_expected_improvement",
+        "thompson",
+    ]
+
+    tasks: list[tuple[str, int, int]] = []
+    for seed in range(n_seeds):
+        rng = np.random.default_rng(seed)
+        init_idx = int(rng.integers(0, len(cand_pool)))
+        for strat in strategies:
+            tasks.append((strat, init_idx, seed))
+
+    if n_jobs == 1:
+        nested_trajectories = [
+            _run_single_seed_strat_auirh(
+                cand_pool=cand_pool,
+                adapter=adapter,
+                target_name=target_name,
+                strat=strat,
+                init_idx=init_idx,
+                total_budget=total_budget,
+                seed=seed,
+            )
+            for strat, init_idx, seed in tasks
+        ]
+    else:
+        from joblib import Parallel, delayed
+
+        nested_trajectories = Parallel(n_jobs=n_jobs, verbose=0)(
+            delayed(_run_single_seed_strat_auirh)(
+                cand_pool=cand_pool,
+                adapter=adapter,
+                target_name=target_name,
+                strat=strat,
+                init_idx=init_idx,
+                total_budget=total_budget,
+                seed=seed,
+            )
+            for strat, init_idx, seed in tasks
+        )
+
+    all_trajectories: list[dict[str, Any]] = []
+    for traj in nested_trajectories:
+        all_trajectories.extend(traj)
+
+    trajs_df = pd.DataFrame(all_trajectories)
+    trajs_df.to_csv(out_p / f"auirh_{target_name}_trajectories.csv", index=False)
+
+
+    summary_rows = []
+    for strat in strategies:
+        sub = trajs_df[(trajs_df["strategy"] == strat) & (trajs_df["iteration"] == total_budget)]
+        final_devs = sub["percent_deviation"].to_numpy()
+        mean_dev = float(np.mean(final_devs))
+        std_dev = float(np.std(final_devs, ddof=1)) if len(final_devs) > 1 else 0.0
+        ci_low, ci_high = compute_bootstrap_ci_95(final_devs)
+        summary_rows.append(
+            {
+                "strategy": strat,
+                "target": target_name,
+                "n_seeds": n_seeds,
+                "final_pct_deviation_mean": mean_dev,
+                "final_pct_deviation_std": std_dev,
+                "final_pct_deviation_ci_95_lower": ci_low,
+                "final_pct_deviation_ci_95_upper": ci_high,
+            }
+        )
+
+    summary_df = pd.DataFrame(summary_rows)
+    summary_df.to_csv(out_p / f"auirh_{target_name}_summary.csv", index=False)
+
+    report = {
+        "dataset": "AuIrRh",
+        "target": target_name,
+        "n_seeds": n_seeds,
+        "total_budget": total_budget,
+        "backend": "botorch",
+        "summary": summary_rows,
+    }
+    with open(out_p / f"auirh_{target_name}_report.json", "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2)
+
+    return report
+

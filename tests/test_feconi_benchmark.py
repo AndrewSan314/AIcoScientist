@@ -59,7 +59,7 @@ def test_same_seed_gives_identical_initialization_across_all_methods(synthetic_p
     rng = np.random.default_rng(seed)
     init_idx = int(rng.integers(0, len(pool)))
 
-    methods = ["random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "turbo_nei"]
+    methods = ["random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "thompson"]
     trajs = {}
     for m in methods:
         oracle.reset()
@@ -110,7 +110,7 @@ def test_selected_candidates_always_belong_to_finite_pool(synthetic_pool_and_ora
         candidate_pool=pool,
         oracle=oracle,
         target_name="Kerr",
-        strategy="turbo_nei",
+        strategy="noisy_expected_improvement",
         init_sample_index=2,
         total_budget=8,
         seed=50,

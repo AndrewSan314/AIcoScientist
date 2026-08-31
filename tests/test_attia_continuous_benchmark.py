@@ -60,12 +60,12 @@ def test_optimizer_evaluator_strict_isolation() -> None:
     init_indices = [0, 5, 10, 15, 20]
 
     # Run optimizer trajectory
-    raw_hist, decision_trace = run_single_attia_continuous_trajectory(
+    raw_hist, _ = run_single_attia_continuous_trajectory(
         search_space=space,
         discrete_pool=discrete_pool,
         init_indices=init_indices,
         total_queries=3,
-        strategy="adaptive",
+        strategy="gp_ucb",
         optimizer_seed=7,
         n_candidates_per_step=50,
         refine_continuous=False,
@@ -82,7 +82,6 @@ def test_optimizer_evaluator_strict_isolation() -> None:
         assert "simulated_lifetime" in row
         assert "candidate_id" in row
         assert "query_id" in row
-        assert "controller_reason" in row
 
     # Evaluate with post-hoc evaluator
     evaluated_hist, ref_under = evaluate_continuous_trajectory(
@@ -179,10 +178,10 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     assert "derived_discrete_grid_optimum" in summary
     assert "best_known_continuous_reference" in summary
     assert "best_discovered_per_strategy" in summary
-    assert "adaptive" in summary["best_discovered_per_strategy"]
+    assert "gp_ucb" in summary["best_discovered_per_strategy"]
     assert "expected_improvement" in summary["best_discovered_per_strategy"]
-    assert "turbo_nei" in summary["best_discovered_per_strategy"]
-    assert "nei" in summary["best_discovered_per_strategy"]
+    assert "noisy_expected_improvement" in summary["best_discovered_per_strategy"]
+    assert "thompson" in summary["best_discovered_per_strategy"]
     assert "paired_comparisons" in summary
     assert "sample_efficiency_to_threshold" in summary
     assert "threshold_a_discrete_opt_1079" in summary["sample_efficiency_to_threshold"]
@@ -194,24 +193,4 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
     assert (tmp_path / "search_space_summary.json").is_file()
     assert (tmp_path / "optimization_history.csv").is_file()
     assert (tmp_path / "proposed_protocols.csv").is_file()
-    assert (tmp_path / "adaptive_decision_trace.csv").is_file()
-    assert (tmp_path / "turbo_state_history.csv").is_file()
 
-    turbo_df = pd.read_csv(tmp_path / "turbo_state_history.csv")
-    assert "benchmark_seed" in turbo_df.columns
-    assert "step" in turbo_df.columns
-    assert "candidate_id" in turbo_df.columns
-    assert "trust_region_center_C1" in turbo_df.columns
-    assert "trust_region_center_C2" in turbo_df.columns
-    assert "trust_region_center_C3" in turbo_df.columns
-    assert "trust_region_length" in turbo_df.columns
-    assert "posterior_candidate_mean" in turbo_df.columns
-    assert "posterior_candidate_std" in turbo_df.columns
-    assert "posterior_incumbent_mean" in turbo_df.columns
-    assert "posterior_incumbent_std" in turbo_df.columns
-    assert "success_counter" in turbo_df.columns
-    assert "failure_counter" in turbo_df.columns
-    assert "expanded" in turbo_df.columns
-    assert "contracted" in turbo_df.columns
-    assert "restarted" in turbo_df.columns
-    assert "global_escape" in turbo_df.columns
