@@ -21,6 +21,25 @@ logger = logging.getLogger(__name__)
 DEFAULT_IDENTIFIABILITY_REPORT = Path("reports/falsification/hypothesis_identifiability.md")
 
 
+def _df_to_markdown_simple(df: pd.DataFrame) -> str:
+    """Formats a DataFrame as a GitHub-flavored Markdown table without tabulate dependency."""
+    if df.empty:
+        return ""
+    headers = [str(c) for c in df.columns]
+    header_line = "| " + " | ".join(headers) + " |"
+    sep_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+    rows = []
+    for _, row in df.iterrows():
+        row_strs = []
+        for val in row:
+            if isinstance(val, float):
+                row_strs.append(f"{val:.4f}")
+            else:
+                row_strs.append(str(val))
+        rows.append("| " + " | ".join(row_strs) + " |")
+    return "\n".join([header_line, sep_line] + rows)
+
+
 def compute_gaussian_js_divergence(
     p1: PredictiveDistribution,
     p2: PredictiveDistribution,
@@ -91,6 +110,8 @@ def run_identifiability_analysis(
         mean_sep=("mean_separation", "mean"),
     ).reset_index()
 
+    table_md = _df_to_markdown_simple(agg_df)
+
     # Generate Markdown Report
     lines = [
         "# Scientific Hypothesis Identifiability & Predictive Divergence Analysis",
@@ -101,7 +122,7 @@ def run_identifiability_analysis(
         "",
         "## 2. Pairwise Divergence Metrics (Jensen-Shannon Divergence)",
         "",
-        agg_df.to_markdown(index=False),
+        table_md,
         "",
         "## 3. Key Identifiability Findings",
         "- **$H_1$ vs. $H_2$ (Composition vs. Structure-Informed)**: Strongly distinguishable under **PROPERTY** actions when structural variance is observed. When XRD is unmeasured, predictions overlap in smooth regions.",

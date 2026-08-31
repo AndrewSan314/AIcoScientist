@@ -27,6 +27,25 @@ logger = logging.getLogger(__name__)
 DEFAULT_OUTPUT_DIR = Path("outputs/falsification")
 
 
+def _df_to_markdown_simple(df: pd.DataFrame) -> str:
+    """Formats a DataFrame as a Markdown table without requiring tabulate."""
+    if df.empty:
+        return ""
+    headers = [str(c) for c in df.columns]
+    header_line = "| " + " | ".join(headers) + " |"
+    sep_line = "| " + " | ".join(["---"] * len(headers)) + " |"
+    rows = []
+    for _, row in df.iterrows():
+        row_strs = []
+        for val in row:
+            if isinstance(val, float):
+                row_strs.append(f"{val:.4f}")
+            else:
+                row_strs.append(str(val))
+        rows.append("| " + " | ".join(row_strs) + " |")
+    return "\n".join([header_line, sep_line] + rows)
+
+
 def run_single_falsification_trajectory(
     world: SyntheticTruthWorld,
     policy_name: str,
@@ -288,6 +307,8 @@ def run_full_falsification_benchmark(
         mean_cost=("cost_spent", "last"),
     ).reset_index()
 
+    table_md = _df_to_markdown_simple(grouped)
+
     report_lines = [
         "# Falsification-First Hypothesis Discrimination Benchmark Report",
         "",
@@ -297,7 +318,7 @@ def run_full_falsification_benchmark(
         "",
         "## Summary Results by World and Policy",
         "",
-        grouped.to_markdown(index=False),
+        table_md,
         "",
         "## Scientific Interpretation",
         "- **Pure Falsification (HIG)** preferentially selects experiments maximizing hypothesis entropy reduction.",
