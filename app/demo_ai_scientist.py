@@ -208,7 +208,11 @@ col_hypo, col_map, col_action = st.columns([1.1, 1.6, 1.3])
 # LEFT COLUMN: Scientific Hypotheses
 with col_hypo:
     st.subheader("Scientific Hypotheses")
-    st.caption("Evidence-weighted competing models")
+    n_events = len(engine.hypothesis_engine.evidence_events)
+    if n_events == 0:
+        st.caption("Prior / No sequential evidence yet")
+    else:
+        st.caption(f"Evidence weight after {n_events} adaptive experiment(s)")
 
     hypotheses = engine.hypothesis_engine.hypotheses
     for hid, h in hypotheses.items():

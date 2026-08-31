@@ -30,10 +30,19 @@ class ExperimentLedger:
         self.db_path = str(db_path)
         if self.db_path != ":memory:":
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(self.db_path)
+        self._conn: sqlite3.Connection | None = sqlite3.connect(self.db_path)
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._init_schema()
+
+    def close(self) -> None:
+        """Closes the underlying SQLite database connection."""
+        if hasattr(self, "_conn") and self._conn is not None:
+            self._conn.close()
+            self._conn = None
+
+    def __del__(self) -> None:
+        self.close()
 
     def _init_schema(self) -> None:
         with self._conn:

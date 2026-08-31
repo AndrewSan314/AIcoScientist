@@ -11,6 +11,6 @@
 | **fixed_ratio** | 0.011719 | 0.1748 | 14.0 | 9.0 | 59.0 |
 | **property_only** | 0.011719 | 0.1748 | 2.0 | 11.0 | 57.0 |
 | **random_action** | 0.011789 | 0.1698 | 2.0 | 11.0 | 57.0 |
-| **scientific_action** | 0.011285 | 0.2053 | 15.0 | 9.0 | 60.0 |
+| **scientific_action** | 0.012103 | 0.1478 | 2.2 | 11.0 | 57.2 |
 
 *Note: Illustrative development benchmark on 5 seeds demonstrating adaptive multi-action exploration under normalized cost constraints.*

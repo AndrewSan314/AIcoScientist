@@ -133,3 +133,43 @@ class OptimizerBackend(Protocol):
             Ranked list of candidate proposals with predicted means, uncertainties, and acquisition scores.
         """
         ...
+
+    def score_candidates(
+        self,
+        observations: pd.DataFrame | Sequence[Mapping[str, Any]],
+        candidate_pool: pd.DataFrame,
+        objective: OptimizationObjective | str,
+        *,
+        feature_columns: Sequence[str] | None = None,
+        candidate_id_column: str | None = None,
+        seed: int | None = None,
+        strategy: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, float]:
+        """Evaluates acquisition scores for candidate design points in the candidate pool.
+
+        Parameters
+        ----------
+        observations:
+            Observed experimental data points with feature coordinates and target values.
+        candidate_pool:
+            Universe of candidate design points.
+        objective:
+            Optimization objective (target name, minimization/maximization sense).
+        feature_columns:
+            Optional explicit feature column names.
+        candidate_id_column:
+            Optional column identifying candidates.
+        seed:
+            Random seed for stochastic reproducibility.
+        strategy:
+            Acquisition strategy name (e.g. 'expected_improvement', 'noisy_expected_improvement', 'gp_ucb').
+        kwargs:
+            Optional strategy hyperparameters.
+
+        Returns
+        -------
+        dict[str, float]:
+            Mapping from candidate_id to raw acquisition score evaluated by the backend.
+        """
+        ...

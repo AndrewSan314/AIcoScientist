@@ -206,6 +206,7 @@ def run_single_attia_continuous_trajectory(
 
     Surrogate GP is fit strictly on free continuous variables ["C1", "C2", "C3"].
     """
+    _ = refine_continuous  # Backward-compatible no-op; refinement is evaluator-only.
     feature_cols = ["C1", "C2", "C3"]  # Free design variables only
 
     strat_key = strategy.lower().strip()

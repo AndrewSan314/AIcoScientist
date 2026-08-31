@@ -9,6 +9,7 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from src.datasets.auirh_actions import AuIrRhMultimodalOracle
+    from src.optimization.backend import OptimizerBackend
 
 from src.science.actions import (
     ActionRecommendation,
@@ -42,6 +43,7 @@ class AutonomousDiscoveryEngine:
     def __init__(
         self,
         oracle: AuIrRhMultimodalOracle | None = None,
+        optimizer_backend: OptimizerBackend | None = None,
         db_path: Path | str = ":memory:",
         seed: int = 42,
         cost_xrd: float = 1.0,
@@ -58,6 +60,13 @@ class AutonomousDiscoveryEngine:
             self.oracle = AuIrRhMultimodalOracle()
         else:
             self.oracle = oracle
+
+        if optimizer_backend is None:
+            from src.optimization.botorch_backend import BoTorchBackend
+
+            self.optimizer_backend: OptimizerBackend = BoTorchBackend(default_strategy="expected_improvement")
+        else:
+            self.optimizer_backend = optimizer_backend
 
         self.ledger = ExperimentLedger(db_path=self._db_path)
         self.xrd_extractor = XRDRepresentationExtractor()
@@ -92,7 +101,8 @@ class AutonomousDiscoveryEngine:
     ) -> None:
         """Sets up a deterministic, reproducible initial scientific campaign state.
 
-        Reveals a small initial subset of XRD and property measurements without cherry-picking.
+        Initial seed measurements provide prior context and fit models without generating
+        fabricated hypothesis evidence events or altering neutral baseline belief weights.
         """
         init_seed = seed if seed is not None else self.seed
         rng = np.random.default_rng(init_seed)
@@ -108,7 +118,7 @@ class AutonomousDiscoveryEngine:
         init_prop_cids = shuffled_cids[:n_init_prop]
         init_xrd_cids = shuffled_cids[n_init_prop : n_init_prop + n_init_xrd]
 
-        # 1. Execute initial XRD actions
+        # 1. Execute initial XRD actions (record to ledger and timeline only)
         for cid in init_xrd_cids:
             act = ScientificAction(
                 action_id=f"init_xrd_{cid}",
@@ -121,16 +131,6 @@ class AutonomousDiscoveryEngine:
             self._record_to_ledger(act, outcome)
             self.total_budget_spent += self.policy.cost_xrd
 
-            # Record baseline evidence event
-            self.hypothesis_engine.record_evidence_event(
-                event_id=act.action_id,
-                action_type="XRD",
-                candidate_id=cid,
-                structure_residual=0.20,
-                structure_novelty=0.40,
-                structure_advantage_ratio=0.0,
-            )
-
             self.timeline.append(
                 {
                     "step": len(self.timeline) + 1,
@@ -138,13 +138,13 @@ class AutonomousDiscoveryEngine:
                     "candidate_id": cid,
                     "action_type": "XRD",
                     "cost": self.policy.cost_xrd,
-                    "hypothesis_tested": "Initial Baseline",
+                    "hypothesis_tested": "Initial Baseline Context",
                     "revealed_summary": f"Peak 2theta: {outcome.revealed_data.get('peak_two_theta', 0.0):.1f}°",
                     "status": "COMPLETED",
                 }
             )
 
-        # 2. Execute initial Property actions
+        # 2. Execute initial Property actions (record to ledger and timeline only)
         for cid in init_prop_cids:
             act = ScientificAction(
                 action_id=f"init_prop_{cid}",
@@ -157,15 +157,6 @@ class AutonomousDiscoveryEngine:
             self._record_to_ledger(act, outcome)
             self.total_budget_spent += self.policy.cost_property
 
-            # Record baseline evidence event
-            self.hypothesis_engine.record_evidence_event(
-                event_id=act.action_id,
-                action_type="PROPERTY",
-                candidate_id=cid,
-                property_residual=0.20,
-                structure_advantage_ratio=0.0,
-            )
-
             self.timeline.append(
                 {
                     "step": len(self.timeline) + 1,
@@ -173,16 +164,16 @@ class AutonomousDiscoveryEngine:
                     "candidate_id": cid,
                     "action_type": "PROPERTY",
                     "cost": self.policy.cost_property,
-                    "hypothesis_tested": "Initial Baseline",
+                    "hypothesis_tested": "Initial Baseline Context",
                     "revealed_summary": f"k0: {outcome.revealed_data.get('k0', 0.0):.5f} cm/s",
                     "status": "COMPLETED",
                 }
             )
 
-        self._refit_models_and_recompute_beliefs()
+        self._refit_models()
 
-    def _refit_models_and_recompute_beliefs(self) -> None:
-        """Refits surrogate projections and updates hypothesis beliefs without manufacturing new events."""
+    def _refit_models(self) -> float:
+        """Refits surrogate models on revealed data and returns current structural predictive advantage."""
         cand_df = self.oracle.get_candidate_pool()
 
         # 1. Fit XRD Representation Extractor on revealed spectra
@@ -192,7 +183,7 @@ class AutonomousDiscoveryEngine:
         ]
         self.xrd_extractor.fit(revealed_spectra)
 
-        # 2. Extract embeddings for candidates with XRD
+        # 2. Extract embeddings for candidates with revealed XRD
         revealed_xrd_cids = list(revealed_xrd_map.keys())
         if revealed_xrd_cids:
             xrd_comps = cand_df[cand_df["candidate_id"].isin(revealed_xrd_cids)][["Au", "Ir", "Rh"]].to_numpy()
@@ -222,7 +213,7 @@ class AutonomousDiscoveryEngine:
                     targets=joint_targets,
                     embeddings=joint_embs,
                 )
-                struct_adv = eval_dict["structure_advantage_ratio"]
+                struct_adv = float(eval_dict["structure_advantage_ratio"])
             else:
                 self.property_model.fit(prop_comps, prop_targets)
                 struct_adv = 0.0
@@ -230,8 +221,9 @@ class AutonomousDiscoveryEngine:
             self.property_model.fit(np.empty((0, 3)), np.empty((0,)))
             struct_adv = 0.0
 
-        # 4. Recompute beliefs from accumulated events (does NOT add new events)
-        self.hypothesis_engine._recompute_beliefs(structure_advantage_ratio=struct_adv)
+        # Recalculate hypothesis beliefs without adding fake events
+        self.hypothesis_engine.recalculate_current_scores(structure_advantage_ratio=struct_adv)
+        return struct_adv
 
     def _record_to_ledger(self, action: ScientificAction, outcome: ExperimentOutcome) -> None:
         """Appends experiment record to authoritative ledger via valid lifecycle transitions."""
@@ -274,6 +266,33 @@ class AutonomousDiscoveryEngine:
         cand_df = self.oracle.get_candidate_pool()
         observed_xrd = set(self.oracle.get_revealed_xrd_ids())
         observed_prop = set(self.oracle.get_revealed_property_ids())
+        revealed_props = self.oracle.get_revealed_properties()
+
+        # Build observations DataFrame for production optimizer backend
+        if revealed_props:
+            obs_rows = []
+            for cid, outcome in revealed_props.items():
+                match = cand_df[cand_df["candidate_id"] == cid]
+                if not match.empty:
+                    row = match.iloc[0].to_dict()
+                    row["k0"] = float(outcome.revealed_data["k0"])
+                    obs_rows.append(row)
+            obs_df = pd.DataFrame(obs_rows)
+        else:
+            obs_df = pd.DataFrame(columns=["candidate_id", "Au", "Ir", "Rh", "k0"])
+
+        # Score candidate property discovery potential via production optimizer backend
+        try:
+            property_discovery_scores = self.optimizer_backend.score_candidates(
+                observations=obs_df,
+                candidate_pool=cand_df[["candidate_id", "Au", "Ir", "Rh"]],
+                objective="k0",
+                strategy="expected_improvement",
+                seed=self.seed,
+            )
+        except Exception as exc:
+            logger.warning(f"Optimizer scoring fallback: {exc}")
+            property_discovery_scores = {}
 
         recommendation = self.policy.recommend_next_experiment(
             candidate_pool_df=cand_df,
@@ -282,6 +301,7 @@ class AutonomousDiscoveryEngine:
             structure_model=self.structure_model,
             property_model=self.property_model,
             hypothesis_engine=self.hypothesis_engine,
+            property_discovery_scores=property_discovery_scores,
             step=self.current_step,
         )
 
@@ -293,29 +313,61 @@ class AutonomousDiscoveryEngine:
             total_candidates=len(cand_df),
         )
 
-        # Store pre-measurement prediction for sequential residual calculation
+        # Store pre-measurement prediction for subsequent empirical residual calculation
         rec_cid = recommendation.action.candidate_id
         cand_row = cand_df[cand_df["candidate_id"] == rec_cid].iloc[0]
         cand_comp = np.array([[cand_row["Au"], cand_row["Ir"], cand_row["Rh"]]], dtype=np.float64)
 
-        pred_emb, _ = self.structure_model.predict(cand_comp)
-        pred_mean, pred_std = self.property_model.predict(cand_comp)
+        if self.structure_model.is_fitted:
+            pred_emb, _ = self.structure_model.predict(cand_comp)
+            self._pre_pred_emb = pred_emb[0]
+        else:
+            self._pre_pred_emb = None
 
-        self._pre_pred_emb = pred_emb[0]
-        self._pre_pred_mean = float(pred_mean[0])
-        self._pre_pred_std = float(pred_std[0])
+        if self.property_model.is_fitted:
+            pred_mean, pred_std = self.property_model.predict(cand_comp)
+            self._pre_pred_mean = float(pred_mean[0])
+            self._pre_pred_std = float(pred_std[0])
+        else:
+            self._pre_pred_mean = None
+            self._pre_pred_std = None
 
         self._last_recommendation = recommendation
         self._last_perspectives = perspectives
         return recommendation, perspectives
 
     def execute_experiment(self, action: ScientificAction | None = None) -> dict[str, Any]:
-        """Executes the recommended (or specified) scientific action via the oracle."""
+        """Executes the recommended (or specified) scientific action via the oracle.
+
+        Exact Sequential Flow:
+        1. Capture before-state beliefs.
+        2. Execute action on oracle & record to ledger.
+        3. Derive empirical event metrics (residual/novelty) using pre-measurement predictions.
+        4. Refit models on newly revealed observation.
+        5. Compute current LOO-CV structural predictive advantage.
+        6. Record EXACTLY ONE EvidenceEvent in HypothesisEngine.
+        7. Recompute beliefs once from event history.
+        """
         act = action or (self._last_recommendation.action if self._last_recommendation else None)
         if act is None:
             raise ValueError("No action provided or recommended to execute.")
 
-        # Capture before-state beliefs
+        # Capture pre-measurement prediction if not cached
+        cand_df = self.oracle.get_candidate_pool()
+        if (
+            (act.action_type == ExperimentActionType.XRD and self._pre_pred_emb is None)
+            or (act.action_type == ExperimentActionType.PROPERTY and self._pre_pred_mean is None)
+        ):
+            cand_row = cand_df[cand_df["candidate_id"] == act.candidate_id].iloc[0]
+            cand_comp = np.array([[cand_row["Au"], cand_row["Ir"], cand_row["Rh"]]], dtype=np.float64)
+            if self.structure_model.is_fitted:
+                p_emb, _ = self.structure_model.predict(cand_comp)
+                self._pre_pred_emb = p_emb[0]
+            if self.property_model.is_fitted:
+                p_m, p_s = self.property_model.predict(cand_comp)
+                self._pre_pred_mean = float(p_m[0])
+                self._pre_pred_std = float(p_s[0])
+
         before_beliefs = {hid: h.belief_score for hid, h in self.hypothesis_engine.hypotheses.items()}
 
         outcome = self.oracle.execute(act)
@@ -324,19 +376,17 @@ class AutonomousDiscoveryEngine:
         self.current_step += 1
         self.total_budget_spent += act.estimated_cost
 
-        # 1. Compute empirical event metrics
+        # 1. Compute empirical event metrics (strictly None if no pre-measurement model existed)
         if act.action_type == ExperimentActionType.XRD:
             norm_spec = outcome.revealed_data["normalized_intensity"]
             actual_emb = self.xrd_extractor.transform(norm_spec)
 
-            # Structure residual: distance to pre-measurement predicted embedding
             if self._pre_pred_emb is not None:
                 raw_res = float(np.linalg.norm(actual_emb - self._pre_pred_emb))
                 struct_res = min(1.0, raw_res / np.sqrt(len(actual_emb) + 1e-12))
             else:
-                struct_res = 0.25
+                struct_res = None
 
-            # Structure novelty: distance to nearest previously revealed XRD embedding
             revealed_xrd_map = self.oracle.get_revealed_xrd()
             if len(revealed_xrd_map) > 1:
                 other_embs = [
@@ -347,7 +397,7 @@ class AutonomousDiscoveryEngine:
                 dists = [float(np.linalg.norm(actual_emb - oe)) for oe in other_embs]
                 struct_nov = min(1.0, float(min(dists)) / np.sqrt(len(actual_emb) + 1e-12))
             else:
-                struct_nov = 0.50
+                struct_nov = None
 
             prop_res = None
 
@@ -357,33 +407,15 @@ class AutonomousDiscoveryEngine:
                 denom = max(self._pre_pred_std or 1e-3, 1e-4)
                 prop_res = min(5.0, abs(y_obs - self._pre_pred_mean) / denom)
             else:
-                prop_res = 0.20
+                prop_res = None
 
             struct_res = None
             struct_nov = None
 
-        # 2. Refit models and evaluate structure advantage
-        self._refit_models_and_recompute_beliefs()
+        # 2. Refit models and compute current LOO-CV structural advantage
+        struct_adv = self._refit_models()
 
-        # 3. Record the explicit empirical evidence event
-        revealed_prop_map = self.oracle.get_revealed_properties()
-        revealed_xrd_map = self.oracle.get_revealed_xrd()
-        joint_cids = [cid for cid in revealed_prop_map if cid in revealed_xrd_map]
-
-        if len(joint_cids) >= 3:
-            cand_df = self.oracle.get_candidate_pool()
-            joint_comps = cand_df[cand_df["candidate_id"].isin(joint_cids)][["Au", "Ir", "Rh"]].to_numpy()
-            joint_targets = np.array([revealed_prop_map[cid].revealed_data["k0"] for cid in joint_cids])
-            joint_embs = np.array([self.xrd_extractor.transform(revealed_xrd_map[cid].revealed_data["normalized_intensity"]) for cid in joint_cids])
-            eval_dict = self.property_model.evaluate_structure_predictive_advantage(
-                compositions=joint_comps,
-                targets=joint_targets,
-                embeddings=joint_embs,
-            )
-            struct_adv = eval_dict["structure_advantage_ratio"]
-        else:
-            struct_adv = 0.0
-
+        # 3. Record EXACTLY ONE evidence event (triggers single belief update)
         self.hypothesis_engine.record_evidence_event(
             event_id=act.action_id,
             action_type=act.action_type.value,
@@ -394,7 +426,11 @@ class AutonomousDiscoveryEngine:
             structure_advantage_ratio=struct_adv,
         )
 
-        # Capture after-state beliefs
+        # Clear pre-prediction cache for next step
+        self._pre_pred_emb = None
+        self._pre_pred_mean = None
+        self._pre_pred_std = None
+
         after_beliefs = {hid: h.belief_score for hid, h in self.hypothesis_engine.hypotheses.items()}
         belief_deltas = {hid: after_beliefs[hid] - before_beliefs[hid] for hid in after_beliefs}
 
@@ -471,8 +507,18 @@ class AutonomousDiscoveryEngine:
         cand_df["measured_k0"] = measured_k0s
         return cand_df
 
+    def close(self) -> None:
+        """Closes underlying ledger database connection."""
+        if hasattr(self, "ledger") and self.ledger is not None:
+            self.ledger.close()
+
+    def __del__(self) -> None:
+        self.close()
+
     def reset(self) -> None:
         """Resets the engine and oracle for fresh replay, preserving configured persistence db_path."""
+        if hasattr(self, "ledger") and self.ledger is not None:
+            self.ledger.close()
         self.oracle.reset()
         self.ledger = ExperimentLedger(db_path=self._db_path)
         self.xrd_extractor = XRDRepresentationExtractor()

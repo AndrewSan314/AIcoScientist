@@ -36,7 +36,7 @@ class NextBestExperimentPolicy:
 
     Where:
     - INFO_NORM(a) is the min-max normalized information score across all candidate actions in A.
-    - DISC_NORM(a) is the min-max normalized discovery score (0 for XRD; UCB/acquisition for PROPERTY).
+    - DISC_NORM(a) is the min-max normalized discovery score (0 for XRD; BoTorch acquisition value for PROPERTY).
     - COST_NORM(a) = raw_cost(a) / max_cost.
     """
 
@@ -62,6 +62,7 @@ class NextBestExperimentPolicy:
         structure_model: StructureSurrogateModel,
         property_model: PropertySurrogateModel,
         hypothesis_engine: HypothesisEngine,
+        property_discovery_scores: Mapping[str, float] | None = None,
         step: int = 0,
     ) -> list[dict[str, Any]]:
         """Evaluates and ranks all valid scientific actions."""
@@ -83,6 +84,7 @@ class NextBestExperimentPolicy:
         b_h2 = hypothesis_engine.hypotheses["H2"].belief_score
         b_h3 = hypothesis_engine.hypotheses["H3"].belief_score
 
+        disc_scores = property_discovery_scores or {}
         candidate_actions: list[dict[str, Any]] = []
 
         # 1. Collect candidate XRD actions
@@ -117,8 +119,9 @@ class NextBestExperimentPolicy:
                 continue
 
             u_prop = float(p_std_norm[i])
-            pred_val = float(p_mean_norm[i])
-            disc_val = pred_val + 0.5 * u_prop
+            # Property discovery score strictly originates from production optimizer backend acquisition value
+            raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+            disc_val = raw_botorch_acq
 
             has_xrd = cid in observed_xrd_ids
             info_val = u_prop * (1.0 * b_h1 + (1.3 * b_h2 if has_xrd else 0.8 * b_h2) + 0.3)
@@ -136,7 +139,7 @@ class NextBestExperimentPolicy:
                     "struct_uncertainty": float(s_std_norm[i]),
                     "prop_uncertainty": u_prop,
                     "predicted_k0_mean": float(prop_means[i]),
-                    "predicted_k0_norm": pred_val,
+                    "predicted_k0_norm": float(p_mean_norm[i]),
                 }
             )
 
@@ -144,16 +147,28 @@ class NextBestExperimentPolicy:
             return []
 
         # 3. Normalized multi-component scoring
+        # Information value is normalized across all candidate actions
         all_info = [a["raw_info"] for a in candidate_actions]
-        all_disc = [a["raw_disc"] for a in candidate_actions]
         min_info, max_info = min(all_info), max(all_info)
-        min_disc, max_disc = min(all_disc), max(all_disc)
+
+        # Discovery score is normalized strictly across valid PROPERTY actions (0.0 for XRD)
+        prop_discs = [a["raw_disc"] for a in candidate_actions if a["action_type"] == ExperimentActionType.PROPERTY]
+        if prop_discs:
+            min_p_disc, max_p_disc = min(prop_discs), max(prop_discs)
+        else:
+            min_p_disc, max_p_disc = 0.0, 1.0
+
         max_cost = max(self.cost_xrd, self.cost_property, 1.0)
 
         scored_actions: list[dict[str, Any]] = []
         for a in candidate_actions:
             info_norm = (a["raw_info"] - min_info) / (max_info - min_info + 1e-12)
-            disc_norm = (a["raw_disc"] - min_disc) / (max_disc - min_disc + 1e-12)
+
+            if a["action_type"] == ExperimentActionType.PROPERTY and prop_discs:
+                disc_norm = (a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12)
+            else:
+                disc_norm = 0.0
+
             cost_norm = a["raw_cost"] / max_cost
 
             total = (self.w_info * info_norm) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
@@ -176,6 +191,7 @@ class NextBestExperimentPolicy:
         structure_model: StructureSurrogateModel,
         property_model: PropertySurrogateModel,
         hypothesis_engine: HypothesisEngine,
+        property_discovery_scores: Mapping[str, float] | None = None,
         step: int = 0,
     ) -> ActionRecommendation:
         """Selects the top-ranked next experiment and generates contrastive counterfactuals."""
@@ -186,6 +202,7 @@ class NextBestExperimentPolicy:
             structure_model=structure_model,
             property_model=property_model,
             hypothesis_engine=hypothesis_engine,
+            property_discovery_scores=property_discovery_scores,
             step=step,
         )
 
@@ -214,7 +231,7 @@ class NextBestExperimentPolicy:
             # Build contrastive rationale without nested f-strings (Python 3.11 safe)
             if alt["action_type"] != top["action_type"]:
                 if alt["action_type"] == ExperimentActionType.PROPERTY:
-                    trait = f"high predicted discovery value ({alt['discovery_value']:.2f})"
+                    trait = f"high predicted discovery score ({alt['discovery_value']:.2f})"
                 else:
                     trait = "lower measurement cost"
                 contrast = (

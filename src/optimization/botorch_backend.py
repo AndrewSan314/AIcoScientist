@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 import torch
 import botorch
-import gpytorch
 
 from botorch.acquisition.analytic import (
     ExpectedImprovement,
@@ -16,14 +15,7 @@ from botorch.acquisition.analytic import (
     PosteriorMean,
     UpperConfidenceBound,
 )
-from botorch.acquisition.monte_carlo import (
-    qExpectedImprovement,
-    qNoisyExpectedImprovement,
-)
-from botorch.acquisition.logei import (
-    qLogExpectedImprovement,
-    qLogNoisyExpectedImprovement,
-)
+from botorch.acquisition.logei import qLogNoisyExpectedImprovement
 from botorch.fit import fit_gpytorch_mll
 from botorch.models.gp_regression import SingleTaskGP
 from botorch.models.transforms.input import Normalize
@@ -439,3 +431,31 @@ class BoTorchBackend(OptimizerBackend):
 
         else:
             raise UnsupportedStrategyError(f"Unsupported optimization strategy {strategy!r} for BoTorch backend.")
+
+    def score_candidates(
+        self,
+        observations: pd.DataFrame | Sequence[Mapping[str, Any]],
+        candidate_pool: pd.DataFrame,
+        objective: OptimizationObjective | str,
+        *,
+        feature_columns: Sequence[str] | None = None,
+        candidate_id_column: str | None = None,
+        seed: int | None = None,
+        strategy: str | None = None,
+        strict_identity: bool = True,
+        **kwargs: Any,
+    ) -> dict[str, float]:
+        """Evaluates acquisition scores for candidate design points across the pool using BoTorch."""
+        proposals = self.propose(
+            observations=observations,
+            candidate_pool=candidate_pool,
+            objective=objective,
+            feature_columns=feature_columns,
+            candidate_id_column=candidate_id_column,
+            n=len(candidate_pool),
+            seed=seed,
+            strategy=strategy,
+            strict_identity=strict_identity,
+            **kwargs,
+        )
+        return {p.candidate_id: float(p.acquisition_value) for p in proposals}

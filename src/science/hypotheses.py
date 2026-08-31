@@ -155,21 +155,38 @@ class HypothesisEngine:
         )
         self.evidence_events.append(event)
 
-        # 1. Update evidence counters based on event type
+        # 1. Update evidence counters based on genuine event observations
         if action_type == "XRD":
-            if structure_residual is not None and structure_residual > 0.35:
-                self.hypotheses["H3"].supporting_evidence_count += 1
-            else:
-                self.hypotheses["H3"].contradicting_evidence_count += 1
+            if structure_residual is not None:
+                if structure_residual > 0.35:
+                    self.hypotheses["H3"].supporting_evidence_count += 1
+                else:
+                    self.hypotheses["H3"].contradicting_evidence_count += 1
 
         elif action_type == "PROPERTY":
             if structure_advantage_ratio > 0.05:
                 self.hypotheses["H2"].supporting_evidence_count += 1
                 self.hypotheses["H1"].contradicting_evidence_count += 1
-            else:
+            elif structure_advantage_ratio < -0.05:
                 self.hypotheses["H1"].supporting_evidence_count += 1
                 self.hypotheses["H2"].contradicting_evidence_count += 1
 
+        beliefs = self._recompute_beliefs(structure_advantage_ratio=structure_advantage_ratio)
+
+        update_record = {
+            "step": len(self.update_history) + 1,
+            "event_id": event_id,
+            "action_type": action_type,
+            "candidate_id": candidate_id,
+            "beliefs": {hid: h.belief_score for hid, h in self.hypotheses.items()},
+            "raw_scores": {hid: h.raw_evidence_score for hid, h in self.hypotheses.items()},
+            "structure_advantage_ratio": structure_advantage_ratio,
+        }
+        self.update_history.append(update_record)
+        return beliefs
+
+    def recalculate_current_scores(self, structure_advantage_ratio: float = 0.0) -> dict[str, float]:
+        """Recalculates belief scores from accumulated evidence without appending to update history."""
         return self._recompute_beliefs(structure_advantage_ratio=structure_advantage_ratio)
 
     def _recompute_beliefs(self, structure_advantage_ratio: float = 0.0) -> dict[str, float]:
@@ -178,6 +195,7 @@ class HypothesisEngine:
             for h in self.hypotheses.values():
                 h.belief_score = 1.0 / len(self.hypotheses)
                 h.raw_evidence_score = 0.0
+                h.status = HypothesisStatus.ACTIVE
             return {hid: h.belief_score for hid, h in self.hypotheses.items()}
 
         # Compute empirical averages over recorded events
@@ -220,14 +238,6 @@ class HypothesisEngine:
                 h.status = HypothesisStatus.WEAKENED
             else:
                 h.status = HypothesisStatus.ACTIVE
-
-        update_record = {
-            "step": len(self.update_history) + 1,
-            "beliefs": {hid: h.belief_score for hid, h in self.hypotheses.items()},
-            "raw_scores": {hid: h.raw_evidence_score for hid, h in self.hypotheses.items()},
-            "structure_advantage_ratio": structure_advantage_ratio,
-        }
-        self.update_history.append(update_record)
 
         return {hid: h.belief_score for hid, h in self.hypotheses.items()}
 

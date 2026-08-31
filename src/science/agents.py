@@ -47,7 +47,7 @@ class HypothesisScientistAgent:
             key_points=[
                 f"H1 Direct Composition: {beliefs['H1'].belief_score*100:.1f}% evidence weight",
                 f"H2 Structure-Mediated: {beliefs['H2'].belief_score*100:.1f}% evidence weight",
-                f"H3 Local Regime Transition: {beliefs['H3'].belief_score*100:.1f}% evidence weight",
+                f"H3 Local Structural-Regime: {beliefs['H3'].belief_score*100:.1f}% evidence weight",
             ],
         )
 
@@ -73,13 +73,13 @@ class FalsificationScientistAgent:
 
         if recommendation.action.action_type == ExperimentActionType.XRD:
             points = [
-                "XRD pattern reveals standard solid-solution peaks with no novel phase splitting.",
-                "Structure-informed model provides zero variance reduction over nominal composition on held-out samples.",
+                "Observed XRD embedding falls within the predictive distribution of the composition-to-structure surrogate.",
+                "Observed structural residual is low despite high pre-measurement uncertainty.",
             ]
         else:
             points = [
-                "Measured k0 falls within nominal composition confidence bounds despite distinct XRD structure.",
-                "Residual error contradicts the predicted structural regime advantage.",
+                "Structure-informed cross-validation does not improve predictive error over composition-only modeling on held-out samples.",
+                "Observed electrochemical property k0 aligns with nominal composition predictions.",
             ]
 
         return AgentPerspective(
