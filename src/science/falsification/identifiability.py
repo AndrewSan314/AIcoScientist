@@ -63,11 +63,41 @@ def moment_matched_gaussian_divergence_proxy(
     return float(max(0.0, proxy))
 
 
+def _compute_raw_monte_carlo_js(
+    p1: PredictiveDistribution,
+    p2: PredictiveDistribution,
+    n_samples: int = 256,
+    seed: int = 42,
+) -> float:
+    """Computes unclipped raw Monte Carlo Jensen-Shannon Divergence estimate."""
+    if np.allclose(p1.mean, p2.mean, atol=1e-9) and np.allclose(p1.variance, p2.variance, atol=1e-9):
+        return 0.0
+
+    rng = np.random.default_rng(seed)
+    samples_1 = p1.sample(n_samples=n_samples, rng=rng)
+    samples_2 = p2.sample(n_samples=n_samples, rng=rng)
+
+    # 1. E_{y ~ p1} [ log p1(y) - log m(y) ]
+    log_p1_s1 = np.array([p1.log_pdf(y) for y in samples_1])
+    log_p2_s1 = np.array([p2.log_pdf(y) for y in samples_1])
+    log_m_s1 = np.log(0.5) + np.logaddexp(log_p1_s1, log_p2_s1)
+    kl1 = float(np.mean(log_p1_s1 - log_m_s1))
+
+    # 2. E_{y ~ p2} [ log p2(y) - log m(y) ]
+    log_p1_s2 = np.array([p1.log_pdf(y) for y in samples_2])
+    log_p2_s2 = np.array([p2.log_pdf(y) for y in samples_2])
+    log_m_s2 = np.log(0.5) + np.logaddexp(log_p1_s2, log_p2_s2)
+    kl2 = float(np.mean(log_p2_s2 - log_m_s2))
+
+    return float(0.5 * (kl1 + kl2))
+
+
 def compute_monte_carlo_js_divergence(
     p1: PredictiveDistribution,
     p2: PredictiveDistribution,
     n_samples: int = 256,
     seed: int = 42,
+    tol: float = 0.05,
 ) -> float:
     """Computes true Shannon-base-e Jensen-Shannon Divergence using Monte Carlo sampling.
 
@@ -79,32 +109,25 @@ def compute_monte_carlo_js_divergence(
         - Symmetric: JS(p1, p2) == JS(p2, p1)
         - Bounded: 0.0 <= JS(p1, p2) <= ln(2) ~ 0.69315 nats
         - Zero if and only if p1 == p2 almost everywhere
+
+    Parameters
+    ----------
+    tol : float
+        Tolerance for Monte Carlo sampling variance around [0, ln(2)] bounds.
+        Excursions beyond tolerance raise RuntimeError rather than being silently clipped.
     """
-    # Analytical zero check for identical distributions
-    if np.allclose(p1.mean, p2.mean, atol=1e-9) and np.allclose(p1.variance, p2.variance, atol=1e-9):
-        return 0.0
+    raw_js = _compute_raw_monte_carlo_js(p1, p2, n_samples=n_samples, seed=seed)
 
-    rng = np.random.default_rng(seed)
-    samples_1 = p1.sample(n_samples=n_samples, rng=rng)
-    samples_2 = p2.sample(n_samples=n_samples, rng=rng)
+    # Validate against theoretical bounds with numerical tolerance
+    ln2 = float(np.log(2.0))
+    if raw_js < -tol or raw_js > ln2 + tol:
+        raise RuntimeError(
+            f"Monte Carlo JS divergence estimate ({raw_js:.5f}) exceeded theoretical bounds "
+            f"[0.0, {ln2:.5f}] beyond tolerance ({tol:.5f})."
+        )
 
-    # 1. E_{y ~ p1} [ log p1(y) - log m(y) ]
-    log_p1_s1 = np.array([p1.log_pdf(y) for y in samples_1])
-    log_p2_s1 = np.array([p2.log_pdf(y) for y in samples_1])
-    # log m(y) = log(0.5 * exp(log_p1) + 0.5 * exp(log_p2)) = -log(2) + logsumexp([log_p1, log_p2])
-    log_m_s1 = np.log(0.5) + np.logaddexp(log_p1_s1, log_p2_s1)
-    kl1 = float(np.mean(log_p1_s1 - log_m_s1))
-
-    # 2. E_{y ~ p2} [ log p2(y) - log m(y) ]
-    log_p1_s2 = np.array([p1.log_pdf(y) for y in samples_2])
-    log_p2_s2 = np.array([p2.log_pdf(y) for y in samples_2])
-    log_m_s2 = np.log(0.5) + np.logaddexp(log_p1_s2, log_p2_s2)
-    kl2 = float(np.mean(log_p2_s2 - log_m_s2))
-
-    raw_js = 0.5 * (kl1 + kl2)
-    # Clip to theoretical bounds: [0, ln(2)]
-    js_divergence = float(np.clip(raw_js, 0.0, np.log(2.0)))
-    return js_divergence
+    # Clamp tiny epsilon-scale Monte Carlo sampling noise to exact mathematical bounds [0, ln(2)]
+    return float(min(max(raw_js, 0.0), ln2))
 
 
 # Alias for backward compatibility

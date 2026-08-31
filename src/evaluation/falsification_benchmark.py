@@ -4,6 +4,7 @@ import argparse
 import copy
 import json
 import logging
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -246,8 +247,21 @@ def run_single_falsification_trajectory(
     return history
 
 
+WORLD_TYPE_TO_CANONICAL_NAME: dict[str, str] = {
+    "World1": "Synthetic_World_1_H1_True",
+    "World2": "Synthetic_World_2_H2_True",
+    "World3": "Synthetic_World_3_H3_True",
+}
+
+
 def _run_single_job(args: tuple[str, str, int, int]) -> list[dict[str, Any]]:
     world_type, policy_name, n_steps, seed = args
+
+    # Test hook: allow testing worker exceptions in child processes without monkeypatch pickling issues
+    simulated_fail_policy = os.environ.get("_TEST_BENCHMARK_SIMULATE_FAILURE_POLICY")
+    if simulated_fail_policy and policy_name == simulated_fail_policy:
+        raise RuntimeError(f"Simulated worker failure for policy {policy_name}")
+
     if world_type == "World1":
         world = World1_CompositionSufficient(seed=seed)
     elif world_type == "World2":
@@ -333,10 +347,10 @@ def run_full_falsification_benchmark(
 
     raw_df = pd.DataFrame(all_records)
 
-    # Validate that all expected (world, policy, seed) combinations are present
-    expected_combinations = {(w, p, s) for w, p, _, s in jobs}
+    # Validate that all expected (world, policy, seed) combinations are present without digit substring matching
+    expected_combinations = {(WORLD_TYPE_TO_CANONICAL_NAME.get(w, w), p, s) for w, p, _, s in jobs}
     actual_combinations = set(zip(
-        raw_df["world"].apply(lambda name: "World1" if "1" in name else ("World2" if "2" in name else "World3")),
+        raw_df["world"],
         raw_df["policy"],
         raw_df["seed"],
     ))
@@ -391,9 +405,9 @@ def run_full_falsification_benchmark(
         table_md,
         "",
         "## Scientific Findings & Methodological Boundaries",
-        "- **World 3 ($H_3$ Local Regime)**: Falsification and Hybrid policies achieve high true-hypothesis recovery ($P(H_3) \\approx 1.0$) by characterizing regime boundaries with high HIG, significantly outperforming random exploration.",
-        "- **World 1 & World 2 ($H_1$ vs. $H_2$)**: Uncovers sample-complexity limits where 11-dimensional joint models require longer observation horizons to overcome the Bayesian Occam penalty on sparse data.",
-        "- **Discovery vs. Falsification**: `pure_falsification` operates with lowest experimental cost, while `hybrid` balances discovery potential with information gain.",
+        "- **World 3 ($H_3$ Local Regime)**: Falsification and Hybrid policies demonstrate strong true-hypothesis recovery ($P(H_3) \\approx 1.0$) by identifying transition candidates with high Expected HIG, significantly outperforming unguided exploration.",
+        "- **World 1 & World 2 ($H_1$ vs. $H_2$)**: At the evaluated six-step horizon, H1 and H2 remain poorly identifiable. The current results are consistent with a sample-complexity limitation of the higher-dimensional structure-informed model, but longer-horizon and targeted joint-characterization experiments are required to test that explanation.",
+        "- **Discovery vs. Falsification Trade-off**: `pure_falsification` operates with lowest experimental cost, while `hybrid` balances discovery potential with information gain.",
     ]
 
     with open(report_md, "w", encoding="utf-8") as f:

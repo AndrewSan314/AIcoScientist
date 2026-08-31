@@ -164,16 +164,22 @@ def _build_candidate_maps(
 ) -> tuple[dict[str, np.ndarray], dict[str, float], dict[str, np.ndarray]]:
     """Helper to safely build candidate ID maps from explicit mappings or validated legacy arrays.
 
-    Explicit candidate-ID keyed dictionaries take absolute precedence.
+    Precedence order:
+        Explicit map > legacy positional source.
+    If explicit map and legacy arrays are both provided with conflicting values, raises ValueError.
     Legacy positional arrays are validated for exact length match and unique candidate IDs
     to prevent silent identity cross-contamination.
     """
+    has_explicit_comp = composition_by_id is not None
+    has_explicit_prop = property_by_id is not None
+    has_explicit_xrd = xrd_embedding_by_id is not None
+
     comp_map: dict[str, np.ndarray] = {k: np.asarray(v, dtype=np.float64) for k, v in (composition_by_id or {}).items()}
     prop_map: dict[str, float] = {k: float(v) for k, v in (property_by_id or {}).items()}
     xrd_map: dict[str, np.ndarray] = {k: np.asarray(v, dtype=np.float64) for k, v in (xrd_embedding_by_id or {}).items()}
 
     # Legacy composition resolution
-    if not comp_map and compositions is not None:
+    if compositions is not None:
         cids = candidate_ids or property_candidate_ids or xrd_candidate_ids
         if cids is None:
             raise ValueError("Candidate IDs must be provided when passing positional compositions array.")
@@ -182,7 +188,12 @@ def _build_candidate_maps(
         if len(cids) != len(set(cids)):
             raise ValueError("Duplicate candidate IDs detected in compositions mapping.")
         for cid, c in zip(cids, compositions):
-            comp_map[cid] = np.asarray(c, dtype=np.float64)
+            c_arr = np.asarray(c, dtype=np.float64)
+            if has_explicit_comp and cid in comp_map:
+                if not np.allclose(comp_map[cid], c_arr):
+                    raise ValueError(f"Conflicting explicit and legacy candidate mapping for candidate {cid}")
+            elif cid not in comp_map:
+                comp_map[cid] = c_arr
 
     if xrd_compositions is not None and xrd_candidate_ids is not None:
         if len(xrd_candidate_ids) != len(xrd_compositions):
@@ -190,10 +201,15 @@ def _build_candidate_maps(
         if len(xrd_candidate_ids) != len(set(xrd_candidate_ids)):
             raise ValueError("Duplicate candidate IDs detected in XRD candidate IDs.")
         for cid, c in zip(xrd_candidate_ids, xrd_compositions):
-            comp_map[cid] = np.asarray(c, dtype=np.float64)
+            c_arr = np.asarray(c, dtype=np.float64)
+            if has_explicit_comp and cid in comp_map:
+                if not np.allclose(comp_map[cid], c_arr):
+                    raise ValueError(f"Conflicting explicit and legacy candidate mapping for candidate {cid}")
+            elif cid not in comp_map:
+                comp_map[cid] = c_arr
 
     # Legacy property targets resolution
-    if not prop_map and property_targets is not None:
+    if property_targets is not None:
         p_cids = property_candidate_ids if property_candidate_ids is not None else candidate_ids
         if p_cids is None:
             raise ValueError("Property candidate IDs must be provided when passing property_targets array.")
@@ -202,10 +218,15 @@ def _build_candidate_maps(
         if len(p_cids) != len(set(p_cids)):
             raise ValueError("Duplicate candidate IDs detected in property candidate IDs.")
         for cid, y in zip(p_cids, property_targets):
-            prop_map[cid] = float(y)
+            y_val = float(y)
+            if has_explicit_prop and cid in prop_map:
+                if not np.isclose(prop_map[cid], y_val):
+                    raise ValueError(f"Conflicting explicit and legacy candidate mapping for candidate {cid}")
+            elif cid not in prop_map:
+                prop_map[cid] = y_val
 
     # Legacy XRD embeddings resolution
-    if not xrd_map and xrd_embeddings is not None:
+    if xrd_embeddings is not None:
         x_cids = xrd_candidate_ids if xrd_candidate_ids is not None else (
             candidate_ids if (property_targets is None or len(candidate_ids) == len(xrd_embeddings)) else None
         )
@@ -216,7 +237,12 @@ def _build_candidate_maps(
         if len(x_cids) != len(set(x_cids)):
             raise ValueError("Duplicate candidate IDs detected in XRD candidate IDs.")
         for cid, emb in zip(x_cids, xrd_embeddings):
-            xrd_map[cid] = np.asarray(emb, dtype=np.float64)
+            emb_arr = np.asarray(emb, dtype=np.float64)
+            if has_explicit_xrd and cid in xrd_map:
+                if not np.allclose(xrd_map[cid], emb_arr):
+                    raise ValueError(f"Conflicting explicit and legacy candidate mapping for candidate {cid}")
+            elif cid not in xrd_map:
+                xrd_map[cid] = emb_arr
 
     return comp_map, prop_map, xrd_map
 
@@ -252,6 +278,8 @@ class CompositionSufficientHypothesis:
             random_state=random_state,
         )
         self._struct_gps: list[GaussianProcessRegressor] = []
+        self._has_property_model = False
+        self._has_structure_model = False
         self.is_fitted = False
         self._emb_dim = 8
 
@@ -292,16 +320,17 @@ class CompositionSufficientHypothesis:
             **kwargs,
         )
 
+        self._has_property_model = False
+        self._has_structure_model = False
+        self._struct_gps = []
+
         # Fit property GP strictly on candidates with observed property
         prop_cids = sorted([cid for cid in prop_map if cid in comp_map])
         if prop_cids:
             X_p = np.array([comp_map[cid] for cid in prop_cids], dtype=np.float64)
             y_p = np.array([prop_map[cid] for cid in prop_cids], dtype=np.float64)
             self._prop_gp.fit(X_p, y_p)
-        elif comp_map:
-            cids = sorted(comp_map.keys())
-            X_dummy = np.array([comp_map[cid] for cid in cids], dtype=np.float64)
-            self._prop_gp.fit(X_dummy, np.zeros(len(cids)))
+            self._has_property_model = True
 
         # Fit shared structure GP on candidates with observed XRD
         xrd_cids = sorted([cid for cid in xrd_map if cid in comp_map])
@@ -320,8 +349,9 @@ class CompositionSufficientHypothesis:
                 )
                 gp.fit(X_x, Y_x[:, d])
                 self._struct_gps.append(gp)
+            self._has_structure_model = True
 
-        self.is_fitted = True
+        self.is_fitted = self._has_property_model or self._has_structure_model
 
     def predict_observation(
         self,
@@ -333,13 +363,15 @@ class CompositionSufficientHypothesis:
         comp = np.atleast_2d(composition)
 
         if action_type == ExperimentActionType.PROPERTY:
-            if self.is_fitted:
+            if self._has_property_model:
                 mean, std = self._prop_gp.predict(comp, return_std=True)
                 mean_val = float(mean[0])
                 var_val = float(max(std[0] ** 2, 1e-4))
+                mode = "composition_gp"
             else:
                 mean_val = 0.005
                 var_val = 0.01
+                mode = "unfitted_property_prior"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -347,11 +379,11 @@ class CompositionSufficientHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model_type": "composition_gp"},
+                metadata={"model_type": mode},
             )
 
         elif action_type == ExperimentActionType.XRD:
-            if self.is_fitted and self._struct_gps:
+            if self._has_structure_model and self._struct_gps:
                 means = []
                 vars_ = []
                 for gp in self._struct_gps:
@@ -360,9 +392,11 @@ class CompositionSufficientHypothesis:
                     vars_.append(float(max(s[0] ** 2, 1e-3)))
                 mean_vec = np.array(means, dtype=np.float64)
                 var_vec = np.array(vars_, dtype=np.float64)
+                mode = "baseline_structure_gp"
             else:
                 mean_vec = np.zeros(self._emb_dim, dtype=np.float64)
                 var_vec = np.ones(self._emb_dim, dtype=np.float64) * 0.25
+                mode = "unfitted_structure_prior"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -370,7 +404,7 @@ class CompositionSufficientHypothesis:
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model_type": "baseline_structure_gp"},
+                metadata={"model_type": mode},
             )
 
         raise ValueError(f"Unsupported action type: {action_type}")
@@ -431,8 +465,10 @@ class StructureInformedHypothesis:
             random_state=random_state,
         )
         self._struct_gps: list[GaussianProcessRegressor] = []
-        self.is_fitted = False
+        self._has_comp_property_model = False
+        self._has_structure_model = False
         self._has_joint_data = False
+        self.is_fitted = False
         self._emb_dim = 8
 
     @property
@@ -472,6 +508,11 @@ class StructureInformedHypothesis:
             **kwargs,
         )
 
+        self._has_structure_model = False
+        self._has_comp_property_model = False
+        self._has_joint_data = False
+        self._struct_gps = []
+
         # 1. Fit structure surrogate strictly on candidates with observed XRD
         xrd_cids = sorted([cid for cid in xrd_map if cid in comp_map])
         if xrd_cids:
@@ -489,6 +530,7 @@ class StructureInformedHypothesis:
                 )
                 gp.fit(X_x, Y_x[:, d])
                 self._struct_gps.append(gp)
+            self._has_structure_model = True
 
         # 2. Fit composition property GP
         prop_cids = sorted([cid for cid in prop_map if cid in comp_map])
@@ -496,6 +538,7 @@ class StructureInformedHypothesis:
             X_p = np.array([comp_map[cid] for cid in prop_cids], dtype=np.float64)
             y_p = np.array([prop_map[cid] for cid in prop_cids], dtype=np.float64)
             self._comp_gp.fit(X_p, y_p)
+            self._has_comp_property_model = True
 
         # 3. Fit joint (composition + XRD embedding -> k0) model using candidate_id as ONLY join key
         joint_cids = sorted([cid for cid in prop_map if cid in xrd_map and cid in comp_map])
@@ -507,7 +550,9 @@ class StructureInformedHypothesis:
         else:
             self._has_joint_data = False
 
-        self.is_fitted = True
+        self.is_fitted = (
+            self._has_structure_model or self._has_comp_property_model or self._has_joint_data
+        )
 
     def predict_observation(
         self,
@@ -522,7 +567,7 @@ class StructureInformedHypothesis:
             # Predict structure mean & variance
             struct_means = []
             struct_vars = []
-            if self.is_fitted and self._struct_gps:
+            if self._has_structure_model and self._struct_gps:
                 for gp in self._struct_gps:
                     m, s = gp.predict(comp, return_std=True)
                     struct_means.append(float(m[0]))
@@ -547,7 +592,7 @@ class StructureInformedHypothesis:
                 mean_val = float(mean[0])
                 var_val = float(max(std[0] ** 2 + 0.3 * float(np.mean(var_z)), 1e-4))
                 mode = "joint_predicted_structure_inflated"
-            elif self.is_fitted:
+            elif self._has_comp_property_model:
                 mean, std = self._comp_gp.predict(comp, return_std=True)
                 mean_val = float(mean[0])
                 var_val = float(max(std[0] ** 2 + 0.1 * float(np.mean(var_z)), 1e-4))
@@ -555,7 +600,7 @@ class StructureInformedHypothesis:
             else:
                 mean_val = 0.005
                 var_val = 0.015
-                mode = "unfitted_prior"
+                mode = "unfitted_property_prior" if self._has_structure_model else "unfitted_prior"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -568,7 +613,7 @@ class StructureInformedHypothesis:
 
         elif action_type == ExperimentActionType.XRD:
             # Shared structure prediction
-            if self.is_fitted and self._struct_gps:
+            if self._has_structure_model and self._struct_gps:
                 means = []
                 vars_ = []
                 for gp in self._struct_gps:
@@ -577,9 +622,11 @@ class StructureInformedHypothesis:
                     vars_.append(float(max(s[0] ** 2, 1e-3)))
                 mean_vec = np.array(means, dtype=np.float64)
                 var_vec = np.array(vars_, dtype=np.float64)
+                mode = "structure_surrogate_gp"
             else:
                 mean_vec = np.zeros(self._emb_dim, dtype=np.float64)
                 var_vec = np.ones(self._emb_dim, dtype=np.float64) * 0.25
+                mode = "unfitted_structure_prior"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -587,7 +634,7 @@ class StructureInformedHypothesis:
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model_type": "structure_surrogate_gp"},
+                metadata={"model_type": mode},
             )
 
         raise ValueError(f"Unsupported action type: {action_type}")
@@ -640,6 +687,10 @@ class LocalStructuralRegimeHypothesis:
             random_state=random_state,
         )
         self._struct_gps: list[GaussianProcessRegressor] = []
+        self._has_global_property_model = False
+        self._has_regime_property_models = False
+        self._has_structure_model = False
+        self._has_regime_partition = False
         self.is_fitted = False
         self._emb_dim = 8
 
@@ -680,11 +731,19 @@ class LocalStructuralRegimeHypothesis:
             **kwargs,
         )
 
+        self._has_global_property_model = False
+        self._has_regime_property_models = False
+        self._has_structure_model = False
+        self._has_regime_partition = False
+        self._regime_prop_gps = {}
+        self._struct_gps = []
+
         all_cids = sorted(comp_map.keys())
         if all_cids:
             all_comps = np.array([comp_map[cid] for cid in all_cids], dtype=np.float64)
             if len(all_comps) >= self.n_regimes:
                 self._kmeans.fit(all_comps)
+                self._has_regime_partition = True
 
         # Fit regime property GPs
         prop_cids = sorted([cid for cid in prop_map if cid in comp_map])
@@ -692,9 +751,9 @@ class LocalStructuralRegimeHypothesis:
             X_p = np.array([comp_map[cid] for cid in prop_cids], dtype=np.float64)
             y_p = np.array([prop_map[cid] for cid in prop_cids], dtype=np.float64)
             self._global_prop_gp.fit(X_p, y_p)
-            self._regime_prop_gps = {}
+            self._has_global_property_model = True
 
-            if len(X_p) >= self.n_regimes:
+            if self._has_regime_partition and len(X_p) >= self.n_regimes:
                 cluster_labels = self._kmeans.predict(X_p)
                 for k in range(self.n_regimes):
                     idx = np.where(cluster_labels == k)[0]
@@ -708,6 +767,8 @@ class LocalStructuralRegimeHypothesis:
                         )
                         gp.fit(X_p[idx], y_p[idx])
                         self._regime_prop_gps[k] = gp
+                if len(self._regime_prop_gps) > 0:
+                    self._has_regime_property_models = True
 
         # Fit localized structure surrogate with Matern kernel
         xrd_cids = sorted([cid for cid in xrd_map if cid in comp_map])
@@ -726,8 +787,13 @@ class LocalStructuralRegimeHypothesis:
                 )
                 gp.fit(X_x, Y_x[:, d])
                 self._struct_gps.append(gp)
+            self._has_structure_model = True
 
-        self.is_fitted = True
+        self.is_fitted = (
+            self._has_global_property_model
+            or self._has_regime_property_models
+            or self._has_structure_model
+        )
 
     def predict_observation(
         self,
@@ -739,26 +805,28 @@ class LocalStructuralRegimeHypothesis:
         comp = np.atleast_2d(composition)
 
         if action_type == ExperimentActionType.PROPERTY:
-            if self.is_fitted:
+            if self._has_regime_partition:
                 try:
                     regime_idx = int(self._kmeans.predict(comp)[0])
                 except Exception:
                     regime_idx = 0
+            else:
+                regime_idx = 0
 
-                if regime_idx in self._regime_prop_gps:
-                    mean, std = self._regime_prop_gps[regime_idx].predict(comp, return_std=True)
-                    mean_val = float(mean[0])
-                    var_val = float(max(std[0] ** 2, 1e-4))
-                    mode = f"regime_{regime_idx}_gp"
-                else:
-                    mean, std = self._global_prop_gp.predict(comp, return_std=True)
-                    mean_val = float(mean[0])
-                    var_val = float(max(std[0] ** 2 * 1.2, 1e-4))
-                    mode = "global_regime_gp"
+            if self._has_regime_property_models and regime_idx in self._regime_prop_gps:
+                mean, std = self._regime_prop_gps[regime_idx].predict(comp, return_std=True)
+                mean_val = float(mean[0])
+                var_val = float(max(std[0] ** 2, 1e-4))
+                mode = f"regime_{regime_idx}_gp"
+            elif self._has_global_property_model:
+                mean, std = self._global_prop_gp.predict(comp, return_std=True)
+                mean_val = float(mean[0])
+                var_val = float(max(std[0] ** 2 * 1.2, 1e-4))
+                mode = "global_regime_gp"
             else:
                 mean_val = 0.005
                 var_val = 0.02
-                mode = "unfitted"
+                mode = "unfitted_property_prior" if self._has_structure_model else "unfitted"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -770,7 +838,7 @@ class LocalStructuralRegimeHypothesis:
             )
 
         elif action_type == ExperimentActionType.XRD:
-            if self.is_fitted and self._struct_gps:
+            if self._has_structure_model and self._struct_gps:
                 means = []
                 vars_ = []
                 for gp in self._struct_gps:
@@ -779,9 +847,11 @@ class LocalStructuralRegimeHypothesis:
                     vars_.append(float(max(s[0] ** 2, 1e-3)))
                 mean_vec = np.array(means, dtype=np.float64)
                 var_vec = np.array(vars_, dtype=np.float64)
+                mode = "local_structure_matern_gp"
             else:
                 mean_vec = np.zeros(self._emb_dim, dtype=np.float64)
                 var_vec = np.ones(self._emb_dim, dtype=np.float64) * 0.35
+                mode = "unfitted_structure_prior"
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -789,7 +859,7 @@ class LocalStructuralRegimeHypothesis:
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model_type": "local_structure_matern_gp"},
+                metadata={"model_type": mode},
             )
 
         raise ValueError(f"Unsupported action type: {action_type}")
@@ -827,6 +897,8 @@ class HypothesisEnsemble:
                 "H2": StructureInformedHypothesis(),
                 "H3": LocalStructuralRegimeHypothesis(),
             }
+        elif isinstance(hypotheses, Mapping):
+            self.hypotheses = {str(k): v for k, v in hypotheses.items()}
         else:
             self.hypotheses = {h.hypothesis_id: h for h in hypotheses}
 

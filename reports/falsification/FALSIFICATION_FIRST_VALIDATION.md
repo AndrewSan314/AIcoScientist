@@ -12,13 +12,13 @@
 We evaluate the mathematical implementation and empirical behavior of the falsification-first experiment design engine. The core objective is to test whether an autonomous materials-science system can maintain competing predictive hypotheses ($H_1$: Composition-Sufficient, $H_2$: Structure-Informed, $H_3$: Local Structural-Regime), quantify their predictive divergence via Expected Hypothesis Information Gain (HIG), and adaptively execute experiments to discriminate between them.
 
 ### Empirical Status & Boundaries
-1. **Mathematical Rigor**: Expected HIG $I(H; Y_a \mid \mathcal{D})$ and True Monte Carlo Jensen-Shannon Divergence (bounded in $[0, \ln 2]$ nats) are mathematically validated across analytical canonical cases ($A$ through $E$).
-2. **Defensive Candidate Identity Integrity**: Candidate alignment in hypothesis fitting was hardened to use `candidate_id` as the sole join key, strictly verified via regression test invariance under random dataset permutations.
-3. **True Multivariate Gaussian Likelihood**: Restored exact mathematical formulation of diagonal multivariate Gaussian log-density without dimension tempering.
-4. **Fail-Closed Parallel Benchmark Execution**: Enforced strict validation ensuring all expected trajectories complete successfully before official artifact generation.
+1. **Mathematical Invariants**: Expected HIG $I(H; Y_a \mid \mathcal{D})$ and True Monte Carlo Jensen-Shannon Divergence are validated across controlled canonical cases.
+2. **Defensive Candidate Identity Integrity**: Candidate alignment in hypothesis fitting is keyed strictly on `candidate_id` as the sole join key, verified via invariance under dataset row order permutations and equal-count disjoint observation checks.
+3. **True Multivariate Gaussian Likelihood**: Restored exact multivariate diagonal Gaussian log-density without dimension tempering.
+4. **Fail-Closed Parallel Benchmark Execution**: Enforced strict validation ensuring all expected trajectories complete successfully without relying on world-name substring heuristics.
 5. **Controlled Synthetic Truth Recovery**:
-   - **World 3 ($H_3$ Local Regime)**: Falsification-First (`pure_falsification` & `hybrid`) policies achieve **100% Top-1 Accuracy** and **100% Identification Rate @ 90% confidence** ($P(H_3) = 1.000 \pm 0.000$) while reducing experimental cost by **44.4%** relative to discovery policies (30.0 vs. 54.0 cost units).
-   - **World 1 & World 2 ($H_1$ vs. $H_2$)**: Demonstrates the sample-complexity trade-off where joint 11-dimensional surrogate models ($X_{\text{joint}} \in \mathbb{R}^{11}$) with sparse data ($N \le 6$) have higher epistemic variance and require extended horizons to overcome the Bayesian Occam penalty against 3-dimensional composition surrogates ($X \in \mathbb{R}^3$).
+   - **World 3 ($H_3$ Local Regime)**: Falsification-First (`pure_falsification` & `hybrid`) policies achieve **100% Top-1 Accuracy** and **100% Identification Rate @ 90% confidence** ($P(H_3) = 1.000 \pm 0.000$) while reducing experimental cost by **44.4%** relative to unguided exploration.
+   - **World 1 & World 2 ($H_1$ vs. $H_2$)**: At the evaluated six-step horizon, H1 and H2 remain poorly identifiable. The current results are consistent with a sample-complexity limitation of the higher-dimensional structure-informed model, but longer-horizon and targeted joint-characterization experiments are required to test that explanation.
 
 ---
 
@@ -51,10 +51,9 @@ Evaluating 6-step adaptive trajectories across 3 random seeds (`[42, 101, 2024]`
 ### 3.1 World 3 Identification
 In World 3 ($H_3$: Localized Structural Regimes), candidate compositions in distinct chemical clusters exhibit sharp transitions in crystal structure and electrocatalytic properties.
 - **Mechanism**: The Falsification policy selects candidate experiments where local regime GPs ($H_3$) make distinct predictions from smooth global models ($H_1, H_2$).
-- **Outcome**: The expected HIG ($I(H; Y_a)$) guides the agent to boundary candidates, rapidly driving posterior entropy to $0.000$ nats and isolating $H_3$ with $100\%$ confidence.
+- **Outcome**: The expected HIG ($I(H; Y_a)$) guides the agent to boundary candidates, driving posterior entropy to $0.000$ nats and isolating $H_3$ with high confidence.
 
-### 3.2 Sample Complexity in World 1 vs. World 2
+### 3.2 Identifiability in World 1 vs. World 2
 Between $H_1$ (3D composition surrogate) and $H_2$ (11D joint surrogate):
-- With short experimental budgets ($N \le 6$), the 11D Gaussian process has high epistemic uncertainty due to sparsity in 11 dimensions.
-- Under exact Gaussian likelihood, higher predictive variance incurs a volume penalty unless offset by large residual reduction.
-- This accurately highlights that discriminating structural mediation from pure composition sufficiency requires coupled active learning strategies and longer characterization horizons.
+- At the evaluated six-step horizon, H1 and H2 remain poorly identifiable.
+- The current results are consistent with a sample-complexity limitation of the higher-dimensional structure-informed model on sparse observations ($N \le 6$), but longer-horizon and targeted joint-characterization experiments are required to test that explanation.

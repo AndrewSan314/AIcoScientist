@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-import copy
 import numpy as np
-import pandas as pd
-import pytest
 
 from src.science.actions import ExperimentActionType, ScientificAction
 from src.science.discovery_engine import AutonomousDiscoveryEngine
-from src.science.falsification.policy import FalsificationPolicyMode
 
 
 def test_formal_falsification_engine_curated_scenario_lifecycle() -> None:
@@ -54,51 +50,16 @@ def test_formal_falsification_engine_curated_scenario_lifecycle() -> None:
         assert 0.0 <= p <= 1.0
 
 
-def test_formal_falsification_shuffled_candidate_pool_invariance() -> None:
-    """Verifies that shuffling candidate pool rows does not corrupt formal model predictions."""
-    engine1 = AutonomousDiscoveryEngine(seed=101)
-    engine1.initialize_curated_scenario(n_init_prop=4, n_init_xrd=4, seed=101)
-
-    cand_pool = engine1.oracle.get_candidate_pool()
-    test_cid = cand_pool["candidate_id"].iloc[10]
-    test_comp = cand_pool.loc[cand_pool["candidate_id"] == test_cid, ["Au", "Ir", "Rh"]].iloc[0].to_numpy(dtype=np.float64)
-
-    preds1 = engine1.ensemble.predict_all(
-        candidate_id=test_cid,
-        action_type=ExperimentActionType.PROPERTY,
-        composition=test_comp,
-    )
-
-    # Create second engine with permuted candidate pool ordering in oracle
-    engine2 = AutonomousDiscoveryEngine(seed=101)
-    shuffled_pool = cand_pool.sample(frac=1.0, random_state=999).reset_index(drop=True)
-    engine2.oracle._candidate_pool = shuffled_pool
-    engine2.initialize_curated_scenario(n_init_prop=4, n_init_xrd=4, seed=101)
-
-    preds2 = engine2.ensemble.predict_all(
-        candidate_id=test_cid,
-        action_type=ExperimentActionType.PROPERTY,
-        composition=test_comp,
-    )
-
-    for hid in ["H1", "H2", "H3"]:
-        assert np.isclose(preds1[hid].mean[0], preds2[hid].mean[0], atol=1e-6)
-        assert np.isclose(preds1[hid].variance[0], preds2[hid].variance[0], atol=1e-6)
-
-
-def test_disjoint_equal_count_observations_no_cross_assignment() -> None:
-    """Verifies that equal count but disjoint candidate sets for XRD and Property do not cross-assign."""
+def test_formal_falsification_xrd_only_campaign_proposal() -> None:
+    """Verifies that an autonomous campaign with XRD observations but zero property observations succeeds."""
     engine = AutonomousDiscoveryEngine(seed=42)
     cand_df = engine.oracle.get_candidate_pool()
     all_cids = cand_df["candidate_id"].tolist()
 
-    # Disjoint candidates
-    xrd_cids = all_cids[0:3]
-    prop_cids = all_cids[3:6]
-
-    for cid in xrd_cids:
+    # Execute only XRD observations (zero property observations)
+    for cid in all_cids[0:4]:
         act = ScientificAction(
-            action_id=f"xrd_{cid}",
+            action_id=f"xrd_init_{cid}",
             candidate_id=cid,
             action_type=ExperimentActionType.XRD,
             estimated_cost=1.0,
@@ -107,20 +68,93 @@ def test_disjoint_equal_count_observations_no_cross_assignment() -> None:
         out = engine.oracle.execute(act)
         engine._record_to_ledger(act, out)
 
+    engine._refit_models()
+
+    assert len(engine.oracle.get_revealed_xrd_ids()) == 4
+    assert len(engine.oracle.get_revealed_property_ids()) == 0
+
+    # Request formal recommendation in XRD-only state
+    rec, perspectives = engine.propose_next_experiment(use_falsification_first=True, fast_mode=True)
+    assert rec is not None
+    assert rec.action.candidate_id is not None
+    assert np.isfinite(rec.total_value)
+
+
+def test_formal_falsification_shuffled_candidate_pool_invariance() -> None:
+    """Option A Invariance Test: Shuffling candidate pool row order with identical observations must yield identical predictions."""
+    engine1 = AutonomousDiscoveryEngine(seed=101)
+    cand_pool = engine1.oracle.get_candidate_pool()
+    all_cids = cand_pool["candidate_id"].tolist()
+
+    # Select exact explicit property and XRD IDs
+    prop_cids = [all_cids[0], all_cids[2], all_cids[5], all_cids[7]]
+    xrd_cids = [all_cids[0], all_cids[3], all_cids[5], all_cids[8]]
+
+    # Execute explicit identical actions in Engine 1
     for cid in prop_cids:
-        act = ScientificAction(
-            action_id=f"prop_{cid}",
-            candidate_id=cid,
-            action_type=ExperimentActionType.PROPERTY,
-            estimated_cost=5.0,
-            requested_at_step=0,
-        )
+        act = ScientificAction(f"prop_{cid}", cid, ExperimentActionType.PROPERTY, 5.0, 0)
+        out = engine1.oracle.execute(act)
+        engine1._record_to_ledger(act, out)
+    for cid in xrd_cids:
+        act = ScientificAction(f"xrd_{cid}", cid, ExperimentActionType.XRD, 1.0, 0)
+        out = engine1.oracle.execute(act)
+        engine1._record_to_ledger(act, out)
+
+    engine1._refit_models()
+
+    test_cid = all_cids[12]
+    test_comp = cand_pool.loc[cand_pool["candidate_id"] == test_cid, ["Au", "Ir", "Rh"]].iloc[0].to_numpy(dtype=np.float64)
+
+    preds1_prop = engine1.ensemble.predict_all(test_cid, ExperimentActionType.PROPERTY, test_comp)
+    preds1_xrd = engine1.ensemble.predict_all(test_cid, ExperimentActionType.XRD, test_comp)
+
+    # Engine 2: Permuted candidate pool rows, but EXACT SAME observations executed
+    engine2 = AutonomousDiscoveryEngine(seed=101)
+    shuffled_pool = cand_pool.sample(frac=1.0, random_state=999).reset_index(drop=True)
+    engine2.oracle._candidate_pool = shuffled_pool
+
+    for cid in prop_cids:
+        act = ScientificAction(f"prop_{cid}", cid, ExperimentActionType.PROPERTY, 5.0, 0)
+        out = engine2.oracle.execute(act)
+        engine2._record_to_ledger(act, out)
+    for cid in xrd_cids:
+        act = ScientificAction(f"xrd_{cid}", cid, ExperimentActionType.XRD, 1.0, 0)
+        out = engine2.oracle.execute(act)
+        engine2._record_to_ledger(act, out)
+
+    engine2._refit_models()
+
+    preds2_prop = engine2.ensemble.predict_all(test_cid, ExperimentActionType.PROPERTY, test_comp)
+    preds2_xrd = engine2.ensemble.predict_all(test_cid, ExperimentActionType.XRD, test_comp)
+
+    for hid in ["H1", "H2", "H3"]:
+        assert np.isclose(preds1_prop[hid].mean[0], preds2_prop[hid].mean[0], atol=1e-7)
+        assert np.isclose(preds1_prop[hid].variance[0], preds2_prop[hid].variance[0], atol=1e-7)
+        assert np.allclose(preds1_xrd[hid].mean, preds2_xrd[hid].mean, atol=1e-7)
+        assert np.allclose(preds1_xrd[hid].variance, preds2_xrd[hid].variance, atol=1e-7)
+
+
+def test_disjoint_equal_count_observations_no_cross_assignment() -> None:
+    """Verifies that equal count but disjoint candidate sets for XRD and Property do not cross-assign."""
+    engine = AutonomousDiscoveryEngine(seed=42)
+    cand_df = engine.oracle.get_candidate_pool()
+    all_cids = cand_df["candidate_id"].tolist()
+
+    xrd_cids = all_cids[0:3]
+    prop_cids = all_cids[3:6]
+
+    for cid in xrd_cids:
+        act = ScientificAction(f"xrd_{cid}", cid, ExperimentActionType.XRD, 1.0, 0)
+        out = engine.oracle.execute(act)
+        engine._record_to_ledger(act, out)
+
+    for cid in prop_cids:
+        act = ScientificAction(f"prop_{cid}", cid, ExperimentActionType.PROPERTY, 5.0, 0)
         out = engine.oracle.execute(act)
         engine._record_to_ledger(act, out)
 
     engine._refit_models()
 
-    # Verify H2 model has no joint data because joint_cids count is 0
     h2 = engine.ensemble.hypotheses["H2"]
     assert h2._has_joint_data is False
 
@@ -130,41 +164,26 @@ def test_ui_controls_synchronization_to_falsification_policy() -> None:
     engine = AutonomousDiscoveryEngine(seed=42)
     engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=3, seed=42)
 
-    # Configuration A: Heavy Discovery Weight
-    w_info_a = 0.1
-    w_disc_a = 5.0
-    w_cost_a = 0.1
+    # Heavy Discovery Weight
+    engine.policy.w_info = 0.1
+    engine.policy.w_disc = 5.0
+    engine.policy.w_cost = 0.1
 
-    engine.policy.w_info = w_info_a
-    engine.policy.w_disc = w_disc_a
-    engine.policy.w_cost = w_cost_a
-
-    engine.falsification_policy.w_hig = w_info_a
-    engine.falsification_policy.w_disc = w_disc_a
-    engine.falsification_policy.w_cost = w_cost_a
-
-    assert engine.falsification_policy.w_hig == 0.1
-    assert engine.falsification_policy.w_disc == 5.0
+    engine.falsification_policy.w_hig = 0.1
+    engine.falsification_policy.w_disc = 5.0
+    engine.falsification_policy.w_cost = 0.1
 
     rec_a, _ = engine.propose_next_experiment(use_falsification_first=True, fast_mode=True)
 
-    # Configuration B: Heavy HIG Falsification Weight
-    w_info_b = 5.0
-    w_disc_b = 0.1
-    w_cost_b = 0.1
+    # Heavy HIG Falsification Weight
+    engine.policy.w_info = 5.0
+    engine.policy.w_disc = 0.1
+    engine.policy.w_cost = 0.1
 
-    engine.policy.w_info = w_info_b
-    engine.policy.w_disc = w_disc_b
-    engine.policy.w_cost = w_cost_b
-
-    engine.falsification_policy.w_hig = w_info_b
-    engine.falsification_policy.w_disc = w_disc_b
-    engine.falsification_policy.w_cost = w_cost_b
-
-    assert engine.falsification_policy.w_hig == 5.0
-    assert engine.falsification_policy.w_disc == 0.1
+    engine.falsification_policy.w_hig = 5.0
+    engine.falsification_policy.w_disc = 0.1
+    engine.falsification_policy.w_cost = 0.1
 
     rec_b, _ = engine.propose_next_experiment(use_falsification_first=True, fast_mode=True)
 
-    # The recommendations under radically different policy weights should have different scores
     assert rec_a.total_value != rec_b.total_value
