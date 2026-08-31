@@ -33,34 +33,16 @@ from gpytorch.mlls import ExactMarginalLogLikelihood
 from src.optimization.backend import (
     AcquisitionEvaluationError,
     OptimizerBackend,
+    STRATEGY_ALIASES,
+    SUPPORTED_STRATEGIES,
     UnsupportedStrategyError,
+    resolve_strategy,
 )
 from src.optimization.finite_pool import FiniteCandidatePool
 from src.optimization.objective import OptimizationObjective
 from src.optimization.proposal import CandidateProposal
 
 logger = logging.getLogger(__name__)
-
-SUPPORTED_STRATEGIES: set[str] = {
-    "random",
-    "uniform",
-    "greedy",
-    "posterior_mean",
-    "gp_ucb",
-    "ucb",
-    "upper_confidence_bound",
-    "ei",
-    "expected_improvement",
-    "log_ei",
-    "log_expected_improvement",
-    "nei",
-    "noisy_expected_improvement",
-    "log_nei",
-    "log_noisy_expected_improvement",
-    "thompson",
-    "ts",
-    "thompson_sampling",
-}
 
 
 class BoTorchBackend(OptimizerBackend):
@@ -134,8 +116,31 @@ class BoTorchBackend(OptimizerBackend):
         # Parse observed X and y
         if isinstance(observations, pd.DataFrame):
             obs_df = observations.copy()
+            if id_col not in obs_df.columns:
+                for fallback_id in ("candidate_id", "sample_id", "policy_id", "experiment_id", "id"):
+                    if fallback_id in obs_df.columns:
+                        obs_df[id_col] = obs_df[fallback_id]
+                        break
+            if strict_identity and not obs_df.empty:
+                if id_col not in obs_df.columns or obs_df[id_col].isna().any():
+                    raise ValueError(
+                        f"Observations dataframe must contain non-null candidate ID column {id_col!r} "
+                        "under strict candidate identity mode."
+                    )
         else:
-            obs_df = pd.DataFrame(list(observations))
+            obs_list = list(observations)
+            if strict_identity and obs_list:
+                for r in obs_list:
+                    if isinstance(r, (dict, Mapping)):
+                        cid = r.get(id_col) or r.get("candidate_id") or r.get("sample_id") or r.get("policy_id")
+                        if cid is None or pd.isna(cid) or str(cid).strip() == "":
+                            raise ValueError(
+                                f"Observation mapping is missing non-null candidate ID ({id_col!r}) "
+                                f"under strict identity mode: {r}"
+                            )
+            obs_df = pd.DataFrame(obs_list)
+            if id_col not in obs_df.columns and "candidate_id" in obs_df.columns:
+                obs_df[id_col] = obs_df["candidate_id"]
 
         if obs_df.empty or obj.target_name not in obs_df.columns:
             X_obs = np.empty((0, len(feat_cols)), dtype=float)
@@ -166,20 +171,8 @@ class BoTorchBackend(OptimizerBackend):
         **kwargs: Any,
     ) -> list[CandidateProposal]:
         """Proposes next candidate(s) from finite pool using BoTorch surrogate and acquisition functions."""
-        requested_strat = (strategy or self._default_strategy).strip().lower()
-
-        # Validate strategy against retired / supported sets
-        if requested_strat in {"turbo_nei", "turbo_ei", "turbo"}:
-            raise UnsupportedStrategyError(
-                f"Strategy {strategy!r} is not supported. "
-                "TuRBO is not part of the current production backend. "
-                "Use 'nei' for global noisy expected improvement or explicitly use a legacy/reference benchmark."
-            )
-        if requested_strat not in SUPPORTED_STRATEGIES:
-            raise UnsupportedStrategyError(
-                f"Optimization strategy {strategy!r} is not supported by BoTorchBackend. "
-                f"Supported strategies: {sorted(SUPPORTED_STRATEGIES)}"
-            )
+        requested_strat = strategy or self._default_strategy
+        canonical_strat = resolve_strategy(requested_strat)
 
         full_pool, unseen_pool, X_obs, y_obs, obj, feat_cols = self._prepare_data(
             observations,
@@ -191,18 +184,18 @@ class BoTorchBackend(OptimizerBackend):
         )
 
         # Handle purely random strategy or cold start without observations
-        if requested_strat in {"random", "uniform"} or len(y_obs) == 0:
+        if canonical_strat == "random" or len(y_obs) == 0:
             return self._propose_random(
                 unseen_pool,
                 obj,
                 n=n,
                 seed=seed,
-                requested_strat=requested_strat,
+                requested_strat=canonical_strat,
             )
 
         # Build PyTorch tensors with double precision (ensuring writable contiguous buffers)
-        train_X = torch.as_tensor(np.ascontiguousarray(X_obs), dtype=torch.float64)
-        raw_y = torch.as_tensor(np.ascontiguousarray(y_obs), dtype=torch.float64).unsqueeze(-1)
+        train_X = torch.as_tensor(np.ascontiguousarray(X_obs).copy(), dtype=torch.float64)
+        raw_y = torch.as_tensor(np.ascontiguousarray(y_obs).copy(), dtype=torch.float64).unsqueeze(-1)
 
         # BoTorch natively assumes maximization. For minimization, invert sign internally.
         train_Y = -raw_y if obj.minimize else raw_y
@@ -231,7 +224,7 @@ class BoTorchBackend(OptimizerBackend):
 
         # Unseen candidates feature tensor
         X_unseen_np = unseen_pool.get_feature_matrix()
-        X_unseen = torch.as_tensor(np.ascontiguousarray(X_unseen_np), dtype=torch.float64)
+        X_unseen = torch.as_tensor(np.ascontiguousarray(X_unseen_np).copy(), dtype=torch.float64)
 
         # 1. Compute posterior over unseen candidate pool
         with torch.no_grad():

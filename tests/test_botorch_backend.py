@@ -667,3 +667,121 @@ def test_batch_proposal_semantics_metadata(sample_candidate_pool: pd.DataFrame) 
         assert p.metadata.get("batch_requested") == 4
 
 
+# ---------------------------------------------------------------------------
+# Requirement 26: Thompson Sampling positive affine scale invariance
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("scale_a, shift_b", [(100.0, 50.0), (0.01, -1000.0), (2.5, 10.0)])
+def test_thompson_sampling_scale_invariance(
+    sample_candidate_pool: pd.DataFrame, scale_a: float, shift_b: float
+) -> None:
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_orig = sample_candidate_pool.iloc[:8].copy()
+
+    obs_scaled = obs_orig.copy()
+    obs_scaled["target"] = scale_a * obs_orig["target"] + shift_b
+
+    p_orig = backend.propose(
+        observations=obs_orig,
+        candidate_pool=cand_pool,
+        objective="target",
+        strategy="thompson",
+        n=3,
+        seed=101,
+    )
+    p_scaled = backend.propose(
+        observations=obs_scaled,
+        candidate_pool=cand_pool,
+        objective="target",
+        strategy="thompson",
+        n=3,
+        seed=101,
+    )
+
+    cids_orig = [p.candidate_id for p in p_orig]
+    cids_scaled = [p.candidate_id for p in p_scaled]
+    assert cids_orig == cids_scaled, f"Thompson sampling changed top ranking under affine scaling a={scale_a}, b={shift_b}"
+
+
+# ---------------------------------------------------------------------------
+# Requirement 27: Candidate pool content fingerprint determinism and sensitivity
+# ---------------------------------------------------------------------------
+def test_candidate_pool_fingerprint_invariance_and_sensitivity() -> None:
+    from src.optimization.finite_pool import compute_candidate_pool_fingerprint
+
+    df1 = pd.DataFrame({
+        "candidate_id": ["C1", "C2", "C3"],
+        "x1": [1.0, 2.0, 3.0],
+        "x2": [10.0, 20.0, 30.0],
+    })
+    # Shuffled row order
+    df_shuffled = df1.sample(frac=1.0, random_state=42).reset_index(drop=True)
+
+    fp1 = compute_candidate_pool_fingerprint(df1, id_column="candidate_id", feature_columns=["x1", "x2"])
+    fp_shuffled = compute_candidate_pool_fingerprint(df_shuffled, id_column="candidate_id", feature_columns=["x1", "x2"])
+    assert fp1 == fp_shuffled, "Candidate pool fingerprint must be invariant to row permutation"
+
+    # Changed candidate ID
+    df_diff_id = df1.copy()
+    df_diff_id.loc[0, "candidate_id"] = "C999"
+    fp_diff_id = compute_candidate_pool_fingerprint(df_diff_id, id_column="candidate_id", feature_columns=["x1", "x2"])
+    assert fp1 != fp_diff_id, "Candidate pool fingerprint must change when candidate ID changes"
+
+    # Changed feature coordinate
+    df_diff_feat = df1.copy()
+    df_diff_feat.loc[0, "x1"] = 1.0001
+    fp_diff_feat = compute_candidate_pool_fingerprint(df_diff_feat, id_column="candidate_id", feature_columns=["x1", "x2"])
+    assert fp1 != fp_diff_feat, "Candidate pool fingerprint must change when feature coordinate changes"
+
+
+# ---------------------------------------------------------------------------
+# Requirement 28: Strict physical candidate identity for Mapping and DataFrame observations
+# ---------------------------------------------------------------------------
+def test_strict_identity_rejects_missing_or_null_candidate_id() -> None:
+    df_pool = pd.DataFrame({
+        "candidate_id": ["C1", "C2", "C3"],
+        "x1": [1.0, 2.0, 3.0],
+    })
+    pool = FiniteCandidatePool(df_pool, feature_columns=["x1"], id_column="candidate_id", strict_identity=True)
+
+    # 1. Mapping without candidate_id
+    with pytest.raises(ValueError, match="missing non-null candidate ID"):
+        pool.filter_unseen([{"x1": 1.0, "target": 10.0}])
+
+    # 2. Mapping with null candidate_id
+    with pytest.raises(ValueError, match="missing non-null candidate ID"):
+        pool.filter_unseen([{"candidate_id": None, "x1": 1.0, "target": 10.0}])
+
+    # 3. DataFrame with null candidate_id
+    obs_null_df = pd.DataFrame({"candidate_id": [None, "C2"], "x1": [1.0, 2.0], "target": [10.0, 20.0]})
+    with pytest.raises(ValueError, match="contains null candidate IDs"):
+        pool.filter_unseen(obs_null_df)
+
+    # 4. BoTorchBackend with missing candidate_id in Mapping
+    backend = BoTorchBackend()
+    with pytest.raises(ValueError, match="missing non-null candidate ID"):
+        backend.propose(
+            observations=[{"x1": 1.0, "target": 10.0}],
+            candidate_pool=df_pool,
+            objective="target",
+            strategy="random",
+            strict_identity=True,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Requirement 29: Au-Ir-Rh Oracle Global Optimum matches Dataset Max
+# ---------------------------------------------------------------------------
+def test_auirh_oracle_global_optimum_truth() -> None:
+    from src.datasets.auirh import AuIrRhAdapter, AuIrRhExperimentOracle
+
+    adapter = AuIrRhAdapter(target="k0", library=None)
+    oracle = adapter.create_oracle()
+    df = adapter.load()
+
+    expected_optimum = 0.0142014497462072
+    assert abs(oracle.global_best_value - expected_optimum) < 1e-12
+    assert oracle.global_best_candidate_id == "AUIRH_Au-rich_170"
+    assert abs(df["k0"].max() - expected_optimum) < 1e-12
+
+

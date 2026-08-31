@@ -15,6 +15,64 @@ class AcquisitionEvaluationError(RuntimeError):
     """Raised when evaluation of an acquisition function fails on the optimization backend."""
 
 
+SUPPORTED_STRATEGIES: tuple[str, ...] = (
+    "random",
+    "greedy",
+    "gp_ucb",
+    "expected_improvement",
+    "noisy_expected_improvement",
+    "thompson",
+)
+
+STRATEGY_ALIASES: dict[str, str] = {
+    "uniform": "random",
+    "uniform_random": "random",
+    "posterior_mean": "greedy",
+    "ucb": "gp_ucb",
+    "upper_confidence_bound": "gp_ucb",
+    "ei": "expected_improvement",
+    "log_ei": "expected_improvement",
+    "log_expected_improvement": "expected_improvement",
+    "nei": "noisy_expected_improvement",
+    "log_nei": "noisy_expected_improvement",
+    "log_noisy_expected_improvement": "noisy_expected_improvement",
+    "q_nei": "noisy_expected_improvement",
+    "ts": "thompson",
+    "thompson_sampling": "thompson",
+}
+
+RETIRED_STRATEGIES: set[str] = {
+    "turbo",
+    "turbo_ei",
+    "turbo_nei",
+    "adaptive",
+    "qnehvi",
+}
+
+
+def resolve_strategy(strategy: str) -> str:
+    """Validates and maps a requested strategy name or alias to its canonical name.
+
+    Raises:
+        UnsupportedStrategyError: If strategy is retired (e.g. TuRBO) or unrecognized.
+    """
+    key = strategy.strip().lower()
+    if key in RETIRED_STRATEGIES:
+        raise UnsupportedStrategyError(
+            f"Strategy {strategy!r} is retired and not part of the production BoTorch backend. "
+            "Use 'noisy_expected_improvement' (or 'nei') for global noisy BO or explicitly use a legacy reference benchmark."
+        )
+    if key in STRATEGY_ALIASES:
+        return STRATEGY_ALIASES[key]
+    if key in SUPPORTED_STRATEGIES:
+        return key
+    raise UnsupportedStrategyError(
+        f"Optimization strategy {strategy!r} is not recognized. "
+        f"Supported canonical strategies: {list(SUPPORTED_STRATEGIES)}. "
+        f"Supported aliases: {sorted(STRATEGY_ALIASES.keys())}."
+    )
+
+
 @runtime_checkable
 class OptimizerBackend(Protocol):
     """Protocol defining the clean boundary between AIcoScientist and generic optimization engines.

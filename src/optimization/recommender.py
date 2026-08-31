@@ -55,9 +55,16 @@ def recommend(
     if id_col not in candidates.columns:
         candidates[id_col] = [f"CAND_{i:04d}" for i in range(len(candidates))]
 
+    observed_df = observed.copy()
+    if id_col not in observed_df.columns:
+        for fallback_id in (adapter.spec.id_column, "sample_id", "experiment_id", "id"):
+            if fallback_id and fallback_id in observed_df.columns:
+                observed_df[id_col] = observed_df[fallback_id]
+                break
+
     features = list(adapter.spec.feature_columns)
-    fill_values = observed[features].median(numeric_only=True).to_dict()
-    feature_matrix = adapter.build_candidate_features(candidates, observed, fill_values)
+    fill_values = observed_df[features].median(numeric_only=True).to_dict()
+    feature_matrix = adapter.build_candidate_features(candidates, observed_df, fill_values)
     if list(feature_matrix.columns) != features:
         raise ValueError("Adapter returned a candidate feature matrix with the wrong schema")
 
@@ -77,7 +84,7 @@ def recommend(
 
     # Delegate proposal computation to the optimizer backend
     proposals = opt_backend.propose(
-        observations=observed,
+        observations=observed_df,
         candidate_pool=candidates_with_features,
         objective=objective,
         feature_columns=features,
