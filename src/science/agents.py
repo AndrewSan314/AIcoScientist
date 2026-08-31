@@ -37,7 +37,7 @@ class HypothesisScientistAgent:
             f"Current scientific belief is distributed across 3 competing models: "
             f"H1 ({beliefs['H1'].belief_score*100:.1f}%), H2 ({beliefs['H2'].belief_score*100:.1f}%), and H3 ({beliefs['H3'].belief_score*100:.1f}%). "
             f"Hypothesis {target_h.hypothesis_id} asserts: '{target_h.statement}' "
-            f"Running {recommendation.action.action_type.value} on candidate {recommendation.action.candidate_id} yields maximum expected information gain to update this belief."
+            f"Running {recommendation.action.action_type.value} on candidate {recommendation.action.candidate_id} yields the highest estimated scientific value under the current policy to update this belief."
         )
 
         return AgentPerspective(
@@ -45,9 +45,9 @@ class HypothesisScientistAgent:
             headline=headline,
             body=body,
             key_points=[
-                f"H1 Direct Composition: {beliefs['H1'].belief_score*100:.1f}% belief",
-                f"H2 Structure-Mediated: {beliefs['H2'].belief_score*100:.1f}% belief",
-                f"H3 Local Regime Transition: {beliefs['H3'].belief_score*100:.1f}% belief",
+                f"H1 Direct Composition: {beliefs['H1'].belief_score*100:.1f}% evidence weight",
+                f"H2 Structure-Mediated: {beliefs['H2'].belief_score*100:.1f}% evidence weight",
+                f"H3 Local Regime Transition: {beliefs['H3'].belief_score*100:.1f}% evidence weight",
             ],
         )
 
@@ -74,7 +74,7 @@ class FalsificationScientistAgent:
         if recommendation.action.action_type == ExperimentActionType.XRD:
             points = [
                 "XRD pattern reveals standard solid-solution peaks with no novel phase splitting.",
-                "Structure-informed model provides zero variance reduction over nominal composition.",
+                "Structure-informed model provides zero variance reduction over nominal composition on held-out samples.",
             ]
         else:
             points = [
@@ -104,8 +104,8 @@ class ExperimentDesignerAgent:
         action_title = "XRD Characterization" if recommendation.action.action_type == ExperimentActionType.XRD else "SECCM Electrochemical Test"
         headline = f"Selected {action_title} for {recommendation.action.candidate_id}"
         body = (
-            f"Recommended {action_title} with total value score {recommendation.total_value:.3f} "
-            f"(Information Value: {recommendation.scientific_information_value:.3f}, Discovery Value: {recommendation.discovery_value:.3f}, Cost Penalty: {recommendation.cost_penalty:.3f})."
+            f"Recommended {action_title} with highest estimated scientific value score {recommendation.total_value:.3f} "
+            f"(Information Score: {recommendation.scientific_information_value:.3f}, Discovery Score: {recommendation.discovery_value:.3f}, Cost Penalty: {recommendation.cost_penalty:.3f})."
         )
 
         contrast_points = [
@@ -124,12 +124,12 @@ class ExperimentDesignerAgent:
         )
 
 
-class EvidenceAuditorAgent:
-    """Verifies that all scientific claims respect the strict offline-oracle firewall and provenance bounds."""
+class EvidenceProvenanceAgent:
+    """Reports auditable data provenance and boundary conditions for scientific recommendations."""
 
     @property
     def role_name(self) -> str:
-        return "Evidence Auditor"
+        return "Evidence Provenance"
 
     def reason(
         self,
@@ -137,11 +137,11 @@ class EvidenceAuditorAgent:
         num_property_revealed: int,
         total_candidates: int,
     ) -> AgentPerspective:
-        headline = "Firewall & Scientific Claim Integrity: PASS"
+        headline = f"Data Provenance: {num_xrd_revealed} XRD, {num_property_revealed} Property Observations"
         body = (
-            f"Audit verified: Zero oracle leakage. All candidate selections rely strictly on observable "
-            f"composition coordinates, {num_xrd_revealed} revealed XRD spectra, and {num_property_revealed} revealed property measurements "
-            f"out of {total_candidates} physical samples."
+            f"Decision inputs: nominal composition for {total_candidates} candidates, "
+            f"{num_xrd_revealed} revealed XRD diffractograms, and {num_property_revealed} revealed electrochemical property observations. "
+            f"All surrogate predictions and hypothesis evidence weights are derived strictly from these revealed data."
         )
 
         return AgentPerspective(
@@ -149,12 +149,16 @@ class EvidenceAuditorAgent:
             headline=headline,
             body=body,
             key_points=[
-                f"Revealed structural evidence: {num_xrd_revealed} / {total_candidates} samples",
-                f"Revealed property evidence: {num_property_revealed} / {total_candidates} samples",
-                "Firewall Status: Sealed (No hidden targets or unrevealed spectra accessed)",
-                "Claim boundary: Evidence-weighted hypotheses; no unverified physical mechanisms claimed.",
+                f"Visible candidate pool: {total_candidates} physical samples (Au, Ir, Rh)",
+                f"Revealed structural observations: {num_xrd_revealed} samples",
+                f"Revealed property observations: {num_property_revealed} samples",
+                "Claim boundary: Evidence-weighted heuristic policy; no unverified physical mechanisms or exact Bayesian posteriors claimed.",
             ],
         )
+
+
+# Backward-compatible alias
+EvidenceAuditorAgent = EvidenceProvenanceAgent
 
 
 class MultiAgentPresentationLayer:
@@ -164,7 +168,7 @@ class MultiAgentPresentationLayer:
         self.hypothesis_scientist = HypothesisScientistAgent()
         self.falsification_scientist = FalsificationScientistAgent()
         self.experiment_designer = ExperimentDesignerAgent()
-        self.evidence_auditor = EvidenceAuditorAgent()
+        self.evidence_provenance = EvidenceProvenanceAgent()
 
     def generate_perspectives(
         self,
@@ -174,10 +178,10 @@ class MultiAgentPresentationLayer:
         num_property_revealed: int,
         total_candidates: int,
     ) -> list[AgentPerspective]:
-        """Generates structured perspectives from all 4 specialized agents."""
+        """Generates structured perspectives from all specialized agent roles."""
         return [
             self.hypothesis_scientist.reason(hypothesis_engine, recommendation),
             self.falsification_scientist.reason(recommendation, hypothesis_engine),
             self.experiment_designer.reason(recommendation),
-            self.evidence_auditor.reason(num_xrd_revealed, num_property_revealed, total_candidates),
+            self.evidence_provenance.reason(num_xrd_revealed, num_property_revealed, total_candidates),
         ]

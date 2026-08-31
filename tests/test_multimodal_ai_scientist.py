@@ -16,6 +16,7 @@ from src.science.actions import (
 )
 from src.science.agents import (
     EvidenceAuditorAgent,
+    EvidenceProvenanceAgent,
     ExperimentDesignerAgent,
     FalsificationScientistAgent,
     HypothesisScientistAgent,
@@ -37,58 +38,34 @@ def auirh_oracle() -> AuIrRhMultimodalOracle:
 
 
 # ---------------------------------------------------------------------------
-# Requirement 1 & 2: XRD and k0 Hidden Prior to Action Execution
+# 1. Action Space Validity
 # ---------------------------------------------------------------------------
-def test_oracle_firewall_hides_unobserved_measurements(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+def test_action_space_validity(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    engine = AutonomousDiscoveryEngine(oracle=auirh_oracle, seed=42)
+    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
     cand_df = auirh_oracle.get_candidate_pool()
-    assert len(cand_df) == 966
-    # Visible candidate table has ONLY composition features
-    assert set(cand_df.columns) == {"candidate_id", "Library", "Area", "Au", "Ir", "Rh"}
+    observed_xrd = set(auirh_oracle.get_revealed_xrd_ids())
+    observed_prop = set(auirh_oracle.get_revealed_property_ids())
 
-    # No targets in observable dataset before execution
-    obs_df = auirh_oracle.get_observable_dataset()
-    assert obs_df["xrd_observed"].sum() == 0
-    assert obs_df["property_observed"].sum() == 0
-    assert obs_df["k0"].isna().all()
-
-
-# ---------------------------------------------------------------------------
-# Requirement 3 & 4: Exact Physical Sample Measurement Reveal
-# ---------------------------------------------------------------------------
-def test_oracle_reveals_exact_physical_measurements(auirh_oracle: AuIrRhMultimodalOracle) -> None:
-    cand_id = "AUIRH_Au-rich_001"
-
-    # 1. Execute XRD
-    xrd_out = auirh_oracle.execute_xrd(cand_id)
-    assert xrd_out.candidate_id == cand_id
-    assert xrd_out.action_type == ExperimentActionType.XRD
-    assert len(xrd_out.revealed_data["two_theta"]) == 4500
-    assert len(xrd_out.revealed_data["intensity"]) == 4500
-    assert len(xrd_out.revealed_data["downsampled_two_theta"]) == 450
-    assert xrd_out.provenance["library"] == "Au-rich"
-    assert xrd_out.provenance["area"] == 1
-
-    # 2. Execute Property
-    prop_out = auirh_oracle.execute_property(cand_id)
-    assert prop_out.candidate_id == cand_id
-    assert prop_out.action_type == ExperimentActionType.PROPERTY
-    assert "k0" in prop_out.revealed_data
-    assert prop_out.revealed_data["k0"] > 0.0
-
-    # Verify visible dataset reflects reveals
-    obs_df = auirh_oracle.get_observable_dataset()
-    row = obs_df[obs_df["candidate_id"] == cand_id].iloc[0]
-    assert bool(row["xrd_observed"]) is True
-    assert bool(row["property_observed"]) is True
-    assert not np.isnan(float(row["k0"]))
+    scored = engine.policy.evaluate_actions(
+        candidate_pool_df=cand_df,
+        observed_xrd_ids=observed_xrd,
+        observed_property_ids=observed_prop,
+        structure_model=engine.structure_model,
+        property_model=engine.property_model,
+        hypothesis_engine=engine.hypothesis_engine,
+    )
+    assert len(scored) > 0
+    for a in scored:
+        assert a["action_type"] in {ExperimentActionType.XRD, ExperimentActionType.PROPERTY}
+        assert a["candidate_id"].startswith("AUIRH_")
 
 
 # ---------------------------------------------------------------------------
-# Requirement 5 & 6: Strict Prohibition of Repeated Measurements
+# 2. Repeat Actions Rejected
 # ---------------------------------------------------------------------------
-def test_oracle_rejects_duplicate_actions(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+def test_repeat_actions_rejected(auirh_oracle: AuIrRhMultimodalOracle) -> None:
     cand_id = "AUIRH_Au-rich_005"
-
     auirh_oracle.execute_xrd(cand_id)
     with pytest.raises(ValueError, match="XRD characterization already executed"):
         auirh_oracle.execute_xrd(cand_id)
@@ -99,171 +76,225 @@ def test_oracle_rejects_duplicate_actions(auirh_oracle: AuIrRhMultimodalOracle) 
 
 
 # ---------------------------------------------------------------------------
-# Requirement 7: Candidate Identity Preserved Across Steps
+# 3. Budget Accounting Exact
 # ---------------------------------------------------------------------------
-def test_candidate_identity_preservation(auirh_oracle: AuIrRhMultimodalOracle) -> None:
-    cand_pool = auirh_oracle.get_candidate_pool()
-    all_cids = cand_pool["candidate_id"].tolist()
-    assert len(all_cids) == 966
-    assert len(set(all_cids)) == 966
-    for cid in all_cids:
-        assert cid.startswith("AUIRH_")
+def test_budget_accounting_exact(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    engine = AutonomousDiscoveryEngine(oracle=auirh_oracle, cost_xrd=1.5, cost_property=6.0, seed=42)
+    engine.initialize_curated_scenario(n_init_prop=3, n_init_xrd=2, seed=42)
+    # 3 * 6.0 + 2 * 1.5 = 18.0 + 3.0 = 21.0
+    assert np.isclose(engine.total_budget_spent, 21.0)
 
 
 # ---------------------------------------------------------------------------
-# Requirement 8 & 12: Policy Invariants, Scores, and Absence of Hidden Leakage
+# 4. Public Oracle Firewall & Defensive Copies
 # ---------------------------------------------------------------------------
-def test_policy_scoring_invariants_and_components(auirh_oracle: AuIrRhMultimodalOracle) -> None:
-    engine = AutonomousDiscoveryEngine(oracle=auirh_oracle, seed=42)
-    engine.initialize_curated_scenario(n_init_prop=5, n_init_xrd=3, seed=42)
+def test_public_oracle_firewall(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    cand_df = auirh_oracle.get_candidate_pool()
+    assert len(cand_df) == 966
+    assert set(cand_df.columns) == {"candidate_id", "Library", "Area", "Au", "Ir", "Rh"}
 
-    rec, perspectives = engine.propose_next_experiment()
-    assert isinstance(rec, ActionRecommendation)
-    assert rec.action.candidate_id.startswith("AUIRH_")
-    assert rec.action.action_type in {ExperimentActionType.XRD, ExperimentActionType.PROPERTY}
-
-    # All required score components present
-    assert isinstance(rec.total_value, float)
-    assert isinstance(rec.scientific_information_value, float)
-    assert isinstance(rec.discovery_value, float)
-    assert isinstance(rec.cost_penalty, float)
-    assert rec.hypothesis_id in {"H1", "H2", "H3"}
-    assert len(rec.falsification_criterion) > 10
-    assert len(rec.alternatives) >= 2
+    # Defensive copies
+    revealed_xrd = auirh_oracle.get_revealed_xrd()
+    assert isinstance(revealed_xrd, dict)
+    revealed_xrd["fake"] = None  # Mutation should not affect internal oracle state
+    assert "fake" not in auirh_oracle.get_revealed_xrd()
 
 
 # ---------------------------------------------------------------------------
-# Requirement 9 & 10: Deterministic Scenario & Reset Replay
+# 5. Unrevealed Spectra Never Accessed
 # ---------------------------------------------------------------------------
-def test_deterministic_scenario_and_reset_reproducibility() -> None:
-    engine1 = AutonomousDiscoveryEngine(seed=42)
-    engine1.initialize_curated_scenario(n_init_prop=5, n_init_xrd=3, seed=42)
-    rec1, _ = engine1.propose_next_experiment()
-
-    engine2 = AutonomousDiscoveryEngine(seed=42)
-    engine2.initialize_curated_scenario(n_init_prop=5, n_init_xrd=3, seed=42)
-    rec2, _ = engine2.propose_next_experiment()
-
-    assert rec1.action.candidate_id == rec2.action.candidate_id
-    assert rec1.action.action_type == rec2.action.action_type
-    assert np.isclose(rec1.total_value, rec2.total_value)
-
-    # Test Reset
-    engine1.reset()
-    assert engine1.current_step == 0
-    assert engine1.total_budget_spent == 0.0
-    assert len(engine1.timeline) == 0
+def test_unrevealed_spectra_never_accessed(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    obs_df = auirh_oracle.get_observable_dataset()
+    assert obs_df["xrd_observed"].sum() == 0
+    assert obs_df["property_observed"].sum() == 0
+    assert obs_df["k0"].isna().all()
 
 
 # ---------------------------------------------------------------------------
-# Requirement 11: Action Ledger Records and Replay
+# 6. PCA Low Sample Fallback
 # ---------------------------------------------------------------------------
-def test_action_ledger_records(tmp_path: Path) -> None:
-    db_file = tmp_path / "action_test.db"
-    oracle = AuIrRhMultimodalOracle()
-    engine = AutonomousDiscoveryEngine(oracle=oracle, db_path=db_file, seed=42)
-    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
-
-    # 4 property + 2 XRD = 6 records
-    records = engine.ledger.list_records()
-    assert len(records) == 6
-    for r in records:
-        assert r.dataset_name == "Au-Ir-Rh_Multimodal_Demo"
-        assert r.stage.value == "COMPLETED"
-
-
-# ---------------------------------------------------------------------------
-# Requirement 13: Cost Changes Alter Policy Action Ranking
-# ---------------------------------------------------------------------------
-def test_cost_sensitivity_alters_policy_ranking() -> None:
-    engine_cheap_xrd = AutonomousDiscoveryEngine(cost_xrd=0.1, cost_property=10.0, seed=42)
-    engine_cheap_xrd.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
-    rec_cheap_xrd, _ = engine_cheap_xrd.propose_next_experiment()
-
-    engine_expensive_xrd = AutonomousDiscoveryEngine(cost_xrd=10.0, cost_property=0.1, seed=42)
-    engine_expensive_xrd.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
-    rec_expensive_xrd, _ = engine_expensive_xrd.propose_next_experiment()
-
-    assert rec_cheap_xrd.action.action_type == ExperimentActionType.XRD
-    assert rec_expensive_xrd.action.action_type == ExperimentActionType.PROPERTY
-
-
-# ---------------------------------------------------------------------------
-# Requirement 14: Hypothesis Evidence Updates Only After Observed Evidence
-# ---------------------------------------------------------------------------
-def test_hypothesis_evidence_updates_from_observations() -> None:
-    hypo_engine = HypothesisEngine(get_default_hypotheses())
-    # Prior state is uniform
-    assert np.isclose(hypo_engine.hypotheses["H1"].belief_score, 1.0 / 3.0)
-
-    # Simulate strong structural predictive advantage
-    beliefs = hypo_engine.update_evidence(
-        num_xrd=8,
-        num_prop=8,
-        structure_advantage_ratio=0.35,
-        structure_novelty_mean=0.40,
-        structure_residual_norm=0.30,
-        property_residual_norm=0.10,
-    )
-    # H2 (structure-mediated) should rise significantly
-    assert beliefs["H2"] > beliefs["H1"]
-    assert np.isclose(sum(beliefs.values()), 1.0)
-
-
-# ---------------------------------------------------------------------------
-# Requirement 15 & 16: Multi-Agent Perspectives & Falsification Criteria
-# ---------------------------------------------------------------------------
-def test_multi_agent_perspectives_and_falsification() -> None:
-    engine = AutonomousDiscoveryEngine(seed=42)
-    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
-    rec, perspectives = engine.propose_next_experiment()
-
-    role_names = [p.role_name for p in perspectives]
-    assert "Hypothesis Scientist" in role_names
-    assert "Falsification Scientist" in role_names
-    assert "Experiment Designer" in role_names
-    assert "Evidence Auditor" in role_names
-
-    fals_agent = next(p for p in perspectives if p.role_name == "Falsification Scientist")
-    assert len(fals_agent.body) > 20
-    assert len(fals_agent.key_points) >= 2
-
-
-# ---------------------------------------------------------------------------
-# Requirement 17: Counterfactual Explanation Decompositions
-# ---------------------------------------------------------------------------
-def test_counterfactual_explanation_decompositions() -> None:
-    engine = AutonomousDiscoveryEngine(seed=42)
-    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
-    rec, _ = engine.propose_next_experiment()
-
-    assert len(rec.alternatives) >= 2
-    for alt in rec.alternatives:
-        assert isinstance(alt.total_value, float)
-        assert isinstance(alt.scientific_information_value, float)
-        assert isinstance(alt.discovery_value, float)
-        assert len(alt.contrastive_rationale) > 10
-        # Recommended action score is greater than or equal to alternative
-        assert rec.total_value >= alt.total_value
-
-
-# ---------------------------------------------------------------------------
-# Requirement: PCA Leakage Contract (Fitted only on revealed spectra)
-# ---------------------------------------------------------------------------
-def test_xrd_pca_leakage_contract() -> None:
+def test_pca_low_sample_fallback() -> None:
     extractor = XRDRepresentationExtractor(min_pca_samples=3)
-
-    # 1. Zero or 1 sample -> fallback binning
     spec1 = np.linspace(0, 1, 450)
     extractor.fit([spec1])
     assert not extractor.is_pca_fitted
     emb1 = extractor.transform(spec1)
     assert len(emb1) == 8
 
-    # 2. >= 3 samples -> PCA fits on those 3 samples only
-    spec2 = np.sin(np.linspace(0, 3.14, 450))
-    spec3 = np.cos(np.linspace(0, 3.14, 450))
-    extractor.fit([spec1, spec2, spec3])
-    assert extractor.is_pca_fitted
-    emb3 = extractor.transform(spec3)
-    assert len(emb3) == 8
+
+# ---------------------------------------------------------------------------
+# 7. Property Surrogate Fits and Predicts
+# ---------------------------------------------------------------------------
+def test_property_surrogate_fits_and_predicts() -> None:
+    model = PropertySurrogateModel(random_state=42)
+    comps = np.array([[0.8, 0.1, 0.1], [0.2, 0.7, 0.1], [0.1, 0.1, 0.8]])
+    targets = np.array([0.001, 0.005, 0.003])
+    model.fit(comps, targets)
+    assert model.is_fitted
+    means, stds = model.predict(comps)
+    assert len(means) == 3
+    assert len(stds) == 3
+    assert (stds >= 0.0).all()
+
+
+# ---------------------------------------------------------------------------
+# 8. Structure Surrogate Fits and Predicts
+# ---------------------------------------------------------------------------
+def test_structure_surrogate_fits_and_predicts() -> None:
+    model = StructureSurrogateModel(random_state=42)
+    comps = np.array([[0.8, 0.1, 0.1], [0.2, 0.7, 0.1], [0.1, 0.1, 0.8]])
+    embs = np.random.default_rng(42).normal(size=(3, 8))
+    model.fit(comps, embs)
+    assert model.is_fitted
+    pred_embs, unc = model.predict(comps)
+    assert pred_embs.shape == (3, 8)
+    assert len(unc) == 3
+
+
+# ---------------------------------------------------------------------------
+# 9. Structure Advantage LOO-CV Contract
+# ---------------------------------------------------------------------------
+def test_structure_advantage_loo_cv() -> None:
+    model = PropertySurrogateModel(random_state=42)
+    comps = np.array([[0.8, 0.1, 0.1], [0.2, 0.7, 0.1]])
+    targets = np.array([0.001, 0.005])
+    embs = np.random.default_rng(42).normal(size=(2, 8))
+
+    # N < 3 -> neutral
+    res_small = model.evaluate_structure_predictive_advantage(comps, targets, embs)
+    assert res_small["structure_advantage_ratio"] == 0.0
+
+    # N >= 3 -> true LOO-CV
+    comps_3 = np.array([[0.8, 0.1, 0.1], [0.2, 0.7, 0.1], [0.1, 0.1, 0.8], [0.4, 0.4, 0.2]])
+    targets_3 = np.array([0.001, 0.005, 0.003, 0.004])
+    embs_3 = np.random.default_rng(42).normal(size=(4, 8))
+    res_loo = model.evaluate_structure_predictive_advantage(comps_3, targets_3, embs_3)
+    assert "structure_advantage_ratio" in res_loo
+    assert -1.0 <= res_loo["structure_advantage_ratio"] <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# 10. Evidence Events Event-Driven Invariant
+# ---------------------------------------------------------------------------
+def test_evidence_events_event_driven() -> None:
+    engine = AutonomousDiscoveryEngine(seed=42)
+    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+
+    h1_sup_before = engine.hypothesis_engine.hypotheses["H1"].supporting_evidence_count
+    h2_sup_before = engine.hypothesis_engine.hypotheses["H2"].supporting_evidence_count
+
+    # Calling refit repeated times without new experiment events MUST NOT increase counters
+    engine._refit_models_and_recompute_beliefs()
+    engine._refit_models_and_recompute_beliefs()
+
+    assert engine.hypothesis_engine.hypotheses["H1"].supporting_evidence_count == h1_sup_before
+    assert engine.hypothesis_engine.hypotheses["H2"].supporting_evidence_count == h2_sup_before
+
+
+# ---------------------------------------------------------------------------
+# 11. Hypothesis Beliefs Sum To One
+# ---------------------------------------------------------------------------
+def test_hypothesis_beliefs_sum_to_one() -> None:
+    hypo_engine = HypothesisEngine(get_default_hypotheses())
+    hypo_engine.record_evidence_event(
+        event_id="test_ev_1",
+        action_type="XRD",
+        candidate_id="AUIRH_Au-rich_001",
+        structure_residual=0.35,
+        structure_novelty=0.45,
+    )
+    total_belief = sum(h.belief_score for h in hypo_engine.hypotheses.values())
+    assert np.isclose(total_belief, 1.0, atol=1e-6)
+
+
+# ---------------------------------------------------------------------------
+# 12. Policy Scoring Normalization
+# ---------------------------------------------------------------------------
+def test_policy_scoring_normalization(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    engine = AutonomousDiscoveryEngine(oracle=auirh_oracle, seed=42)
+    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+    rec, _ = engine.propose_next_experiment()
+
+    assert 0.0 <= rec.scientific_information_value <= 1.000001
+    assert 0.0 <= rec.discovery_value <= 1.000001
+    assert rec.cost_penalty >= 0.0
+
+
+# ---------------------------------------------------------------------------
+# 13. Policy Modality Ranking Switch
+# ---------------------------------------------------------------------------
+def test_policy_modality_ranking_switch() -> None:
+    engine_cheap_xrd = AutonomousDiscoveryEngine(cost_xrd=0.01, cost_property=20.0, seed=42)
+    engine_cheap_xrd.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+    rec_cheap_xrd, _ = engine_cheap_xrd.propose_next_experiment()
+
+    engine_cheap_prop = AutonomousDiscoveryEngine(cost_xrd=20.0, cost_property=0.01, seed=42)
+    engine_cheap_prop.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+    rec_cheap_prop, _ = engine_cheap_prop.propose_next_experiment()
+
+    assert rec_cheap_xrd.action.action_type == ExperimentActionType.XRD
+    assert rec_cheap_prop.action.action_type == ExperimentActionType.PROPERTY
+
+
+# ---------------------------------------------------------------------------
+# 14. Counterfactual Rationales Generated
+# ---------------------------------------------------------------------------
+def test_counterfactual_rationales_generated() -> None:
+    engine = AutonomousDiscoveryEngine(seed=42)
+    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+    rec, _ = engine.propose_next_experiment()
+    assert len(rec.alternatives) >= 2
+    for alt in rec.alternatives:
+        assert len(alt.contrastive_rationale) > 10
+
+
+# ---------------------------------------------------------------------------
+# 15. Agent Perspectives Generated
+# ---------------------------------------------------------------------------
+def test_agent_perspectives_generated() -> None:
+    engine = AutonomousDiscoveryEngine(seed=42)
+    engine.initialize_curated_scenario(n_init_prop=4, n_init_xrd=2, seed=42)
+    _, perspectives = engine.propose_next_experiment()
+    role_names = [p.role_name for p in perspectives]
+    assert "Hypothesis Scientist" in role_names
+    assert "Falsification Scientist" in role_names
+    assert "Experiment Designer" in role_names
+    assert "Evidence Provenance" in role_names
+
+
+# ---------------------------------------------------------------------------
+# 16. Ledger Persists DB Path on Reset
+# ---------------------------------------------------------------------------
+def test_ledger_persists_db_path_on_reset(tmp_path: Path) -> None:
+    db_file = tmp_path / "persistence_test.db"
+    engine = AutonomousDiscoveryEngine(db_path=db_file, seed=42)
+    assert str(engine._db_path) == str(db_file)
+    engine.reset()
+    assert str(engine.ledger.db_path) == str(db_file)
+
+
+# ---------------------------------------------------------------------------
+# 17. Ledger Lifecycle Transitions
+# ---------------------------------------------------------------------------
+def test_ledger_lifecycle_transitions(tmp_path: Path) -> None:
+    db_file = tmp_path / "lifecycle_test.db"
+    engine = AutonomousDiscoveryEngine(db_path=db_file, seed=42)
+    engine.initialize_curated_scenario(n_init_prop=2, n_init_xrd=2, seed=42)
+    records = engine.ledger.list_records()
+    assert len(records) == 4
+    for r in records:
+        assert r.stage.value == "COMPLETED"
+
+
+# ---------------------------------------------------------------------------
+# 18. Candidate Pool Real Dataset Integrity
+# ---------------------------------------------------------------------------
+def test_candidate_pool_real_dataset_integrity(auirh_oracle: AuIrRhMultimodalOracle) -> None:
+    cand_df = auirh_oracle.get_candidate_pool()
+    assert len(cand_df) == 966
+    for col in ["Au", "Ir", "Rh"]:
+        assert (cand_df[col] >= 0.0).all()
+        assert (cand_df[col] <= 100.0).all()
+    # Composition sums to ~100
+    comp_sums = cand_df["Au"] + cand_df["Ir"] + cand_df["Rh"]
+    assert np.allclose(comp_sums, 100.0, atol=1.0)

@@ -1,8 +1,8 @@
 # Multimodal Epistemic Actions Architecture (MVP)
 
-**Status**: ACTIVE & VERIFIED  
+**Status**: EXPERIMENTAL MVP  
 **Version**: 1.0.0  
-**Domain**: Au-Ir-Rh Multimodal Materials Dataset  
+**Domain**: Au-Ir-Rh Multimodal Materials Dataset (966 physical SECCM library samples)  
 
 ---
 
@@ -22,7 +22,7 @@
                                          │
                               MultiAgentPresentation
                          (Hypothesis, Falsification,
-                          Designer, Auditor Roles)
+                          Designer, Provenance Roles)
                                          │
                                          ▼
                             ScientificAction Proposal
@@ -44,8 +44,8 @@
 ## 2. Action Space & Eligibility Rules
 
 1. **Action Types**:
-   - `XRD(candidate_id)`: Characterization action revealing exact measured 2theta vs. intensity diffractogram. (Normalized cost = 1.0).
-   - `PROPERTY(candidate_id)`: Performance test revealing exact measured electrochemical rate constant $k^0$, $i_{\text{lim}}$, and $\alpha$. (Normalized cost = 5.0).
+   - `XRD(candidate_id)`: Characterization action revealing exact measured 2theta vs. intensity diffractogram from physical sample. (Illustrative normalized cost = 1.0).
+   - `PROPERTY(candidate_id)`: Performance test revealing exact measured electrochemical rate constant $k^0$, $i_{\text{lim}}$, and $\alpha$. (Illustrative normalized cost = 5.0).
 2. **Eligibility**:
    - Repeat XRD measurements on already characterized candidates are strictly rejected.
    - Repeat Property measurements on already measured candidates are strictly rejected.
@@ -58,37 +58,37 @@
 
 For any valid action $a \in \mathcal{A}_t$:
 
-$$\text{TOTAL\_VALUE}(a) = w_{\text{info}} \cdot S_{\text{info}}(a) + w_{\text{disc}} \cdot S_{\text{disc}}(a) - w_{\text{cost}} \cdot \text{Cost}(a)$$
+$$\text{TOTAL\_VALUE}(a) = w_{\text{info}} \cdot S_{\text{info, norm}}(a) + w_{\text{disc}} \cdot S_{\text{disc, norm}}(a) - w_{\text{cost}} \cdot \text{Cost}_{\text{norm}}(a)$$
 
-### For $a = \text{XRD}(c)$:
-- $S_{\text{info}}(a) = U_{\text{struct}}(c) \cdot (1.2 \cdot b_{\text{H3}} + 1.0 \cdot b_{\text{H2}} + 0.4)$
-- $S_{\text{disc}}(a) = 0.0$
-- $\text{Cost}(a) = c_{\text{xrd}}$ (default 1.0)
-
-### For $a = \text{PROPERTY}(c)$:
-- $S_{\text{info}}(a) = U_{\text{prop}}(c) \cdot (1.0 \cdot b_{\text{H1}} + 1.3 \cdot b_{\text{H2}} \cdot \mathbb{I}[c \in \mathcal{D}_{\text{xrd}}] + 0.3)$
-- $S_{\text{disc}}(a) = \hat{\mu}_{\text{norm}}(c) + 0.5 \cdot U_{\text{prop}}(c)$
-- $\text{Cost}(a) = c_{\text{prop}}$ (default 5.0)
+Where:
+- $S_{\text{info, norm}}(a)$ is the min-max normalized information score across all active candidate actions.
+- $S_{\text{disc, norm}}(a)$ is the min-max normalized discovery score (0 for XRD; BoTorch discovery score for PROPERTY).
+- $\text{Cost}_{\text{norm}}(a) = \text{raw\_cost}(a) / \max(c_{\text{xrd}}, c_{\text{prop}})$.
 
 ---
 
 ## 4. PCA Representation & Zero Leakage Contract
 
-- Real XRD diffractograms have 4501 raw data points across $10^\circ \le 2\theta \le 100^\circ$.
-- Diffractograms are normalized and linearly interpolated to 450 grid points.
+- Real XRD diffractograms contain 4500 numeric rows of diffractogram data across $10.0^\circ \le 2\theta \le 99.98^\circ$ (with a single header line containing instrument metadata).
+- Diffractograms are normalized and interpolated to 450 standardized grid points.
 - **Leakage Contract**:
   - `XRDRepresentationExtractor` fits a PCA model ($\le 8$ components) **strictly on revealed spectra**.
   - When $N_{\text{revealed}} < 3$, deterministic 8-region coarse binning is used without fitting.
-  - Zero unobserved spectra are ever seen during dimensionality reduction.
+  - Zero unobserved spectra are ever accessed during dimensionality reduction.
 
 ---
 
 ## 5. Structured Hypothesis Definitions
 
-1. **H1 (Direct Composition)**: Electrocatalytic activity $k^0$ varies smoothly with elemental composition $(Au, Ir, Rh)$ without requiring structural characterization.
-2. **H2 (Structure-Mediated)**: Crystal phase features observable in XRD diffractograms provide predictive advantage for $k^0$ beyond composition alone.
-3. **H3 (Local Structural-Regime)**: Localized ternary composition boundaries contain sharp crystallographic transitions with high structural uncertainty.
+1. **H1 (Direct Composition)**: Composition-only explanation is sufficient for predicting observed electrocatalytic rate constant $k^0$ across the ternary composition space.
+2. **H2 (Structure-Mediated)**: Revealed XRD crystal structure provides predictive information for $k^0$ beyond nominal composition alone.
+3. **H3 (Local Structural-Regime)**: Some local composition regions exhibit structural characteristics that are poorly captured by smooth composition-based interpolation.
 
 Evidence scores are normalized via softmax:
 
 $$b(\text{H}_i) = \frac{\exp(e_i)}{\sum_j \exp(e_j)}$$
+
+### Scope & Claim Boundary
+- Hypothesis beliefs represent evidence-weighted heuristic model scores, NOT exact Bayesian posteriors.
+- No physical causal mechanisms or active-site geometries are claimed to be proven.
+- Au-Ir-Rh is an electrocatalytic library; battery materials discovery is labeled as future roadmap scope.

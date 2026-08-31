@@ -149,32 +149,63 @@ class PropertySurrogateModel:
         compositions: np.ndarray,
         targets: np.ndarray,
         embeddings: np.ndarray,
-    ) -> dict[str, float]:
-        """Evaluates whether structural features improve predictive error over composition alone."""
-        if len(compositions) < 4:
+    ) -> dict[str, Any]:
+        """Evaluates whether structural features improve predictive error over composition alone via Leave-One-Out Cross-Validation.
+
+        GENUINE OUT-OF-SAMPLE CONTRACT:
+        - Trains composition GP on N-1 samples and tests on held-out sample.
+        - Trains structure-informed GP on N-1 samples and tests on held-out sample.
+        - If N < 3, returns neutral advantage (0.0).
+        """
+        N = len(compositions)
+        if N < 3:
             return {
                 "composition_mse": 1.0,
                 "structure_informed_mse": 1.0,
                 "structure_advantage_ratio": 0.0,
+                "note": "Insufficient joint observations (N < 3). Neutral evidence assigned.",
             }
 
         X = np.asarray(compositions, dtype=np.float64)
         y = np.asarray(targets, dtype=np.float64)
-        X_joint = np.hstack([X, np.asarray(embeddings, dtype=np.float64)])
+        Z = np.asarray(embeddings, dtype=np.float64)
+        X_joint = np.hstack([X, Z])
 
-        # Leave-one-out or resubstitution proxy
-        pred_comp = self._gpr.predict(X) if self._gpr is not None else np.zeros_like(y)
-        mse_comp = float(mean_squared_error(y, pred_comp))
+        comp_errors: list[float] = []
+        struct_errors: list[float] = []
 
-        if self._gpr_with_structure is not None:
-            pred_struct = self._gpr_with_structure.predict(X_joint)
-            mse_struct = float(mean_squared_error(y, pred_struct))
-        else:
-            mse_struct = mse_comp
+        for i in range(N):
+            train_idx = [j for j in range(N) if j != i]
+            test_idx = [i]
 
-        ratio = (mse_comp - mse_struct) / (mse_comp + 1e-12)
+            X_tr, y_tr = X[train_idx], y[train_idx]
+            X_te, y_te = X[test_idx], y[test_idx]
+
+            Xj_tr = X_joint[train_idx]
+            Xj_te = X_joint[test_idx]
+
+            # 1. Composition-only GP on N-1
+            k_comp = ConstantKernel(1.0, (1e-3, 1e3)) * Matern(length_scale=[10.0] * X.shape[1], nu=2.5, length_scale_bounds=(1.0, 100.0)) + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-6, 1.0))
+            gp_c = GaussianProcessRegressor(kernel=k_comp, n_restarts_optimizer=0, random_state=self.random_state + i, normalize_y=True)
+            gp_c.fit(X_tr, y_tr)
+            y_pred_c = float(gp_c.predict(X_te)[0])
+            comp_errors.append((float(y_te[0]) - y_pred_c) ** 2)
+
+            # 2. Structure-informed GP on N-1
+            k_struct = ConstantKernel(1.0, (1e-3, 1e3)) * Matern(length_scale=[10.0] * X_joint.shape[1], nu=2.5, length_scale_bounds=(1.0, 100.0)) + WhiteKernel(noise_level=1e-4, noise_level_bounds=(1e-6, 1.0))
+            gp_s = GaussianProcessRegressor(kernel=k_struct, n_restarts_optimizer=0, random_state=self.random_state + i, normalize_y=True)
+            gp_s.fit(Xj_tr, y_tr)
+            y_pred_s = float(gp_s.predict(Xj_te)[0])
+            struct_errors.append((float(y_te[0]) - y_pred_s) ** 2)
+
+        mse_comp = float(np.mean(comp_errors))
+        mse_struct = float(np.mean(struct_errors))
+        ratio = float((mse_comp - mse_struct) / (mse_comp + 1e-12))
+        ratio = max(-1.0, min(1.0, ratio))
+
         return {
             "composition_mse": mse_comp,
             "structure_informed_mse": mse_struct,
-            "structure_advantage_ratio": float(ratio),
+            "structure_advantage_ratio": ratio,
+            "note": f"Leave-One-Out CV across {N} joint observations.",
         }

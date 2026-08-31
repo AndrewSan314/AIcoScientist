@@ -264,6 +264,22 @@ class AuIrRhMultimodalOracle:
         else:
             raise ValueError(f"Unsupported action type: {action.action_type}")
 
+    def get_revealed_xrd(self) -> dict[str, ExperimentOutcome]:
+        """Returns a defensive copy of all revealed XRD experiment outcomes."""
+        return {cid: copy.deepcopy(outcome) for cid, outcome in self._revealed_xrd.items()}
+
+    def get_revealed_properties(self) -> dict[str, ExperimentOutcome]:
+        """Returns a defensive copy of all revealed property experiment outcomes."""
+        return {cid: copy.deepcopy(outcome) for cid, outcome in self._revealed_property.items()}
+
+    def get_revealed_xrd_ids(self) -> list[str]:
+        """Returns list of candidate IDs with revealed XRD measurements."""
+        return list(self._revealed_xrd.keys())
+
+    def get_revealed_property_ids(self) -> list[str]:
+        """Returns list of candidate IDs with revealed property measurements."""
+        return list(self._revealed_property.keys())
+
     def get_revealed_state_summary(self) -> dict[str, Any]:
         """Returns observable campaign summary without leaking unobserved hidden data."""
         best_observed_k0 = None

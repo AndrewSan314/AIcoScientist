@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Mapping, Sequence
 
@@ -18,7 +19,12 @@ class HypothesisStatus(str, Enum):
 
 @dataclass
 class ScientificHypothesis:
-    """A structured, methodologically testable scientific hypothesis."""
+    """A structured, methodologically testable scientific predictive hypothesis.
+
+    CLAIM BOUNDARY CONTRACT:
+    - Represents heuristic, evidence-weighted predictive models on observable data.
+    - Does NOT claim causal physical mechanisms, active-site causality, or exact Bayesian posteriors.
+    """
 
     hypothesis_id: str
     title: str
@@ -53,110 +59,152 @@ class ScientificHypothesis:
 
 
 def get_default_hypotheses() -> dict[str, ScientificHypothesis]:
-    """Returns the 3 canonical methodologically testable hypotheses for Au-Ir-Rh materials discovery."""
+    """Returns the 3 canonical methodologically testable predictive hypotheses for Au-Ir-Rh materials discovery."""
     h1 = ScientificHypothesis(
         hypothesis_id="H1",
         title="Direct Composition Hypothesis",
-        statement="Observed electrocatalytic rate constant k0 can be predicted and optimized primarily from elemental composition (Au, Ir, Rh) without requiring structural characterization.",
+        statement="Composition-only explanation is sufficient for predicting observed electrocatalytic rate constant k0 across the ternary composition space.",
         assumptions=[
-            "Smooth kinetic variation across the ternary composition simplex.",
-            "Solid solution behavior dominates without abrupt crystallographic phase boundaries.",
+            "Electrochemical kinetics vary smoothly with nominal elemental composition (Au, Ir, Rh).",
+            "Predictive accuracy is not substantially improved by measuring crystallographic diffraction.",
         ],
         predictive_scope="Continuous ternary composition space (Au-Ir-Rh).",
         required_modalities=["composition", "k0"],
-        falsification_rule="Evidence against H1 increases when structure-informed surrogate significantly outperforms composition-only surrogate on held-out samples, or when compositionally similar pairs exhibit divergent kinetics explained by distinct XRD diffraction phases.",
+        falsification_rule="Evidence against H1 increases when structure-informed models demonstrate out-of-sample predictive advantage over composition-only models on held-out samples.",
     )
 
     h2 = ScientificHypothesis(
         hypothesis_id="H2",
         title="Structure-Mediated Hypothesis",
-        statement="Crystallographic and phase features observable in XRD diffractograms provide predictive information about k0 beyond nominal elemental composition alone.",
+        statement="Revealed XRD crystal structure provides predictive information for k0 beyond nominal composition alone.",
         assumptions=[
-            "Non-equilibrium synthesis produces phase segregation or order-disorder regimes.",
-            "XRD peak positions and intensity distributions directly correlate with catalytic active sites.",
+            "Crystallographic diffraction features capture structural variations across library regions.",
+            "Incorporating structural embeddings into property surrogate models reduces generalization error on held-out samples.",
         ],
         predictive_scope="Multimodal structural-compositional regimes.",
         required_modalities=["composition", "xrd", "k0"],
-        falsification_rule="Evidence against H2 increases if measured XRD diffractograms show no structural distinction or if structure-informed property predictions remain statistically indistinguishable from composition-only baseline.",
+        falsification_rule="Evidence against H2 increases if structure-informed property models yield higher or indistinguishable cross-validation error compared to composition-only models.",
     )
 
     h3 = ScientificHypothesis(
         hypothesis_id="H3",
         title="Local Structural-Regime Hypothesis",
-        statement="Specific localized composition regions contain sharp structural transitions where nominal composition alone is insufficient to infer property behavior.",
+        statement="Some local composition regions exhibit structural characteristics that are poorly captured by smooth composition-based interpolation.",
         assumptions=[
-            "Ternary boundaries (e.g. Au-rich to Ir-rich or Rh-rich transitions) contain localized structural complexity.",
-            "High structural surrogate uncertainty indicates uncharted crystallographic phase mixtures.",
+            "Certain composition neighborhoods experience crystallographic peak shifts or distinct diffraction signatures.",
+            "Regions with high structural surrogate prediction uncertainty correlate with elevated structural novelty.",
         ],
         predictive_scope="High-gradient transition boundaries across ternary libraries.",
         required_modalities=["composition", "xrd"],
-        falsification_rule="Evidence against H3 increases if XRD characterization in high-uncertainty boundary regions reveals only routine, well-interpolated solid solution diffraction patterns with low structural novelty.",
+        falsification_rule="Evidence against H3 increases if XRD measurements in high-uncertainty regions reveal predictable, low-residual diffraction embeddings that match standard interpolation.",
     )
 
     return {"H1": h1, "H2": h2, "H3": h3}
 
 
-class HypothesisEngine:
-    """Manages evidence accumulation and evidence-weighted belief updates for scientific hypotheses.
+@dataclass(frozen=True)
+class EvidenceEvent:
+    """An explicit, immutable scientific observation event."""
 
-    SCIENTIFIC EVIDENCE CONTRACT:
+    event_id: str
+    action_type: str
+    candidate_id: str
+    structure_residual: float | None = None
+    structure_novelty: float | None = None
+    property_residual: float | None = None
+    structure_advantage_ratio: float = 0.0
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
+class HypothesisEngine:
+    """Manages event-driven evidence accumulation and evidence-weighted belief updates.
+
+    SCIENTIFIC EVIDENCE INVARIANTS:
     - Belief values represent evidence-weighted softmax normalized scores, NOT exact Bayesian posteriors.
-    - Evidence is updated exclusively from real revealed experimental observations in the active campaign.
+    - Evidence is updated strictly from real sequential events derived from revealed observations.
+    - Calling update or refit repeatedly WITHOUT new observations does NOT increment evidence counters.
     """
 
     def __init__(self, hypotheses: dict[str, ScientificHypothesis] | None = None) -> None:
         self.hypotheses = hypotheses or get_default_hypotheses()
+        self.evidence_events: list[EvidenceEvent] = []
         self.update_history: list[dict[str, Any]] = []
 
-    def update_evidence(
+    def record_evidence_event(
         self,
-        num_xrd: int,
-        num_prop: int,
-        structure_advantage_ratio: float,
-        structure_novelty_mean: float,
-        structure_residual_norm: float,
-        property_residual_norm: float,
+        event_id: str,
+        action_type: str,
+        candidate_id: str,
+        structure_residual: float | None = None,
+        structure_novelty: float | None = None,
+        property_residual: float | None = None,
+        structure_advantage_ratio: float = 0.0,
     ) -> dict[str, float]:
-        """Calculates evidence scores and updates normalized hypothesis beliefs.
+        """Records a new empirical observation event and updates hypothesis beliefs.
 
-        Returns:
-            Dict mapping hypothesis_id to new normalized belief score.
+        This is the ONLY method that increments supporting/contradicting evidence counts.
         """
-        # Baseline uninformative prior if no evidence
-        if num_xrd == 0 and num_prop == 0:
+        event = EvidenceEvent(
+            event_id=event_id,
+            action_type=action_type,
+            candidate_id=candidate_id,
+            structure_residual=structure_residual,
+            structure_novelty=structure_novelty,
+            property_residual=property_residual,
+            structure_advantage_ratio=structure_advantage_ratio,
+        )
+        self.evidence_events.append(event)
+
+        # 1. Update evidence counters based on event type
+        if action_type == "XRD":
+            if structure_residual is not None and structure_residual > 0.35:
+                self.hypotheses["H3"].supporting_evidence_count += 1
+            else:
+                self.hypotheses["H3"].contradicting_evidence_count += 1
+
+        elif action_type == "PROPERTY":
+            if structure_advantage_ratio > 0.05:
+                self.hypotheses["H2"].supporting_evidence_count += 1
+                self.hypotheses["H1"].contradicting_evidence_count += 1
+            else:
+                self.hypotheses["H1"].supporting_evidence_count += 1
+                self.hypotheses["H2"].contradicting_evidence_count += 1
+
+        return self._recompute_beliefs(structure_advantage_ratio=structure_advantage_ratio)
+
+    def _recompute_beliefs(self, structure_advantage_ratio: float = 0.0) -> dict[str, float]:
+        """Recomputes raw evidence scores and softmax normalized beliefs from accumulated events."""
+        if not self.evidence_events:
             for h in self.hypotheses.values():
                 h.belief_score = 1.0 / len(self.hypotheses)
                 h.raw_evidence_score = 0.0
             return {hid: h.belief_score for hid, h in self.hypotheses.items()}
 
+        # Compute empirical averages over recorded events
+        struct_res_list = [e.structure_residual for e in self.evidence_events if e.structure_residual is not None]
+        struct_nov_list = [e.structure_novelty for e in self.evidence_events if e.structure_novelty is not None]
+        prop_res_list = [e.property_residual for e in self.evidence_events if e.property_residual is not None]
+
+        mean_struct_res = float(np.mean(struct_res_list)) if struct_res_list else 0.0
+        mean_struct_nov = float(np.mean(struct_nov_list)) if struct_nov_list else 0.0
+        mean_prop_res = float(np.mean(prop_res_list)) if prop_res_list else 0.0
+        num_xrd = len(struct_res_list)
+
         # 1. Evidence for H1 (Direct Composition)
         # Favored when property residual is low and structure advantage is low/negative
-        e_h1 = max(-5.0, min(5.0, (1.0 - 2.0 * structure_advantage_ratio) - 0.5 * property_residual_norm))
+        e_h1 = max(-5.0, min(5.0, (1.0 - 2.0 * structure_advantage_ratio) - 0.5 * mean_prop_res))
 
         # 2. Evidence for H2 (Structure-Mediated)
-        # Favored when structural advantage is positive and correlates with revealed XRD observations
+        # Favored when structural advantage is positive from out-of-sample CV
         e_h2 = max(-5.0, min(5.0, (3.0 * structure_advantage_ratio) + (0.5 if num_xrd >= 3 else 0.0)))
 
         # 3. Evidence for H3 (Local Structural-Regime)
         # Favored when structural novelty and residuals in revealed XRDs are high
-        e_h3 = max(-5.0, min(5.0, (2.0 * structure_novelty_mean) + (1.5 * structure_residual_norm) - 0.5))
+        e_h3 = max(-5.0, min(5.0, (2.0 * mean_struct_nov) + (1.5 * mean_struct_res) - 0.5))
 
         self.hypotheses["H1"].raw_evidence_score = float(e_h1)
         self.hypotheses["H2"].raw_evidence_score = float(e_h2)
         self.hypotheses["H3"].raw_evidence_score = float(e_h3)
-
-        # Update evidence counters
-        if structure_advantage_ratio > 0.05:
-            self.hypotheses["H2"].supporting_evidence_count += 1
-            self.hypotheses["H1"].contradicting_evidence_count += 1
-        else:
-            self.hypotheses["H1"].supporting_evidence_count += 1
-            self.hypotheses["H2"].contradicting_evidence_count += 1
-
-        if structure_novelty_mean > 0.3:
-            self.hypotheses["H3"].supporting_evidence_count += 1
-        else:
-            self.hypotheses["H3"].contradicting_evidence_count += 1
 
         # Softmax normalization
         raw_scores = np.array([e_h1, e_h2, e_h3], dtype=np.float64)

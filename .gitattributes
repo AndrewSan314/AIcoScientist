@@ -1,0 +1,15 @@
+# Auto-detect text files and normalize line endings for source code
+* text=auto eol=lf
+
+# Raw scientific datasets must preserve exact byte-for-byte identity across all platforms
+EDX_dataset/** -text
+SECCM_dataset/** -text
+XRD_dataset/** -text
+data/external/** -text
+outputs/**/data_audit.json -text
+*.xy -text
+*.h5 -text
+*.pt -text
+*.db -text
+*.parquet -text
+*.gz -text
