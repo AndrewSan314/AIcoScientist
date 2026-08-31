@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .pytest_tmp/
+.pytest_temp/
 .venv/
 data/experiments.db
 models/*.pth
@@ -47,4 +48,4 @@ outputs/test_tmp/
 outputs/**/*trajectories.csv
 outputs/**/*per_step.csv
 scratch/
-
+*.pdf

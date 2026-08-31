@@ -1,0 +1,9 @@
+# Exact frozen benchmark environment lock for AIcoScientist optimizer infrastructure
+botorch==0.18.1
+torch==2.13.0+cpu
+gpytorch==1.15.2
+pandas==3.0.3
+numpy==2.4.6
+scipy==1.18.0
+scikit-learn==1.9.0
+joblib==1.5.3
