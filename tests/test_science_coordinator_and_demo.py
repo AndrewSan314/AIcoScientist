@@ -1,11 +1,15 @@
 import copy
+import dataclasses
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.datasets.base import DatasetSpec, TwoStageModelSpec
+from src.optimization.botorch_backend import BoTorchBackend
+from src.optimization.objective import OptimizationObjective
 from src.optimization.search_space import ContinuousVariable, SearchSpace
 from src.science.cli import run_synthetic_demo
 from src.science.coordinator import (
@@ -1601,6 +1605,193 @@ def test_resume_authoritative_snapshot_restoration_and_conflict_rejection(tmp_pa
             candidate_pool=modified_cand_pool,
             search_space=adapter.search_space,
         )
+
+
+def test_coordinator_resume_authoritative_objective_and_conflict_rejection(tmp_path: Path) -> None:
+    db_path = tmp_path / "resume_obj_test.db"
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=15, seed=42)
+
+    custom_objective = OptimizationObjective(
+        target_name="y",
+        minimize=False,
+    )
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        objective=custom_objective,
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 650.0})
+    coord.ledger.close()
+
+    # 1. Authoritative objective restoration when objective is omitted
+    resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+        db_path=db_path,
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+    )
+    assert resumed.objective.target_name == "y"
+    assert resumed.objective.minimize is False
+    resumed.ledger.close()
+
+    # 2. Rejection of conflicting minimize direction
+    with pytest.raises(ResumeStateMismatchError, match="Supplied objective minimize=True does not match snapshot objective minimize=False"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+            objective=OptimizationObjective(target_name="y", minimize=True),
+        )
+
+    # 3. Rejection of conflicting target name
+    with pytest.raises(ResumeStateMismatchError, match="Supplied objective target_name 'other_y' does not match snapshot objective target 'y'"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+            objective=OptimizationObjective(target_name="other_y", minimize=False),
+        )
+
+
+def test_coordinator_resume_snapshot_objective_conflict_with_spec(tmp_path: Path) -> None:
+    db_path = tmp_path / "resume_spec_conflict.db"
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=15, seed=42)
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 650.0})
+    coord.ledger.close()
+
+    # Create a spec with conflicting objective direction ("minimize" instead of "maximize")
+    conflicting_spec = dataclasses.replace(adapter.spec, objective="minimize")
+
+    with pytest.raises(ResumeStateMismatchError, match="Snapshot objective minimize=False does not match DatasetSpec objective 'minimize'"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=conflicting_spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+        )
+
+
+def test_coordinator_resume_backend_name_mismatch_and_version_warning(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    db_path = tmp_path / "resume_backend_check.db"
+    adapter = SyntheticScienceAdapter()
+    init_df = adapter.load_initial_dataset(n_samples=4, seed=42)
+    cand_pool = adapter.candidate_space(observed=init_df, n_candidates=15, seed=42)
+
+    coord = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        db_path=db_path,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+
+    rec, _ = coord.propose_next(n_mc_samples=16)
+    coord.record_executed(rec.experiment_id)
+    coord.record_characterization(rec.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord.record_performance(rec.experiment_id, {"y": 650.0})
+    coord.ledger.close()
+
+    # 1. Backend name mismatch via custom dummy backend
+    class CustomBackend:
+        @property
+        def name(self) -> str:
+            return "custom_dummy"
+
+        @property
+        def version(self) -> str:
+            return "1.0.0"
+
+        def propose(self, *args: Any, **kwargs: Any) -> Any:
+            return []
+
+    with pytest.raises(ResumeStateMismatchError, match="Resumed backend name 'custom_dummy' does not match snapshot backend name 'botorch'"):
+        ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+            backend=CustomBackend(),
+        )
+
+    # 2. Version mismatch warning logging on auto-created backend
+    class VersionedBoTorchBackend(BoTorchBackend):
+        @property
+        def version(self) -> str:
+            return "0.0.1_legacy"
+
+    db_path_ver = tmp_path / "resume_backend_ver.db"
+    coord_ver = ScientificClosedLoopCoordinator.initialize_new(
+        spec=adapter.spec,
+        two_stage_spec=adapter.two_stage_spec,
+        initial_data=init_df,
+        candidate_pool=cand_pool,
+        search_space=adapter.search_space,
+        backend=VersionedBoTorchBackend(),
+        db_path=db_path_ver,
+        strategy="expected_improvement",
+        random_state=42,
+    )
+    rec_v, _ = coord_ver.propose_next(n_mc_samples=16)
+    coord_ver.record_executed(rec_v.experiment_id)
+    coord_ver.record_characterization(rec_v.experiment_id, {"z1": 0.1, "z2": 0.2})
+    coord_ver.record_performance(rec_v.experiment_id, {"y": 650.0})
+    coord_ver.ledger.close()
+
+    import logging
+    with caplog.at_level(logging.WARNING):
+        resumed = ScientificClosedLoopCoordinator.resume_from_ledger(
+            db_path=db_path_ver,
+            spec=adapter.spec,
+            two_stage_spec=adapter.two_stage_spec,
+            candidate_pool=cand_pool,
+            search_space=adapter.search_space,
+        )
+        assert "Resuming campaign created under botorch 0.0.1_legacy with runtime botorch" in caplog.text
+        resumed.ledger.close()
+
 
 
 

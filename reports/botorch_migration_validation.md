@@ -20,12 +20,14 @@ The migration from bespoke Bayesian optimization routines to external library de
 
 | Requirement / Invariant | Status | Implementation Details | Test Coverage |
 | :--- | :---: | :--- | :--- |
-| **Coordinator BoTorch Delegation** | **PASS** | `ScientificClosedLoopCoordinator` uses `BoTorchBackend`, `OptimizationObjective`, and `FiniteCandidatePool(strict_identity=True)`. All imports of `ClosedLoopOptimizer` and `OptimizerState` removed. | `tests/test_science_coordinator_and_demo.py` (28 tests), `tests/test_botorch_backend.py` |
+| **Coordinator BoTorch Delegation** | **PASS** | `ScientificClosedLoopCoordinator` uses `BoTorchBackend`, `OptimizationObjective`, and `FiniteCandidatePool(strict_identity=True)`. All imports of `ClosedLoopOptimizer` and `OptimizerState` removed. | `tests/test_science_coordinator_and_demo.py` (32 tests), `tests/test_botorch_backend.py` (65 tests) |
 | **Pure Ledger Authority** | **PASS** | Authoritative state is stored exclusively in SQLite (`ExperimentLedger`). Surrogates and acquisition functions are stateless on-demand projections; resume reconstructs entirely from ledger records. | `test_resume_and_rebuild_from_ledger`, `test_crash_after_invalidation_before_snapshot_reconciles_on_resume` |
+| **Authoritative Objective Restoration** | **PASS** | `OptimizationObjective` is authoritatively restored from snapshot when omitted on resume, and validated against `DatasetSpec` (target column & minimize sense) and explicit caller overrides. | `test_coordinator_resume_authoritative_objective_and_conflict_rejection`, `test_coordinator_resume_snapshot_objective_conflict_with_spec` |
+| **Strategy Alias Canonicalization** | **PASS** | Strategy aliases (`q_nei`, `uniform`, `posterior_mean`, `ts`, etc.) are canonicalized before acquisition evaluation and tracked transparently (`requested_strategy`, `canonical_strategy`, `actual_strategy`). | `test_strategy_aliases_resolve_and_execute`, `test_canonical_strategies_execute` |
 | **Fail-Closed NEI** | **PASS** | Silent fallbacks from NEI to EI have been removed. When `qLogNoisyExpectedImprovement` fails (e.g. ill-conditioned fantasy samples), `BoTorchBackend` raises `AcquisitionEvaluationError`. | `test_fail_closed_nei_raises_acquisition_evaluation_error` |
-| **Rejection of Fake TuRBO Labels** | **PASS** | `turbo_nei`, `turbo_ei`, and `turbo` are rejected with `UnsupportedStrategyError`. No fake aliases or unmanaged trust-region mutations exist. | `test_rejection_of_unsupported_and_fake_turbo_strategies` |
-| **Strict Physical Identity** | **PASS** | `FiniteCandidatePool(strict_identity=True)` preserves distinct candidate IDs even when physical coordinates are identical (e.g. duplicate synthesis attempts or combinatorial repeats). | `test_strict_physical_identity_preserves_distinct_ids_with_identical_coordinates` |
-| **Multi-Strategy Scale Invariance** | **PASS** | Ranking across `greedy`, `gp_ucb`, `expected_improvement`, and `noisy_expected_improvement` is invariant under arbitrary positive affine transformations ($y \to a \cdot y + b, a > 0$). | `test_multi_strategy_scale_invariance`, `test_optimizer_scale_invariance.py` |
+| **Rejection of Fake TuRBO Labels** | **PASS** | `turbo_nei`, `turbo_ei`, and `turbo` are rejected with `UnsupportedStrategyError`. No fake aliases or unmanaged trust-region mutations exist. | `test_retired_strategies_rejected`, `test_rejection_of_unsupported_and_fake_turbo_strategies` |
+| **Strict Physical Identity** | **PASS** | `FiniteCandidatePool(strict_identity=True)` preserves distinct candidate IDs even when physical coordinates are identical (e.g. duplicate synthesis attempts or combinatorial repeats). | `test_strict_physical_identity_preserves_distinct_ids_with_identical_coordinates`, `test_strict_identity_rejects_missing_or_null_candidate_id` |
+| **Multi-Strategy Scale Invariance** | **PASS** | Ranking across `greedy`, `gp_ucb`, `expected_improvement`, `noisy_expected_improvement`, and `thompson` is invariant under arbitrary positive affine transformations ($y \to a \cdot y + b, a > 0$). | `test_multi_strategy_scale_invariance`, `test_thompson_affine_scale_invariance`, `test_optimizer_scale_invariance.py` |
 | **Batch Proposal Metadata** | **PASS** | Proposal metadata explicitly declares `batch_semantics: "top_n_individual_scores"` and `batch_requested: n`. | `test_batch_proposal_semantics_metadata` |
 
 ---
@@ -34,15 +36,15 @@ The migration from bespoke Bayesian optimization routines to external library de
 
 The entire unit and integration test suite was executed against the active BoTorch backend:
 
-- **Total Tests Passed**: **297 / 297 (100% Pass Rate)**
-- **Total Execution Time**: 275.38s (4m 35s)
+- **Total Tests Passed**: **332 / 332 (100% Pass Rate)**
+- **Total Execution Time**: ~560s (Self-contained fast test suite)
 - **Zero Regressions**: 0 failures, 0 errors.
 
 Key Subsystems Tested:
-1. `tests/test_botorch_backend.py` (34 tests): Unit invariants, scale invariance, fail-closed handling, two-stage modeling, ledger rebuilds.
-2. `tests/test_science_coordinator_and_demo.py` (28 tests): Full closed-loop coordinator lifecycle, stage progression, state invalidation, crash reconciliation.
+1. `tests/test_botorch_backend.py` (65 tests): Unit invariants, scale invariance, fail-closed handling, two-stage modeling, ledger rebuilds, alias canonicalization parametrization.
+2. `tests/test_science_coordinator_and_demo.py` (32 tests): Full closed-loop coordinator lifecycle, stage progression, state invalidation, crash reconciliation, authoritative objective restoration, backend version checks.
 3. `tests/test_feconi_benchmark.py` (8 tests): NIST Fe-Co-Ni combinatorial dataset adapter, oracle queries, finite pool constraints.
-4. `tests/test_auirh_benchmark.py` (9 tests): Au-Ir-Rh ternary combinatorial dataset adapter, cross-library transfer diagnostics, oracle firewalling.
+4. `tests/test_auirh_benchmark.py` (9 tests): Au-Ir-Rh ternary combinatorial dataset adapter, cross-library transfer diagnostics, oracle firewalling, verified ground truth optimum.
 5. `tests/test_attia_continuous_benchmark.py` (7 tests): Attia fast-charging battery continuous search space, discrete grid optimum derivation, zero latent leakage.
 
 ---

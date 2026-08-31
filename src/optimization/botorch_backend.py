@@ -190,7 +190,8 @@ class BoTorchBackend(OptimizerBackend):
                 obj,
                 n=n,
                 seed=seed,
-                requested_strat=canonical_strat,
+                requested_strat=requested_strat,
+                canonical_strat=canonical_strat,
             )
 
         # Build PyTorch tensors with double precision (ensuring writable contiguous buffers)
@@ -243,7 +244,7 @@ class BoTorchBackend(OptimizerBackend):
             train_X=train_X,
             train_Y=train_Y,
             X_unseen=X_unseen,
-            strategy=requested_strat,
+            strategy=canonical_strat,
             seed=seed,
             **kwargs,
         )
@@ -270,6 +271,7 @@ class BoTorchBackend(OptimizerBackend):
             prop_meta = {
                 "rank": rank,
                 "requested_strategy": requested_strat,
+                "canonical_strategy": canonical_strat,
                 "actual_strategy": actual_strat_name,
                 "backend_name": self.name,
                 "backend_version": self.version,
@@ -308,6 +310,7 @@ class BoTorchBackend(OptimizerBackend):
         n: int,
         seed: int | None,
         requested_strat: str,
+        canonical_strat: str = "random",
     ) -> list[CandidateProposal]:
         """Proposes random candidates uniformly from unseen pool."""
         rng = np.random.default_rng(seed)
@@ -323,6 +326,7 @@ class BoTorchBackend(OptimizerBackend):
             prop_meta = {
                 "rank": i,
                 "requested_strategy": requested_strat,
+                "canonical_strategy": canonical_strat,
                 "actual_strategy": "uniform_random",
                 "backend_name": self.name,
                 "backend_version": self.version,
@@ -343,8 +347,8 @@ class BoTorchBackend(OptimizerBackend):
                 backend_name=self.name,
                 backend_version=self.version,
                 seed=seed,
-                reason_code="UNIFORM_RANDOM_EXPLORATION",
-                recommendation_reason="Uniform stochastic selection from candidate pool",
+                reason_code="PURE_EXPLORATION",
+                recommendation_reason="Uniform random sampling from finite candidate space",
                 distance_to_nearest_observed=0.0,
                 step=i + 1,
                 metadata=prop_meta,
@@ -369,15 +373,17 @@ class BoTorchBackend(OptimizerBackend):
             actual_strategy: canonical algorithm name
             acquisition_class: exact BoTorch acquisition class evaluated
         """
+        canonical = resolve_strategy(strategy)
+
         # 1. Greedy / Posterior Mean
-        if strategy in {"greedy", "posterior_mean"}:
+        if canonical == "greedy":
             acq_func = PosteriorMean(model=model)
             with torch.no_grad():
                 scores = acq_func(X_unseen.unsqueeze(1))
             return scores.cpu().numpy().astype(float), "posterior_mean", "PosteriorMean"
 
         # 2. GP-UCB
-        elif strategy in {"gp_ucb", "ucb", "upper_confidence_bound"}:
+        elif canonical == "gp_ucb":
             beta = float(kwargs.get("beta", 2.0))
             acq_func = UpperConfidenceBound(model=model, beta=beta)
             with torch.no_grad():
@@ -385,7 +391,7 @@ class BoTorchBackend(OptimizerBackend):
             return scores.cpu().numpy().astype(float), "gp_ucb", "UpperConfidenceBound"
 
         # 3. Expected Improvement (LogEI or analytic EI)
-        elif strategy in {"ei", "expected_improvement", "log_ei", "log_expected_improvement"}:
+        elif canonical == "expected_improvement":
             best_f = train_Y.max()
             try:
                 acq_func = LogExpectedImprovement(model=model, best_f=best_f)
@@ -399,7 +405,7 @@ class BoTorchBackend(OptimizerBackend):
                 return scores.cpu().numpy().astype(float), "expected_improvement", "ExpectedImprovement"
 
         # 4. Noisy Expected Improvement (qLogNEI) - FAILS CLOSED ON ERROR
-        elif strategy in {"nei", "noisy_expected_improvement", "log_nei", "log_noisy_expected_improvement"}:
+        elif canonical == "noisy_expected_improvement":
             try:
                 with torch.no_grad():
                     if seed is not None:
@@ -422,7 +428,7 @@ class BoTorchBackend(OptimizerBackend):
                 ) from exc
 
         # 5. Joint Thompson Sampling (discrete posterior joint draws)
-        elif strategy in {"thompson", "ts", "thompson_sampling"}:
+        elif canonical == "thompson":
             if seed is not None:
                 torch.manual_seed(seed)
             with torch.no_grad():

@@ -950,24 +950,69 @@ class ScientificClosedLoopCoordinator:
                 raise ResumeStateMismatchError(
                     f"Snapshot target column {snap_target!r} does not match DatasetSpec target_column {spec.target_column!r}"
                 )
-            snap_obj = latest_snapshot.get("objective")
-            if snap_obj and isinstance(snap_obj, dict):
-                snap_obj_name = snap_obj.get("target_name")
-                if snap_obj_name and snap_obj_name != spec.target_column:
-                    raise ResumeStateMismatchError(
-                        f"Snapshot objective target {snap_obj_name!r} does not match DatasetSpec target {spec.target_column!r}"
-                    )
-            elif snap_obj and isinstance(snap_obj, str) and snap_obj != spec.objective:
-                raise ResumeStateMismatchError(
-                    f"Snapshot objective {snap_obj!r} does not match DatasetSpec objective {spec.objective!r}"
-                )
             snap_feats = latest_snapshot.get("feature_cols")
             if snap_feats and list(snap_feats) != list(candidate_cols):
                 raise ResumeStateMismatchError(
                     f"Snapshot feature columns {snap_feats} do not match coordinator candidate columns {candidate_cols}"
                 )
 
-            # 3. Strategy restoration or conflict validation
+            # 3. Objective restoration & validation against DatasetSpec and supplied objective
+            snap_obj_raw = latest_snapshot.get("objective")
+            persisted_obj: OptimizationObjective | None = None
+            if isinstance(snap_obj_raw, dict):
+                persisted_obj = OptimizationObjective.from_dict(snap_obj_raw)
+            elif isinstance(snap_obj_raw, str):
+                persisted_obj = OptimizationObjective(
+                    target_name=spec.target_column,
+                    minimize=(snap_obj_raw.strip().lower() == "minimize"),
+                )
+
+            if persisted_obj is not None:
+                # Validate persisted objective against DatasetSpec
+                if persisted_obj.target_name != spec.target_column:
+                    raise ResumeStateMismatchError(
+                        f"Snapshot objective target {persisted_obj.target_name!r} does not match DatasetSpec target {spec.target_column!r}"
+                    )
+                spec_minimize = spec.objective.strip().lower() == "minimize"
+                if persisted_obj.minimize != spec_minimize:
+                    raise ResumeStateMismatchError(
+                        f"Snapshot objective minimize={persisted_obj.minimize} does not match DatasetSpec objective {spec.objective!r} (minimize={spec_minimize})"
+                    )
+
+            if objective is None:
+                if persisted_obj is not None:
+                    final_objective = persisted_obj
+                else:
+                    final_objective = OptimizationObjective(
+                        target_name=spec.target_column,
+                        minimize=(spec.objective.strip().lower() == "minimize"),
+                    )
+            else:
+                supplied_obj = (
+                    objective
+                    if isinstance(objective, OptimizationObjective)
+                    else OptimizationObjective.create(objective, objective=spec.objective)
+                )
+                if persisted_obj is not None:
+                    if supplied_obj.target_name != persisted_obj.target_name:
+                        raise ResumeStateMismatchError(
+                            f"Supplied objective target_name {supplied_obj.target_name!r} does not match snapshot objective target {persisted_obj.target_name!r}"
+                        )
+                    if supplied_obj.minimize != persisted_obj.minimize:
+                        raise ResumeStateMismatchError(
+                            f"Supplied objective minimize={supplied_obj.minimize} does not match snapshot objective minimize={persisted_obj.minimize}"
+                        )
+                    if supplied_obj.constraints != persisted_obj.constraints:
+                        raise ResumeStateMismatchError(
+                            f"Supplied objective constraints {supplied_obj.constraints!r} do not match snapshot objective constraints {persisted_obj.constraints!r}"
+                        )
+                    if supplied_obj.threshold != persisted_obj.threshold:
+                        raise ResumeStateMismatchError(
+                            f"Supplied objective threshold {supplied_obj.threshold!r} does not match snapshot objective threshold {persisted_obj.threshold!r}"
+                        )
+                final_objective = supplied_obj
+
+            # 4. Strategy restoration or conflict validation
             snap_strat = latest_snapshot.get("strategy")
             if strategy is None:
                 final_strategy = snap_strat or "expected_improvement"
@@ -978,7 +1023,7 @@ class ScientificClosedLoopCoordinator:
                     )
                 final_strategy = strategy
 
-            # 4. Random state restoration or conflict validation
+            # 5. Random state restoration or conflict validation
             snap_rand = latest_snapshot.get("random_state")
             if random_state is None:
                 final_random_state = int(snap_rand) if snap_rand is not None else 42
@@ -989,28 +1034,36 @@ class ScientificClosedLoopCoordinator:
                     )
                 final_random_state = random_state
 
-            # 5. Backend restoration or conflict validation
+            # 6. Backend restoration or conflict validation (executed whether supplied or auto-created)
             snap_bname = latest_snapshot.get("backend_name")
             snap_bver = latest_snapshot.get("backend_version")
             if backend is None:
                 final_backend = BoTorchBackend(default_strategy=final_strategy)
             else:
-                if snap_bname and backend.name != snap_bname:
-                    raise ResumeStateMismatchError(
-                        f"Supplied backend name {backend.name!r} does not match snapshot backend name {snap_bname!r}"
-                    )
-                if snap_bver and backend.version != snap_bver:
-                    logger.warning(
-                        "Resumed backend version %r differs from persisted snapshot version %r.",
-                        backend.version,
-                        snap_bver,
-                    )
                 final_backend = backend
+
+            if snap_bname and final_backend.name != snap_bname:
+                raise ResumeStateMismatchError(
+                    f"Resumed backend name {final_backend.name!r} does not match snapshot backend name {snap_bname!r}"
+                )
+            if snap_bver and final_backend.version != snap_bver:
+                logger.warning(
+                    "Resuming campaign created under %s %s with runtime %s %s.",
+                    snap_bname or "backend",
+                    snap_bver,
+                    final_backend.name,
+                    final_backend.version,
+                )
 
         else:
             final_strategy = strategy or "expected_improvement"
             final_random_state = random_state if random_state is not None else 42
             final_backend = backend or BoTorchBackend(default_strategy=final_strategy)
+            final_objective = (
+                objective
+                if isinstance(objective, OptimizationObjective)
+                else OptimizationObjective.create(objective or spec.target_column, objective=spec.objective)
+            )
 
         direct_model = DirectPerformanceModel(two_stage_spec.process_features, spec.target_column, random_state=final_random_state)
         two_stage_model = TwoStageScientificModel(two_stage_spec, random_state=final_random_state)

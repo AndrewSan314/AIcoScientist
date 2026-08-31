@@ -9,11 +9,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.datasets.base import DatasetSpec, TwoStageModelSpec
 from src.optimization.backend import (
+    RETIRED_STRATEGIES,
+    STRATEGY_ALIASES,
+    SUPPORTED_STRATEGIES,
     AcquisitionEvaluationError,
     OptimizerBackend,
     UnsupportedStrategyError,
+    resolve_strategy,
 )
 from src.optimization.botorch_backend import BoTorchBackend
 from src.optimization.finite_pool import FiniteCandidatePool
@@ -580,7 +583,7 @@ def test_fail_closed_nei_raises_acquisition_evaluation_error(sample_candidate_po
                 seed=42,
             )
         assert "Failed to evaluate NEI acquisition function" in str(excinfo.value)
-        assert "nei" in str(excinfo.value)
+        assert "noisy_expected_improvement" in str(excinfo.value) or "nei" in str(excinfo.value)
 
 
 # ---------------------------------------------------------------------------
@@ -783,5 +786,101 @@ def test_auirh_oracle_global_optimum_truth() -> None:
     assert abs(oracle.global_best_value - expected_optimum) < 1e-12
     assert oracle.global_best_candidate_id == "AUIRH_Au-rich_170"
     assert abs(df["k0"].max() - expected_optimum) < 1e-12
+
+
+# ---------------------------------------------------------------------------
+# Requirement 30: All strategy aliases resolve, execute, and record provenance
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("alias,canonical", list(STRATEGY_ALIASES.items()))
+def test_strategy_aliases_resolve_and_execute(
+    sample_candidate_pool: pd.DataFrame,
+    alias: str,
+    canonical: str,
+) -> None:
+    # 1. Alias resolution
+    assert resolve_strategy(alias) == canonical
+
+    # 2. Execution via propose()
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:6].copy()
+
+    proposals = backend.propose(
+        observations=obs_df,
+        candidate_pool=cand_pool,
+        objective="target",
+        feature_columns=["x1", "x2"],
+        candidate_id_column="candidate_id",
+        strategy=alias,
+        n=2,
+        seed=42,
+    )
+    assert len(proposals) == 2
+    for p in proposals:
+        assert p.acquisition_name == alias
+        assert p.metadata["requested_strategy"] == alias
+        assert p.metadata["canonical_strategy"] == canonical
+        assert isinstance(p.metadata["actual_strategy"], str)
+        assert len(p.metadata["actual_strategy"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# Requirement 31: All canonical strategies execute and record provenance
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("canonical", list(SUPPORTED_STRATEGIES))
+def test_canonical_strategies_execute(
+    sample_candidate_pool: pd.DataFrame,
+    canonical: str,
+) -> None:
+    assert resolve_strategy(canonical) == canonical
+
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:6].copy()
+
+    proposals = backend.propose(
+        observations=obs_df,
+        candidate_pool=cand_pool,
+        objective="target",
+        feature_columns=["x1", "x2"],
+        candidate_id_column="candidate_id",
+        strategy=canonical,
+        n=2,
+        seed=42,
+    )
+    assert len(proposals) == 2
+    for p in proposals:
+        assert p.acquisition_name == canonical
+        assert p.metadata["requested_strategy"] == canonical
+        assert p.metadata["canonical_strategy"] == canonical
+        assert isinstance(p.metadata["actual_strategy"], str)
+        assert len(p.metadata["actual_strategy"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# Requirement 32: Retired strategies are strictly rejected
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("retired", list(RETIRED_STRATEGIES))
+def test_retired_strategies_rejected(
+    sample_candidate_pool: pd.DataFrame,
+    retired: str,
+) -> None:
+    with pytest.raises(UnsupportedStrategyError, match="retired"):
+        resolve_strategy(retired)
+
+    backend = BoTorchBackend()
+    cand_pool = sample_candidate_pool[["candidate_id", "x1", "x2"]]
+    obs_df = sample_candidate_pool.iloc[:6].copy()
+
+    with pytest.raises(UnsupportedStrategyError, match="retired"):
+        backend.propose(
+            observations=obs_df,
+            candidate_pool=cand_pool,
+            objective="target",
+            feature_columns=["x1", "x2"],
+            candidate_id_column="candidate_id",
+            strategy=retired,
+        )
+
 
 
