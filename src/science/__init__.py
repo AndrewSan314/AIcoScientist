@@ -13,10 +13,21 @@ from __future__ import annotations
 
 from src.science.actions import (
     ActionRecommendation,
+    ActionType,
     CounterfactualAlternative,
     ExperimentActionType,
     ExperimentOutcome,
     ScientificAction,
+    normalize_action_type,
+)
+from src.science.domain import (
+    ExperimentExecutor,
+    HypothesisProvider,
+    MaterialDomainAdapter,
+    MaterialDomainConfig,
+    ModalityDefinition,
+    ObjectiveDefinition,
+    ObjectiveDirection,
 )
 from src.science.agents import (
     AgentPerspective,
@@ -59,6 +70,7 @@ from src.science.xrd_representation import XRDRepresentationExtractor
 
 __all__ = [
     "ActionRecommendation",
+    "ActionType",
     "AgentPerspective",
     "AutonomousDiscoveryEngine",
     "CounterfactualAlternative",
@@ -66,16 +78,23 @@ __all__ = [
     "EvidenceAuditorAgent",
     "ExperimentActionType",
     "ExperimentDesignerAgent",
+    "ExperimentExecutor",
     "ExperimentLedger",
     "ExperimentOutcome",
     "ExperimentStage",
     "FalsificationScientistAgent",
     "HypothesisEngine",
+    "HypothesisProvider",
     "HypothesisScientistAgent",
     "HypothesisStatus",
     "InformationHorizonError",
+    "MaterialDomainAdapter",
+    "MaterialDomainConfig",
+    "ModalityDefinition",
     "MultiAgentPresentationLayer",
     "NextBestExperimentPolicy",
+    "ObjectiveDefinition",
+    "ObjectiveDirection",
     "PendingExperimentError",
     "ScientificAction",
     "ScientificClosedLoopCoordinator",
@@ -97,5 +116,6 @@ __all__ = [
     "get_default_hypotheses",
     "get_environment_provenance",
     "get_git_provenance",
+    "normalize_action_type",
     "validate_record_against_spec",
 ]

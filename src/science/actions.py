@@ -7,10 +7,20 @@ from typing import Any, Mapping, Sequence
 
 
 class ExperimentActionType(str, Enum):
-    """Supported scientific experimental measurement action types."""
+    """Supported scientific experimental measurement action types (Au-Ir-Rh compatibility)."""
 
     XRD = "XRD"
     PROPERTY = "PROPERTY"
+
+
+ActionType = str | ExperimentActionType
+
+
+def normalize_action_type(action_type: ActionType) -> str:
+    """Normalizes an action type (enum or string) to a canonical string identifier."""
+    if isinstance(action_type, Enum):
+        return str(action_type.value)
+    return str(action_type)
 
 
 @dataclass(frozen=True)
@@ -19,7 +29,7 @@ class ScientificAction:
 
     action_id: str
     candidate_id: str
-    action_type: ExperimentActionType
+    action_type: ActionType
     estimated_cost: float = 1.0
     requested_at_step: int = 0
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -28,7 +38,7 @@ class ScientificAction:
         return {
             "action_id": self.action_id,
             "candidate_id": self.candidate_id,
-            "action_type": self.action_type.value,
+            "action_type": normalize_action_type(self.action_type),
             "estimated_cost": self.estimated_cost,
             "requested_at_step": self.requested_at_step,
             "metadata": dict(self.metadata),
@@ -36,10 +46,15 @@ class ScientificAction:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ScientificAction:
+        raw_act = data["action_type"]
+        try:
+            act_type: ActionType = ExperimentActionType(raw_act)
+        except ValueError:
+            act_type = str(raw_act)
         return cls(
             action_id=str(data["action_id"]),
             candidate_id=str(data["candidate_id"]),
-            action_type=ExperimentActionType(data["action_type"]),
+            action_type=act_type,
             estimated_cost=float(data.get("estimated_cost", 1.0)),
             requested_at_step=int(data.get("requested_at_step", 0)),
             metadata=dict(data.get("metadata", {})),
@@ -52,7 +67,7 @@ class ExperimentOutcome:
 
     action_id: str
     candidate_id: str
-    action_type: ExperimentActionType
+    action_type: ActionType
     revealed_data: dict[str, Any]  # e.g., {'k0': 0.0142} or {'two_theta': [...], 'intensity': [...]}
     provenance: dict[str, Any] = field(default_factory=dict)
     oracle_timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -62,7 +77,7 @@ class ExperimentOutcome:
         return {
             "action_id": self.action_id,
             "candidate_id": self.candidate_id,
-            "action_type": self.action_type.value,
+            "action_type": normalize_action_type(self.action_type),
             "revealed_data": dict(self.revealed_data),
             "provenance": dict(self.provenance),
             "oracle_timestamp": self.oracle_timestamp,
@@ -71,10 +86,15 @@ class ExperimentOutcome:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ExperimentOutcome:
+        raw_act = data["action_type"]
+        try:
+            act_type: ActionType = ExperimentActionType(raw_act)
+        except ValueError:
+            act_type = str(raw_act)
         return cls(
             action_id=str(data["action_id"]),
             candidate_id=str(data["candidate_id"]),
-            action_type=ExperimentActionType(data["action_type"]),
+            action_type=act_type,
             revealed_data=dict(data["revealed_data"]),
             provenance=dict(data.get("provenance", {})),
             oracle_timestamp=str(data.get("oracle_timestamp", datetime.now(timezone.utc).isoformat())),
@@ -87,7 +107,7 @@ class CounterfactualAlternative:
     """A scored alternative action evaluated during next-best-experiment decision making."""
 
     candidate_id: str
-    action_type: ExperimentActionType
+    action_type: ActionType
     total_value: float
     scientific_information_value: float
     discovery_value: float
@@ -98,7 +118,7 @@ class CounterfactualAlternative:
     def to_dict(self) -> dict[str, Any]:
         return {
             "candidate_id": self.candidate_id,
-            "action_type": self.action_type.value,
+            "action_type": normalize_action_type(self.action_type),
             "total_value": self.total_value,
             "scientific_information_value": self.scientific_information_value,
             "discovery_value": self.discovery_value,

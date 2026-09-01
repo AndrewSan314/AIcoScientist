@@ -10,7 +10,7 @@ from sklearn.cluster import KMeans
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RBF, WhiteKernel
 
-from src.science.actions import ExperimentActionType
+from src.science.actions import ActionType, ExperimentActionType, normalize_action_type
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ class PredictiveDistribution:
         Identifier of the hypothesis generating this prediction (e.g. 'H1', 'H2', 'H3').
     candidate_id : str
         Identifier of the physical candidate.
-    action_type : ExperimentActionType
-        Measurement modality ('XRD' or 'PROPERTY').
+    action_type : ActionType
+        Measurement modality (e.g. 'XRD', 'PROPERTY', 'SEM', etc.).
     mean : np.ndarray
         Predictive mean array (shape (1,) for scalar property k0; shape (D,) for D-dimensional XRD embedding).
     variance : np.ndarray
@@ -37,7 +37,7 @@ class PredictiveDistribution:
 
     hypothesis_id: str
     candidate_id: str
-    action_type: ExperimentActionType
+    action_type: ActionType
     mean: np.ndarray
     variance: np.ndarray
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -127,7 +127,7 @@ class ScientificHypothesisModel(Protocol):
     def predict_observation(
         self,
         candidate_id: str,
-        action_type: ExperimentActionType,
+        action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
     ) -> PredictiveDistribution:
@@ -142,14 +142,14 @@ class ScientificHypothesisModel(Protocol):
         """Evaluates empirical log-likelihood of observation under this hypothesis."""
         ...
 
-    def supports_action(self, action_type: ExperimentActionType) -> bool:
+    def supports_action(self, action_type: ActionType) -> bool:
         """Returns whether this hypothesis can predict outcomes for action_type."""
         ...
 
     def falsification_summary(
         self,
         candidate_id: str,
-        action_type: ExperimentActionType,
+        action_type: ActionType,
         composition: np.ndarray,
     ) -> str:
         """Returns explicit quantitative pre-conditions that would refute this hypothesis."""
@@ -967,27 +967,29 @@ class HypothesisEnsemble:
     def predict_all(
         self,
         candidate_id: str,
-        action_type: ExperimentActionType,
+        action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
+        **kwargs: Any,
     ) -> dict[str, PredictiveDistribution]:
         """Generates predictive distributions for all hypotheses for a given action."""
-        return {
-            hid: h.predict_observation(
-                candidate_id=candidate_id,
-                action_type=action_type,
-                composition=composition,
-                observed_xrd_embedding=observed_xrd_embedding,
-            )
-            for hid, h in self.hypotheses.items()
-            if h.supports_action(action_type)
-        }
+        res: dict[str, PredictiveDistribution] = {}
+        for hid, h in self.hypotheses.items():
+            if h.supports_action(action_type):
+                res[hid] = h.predict_observation(
+                    candidate_id=candidate_id,
+                    action_type=action_type,
+                    composition=composition,
+                    observed_xrd_embedding=observed_xrd_embedding,
+                    **kwargs,
+                )
+        return res
 
     def record_observation_and_update(
         self,
         action_id: str,
         candidate_id: str,
-        action_type: ExperimentActionType,
+        action_type: ActionType,
         observation: np.ndarray | float,
         pre_predictions: dict[str, PredictiveDistribution],
     ) -> dict[str, Any]:
@@ -1010,7 +1012,7 @@ class HypothesisEnsemble:
             "step": len(self.evidence_history) + 1,
             "action_id": action_id,
             "candidate_id": candidate_id,
-            "action_type": action_type.value,
+            "action_type": normalize_action_type(action_type),
             "log_predictive_scores": log_scores,
             "before_beliefs": before_beliefs,
             "after_beliefs": after_beliefs,

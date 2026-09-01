@@ -7,7 +7,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from scipy.special import logsumexp
 
-from src.science.actions import ExperimentActionType
+from src.science.actions import ActionType, ExperimentActionType
 from src.science.hypothesis_models import HypothesisEnsemble, PredictiveDistribution
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class DiscriminationEvaluation:
     """Quantitative summary of hypothesis discrimination value for a single candidate action."""
 
     candidate_id: str
-    action_type: ExperimentActionType
+    action_type: ActionType
     hypothesis_information_gain: float
     current_entropy: float
     expected_posterior_entropy: float
@@ -50,7 +50,7 @@ class HypothesisInformationGainEstimator:
     def evaluate_action_discrimination(
         self,
         candidate_id: str,
-        action_type: ExperimentActionType,
+        action_type: ActionType,
         composition: np.ndarray,
         ensemble: HypothesisEnsemble,
         observed_xrd_embedding: np.ndarray | None = None,
@@ -89,7 +89,8 @@ class HypothesisInformationGainEstimator:
             )
 
         # 3. Compute pairwise disagreement metrics
-        if action_type == ExperimentActionType.PROPERTY:
+        first_pred = next(iter(preds.values()))
+        if len(first_pred.mean) == 1:
             means = [preds[hid].mean[0] for hid in hids if hid in preds]
             prop_disagreement = float(np.var(means)) if len(means) > 1 else 0.0
             struct_disagreement = 0.0

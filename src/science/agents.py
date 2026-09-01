@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
-from src.science.actions import ActionRecommendation, ExperimentActionType
+from src.science.actions import ActionRecommendation, ExperimentActionType, normalize_action_type
 from src.science.hypotheses import HypothesisEngine, ScientificHypothesis
 
 
@@ -108,12 +108,14 @@ class ExperimentDesignerAgent:
             f"(Information Score: {recommendation.scientific_information_value:.3f}, Discovery Score: {recommendation.discovery_value:.3f}, Cost Penalty: {recommendation.cost_penalty:.3f})."
         )
 
+        act_str = normalize_action_type(recommendation.action.action_type)
         contrast_points = [
-            f"Recommended: {recommendation.action.action_type.value} on {recommendation.action.candidate_id} (Net Value: {recommendation.total_value:.2f})"
+            f"Recommended: {act_str} on {recommendation.action.candidate_id} (Net Value: {recommendation.total_value:.2f})"
         ]
         for alt in recommendation.alternatives:
+            alt_act_str = normalize_action_type(alt.action_type)
             contrast_points.append(
-                f"Alternative: {alt.action_type.value} on {alt.candidate_id} -> {alt.contrastive_rationale}"
+                f"Alternative: {alt_act_str} on {alt.candidate_id} -> {alt.contrastive_rationale}"
             )
 
         return AgentPerspective(

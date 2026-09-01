@@ -9,9 +9,11 @@ import pandas as pd
 
 from src.science.actions import (
     ActionRecommendation,
+    ActionType,
     CounterfactualAlternative,
     ExperimentActionType,
     ScientificAction,
+    normalize_action_type,
 )
 from src.science.falsification.information_gain import (
     DiscriminationEvaluation,
@@ -69,88 +71,134 @@ class FalsificationFirstPolicy:
         self.cost_exponent = float(cost_exponent)
         self.hig_estimator = HypothesisInformationGainEstimator()
 
+    def _resolve_feature_cols(self, candidate_pool_df: pd.DataFrame) -> list[str]:
+        """Resolves feature columns dynamically from candidate pool schema."""
+        if all(col in candidate_pool_df.columns for col in ["Au", "Ir", "Rh"]):
+            return ["Au", "Ir", "Rh"]
+        non_feature_cols = {"candidate_id", "Library", "Area", "step", "created_at"}
+        return [c for c in candidate_pool_df.columns if c not in non_feature_cols]
+
     def evaluate_all_actions(
         self,
         candidate_pool_df: pd.DataFrame,
-        observed_xrd_ids: set[str],
-        observed_property_ids: set[str],
-        ensemble: HypothesisEnsemble,
+        observed_xrd_ids: set[str] | None = None,
+        observed_property_ids: set[str] | None = None,
+        ensemble: HypothesisEnsemble | None = None,
         property_discovery_scores: Mapping[str, float] | None = None,
         observed_xrd_embeddings_map: Mapping[str, np.ndarray] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
         step: int = 0,
+        valid_actions: Sequence[ScientificAction] | None = None,
     ) -> list[dict[str, Any]]:
         """Evaluates and ranks all valid candidate actions under current scientific hypotheses."""
-        comp_cols = ["Au", "Ir", "Rh"]
+        comp_cols = self._resolve_feature_cols(candidate_pool_df)
         cids = candidate_pool_df["candidate_id"].tolist()
         comps = candidate_pool_df[comp_cols].to_numpy(dtype=np.float64)
         disc_scores = property_discovery_scores or {}
         xrd_embs_map = observed_xrd_embeddings_map or {}
+        obs_xrd = observed_xrd_ids or set()
+        obs_prop = observed_property_ids or set()
+
+        if ensemble is None:
+            ensemble = HypothesisEnsemble()
 
         candidate_actions: list[dict[str, Any]] = []
 
-        # 1. Evaluate valid XRD actions
-        for i, cid in enumerate(cids):
-            if cid in observed_xrd_ids:
-                continue
+        if valid_actions is not None:
+            cand_map = {row["candidate_id"]: comps[idx] for idx, row in candidate_pool_df.iterrows()}
+            for act in valid_actions:
+                cid = act.candidate_id
+                comp = cand_map.get(cid)
+                if comp is None:
+                    continue
+                obs_emb = xrd_embs_map.get(cid)
+                eval_res = self.hig_estimator.evaluate_action_discrimination(
+                    candidate_id=cid,
+                    action_type=act.action_type,
+                    composition=comp,
+                    ensemble=ensemble,
+                    observed_xrd_embedding=obs_emb,
+                    fast_mode=fast_mode,
+                    seed=seed,
+                )
+                raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+                candidate_actions.append(
+                    {
+                        "candidate_id": cid,
+                        "action_type": act.action_type,
+                        "raw_hig": eval_res.hypothesis_information_gain,
+                        "raw_disc": raw_botorch_acq,
+                        "raw_cost": float(act.estimated_cost),
+                        "property_disagreement": eval_res.property_disagreement,
+                        "structure_disagreement": eval_res.structure_disagreement,
+                        "current_entropy": eval_res.current_entropy,
+                        "expected_entropy": eval_res.expected_posterior_entropy,
+                        "predictions": eval_res.predictions,
+                    }
+                )
+        else:
+            # 1. Evaluate valid XRD actions
+            for i, cid in enumerate(cids):
+                if cid in obs_xrd:
+                    continue
 
-            eval_res = self.hig_estimator.evaluate_action_discrimination(
-                candidate_id=cid,
-                action_type=ExperimentActionType.XRD,
-                composition=comps[i],
-                ensemble=ensemble,
-                fast_mode=fast_mode,
-                seed=seed,
-            )
+                eval_res = self.hig_estimator.evaluate_action_discrimination(
+                    candidate_id=cid,
+                    action_type=ExperimentActionType.XRD,
+                    composition=comps[i],
+                    ensemble=ensemble,
+                    fast_mode=fast_mode,
+                    seed=seed,
+                )
 
-            candidate_actions.append(
-                {
-                    "candidate_id": cid,
-                    "action_type": ExperimentActionType.XRD,
-                    "raw_hig": eval_res.hypothesis_information_gain,
-                    "raw_disc": 0.0,  # Characterization does not measure property k0
-                    "raw_cost": self.cost_xrd,
-                    "property_disagreement": eval_res.property_disagreement,
-                    "structure_disagreement": eval_res.structure_disagreement,
-                    "current_entropy": eval_res.current_entropy,
-                    "expected_entropy": eval_res.expected_posterior_entropy,
-                    "predictions": eval_res.predictions,
-                }
-            )
+                candidate_actions.append(
+                    {
+                        "candidate_id": cid,
+                        "action_type": ExperimentActionType.XRD,
+                        "raw_hig": eval_res.hypothesis_information_gain,
+                        "raw_disc": 0.0,  # Characterization does not measure property k0
+                        "raw_cost": self.cost_xrd,
+                        "property_disagreement": eval_res.property_disagreement,
+                        "structure_disagreement": eval_res.structure_disagreement,
+                        "current_entropy": eval_res.current_entropy,
+                        "expected_entropy": eval_res.expected_posterior_entropy,
+                        "predictions": eval_res.predictions,
+                    }
+                )
 
-        # 2. Evaluate valid PROPERTY actions
-        for i, cid in enumerate(cids):
-            if cid in observed_property_ids:
-                continue
+            # 2. Evaluate valid PROPERTY actions
+            for i, cid in enumerate(cids):
+                if cid in obs_prop:
+                    continue
 
-            obs_emb = xrd_embs_map.get(cid)
-            eval_res = self.hig_estimator.evaluate_action_discrimination(
-                candidate_id=cid,
-                action_type=ExperimentActionType.PROPERTY,
-                composition=comps[i],
-                ensemble=ensemble,
-                observed_xrd_embedding=obs_emb,
-                fast_mode=fast_mode,
-                seed=seed,
-            )
+                obs_emb = xrd_embs_map.get(cid)
+                eval_res = self.hig_estimator.evaluate_action_discrimination(
+                    candidate_id=cid,
+                    action_type=ExperimentActionType.PROPERTY,
+                    composition=comps[i],
+                    ensemble=ensemble,
+                    observed_xrd_embedding=obs_emb,
+                    fast_mode=fast_mode,
+                    seed=seed,
+                )
 
-            raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+                raw_botorch_acq = float(disc_scores.get(cid, 0.0))
 
-            candidate_actions.append(
-                {
-                    "candidate_id": cid,
-                    "action_type": ExperimentActionType.PROPERTY,
-                    "raw_hig": eval_res.hypothesis_information_gain,
-                    "raw_disc": raw_botorch_acq,
-                    "raw_cost": self.cost_property,
-                    "property_disagreement": eval_res.property_disagreement,
-                    "structure_disagreement": eval_res.structure_disagreement,
-                    "current_entropy": eval_res.current_entropy,
-                    "expected_entropy": eval_res.expected_posterior_entropy,
-                    "predictions": eval_res.predictions,
-                }
-            )
+                candidate_actions.append(
+                    {
+                        "candidate_id": cid,
+                        "action_type": ExperimentActionType.PROPERTY,
+                        "raw_hig": eval_res.hypothesis_information_gain,
+                        "raw_disc": raw_botorch_acq,
+                        "raw_cost": self.cost_property,
+                        "property_disagreement": eval_res.property_disagreement,
+                        "structure_disagreement": eval_res.structure_disagreement,
+                        "current_entropy": eval_res.current_entropy,
+                        "expected_entropy": eval_res.expected_posterior_entropy,
+                        "predictions": eval_res.predictions,
+                    }
+                )
 
         if not candidate_actions:
             return []
@@ -159,19 +207,21 @@ class FalsificationFirstPolicy:
         all_higs = [a["raw_hig"] for a in candidate_actions]
         min_hig, max_hig = min(all_higs), max(all_higs)
 
-        prop_discs = [a["raw_disc"] for a in candidate_actions if a["action_type"] == ExperimentActionType.PROPERTY]
+        is_prop_act = lambda a: normalize_action_type(a["action_type"]) in ("PROPERTY", "CAPACITY_TEST") or a["raw_disc"] > 0.0
+        prop_discs = [a["raw_disc"] for a in candidate_actions if is_prop_act(a)]
         min_p_disc = min(prop_discs) if prop_discs else 0.0
         max_p_disc = max(prop_discs) if prop_discs else 1.0
 
-        max_cost = max(self.cost_xrd, self.cost_property, 1.0)
+        all_costs = [a["raw_cost"] for a in candidate_actions]
+        max_cost = max(all_costs + [self.cost_xrd, self.cost_property, 1.0])
 
         scored_actions: list[dict[str, Any]] = []
         for a in candidate_actions:
             # Min-max normalized HIG
             hig_norm = (a["raw_hig"] - min_hig) / (max_hig - min_hig + 1e-12) if max_hig > min_hig else a["raw_hig"]
 
-            # Min-max normalized Discovery score (0 for XRD)
-            if a["action_type"] == ExperimentActionType.PROPERTY and prop_discs and max_p_disc > min_p_disc:
+            # Min-max normalized Discovery score
+            if is_prop_act(a) and prop_discs and max_p_disc > min_p_disc:
                 disc_norm = (a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12)
             else:
                 disc_norm = 0.0
@@ -202,16 +252,20 @@ class FalsificationFirstPolicy:
     def recommend_next_experiment(
         self,
         candidate_pool_df: pd.DataFrame,
-        observed_xrd_ids: set[str],
-        observed_property_ids: set[str],
-        ensemble: HypothesisEnsemble,
+        observed_xrd_ids: set[str] | None = None,
+        observed_property_ids: set[str] | None = None,
+        ensemble: HypothesisEnsemble | None = None,
         property_discovery_scores: Mapping[str, float] | None = None,
         observed_xrd_embeddings_map: Mapping[str, np.ndarray] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
         step: int = 0,
+        valid_actions: Sequence[ScientificAction] | None = None,
     ) -> ActionRecommendation:
         """Selects top-ranked next experiment, generating contrastive counterfactuals and falsification criteria."""
+        if ensemble is None:
+            ensemble = HypothesisEnsemble()
+
         scored = self.evaluate_all_actions(
             candidate_pool_df=candidate_pool_df,
             observed_xrd_ids=observed_xrd_ids,
@@ -222,6 +276,7 @@ class FalsificationFirstPolicy:
             fast_mode=fast_mode,
             seed=seed,
             step=step,
+            valid_actions=valid_actions,
         )
 
         if not scored:
@@ -232,8 +287,9 @@ class FalsificationFirstPolicy:
         beliefs = ensemble.get_beliefs()
         dominant_h = max(beliefs.keys(), key=lambda h: beliefs[h])
 
+        top_act_str = normalize_action_type(top["action_type"])
         act = ScientificAction(
-            action_id=f"rec_step_{step+1:03d}_{top['action_type'].value}_{top['candidate_id']}",
+            action_id=f"rec_step_{step+1:03d}_{top_act_str}_{top['candidate_id']}",
             candidate_id=top["candidate_id"],
             action_type=top["action_type"],
             estimated_cost=top["raw_cost"],
@@ -252,14 +308,15 @@ class FalsificationFirstPolicy:
             if len(alternatives) >= 2:
                 break
 
+            alt_act_str = normalize_action_type(alt["action_type"])
             if alt["action_type"] != top["action_type"]:
                 if alt["action_type"] == ExperimentActionType.PROPERTY:
                     trait = f"higher predicted discovery score ({alt['normalized_disc']:.2f})"
                 else:
                     trait = "lower measurement cost"
                 contrast = (
-                    f"Action {alt['action_type'].value} on {alt['candidate_id']} has {trait} "
-                    f"but net scientific value ({alt['total_value']:.2f}) is lower than recommended {top['action_type'].value} ({top['total_value']:.2f})."
+                    f"Action {alt_act_str} on {alt['candidate_id']} has {trait} "
+                    f"but net scientific value ({alt['total_value']:.2f}) is lower than recommended {top_act_str} ({top['total_value']:.2f})."
                 )
             else:
                 contrast = (
@@ -281,14 +338,21 @@ class FalsificationFirstPolicy:
             )
 
         # Falsification conditions
-        cand_comp = candidate_pool_df[candidate_pool_df["candidate_id"] == top["candidate_id"]][["Au", "Ir", "Rh"]].iloc[0].to_numpy()
+        comp_cols = self._resolve_feature_cols(candidate_pool_df)
+        cand_comp = candidate_pool_df[candidate_pool_df["candidate_id"] == top["candidate_id"]][comp_cols].iloc[0].to_numpy(dtype=np.float64)
         falsification = ensemble.hypotheses[dominant_h].falsification_summary(
             candidate_id=top["candidate_id"],
             action_type=top["action_type"],
             composition=cand_comp,
         )
 
-        action_name = "XRD Characterization" if top["action_type"] == ExperimentActionType.XRD else "SECCM Property Test"
+        if top_act_str == "XRD":
+            action_name = "XRD Characterization"
+        elif top_act_str == "PROPERTY":
+            action_name = "SECCM Property Test"
+        else:
+            action_name = f"{top_act_str} Test"
+
         rationale = (
             f"Selects {action_name} for candidate '{top['candidate_id']}' (Net Scientific Value: {top['total_value']:.3f}). "
             f"Expected Hypothesis Information Gain is {top['raw_hig']:.3f} nats (expected posterior entropy: {top['expected_entropy']:.3f} nats) "
@@ -302,7 +366,7 @@ class FalsificationFirstPolicy:
             f"Structure disagreement: {top['structure_disagreement']:.4f}",
         ]
         for hid, pred in top["predictions"].items():
-            if top["action_type"] == ExperimentActionType.PROPERTY:
+            if len(pred.mean) == 1:
                 evidence.append(f"{hid} predicted k0 mean: {pred.mean[0]:.5f} cm/s (var: {pred.variance[0]:.2e})")
             else:
                 evidence.append(f"{hid} predicted XRD emb[0]: {pred.mean[0]:.3f} (var: {pred.variance[0]:.2e})")
