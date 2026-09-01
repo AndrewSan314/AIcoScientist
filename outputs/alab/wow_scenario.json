@@ -1,261 +1,143 @@
 {
-  "title": "A-Lab Precursor Genome Autonomous Scientific Discovery Campaign",
-  "domain_id": "alab_precursor_genome",
-  "objective": "reaction_conversion",
-  "initial_bootstrap_count": 4,
-  "trajectory_steps": 5,
+  "scenario_name": "A-Lab Precursor Genome Multi-Modal Falsification & Discovery Demo",
+  "domain": "alab_precursor_genome",
+  "policy": "HYBRID",
+  "seed": 42,
+  "bootstrap_candidates": 8,
+  "bootstrap_cost": 12.0,
+  "final_max_utility": 1.0,
+  "first_discovery_budget": 24.0,
+  "total_budget_spent": 26.0,
+  "initial_entropy_nats": 1.0986,
+  "final_entropy_nats": 0.6931,
+  "entropy_reduction_nats": 0.4055,
+  "final_dominant_hypothesis": "precursor_thermodynamics",
   "steps": [
     {
       "step": 1,
-      "selected_candidate_id": "PG_0104",
-      "action_type": "REFINEMENT",
-      "estimated_cost": 0.5,
-      "candidate_metadata": {
-        "target_compound": "Ba2Ag2C2O7",
-        "precursor_1": "Ag2O",
-        "precursor_2": "BaCO3",
-        "heating_temperature_c": 200.0,
-        "heating_time_minutes": 240.0,
-        "reaction_energy_ev_per_atom": 0.0
+      "action_type": "OUTCOME_TEST",
+      "candidate_id": "PG_0547",
+      "cost": 2.0,
+      "total_cost_cumulative": 14.0,
+      "max_utility": 0.75,
+      "normalized_hig": 0.0748,
+      "raw_hig_nats": 0.0821,
+      "discovery_value": 0.9763,
+      "hypothesis_entropy_nats": 0.8829,
+      "beliefs": {
+        "precursor_thermodynamics": 0.46891895744286083,
+        "process_kinetics": 0.062162073347295836,
+        "structure_phase_informed": 0.46891896920984333
       },
-      "score_components": {
-        "total_value": 1.1499999999988386,
-        "scientific_information_value": 0.9999999999990323,
-        "discovery_value": 0.0,
-        "cost_penalty": 0.05,
-        "raw_hig": 1.0335245545649916
-      },
-      "hypothesis_beliefs_before": {
-        "precursor_thermodynamics": 0.3333333333333333,
-        "process_kinetics": 0.3333333333333333,
-        "structure_phase_informed": 0.3333333333333333
-      },
-      "hypothesis_beliefs_after": {
-        "precursor_thermodynamics": 0.9999999999816609,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 1.8338631615652228e-11
-      },
-      "revealed_data_summary": {
-        "refinement_features": [
-          0.9415,
-          0.0585,
-          3.0,
-          5.83
-        ],
-        "phase_weights": {
-          "BaCO3_62_(icsd_166091)-0": 0.7392,
-          "Ag_225_(icsd_604631)-2": 0.2023,
-          "Ag2O_224_(icsd_173984)-0": 0.0585
-        },
-        "rwp": 5.83,
-        "target_fraction": 0.9415
-      },
-      "scientific_rationale": "Selects REFINEMENT for candidate 'PG_0104' (Net Scientific Value: 1.150). Expected Hypothesis Information Gain is 1.034 nats (expected posterior entropy: 0.065 nats) under policy mode 'hybrid'."
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_0547' (Net Scientific Value: 0.536). Expected Hypothesis Information Gain is 0.082 nats (expected posterior entropy: 1.016 nats) under policy mode 'hybrid'."
     },
     {
       "step": 2,
-      "selected_candidate_id": "PG_1346",
       "action_type": "OUTCOME_TEST",
-      "estimated_cost": 2.0,
-      "candidate_metadata": {
-        "target_compound": "Ti2Fe2O7",
-        "precursor_1": "Fe2O3",
-        "precursor_2": "TiO2",
-        "heating_temperature_c": 1000.0,
-        "heating_time_minutes": 60.0,
-        "reaction_energy_ev_per_atom": 0.0
+      "candidate_id": "PG_0517",
+      "cost": 2.0,
+      "total_cost_cumulative": 16.0,
+      "max_utility": 0.75,
+      "normalized_hig": 0.1597,
+      "raw_hig_nats": 0.1755,
+      "discovery_value": 0.8317,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.500375526379584,
+        "process_kinetics": 3.564963669754716e-218,
+        "structure_phase_informed": 0.49962447362041607
       },
-      "score_components": {
-        "total_value": 0.9960362070456006,
-        "scientific_information_value": 0.9966968392046672,
-        "discovery_value": 0.0,
-        "cost_penalty": 0.2,
-        "raw_hig": 3.0174033326290637e-10
-      },
-      "hypothesis_beliefs_before": {
-        "precursor_thermodynamics": 0.9999999999816609,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 1.8338631615652228e-11
-      },
-      "hypothesis_beliefs_after": {
-        "precursor_thermodynamics": 0.035564485024834294,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.964435514975164
-      },
-      "revealed_data_summary": {
-        "reaction_conversion": 1.0,
-        "reaction_category": "completely_reacted"
-      },
-      "scientific_rationale": "Selects OUTCOME_TEST for candidate 'PG_1346' (Net Scientific Value: 0.996). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'hybrid'."
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_0517' (Net Scientific Value: 0.505). Expected Hypothesis Information Gain is 0.175 nats (expected posterior entropy: 0.707 nats) under policy mode 'hybrid'."
     },
     {
       "step": 3,
-      "selected_candidate_id": "PG_3031",
-      "action_type": "REFINEMENT",
-      "estimated_cost": 0.5,
-      "candidate_metadata": {
-        "target_compound": "MoPH9N2O7",
-        "precursor_1": "MoO3",
-        "precursor_2": "(NH4)2HPO4",
-        "heating_temperature_c": 200.0,
-        "heating_time_minutes": 60.0,
-        "reaction_energy_ev_per_atom": -0.0467
+      "action_type": "OUTCOME_TEST",
+      "candidate_id": "PG_0118",
+      "cost": 2.0,
+      "total_cost_cumulative": 18.0,
+      "max_utility": 0.75,
+      "normalized_hig": 0.0,
+      "raw_hig_nats": 0.0,
+      "discovery_value": 1.0,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.5003755263795847,
+        "process_kinetics": 3.564963669754716e-218,
+        "structure_phase_informed": 0.4996244736204154
       },
-      "score_components": {
-        "total_value": 1.1499999999906918,
-        "scientific_information_value": 0.9999999999922432,
-        "discovery_value": 0.0,
-        "cost_penalty": 0.05,
-        "raw_hig": 0.1289206896535387
-      },
-      "hypothesis_beliefs_before": {
-        "precursor_thermodynamics": 0.035564485024834294,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.964435514975164
-      },
-      "hypothesis_beliefs_after": {
-        "precursor_thermodynamics": 0.987580745316553,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.012419254683445229
-      },
-      "revealed_data_summary": {
-        "refinement_features": [
-          0.0,
-          0.0,
-          0.0,
-          5.0
-        ],
-        "phase_weights": {},
-        "rwp": 5.0,
-        "target_fraction": 0.0
-      },
-      "scientific_rationale": "Selects REFINEMENT for candidate 'PG_3031' (Net Scientific Value: 1.150). Expected Hypothesis Information Gain is 0.129 nats (expected posterior entropy: 0.025 nats) under policy mode 'hybrid'."
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_0118' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
     },
     {
       "step": 4,
-      "selected_candidate_id": "PG_1146",
-      "action_type": "REFINEMENT",
-      "estimated_cost": 0.5,
-      "candidate_metadata": {
-        "target_compound": "TiCuO3",
-        "precursor_1": "CuO",
-        "precursor_2": "TiO2",
-        "heating_temperature_c": 800.0,
-        "heating_time_minutes": 60.0,
-        "reaction_energy_ev_per_atom": 0.0
+      "action_type": "OUTCOME_TEST",
+      "candidate_id": "PG_0147",
+      "cost": 2.0,
+      "total_cost_cumulative": 20.0,
+      "max_utility": 0.75,
+      "normalized_hig": 0.0,
+      "raw_hig_nats": 0.0,
+      "discovery_value": 1.0,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.5003755270861993,
+        "process_kinetics": 3.564963674789019e-218,
+        "structure_phase_informed": 0.4996244729138008
       },
-      "score_components": {
-        "total_value": 1.1499999999716701,
-        "scientific_information_value": 0.9999999999763919,
-        "discovery_value": 0.0,
-        "cost_penalty": 0.05,
-        "raw_hig": 0.04235817570719056
-      },
-      "hypothesis_beliefs_before": {
-        "precursor_thermodynamics": 0.987580745316553,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.012419254683445229
-      },
-      "hypothesis_beliefs_after": {
-        "precursor_thermodynamics": 0.9998749930814981,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.00012500691850744644
-      },
-      "revealed_data_summary": {
-        "refinement_features": [
-          0.4545,
-          0.5455,
-          3.0,
-          3.2
-        ],
-        "phase_weights": {
-          "CuO_9_(icsd_69758)-None": 0.4545,
-          "TiO2_141_(icsd_172914)-0": 0.4233,
-          "TiO2_136_(icsd_202240)-10": 0.1222
-        },
-        "rwp": 3.2,
-        "target_fraction": 0.4545
-      },
-      "scientific_rationale": "Selects REFINEMENT for candidate 'PG_1146' (Net Scientific Value: 1.150). Expected Hypothesis Information Gain is 0.042 nats (expected posterior entropy: 0.024 nats) under policy mode 'hybrid'."
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_0147' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
     },
     {
       "step": 5,
-      "selected_candidate_id": "PG_1246",
       "action_type": "OUTCOME_TEST",
-      "estimated_cost": 2.0,
-      "candidate_metadata": {
-        "target_compound": "Ti3Fe3O10",
-        "precursor_1": "Fe3O4",
-        "precursor_2": "TiO2",
-        "heating_temperature_c": 1000.0,
-        "heating_time_minutes": 60.0,
-        "reaction_energy_ev_per_atom": -0.0002
+      "candidate_id": "PG_1247",
+      "cost": 2.0,
+      "total_cost_cumulative": 22.0,
+      "max_utility": 0.75,
+      "normalized_hig": 0.0,
+      "raw_hig_nats": 0.0,
+      "discovery_value": 1.0,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.5003755280319488,
+        "process_kinetics": 3.5649636815271585e-218,
+        "structure_phase_informed": 0.4996244719680511
       },
-      "score_components": {
-        "total_value": 0.9999999960271782,
-        "scientific_information_value": 0.9999999966893152,
-        "discovery_value": 0.0,
-        "cost_penalty": 0.2,
-        "raw_hig": 0.000302052302211684
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_1247' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+    },
+    {
+      "step": 6,
+      "action_type": "OUTCOME_TEST",
+      "candidate_id": "PG_1011",
+      "cost": 2.0,
+      "total_cost_cumulative": 24.0,
+      "max_utility": 1.0,
+      "normalized_hig": 0.0,
+      "raw_hig_nats": 0.0,
+      "discovery_value": 1.0,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.5003755278747001,
+        "process_kinetics": 3.564963680406736e-218,
+        "structure_phase_informed": 0.4996244721252999
       },
-      "hypothesis_beliefs_before": {
-        "precursor_thermodynamics": 0.9998749930814981,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.00012500691850744644
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_1011' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+    },
+    {
+      "step": 7,
+      "action_type": "OUTCOME_TEST",
+      "candidate_id": "PG_1014",
+      "cost": 2.0,
+      "total_cost_cumulative": 26.0,
+      "max_utility": 1.0,
+      "normalized_hig": 0.0,
+      "raw_hig_nats": 0.0,
+      "discovery_value": 1.0,
+      "hypothesis_entropy_nats": 0.6931,
+      "beliefs": {
+        "precursor_thermodynamics": 0.5003755279619185,
+        "process_kinetics": 3.5649636810282473e-218,
+        "structure_phase_informed": 0.4996244720380814
       },
-      "hypothesis_beliefs_after": {
-        "precursor_thermodynamics": 0.9995254509059222,
-        "process_kinetics": 0.0,
-        "structure_phase_informed": 0.00047454909407982753
-      },
-      "revealed_data_summary": {
-        "reaction_conversion": 1.0,
-        "reaction_category": "completely_reacted"
-      },
-      "scientific_rationale": "Selects OUTCOME_TEST for candidate 'PG_1246' (Net Scientific Value: 1.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.001 nats) under policy mode 'hybrid'."
+      "rationale": "Selects OUTCOME_TEST for candidate 'PG_1014' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
     }
-  ],
-  "final_state": {
-    "domain_id": "alab_precursor_genome",
-    "step": 5,
-    "current_beliefs": {
-      "precursor_thermodynamics": 0.9995254509059222,
-      "process_kinetics": 0.0,
-      "structure_phase_informed": 0.00047454909407982753
-    },
-    "current_entropy": 0.004106229760056368,
-    "observations_count": {
-      "XRD": 4,
-      "REFINEMENT": 3,
-      "OUTCOME_TEST": 6
-    },
-    "best_observed_objective": 1.0,
-    "primary_objective": {
-      "name": "reaction_conversion",
-      "direction": "maximize",
-      "units": "fraction",
-      "target_col": "reaction_conversion",
-      "threshold": 0.8,
-      "metadata": {
-        "range": [
-          0.0,
-          1.0
-        ],
-        "description": "Quantitative solid-state synthesis conversion fraction based on reacted precursor consumption and target formation."
-      }
-    },
-    "active_hypotheses": [
-      "precursor_thermodynamics",
-      "process_kinetics",
-      "structure_phase_informed"
-    ],
-    "evidence_history_length": 5,
-    "ledger_records_count": 13,
-    "last_optimizer_status": {
-      "used": false,
-      "success": true,
-      "reason": "Not yet evaluated",
-      "num_scored": 0
-    }
-  }
+  ]
 }

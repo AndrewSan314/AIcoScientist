@@ -1,5 +1,5 @@
 {
-  "audit_timestamp": "2026-09-01T15:08:29.609364+00:00",
+  "audit_timestamp": "2026-09-01T18:33:21.527569+00:00",
   "dataset_identity": {
     "dataset_name": "A-Lab Precursor Genome",
     "dataset_key": "precursor_genome_2026",
@@ -7,8 +7,7 @@
     "zenodo": "https://doi.org/10.5281/zenodo.21285546",
     "license": "CC BY 4.0",
     "local_directory": "data/external/precursor_genome_2026",
-    "manifest_path": "data/external/aicoscientist_datasets_manifest.json",
-    "ledger_sha256": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac"
+    "manifest_path": "data/external/aicoscientist_datasets_manifest.json"
   },
   "candidate_identity": {
     "primary_key": "sample_id",
@@ -16,7 +15,8 @@
     "unique_candidates": 1035,
     "is_unique": true,
     "precursor_count_per_candidate": 2,
-    "unique_precursors": 46,
+    "unique_precursors": 0,
+    "canonical_precursors_defined": 46,
     "unique_target_compounds": 1032
   },
   "information_firewall_classification": {
@@ -27,12 +27,61 @@
       "target_compound",
       "heating_temperature_c",
       "heating_time_minutes",
-      "reaction_energy_ev_per_atom"
+      "reaction_energy_ev_per_atom",
+      "reaction_energy_ev_per_atom",
+      "heating_temperature_scaled",
+      "heating_time_scaled",
+      "prec_(NH4)2HPO4",
+      "prec_Ag2O",
+      "prec_Al(OH)3",
+      "prec_B(OH)3",
+      "prec_BaCO3",
+      "prec_BaO2",
+      "prec_Bi2O3",
+      "prec_CaCO3",
+      "prec_Co3O4",
+      "prec_CoO",
+      "prec_Cr2O3",
+      "prec_CuO",
+      "prec_Fe2O3",
+      "prec_Fe3O4",
+      "prec_FeC2O4",
+      "prec_Ga2O3",
+      "prec_GeO2",
+      "prec_HfO2",
+      "prec_In2O3",
+      "prec_K2CO3",
+      "prec_KH2PO4",
+      "prec_La(OH)3",
+      "prec_Li2CO3",
+      "prec_LiOH",
+      "prec_MgO",
+      "prec_Mn2O3",
+      "prec_Mn3O4",
+      "prec_MnO",
+      "prec_MnO2",
+      "prec_MoO3",
+      "prec_NH4H2PO4",
+      "prec_Na2CO3",
+      "prec_Nb2O5",
+      "prec_NiO",
+      "prec_PbO",
+      "prec_Sb2O3",
+      "prec_SiO2",
+      "prec_SnO2",
+      "prec_SrCO3",
+      "prec_TiO2",
+      "prec_V2O3",
+      "prec_V2O5",
+      "prec_WO3",
+      "prec_Y2O3",
+      "prec_ZnO",
+      "prec_ZrO2"
     ],
     "hidden_post_experiment_modalities": [
-      "raw_xrd_scan (2theta intensity pattern)",
+      "raw_xrd_scan (2theta intensity pattern on 450-pt grid)",
       "xrd_refinement_cases (rwp, phase_weights, cif_names)",
-      "reaction_category (unreacted, transformed, completely_reacted, partially_reacted)",
+      "reaction_outcome_utility (ordinal decision utility)",
       "phases (observed crystal phase weight fractions)"
     ],
     "precursor_characterization_references": [
@@ -42,71 +91,44 @@
   },
   "experimental_modalities": {
     "XRD": {
-      "description": "Powder X-ray diffraction scan (.xrdml XML format)",
+      "description": "Powder X-ray diffraction scan standardized on 450-point 10-100 deg 2theta grid",
       "available_samples": 1035,
       "total_samples": 1035,
       "coverage_pct": 100.0,
       "archive": "raw_scans.zip",
-      "representation": "Leakage-safe PCA basis over revealed scans (frozen during evidence update)",
       "cost": 1.0
     },
     "REFINEMENT": {
-      "description": "Rietveld structural phase refinement (.pkl artifact)",
+      "description": "Rietveld structural phase refinement with deterministic chemical formula matching",
       "available_samples": 1030,
       "total_samples": 1035,
       "coverage_pct": 99.52,
-      "archive": "refinement_pkls.zip",
+      "archive": "refinement_pkls.zip / ledger cases",
       "requires": [
         "XRD"
       ],
-      "representation": "Extracted phase weights, target fraction, and Rwp goodness-of-fit",
       "cost": 0.5
     },
     "OUTCOME_TEST": {
-      "description": "Quantitative reaction conversion and synthesis success measurement",
-      "available_samples": 1035,
+      "description": "Synthesis outcome verification (ordinal decision utility: completely_reacted=1.0, transformed=0.75, partially_reacted=0.5, unreacted=0.0)",
+      "available_samples": 0,
+      "unlabeled_samples": 1035,
       "total_samples": 1035,
-      "coverage_pct": 100.0,
-      "representation": "Continuous reaction conversion score in [0.0, 1.0]",
+      "coverage_pct": 0.0,
       "cost": 2.0
     }
   },
   "objective_definition": {
-    "name": "reaction_conversion",
-    "description": "Quantitative synthesis conversion fraction based on reacted precursor consumption and target formation",
+    "name": "reaction_outcome_utility",
+    "semantic_type": "ordinal_decision_utility",
     "direction": "MAXIMIZE",
     "range": [
       0.0,
       1.0
     ],
-    "distribution": {
-      "transformed_0.75": 384,
-      "unreacted_0.0": 369,
-      "completely_reacted_1.0": 143,
-      "partially_reacted_0.5": 113,
-      "unlabeled_0.0": 26
-    }
-  },
-  "archive_statistics": {
-    "raw_scans.zip": {
-      "member_count": 1419,
-      "uncompressed_bytes": 59591691,
-      "compressed_bytes": 23008523
-    },
-    "refinement_pkls.zip": {
-      "member_count": 2964,
-      "uncompressed_bytes": 904171851,
-      "compressed_bytes": 291408941
-    },
-    "sem.zip": {
-      "member_count": 342,
-      "uncompressed_bytes": 412803337,
-      "compressed_bytes": 408187670
-    },
-    "eds.zip": {
-      "member_count": 242,
-      "uncompressed_bytes": 1505081,
-      "compressed_bytes": 358569
+    "threshold": 0.8,
+    "category_distribution": {
+      "unlabeled": 1035
     }
   }
 }

@@ -1,63 +1,39 @@
-# A-Lab Precursor Genome Dataset Intake & Scientific Affordance Audit
+# A-Lab Precursor Genome Dataset Scientific Audit
 
-**Audit Date**: 2026-09-01T15:08:29.609364+00:00  
-**Dataset Name**: A-Lab Precursor Genome  
-**Local Root**: `data/external/precursor_genome_2026`  
+**Audit Date**: 2026-09-01T18:33:21.527569+00:00  
+**Dataset**: A-Lab Precursor Genome (`precursor_genome_2026`)  
 **License**: CC BY 4.0  
-**Source / Zenodo**: [https://doi.org/10.5281/zenodo.21285546](https://doi.org/10.5281/zenodo.21285546)  
+**Primary Key**: `sample_id`  
 
 ---
 
-## 1. Candidate Identity & Search Space
+## 1. Candidate Population & Chemical Coverage
 
-- **Primary Identity Key**: `sample_id` (`PG_0001` through `PG_4450`)
-- **Total Experimental Candidates**: `1035` (100% unique primary keys, zero unindexed duplicates)
-- **Precursor Formulation**: Exactly 2 binary precursors per reaction chosen from a library of **46** unique stoichiometric precursor compounds.
-- **Unique Target Compounds**: **1032** distinct inorganic target compositions.
-
----
-
-## 2. Information Firewall Classification
-
-To enforce strict, leakage-free offline replay without lookahead bias:
-
-| Classification | Fields / Modalities | Description |
-|---|---|---|
-| **PRE_EXPERIMENT** (Visible before execution) | `sample_id`, `precursor_1`, `precursor_2`, `target_compound`, `heating_temperature_c`, `heating_time_minutes`, `reaction_energy_ev_per_atom` | Candidate identity, thermodynamic reaction energy, nominal formulation, and controllable furnace heating parameters. |
-| **HIDDEN / REVEALABLE** (Available only via scientific actions) | `raw_scans.zip` (`XRD`), `refinement_pkls.zip` (`REFINEMENT`), `outcome.reaction_category` (`OUTCOME_TEST`) | Post-reaction crystal structure diffraction patterns, Rietveld phase quantification, and synthesis conversion outcomes. |
-| **PRECURSOR CHARACTERIZATION** | `sem.zip` (`SEM_PRECURSOR`), `eds.zip` (`EDS_PRECURSOR`) | Pre-reaction precursor morphology and elemental quantification tables. |
+- **Total Unique Candidates**: 1035 (100% unique sample IDs)
+- **Unique Chemical Precursors**: 0 (Canonical multi-hot encoding basis: 46 binary flags)
+- **Unique Target Compounds**: 1032
 
 ---
 
-## 3. Experimental Modality Inventory
+## 2. Information Firewall & Modality Structure
 
-| Modality | Archive / Source | Coverage | Normalized Cost | Representation & Prerequisite |
-|---|---|---|---|---|
-| **`XRD`** | `raw_scans.zip` (1,419 members) | **100.0%** (1035/1,035) | `1.0` | High-resolution 2theta intensity vector standardized onto 450-point grid; PCA basis fitted strictly on revealed historical spectra and frozen during Bayesian updates. |
-| **`REFINEMENT`** | `refinement_pkls.zip` (2,964 members) | **99.52%** (1030/1,035) | `0.5` | Extracted Rietveld phase weights, Rwp goodness-of-fit, and target formation fraction. **Requires `XRD` action first**. |
-| **`OUTCOME_TEST`** | `ledger_precursor_genome.json` | **100.0%** (1,035/1,035) | `2.0` | Quantitative reaction conversion score in $[0.0, 1.0]$. |
-
----
-
-## 4. Primary Discovery Objective
-
-- **Objective**: `reaction_conversion`
-- **Direction**: `MAXIMIZE`
-- **Scientific Meaning**: Quantitative extent of solid-state reaction conversion, mapping synthesis outcomes to continuous performance metrics:
-  - `completely_reacted`: $1.0$ (143 samples, 13.8%)
-  - `transformed`: $0.75$ (384 samples, 37.1%)
-  - `partially_reacted`: $0.5$ (113 samples, 10.9%)
-  - `unreacted`: $0.0$ (369 samples, 35.7%)
+| Modality Name | Physical Meaning | Cost | Availability | Coverage | Requirements |
+|---|---|---|---|---|---|
+| `XRD` | Powder X-ray diffraction (450-pt 10–100° $2\theta$ grid) | 1.0 | 1035 / 1035 | 100.0% | None |
+| `REFINEMENT` | Rietveld phase weights & Rwp | 0.5 | 1030 / 1035 | 99.52% | `XRD` |
+| `OUTCOME_TEST` | Synthesis outcome utility (0.0–1.0) | 2.0 | 0 / 1035 | 0.0% | None |
 
 ---
 
-## 5. Local Archive Integrity & Statistics
+## 3. Outcome Distribution & Missingness Handling
 
-| Archive Name | Member Count | Compressed Size | Uncompressed Size | Linkage Status |
-|---|---|---|---|---|
-| `raw_scans.zip` | 1419 | 21.94 MB | 56.83 MB | 100% linked to sample IDs |
-| `refinement_pkls.zip` | 2964 | 277.91 MB | 862.29 MB | 99.5% linked to sample IDs |
-| `sem.zip` | 342 | 389.28 MB | 393.68 MB | Precursor library reference |
-| `eds.zip` | 242 | 350.17 KB | 1.44 MB | Precursor library reference |
+| Outcome Category | Utility Score | Count | Percentage |
+|---|---|---|---|
+| `completely_reacted` | 1.00 | 0 | 0.0% |
+| `transformed` | 0.75 | 0 | 0.0% |
+| `partially_reacted` | 0.50 | 0 | 0.0% |
+| `unreacted` | 0.00 | 0 | 0.0% |
+| `unlabeled` (physical failures) | `None` (no silent 0 imputation) | 1035 | 100.0% |
 
----
+> [!NOTE]
+> Unlabeled physical failures (e.g., tube breaks, robotic dispensing aborts) reveal `reaction_outcome_utility = None` and `canonical_observation = None`. They are not silently imputed as 0.0 unreacted.

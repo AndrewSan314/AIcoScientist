@@ -1,263 +1,2110 @@
 {
-  "HYBRID": {
-    "policy": "HYBRID",
-    "final_max_conversion": 1.0,
-    "total_budget_spent": 13.5,
-    "steps": [
-      {
-        "step": 1,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_1239",
-        "total_cost_cumulative": 9.5,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0017955094441303074,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 0.9982044905558692
-        }
+  "RANDOM": {
+    "policy": "RANDOM",
+    "seeds": {
+      "42": {
+        "final_max_utility": 0.75,
+        "first_discovery_cost": null,
+        "total_budget_spent": 25.0,
+        "total_steps": 10,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.8677,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.47334135061771576,
+          "process_kinetics": 0.0548801537260332,
+          "structure_phase_informed": 0.471778495656251
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "XRD",
+            "candidate_id": "PG_0204",
+            "cost": 1.0,
+            "total_cost_cumulative": 13.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0981,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3259994489772258,
+              "process_kinetics": 0.34800110204554835,
+              "structure_phase_informed": 0.3259994489772258
+            },
+            "rationale": "Uniform random action selection for candidate PG_0204"
+          },
+          {
+            "step": 2,
+            "action_type": "XRD",
+            "candidate_id": "PG_1743",
+            "cost": 1.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0986,
+            "beliefs": {
+              "precursor_thermodynamics": 0.33112842901129735,
+              "process_kinetics": 0.33774314197740524,
+              "structure_phase_informed": 0.33112842901129735
+            },
+            "rationale": "Uniform random action selection for candidate PG_1743"
+          },
+          {
+            "step": 3,
+            "action_type": "XRD",
+            "candidate_id": "PG_1749",
+            "cost": 1.0,
+            "total_cost_cumulative": 15.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0986,
+            "beliefs": {
+              "precursor_thermodynamics": 0.33154138804470684,
+              "process_kinetics": 0.3369172239105863,
+              "structure_phase_informed": 0.33154138804470684
+            },
+            "rationale": "Uniform random action selection for candidate PG_1749"
+          },
+          {
+            "step": 4,
+            "action_type": "XRD",
+            "candidate_id": "PG_1138",
+            "cost": 1.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0985,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3298464642813606,
+              "process_kinetics": 0.3403070714372788,
+              "structure_phase_informed": 0.3298464642813606
+            },
+            "rationale": "Uniform random action selection for candidate PG_1138"
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_3550",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.9592,
+            "beliefs": {
+              "precursor_thermodynamics": 0.20414402127976766,
+              "process_kinetics": 0.5917467441310342,
+              "structure_phase_informed": 0.20410923458919822
+            },
+            "rationale": "Uniform random action selection for candidate PG_3550"
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2931",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0691,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3885757717099211,
+              "process_kinetics": 0.2226419193782132,
+              "structure_phase_informed": 0.38878230891186577
+            },
+            "rationale": "Uniform random action selection for candidate PG_2931"
+          },
+          {
+            "step": 7,
+            "action_type": "XRD",
+            "candidate_id": "PG_1322",
+            "cost": 1.0,
+            "total_cost_cumulative": 21.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0501,
+            "beliefs": {
+              "precursor_thermodynamics": 0.40326994471898625,
+              "process_kinetics": 0.19324576306001043,
+              "structure_phase_informed": 0.40348429222100335
+            },
+            "rationale": "Uniform random action selection for candidate PG_1322"
+          },
+          {
+            "step": 8,
+            "action_type": "XRD",
+            "candidate_id": "PG_0914",
+            "cost": 1.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.9941,
+            "beliefs": {
+              "precursor_thermodynamics": 0.4329175019904059,
+              "process_kinetics": 0.13393489014012055,
+              "structure_phase_informed": 0.43314760786947354
+            },
+            "rationale": "Uniform random action selection for candidate PG_0914"
+          },
+          {
+            "step": 9,
+            "action_type": "XRD",
+            "candidate_id": "PG_3445",
+            "cost": 1.0,
+            "total_cost_cumulative": 23.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.9952,
+            "beliefs": {
+              "precursor_thermodynamics": 0.4324660154225966,
+              "process_kinetics": 0.1348381032515154,
+              "structure_phase_informed": 0.43269588132588804
+            },
+            "rationale": "Uniform random action selection for candidate PG_3445"
+          },
+          {
+            "step": 10,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1944",
+            "cost": 2.0,
+            "total_cost_cumulative": 25.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.8677,
+            "beliefs": {
+              "precursor_thermodynamics": 0.47334135061771576,
+              "process_kinetics": 0.0548801537260332,
+              "structure_phase_informed": 0.471778495656251
+            },
+            "rationale": "Uniform random action selection for candidate PG_1944"
+          }
+        ]
       },
-      {
-        "step": 2,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_2044",
-        "total_cost_cumulative": 10.0,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.9999998404105795,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.5958942119775046e-07
-        }
+      "101": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 25.0,
+        "total_steps": 10,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.8932,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.46633062663585817,
+          "process_kinetics": 0.06737907789657697,
+          "structure_phase_informed": 0.46629029546756484
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "XRD",
+            "candidate_id": "PG_0248",
+            "cost": 1.0,
+            "total_cost_cumulative": 13.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.068,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3895900488734241,
+              "process_kinetics": 0.22081990225315187,
+              "structure_phase_informed": 0.3895900488734241
+            },
+            "rationale": "Uniform random action selection for candidate PG_0248"
+          },
+          {
+            "step": 2,
+            "action_type": "XRD",
+            "candidate_id": "PG_3031",
+            "cost": 1.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.058,
+            "beliefs": {
+              "precursor_thermodynamics": 0.397701825738792,
+              "process_kinetics": 0.2045963485224161,
+              "structure_phase_informed": 0.397701825738792
+            },
+            "rationale": "Uniform random action selection for candidate PG_3031"
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1118",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0904,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3630908378215978,
+              "process_kinetics": 0.27383139425121206,
+              "structure_phase_informed": 0.3630777679271902
+            },
+            "rationale": "Uniform random action selection for candidate PG_1118"
+          },
+          {
+            "step": 4,
+            "action_type": "XRD",
+            "candidate_id": "PG_2651",
+            "cost": 1.0,
+            "total_cost_cumulative": 17.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.067,
+            "beliefs": {
+              "precursor_thermodynamics": 0.39045309834154196,
+              "process_kinetics": 0.2191078581490274,
+              "structure_phase_informed": 0.39043904350943076
+            },
+            "rationale": "Uniform random action selection for candidate PG_2651"
+          },
+          {
+            "step": 5,
+            "action_type": "XRD",
+            "candidate_id": "PG_0148",
+            "cost": 1.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0728,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3852015763777136,
+              "process_kinetics": 0.22961071304179137,
+              "structure_phase_informed": 0.38518771058049506
+            },
+            "rationale": "Uniform random action selection for candidate PG_0148"
+          },
+          {
+            "step": 6,
+            "action_type": "XRD",
+            "candidate_id": "PG_0713",
+            "cost": 1.0,
+            "total_cost_cumulative": 19.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0631,
+            "beliefs": {
+              "precursor_thermodynamics": 0.39378606965560187,
+              "process_kinetics": 0.21244203549524762,
+              "structure_phase_informed": 0.3937718948491506
+            },
+            "rationale": "Uniform random action selection for candidate PG_0713"
+          },
+          {
+            "step": 7,
+            "action_type": "XRD",
+            "candidate_id": "PG_1025",
+            "cost": 1.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0615,
+            "beliefs": {
+              "precursor_thermodynamics": 0.39504678567092116,
+              "process_kinetics": 0.20992064884560582,
+              "structure_phase_informed": 0.39503256548347304
+            },
+            "rationale": "Uniform random action selection for candidate PG_1025"
+          },
+          {
+            "step": 8,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1449",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.948,
+            "beliefs": {
+              "precursor_thermodynamics": 0.45030946448340836,
+              "process_kinetics": 0.09941998544664166,
+              "structure_phase_informed": 0.45027055006995
+            },
+            "rationale": "Uniform random action selection for candidate PG_1449"
+          },
+          {
+            "step": 9,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2751",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.8943,
+            "beliefs": {
+              "precursor_thermodynamics": 0.46605126497775706,
+              "process_kinetics": 0.0679377770518483,
+              "structure_phase_informed": 0.46601095797039466
+            },
+            "rationale": "Uniform random action selection for candidate PG_2751"
+          },
+          {
+            "step": 10,
+            "action_type": "XRD",
+            "candidate_id": "PG_0830",
+            "cost": 1.0,
+            "total_cost_cumulative": 25.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.8932,
+            "beliefs": {
+              "precursor_thermodynamics": 0.46633062663585817,
+              "process_kinetics": 0.06737907789657697,
+              "structure_phase_informed": 0.46629029546756484
+            },
+            "rationale": "Uniform random action selection for candidate PG_0830"
+          }
+        ]
       },
-      {
-        "step": 3,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_4546",
-        "total_cost_cumulative": 12.0,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
-      },
-      {
-        "step": 4,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_4450",
-        "total_cost_cumulative": 12.5,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
-      },
-      {
-        "step": 5,
-        "action_type": "XRD",
-        "candidate_id": "PG_0102",
-        "total_cost_cumulative": 13.5,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
+      "2024": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 9,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6923,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.5253974368210534,
+          "process_kinetics": 4.3502475846344456e-05,
+          "structure_phase_informed": 0.4745590607031002
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0248",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6938,
+            "beliefs": {
+              "precursor_thermodynamics": 0.4998930779651943,
+              "process_kinetics": 6.807541295550755e-05,
+              "structure_phase_informed": 0.5000388466218503
+            },
+            "rationale": "Uniform random action selection for candidate PG_0248"
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0819",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6944,
+            "beliefs": {
+              "precursor_thermodynamics": 0.49987949042583457,
+              "process_kinetics": 0.0001310190783881983,
+              "structure_phase_informed": 0.4999894904957773
+            },
+            "rationale": "Uniform random action selection for candidate PG_0819"
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0616",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6943,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003138474281144,
+              "process_kinetics": 0.00012345208013661338,
+              "structure_phase_informed": 0.49956270049174895
+            },
+            "rationale": "Uniform random action selection for candidate PG_0616"
+          },
+          {
+            "step": 4,
+            "action_type": "XRD",
+            "candidate_id": "PG_3440",
+            "cost": 1.0,
+            "total_cost_cumulative": 19.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6943,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003112973302871,
+              "process_kinetics": 0.00012854844719628578,
+              "structure_phase_informed": 0.4995601542225166
+            },
+            "rationale": "Uniform random action selection for candidate PG_3440"
+          },
+          {
+            "step": 5,
+            "action_type": "XRD",
+            "candidate_id": "PG_4752",
+            "cost": 1.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6943,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003125283222254,
+              "process_kinetics": 0.00012608831147132242,
+              "structure_phase_informed": 0.4995613833663033
+            },
+            "rationale": "Uniform random action selection for candidate PG_4752"
+          },
+          {
+            "step": 6,
+            "action_type": "XRD",
+            "candidate_id": "PG_1040",
+            "cost": 1.0,
+            "total_cost_cumulative": 21.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6943,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003106199673357,
+              "process_kinetics": 0.00012990215614276649,
+              "structure_phase_informed": 0.49955947787652155
+            },
+            "rationale": "Uniform random action selection for candidate PG_1040"
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0949",
+            "cost": 2.0,
+            "total_cost_cumulative": 23.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6935,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003595181371377,
+              "process_kinetics": 3.113858132573642e-05,
+              "structure_phase_informed": 0.49960934328153656
+            },
+            "rationale": "Uniform random action selection for candidate PG_0949"
+          },
+          {
+            "step": 8,
+            "action_type": "XRD",
+            "candidate_id": "PG_2440",
+            "cost": 1.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6935,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003584984795452,
+              "process_kinetics": 3.3176367767275017e-05,
+              "structure_phase_informed": 0.49960832515268766
+            },
+            "rationale": "Uniform random action selection for candidate PG_2440"
+          },
+          {
+            "step": 9,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0734",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6923,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5253974368210534,
+              "process_kinetics": 4.3502475846344456e-05,
+              "structure_phase_informed": 0.4745590607031002
+            },
+            "rationale": "Uniform random action selection for candidate PG_0734"
+          }
+        ]
       }
-    ],
-    "final_hypothesis_beliefs": {
-      "precursor_thermodynamics": 0.0,
-      "process_kinetics": 0.0,
-      "structure_phase_informed": 1.0
+    },
+    "summary": {
+      "mean_final_utility": 0.917,
+      "std_final_utility": 0.118,
+      "mean_first_discovery_budget": 12.0,
+      "std_first_discovery_budget": 0.0,
+      "mean_budget_spent": 25.33,
+      "mean_final_entropy_nats": 0.8177,
+      "discovery_success_rate": 0.67
     }
   },
   "DISCOVERY_ONLY": {
     "policy": "DISCOVERY_ONLY",
-    "final_max_conversion": 0.0,
-    "total_budget_spent": 12.0,
-    "steps": [
-      {
-        "step": 1,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_1239",
-        "total_cost_cumulative": 9.5,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0017955094441303074,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 0.9982044905558692
-        }
+    "seeds": {
+      "42": {
+        "final_max_utility": 0.75,
+        "first_discovery_cost": null,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.9758,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.12649620821678847,
+          "process_kinetics": 0.5003646786303557,
+          "structure_phase_informed": 0.37313911315285586
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0118",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0986,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3334117251160462,
+              "process_kinetics": 0.3332931364979602,
+              "structure_phase_informed": 0.3332951383859935
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0118' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 1.099 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0917",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0127,
+            "raw_hig_nats": 0.0139,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0893,
+            "beliefs": {
+              "precursor_thermodynamics": 0.31588856337473975,
+              "process_kinetics": 0.2879272502689294,
+              "structure_phase_informed": 0.39618418635633085
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0917' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.014 nats (expected posterior entropy: 1.085 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1224",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0697,
+            "raw_hig_nats": 0.0766,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0609,
+            "beliefs": {
+              "precursor_thermodynamics": 0.210925046385087,
+              "process_kinetics": 0.4163822594131603,
+              "structure_phase_informed": 0.37269269420175266
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1224' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.077 nats (expected posterior entropy: 1.013 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0103",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0628,
+            "raw_hig_nats": 0.069,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.9758,
+            "beliefs": {
+              "precursor_thermodynamics": 0.12649620821679958,
+              "process_kinetics": 0.5003646786303221,
+              "structure_phase_informed": 0.37313911315287845
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0103' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.069 nats (expected posterior entropy: 0.992 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1734",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0448,
+            "raw_hig_nats": 0.0492,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.9758,
+            "beliefs": {
+              "precursor_thermodynamics": 0.12649620821679566,
+              "process_kinetics": 0.5003646786303273,
+              "structure_phase_informed": 0.37313911315287707
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1734' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.049 nats (expected posterior entropy: 0.927 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1734",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0402,
+            "raw_hig_nats": 0.0441,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.9758,
+            "beliefs": {
+              "precursor_thermodynamics": 0.12649620821678847,
+              "process_kinetics": 0.5003646786303557,
+              "structure_phase_informed": 0.37313911315285586
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1734' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.044 nats (expected posterior entropy: 0.932 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1734",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.05,
+            "raw_hig_nats": 0.055,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.9758,
+            "beliefs": {
+              "precursor_thermodynamics": 0.12649620821678847,
+              "process_kinetics": 0.5003646786303557,
+              "structure_phase_informed": 0.37313911315285586
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1734' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.055 nats (expected posterior entropy: 0.921 nats) under policy mode 'discovery_only'."
+          }
+        ]
       },
-      {
-        "step": 2,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_2044",
-        "total_cost_cumulative": 10.0,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.9999998404105795,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.5958942119775046e-07
-        }
+      "101": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 1.0777,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.3074601657680247,
+          "process_kinetics": 0.4277124596588771,
+          "structure_phase_informed": 0.26482737457309835
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0131",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0018,
+            "raw_hig_nats": 0.002,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0981,
+            "beliefs": {
+              "precursor_thermodynamics": 0.34104862381374607,
+              "process_kinetics": 0.3179438182856125,
+              "structure_phase_informed": 0.3410075579006414
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0131' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 1.097 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1631",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0036,
+            "raw_hig_nats": 0.0039,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0919,
+            "beliefs": {
+              "precursor_thermodynamics": 0.37604729294945005,
+              "process_kinetics": 0.28308227469765224,
+              "structure_phase_informed": 0.34087043235289777
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1631' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.004 nats (expected posterior entropy: 1.094 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1431",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0571,
+            "raw_hig_nats": 0.0627,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0777,
+            "beliefs": {
+              "precursor_thermodynamics": 0.30746016576806107,
+              "process_kinetics": 0.4277124596589075,
+              "structure_phase_informed": 0.26482737457303157
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1431' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.063 nats (expected posterior entropy: 1.029 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0331",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0423,
+            "raw_hig_nats": 0.0465,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0777,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3074601657680674,
+              "process_kinetics": 0.4277124596588879,
+              "structure_phase_informed": 0.2648273745730448
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0331' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.047 nats (expected posterior entropy: 1.031 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0331",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0481,
+            "raw_hig_nats": 0.0529,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0777,
+            "beliefs": {
+              "precursor_thermodynamics": 0.30746016576807306,
+              "process_kinetics": 0.4277124596588472,
+              "structure_phase_informed": 0.26482737457307975
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0331' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.053 nats (expected posterior entropy: 1.025 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0331",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0414,
+            "raw_hig_nats": 0.0455,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0777,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3074601657680247,
+              "process_kinetics": 0.4277124596588771,
+              "structure_phase_informed": 0.26482737457309835
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0331' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.046 nats (expected posterior entropy: 1.032 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0331",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0446,
+            "raw_hig_nats": 0.049,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0777,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3074601657680247,
+              "process_kinetics": 0.4277124596588771,
+              "structure_phase_informed": 0.26482737457309835
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0331' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.049 nats (expected posterior entropy: 1.029 nats) under policy mode 'discovery_only'."
+          }
+        ]
       },
-      {
-        "step": 3,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_4450",
-        "total_cost_cumulative": 10.5,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 1.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.7393573174209092e-28
-        }
-      },
-      {
-        "step": 4,
-        "action_type": "XRD",
-        "candidate_id": "PG_0102",
-        "total_cost_cumulative": 11.5,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 1.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 5.570756249204868e-29
-        }
-      },
-      {
-        "step": 5,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_0102",
-        "total_cost_cumulative": 12.0,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 1.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 9.968941516772225e-38
-        }
+      "2024": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6931,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.5000719840022707,
+          "process_kinetics": 4.702435489567805e-140,
+          "structure_phase_informed": 0.4999280159977294
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0430",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0034,
+            "raw_hig_nats": 0.0037,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 1.0405,
+            "beliefs": {
+              "precursor_thermodynamics": 0.2506087910908469,
+              "process_kinetics": 0.49885475737334867,
+              "structure_phase_informed": 0.2505364515358045
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0430' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.004 nats (expected posterior entropy: 1.095 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1928",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.2156,
+            "raw_hig_nats": 0.2368,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6021,
+            "beliefs": {
+              "precursor_thermodynamics": 0.09136543696094157,
+              "process_kinetics": 0.8172954806742525,
+              "structure_phase_informed": 0.09133908236480595
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1928' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.237 nats (expected posterior entropy: 0.804 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1941",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.1013,
+            "raw_hig_nats": 0.1113,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.9738,
+            "beliefs": {
+              "precursor_thermodynamics": 0.2111932820421724,
+              "process_kinetics": 0.5776743617440088,
+              "structure_phase_informed": 0.21113235621381884
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1941' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.111 nats (expected posterior entropy: 0.491 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1949",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.1788,
+            "raw_hig_nats": 0.1964,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6956,
+            "beliefs": {
+              "precursor_thermodynamics": 0.49992735614249445,
+              "process_kinetics": 0.0002897611187392832,
+              "structure_phase_informed": 0.49978288273876625
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1949' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.196 nats (expected posterior entropy: 0.777 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1939",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.001,
+            "raw_hig_nats": 0.0011,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5000722875046324,
+              "process_kinetics": 1.0829689570044686e-138,
+              "structure_phase_informed": 0.49992771249536766
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1939' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.695 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0119",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5000719572874054,
+              "process_kinetics": 2.743928201735592e-139,
+              "structure_phase_informed": 0.49992804271259467
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0119' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'discovery_only'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1929",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5000719840022707,
+              "process_kinetics": 4.702435489567805e-140,
+              "structure_phase_informed": 0.4999280159977294
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1929' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'discovery_only'."
+          }
+        ]
       }
-    ],
-    "final_hypothesis_beliefs": {
-      "precursor_thermodynamics": 1.0,
-      "process_kinetics": 0.0,
-      "structure_phase_informed": 9.968941516772225e-38
+    },
+    "summary": {
+      "mean_final_utility": 0.917,
+      "std_final_utility": 0.118,
+      "mean_first_discovery_budget": 12.0,
+      "std_first_discovery_budget": 0.0,
+      "mean_budget_spent": 26.0,
+      "mean_final_entropy_nats": 0.9155,
+      "discovery_success_rate": 0.67
     }
   },
   "PURE_FALSIFICATION": {
     "policy": "PURE_FALSIFICATION",
-    "final_max_conversion": 1.0,
-    "total_budget_spent": 15.0,
-    "steps": [
-      {
-        "step": 1,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_1239",
-        "total_cost_cumulative": 9.5,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0017955094441303074,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 0.9982044905558692
-        }
+    "seeds": {
+      "42": {
+        "final_max_utility": 0.75,
+        "first_discovery_cost": null,
+        "total_budget_spent": 25.0,
+        "total_steps": 10,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6906,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.5355407423725465,
+          "process_kinetics": 3.8155009379562205e-218,
+          "structure_phase_informed": 0.46445925762745355
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_1218",
+            "cost": 0.5,
+            "total_cost_cumulative": 12.5,
+            "max_utility": 0.75,
+            "normalized_hig": 0.2953,
+            "raw_hig_nats": 0.3244,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.8117,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5181290284319737,
+              "process_kinetics": 0.032563968080636684,
+              "structure_phase_informed": 0.4493070034873896
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_1218' (Net Scientific Value: 0.591). Expected Hypothesis Information Gain is 0.324 nats (expected posterior entropy: 0.774 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 2,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_1650",
+            "cost": 0.5,
+            "total_cost_cumulative": 13.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.087,
+            "raw_hig_nats": 0.0956,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.9012,
+            "beliefs": {
+              "precursor_thermodynamics": 0.4965697734890697,
+              "process_kinetics": 0.0728188059850513,
+              "structure_phase_informed": 0.430611420525879
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_1650' (Net Scientific Value: 0.174). Expected Hypothesis Information Gain is 0.096 nats (expected posterior entropy: 0.716 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 3,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_2243",
+            "cost": 0.5,
+            "total_cost_cumulative": 13.5,
+            "max_utility": 0.75,
+            "normalized_hig": 0.087,
+            "raw_hig_nats": 0.0956,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.7543,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5281190133420469,
+              "process_kinetics": 0.013910947635934007,
+              "structure_phase_informed": 0.457970039022019
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_2243' (Net Scientific Value: 0.174). Expected Hypothesis Information Gain is 0.096 nats (expected posterior entropy: 0.806 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 4,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0117",
+            "cost": 0.5,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0137,
+            "raw_hig_nats": 0.015,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.714,
+            "beliefs": {
+              "precursor_thermodynamics": 0.533414595071815,
+              "process_kinetics": 0.004023185526067822,
+              "structure_phase_informed": 0.46256221940211717
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0117' (Net Scientific Value: 0.027). Expected Hypothesis Information Gain is 0.015 nats (expected posterior entropy: 0.739 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1643",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0124,
+            "raw_hig_nats": 0.0136,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5354821354057411,
+              "process_kinetics": 3.8150833881432243e-218,
+              "structure_phase_informed": 0.4645178645942589
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1643' (Net Scientific Value: 0.006). Expected Hypothesis Information Gain is 0.014 nats (expected posterior entropy: 0.700 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 6,
+            "action_type": "XRD",
+            "candidate_id": "PG_0102",
+            "cost": 1.0,
+            "total_cost_cumulative": 17.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5354821354057411,
+              "process_kinetics": 3.8150833881432243e-218,
+              "structure_phase_informed": 0.4645178645942589
+            },
+            "rationale": "Selects XRD for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.691 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2250",
+            "cost": 2.0,
+            "total_cost_cumulative": 19.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5354823169921611,
+              "process_kinetics": 3.815084681869603e-218,
+              "structure_phase_informed": 0.4645176830078389
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_2250' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.691 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 8,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1822",
+            "cost": 2.0,
+            "total_cost_cumulative": 21.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5355412618052134,
+              "process_kinetics": 3.815504638693871e-218,
+              "structure_phase_informed": 0.4644587381947865
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1822' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.691 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 9,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1016",
+            "cost": 2.0,
+            "total_cost_cumulative": 23.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5355412599533532,
+              "process_kinetics": 3.815504625500242e-218,
+              "structure_phase_informed": 0.46445874004664683
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1016' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.691 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 10,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0450",
+            "cost": 2.0,
+            "total_cost_cumulative": 25.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6906,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5355407423725465,
+              "process_kinetics": 3.8155009379562205e-218,
+              "structure_phase_informed": 0.46445925762745355
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0450' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.691 nats) under policy mode 'pure_falsification'."
+          }
+        ]
       },
-      {
-        "step": 2,
-        "action_type": "REFINEMENT",
-        "candidate_id": "PG_2044",
-        "total_cost_cumulative": 10.0,
-        "max_conversion": 0.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.9999998404105795,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.5958942119775046e-07
-        }
+      "101": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 25.0,
+        "total_steps": 13,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.0,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 1.7229879675796376e-16,
+          "process_kinetics": 0.9999999999999986,
+          "structure_phase_informed": 1.3117681751773927e-15
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_2231",
+            "cost": 0.5,
+            "total_cost_cumulative": 12.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.2409,
+            "raw_hig_nats": 0.2647,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.3492,
+            "beliefs": {
+              "precursor_thermodynamics": 0.11064320697775692,
+              "process_kinetics": 0.00013403528071925965,
+              "structure_phase_informed": 0.8892227577415238
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_2231' (Net Scientific Value: 0.482). Expected Hypothesis Information Gain is 0.265 nats (expected posterior entropy: 0.834 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 2,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_3943",
+            "cost": 0.5,
+            "total_cost_cumulative": 13.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0012,
+            "raw_hig_nats": 0.0013,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 4.353854415846301e-19,
+              "process_kinetics": 1.0,
+              "structure_phase_informed": 3.499127091681509e-18
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_3943' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.348 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 3,
+            "action_type": "XRD",
+            "candidate_id": "PG_0102",
+            "cost": 1.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 7.97313207520037e-19,
+              "process_kinetics": 1.0,
+              "structure_phase_informed": 6.407885929384119e-18
+            },
+            "rationale": "Selects XRD for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 4,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0102",
+            "cost": 0.5,
+            "total_cost_cumulative": 14.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 4.0689754629426104e-18,
+              "process_kinetics": 1.0,
+              "structure_phase_informed": 3.2701741762309815e-17
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0102",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 3.984836457771576e-18,
+              "process_kinetics": 1.0,
+              "structure_phase_informed": 3.202614196965088e-17
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 6,
+            "action_type": "XRD",
+            "candidate_id": "PG_0103",
+            "cost": 1.0,
+            "total_cost_cumulative": 17.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 4.380959381598615e-18,
+              "process_kinetics": 1.0,
+              "structure_phase_informed": 3.5209783037574014e-17
+            },
+            "rationale": "Selects XRD for candidate 'PG_0103' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 7,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0103",
+            "cost": 0.5,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 9.34338709899744e-16,
+              "process_kinetics": 0.9999999999999916,
+              "structure_phase_informed": 7.509282874741549e-15
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0103' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 8,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0103",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 3.624184416692896e-16,
+              "process_kinetics": 0.9999999999999968,
+              "structure_phase_informed": 2.9127141244976936e-15
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0103' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 9,
+            "action_type": "XRD",
+            "candidate_id": "PG_0104",
+            "cost": 1.0,
+            "total_cost_cumulative": 21.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 4.1390759783209347e-16,
+              "process_kinetics": 0.9999999999999962,
+              "structure_phase_informed": 3.326526378982e-15
+            },
+            "rationale": "Selects XRD for candidate 'PG_0104' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 10,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0104",
+            "cost": 0.5,
+            "total_cost_cumulative": 21.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 2.0822426346172807e-16,
+              "process_kinetics": 0.9999999999999981,
+              "structure_phase_informed": 1.673473762688752e-15
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0104' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 11,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0104",
+            "cost": 2.0,
+            "total_cost_cumulative": 23.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 2.1101881338987791e-16,
+              "process_kinetics": 0.9999999999999982,
+              "structure_phase_informed": 1.606556569036172e-15
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0104' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 12,
+            "action_type": "XRD",
+            "candidate_id": "PG_0105",
+            "cost": 1.0,
+            "total_cost_cumulative": 24.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 2.4288727009823476e-16,
+              "process_kinetics": 0.9999999999999979,
+              "structure_phase_informed": 1.8491817532431696e-15
+            },
+            "rationale": "Selects XRD for candidate 'PG_0105' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 13,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0105",
+            "cost": 0.5,
+            "total_cost_cumulative": 25.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.0,
+            "beliefs": {
+              "precursor_thermodynamics": 1.7229879675796376e-16,
+              "process_kinetics": 0.9999999999999986,
+              "structure_phase_informed": 1.3117681751773927e-15
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0105' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+          }
+        ]
       },
-      {
-        "step": 3,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_4546",
-        "total_cost_cumulative": 12.0,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
-      },
-      {
-        "step": 4,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_0102",
-        "total_cost_cumulative": 14.0,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
-      },
-      {
-        "step": 5,
-        "action_type": "XRD",
-        "candidate_id": "PG_0102",
-        "total_cost_cumulative": 15.0,
-        "max_conversion": 1.0,
-        "beliefs": {
-          "precursor_thermodynamics": 0.0,
-          "process_kinetics": 0.0,
-          "structure_phase_informed": 1.0
-        }
+      "2024": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 25.0,
+        "total_steps": 10,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6801,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.580698812017737,
+          "process_kinetics": 7.440615501850674e-139,
+          "structure_phase_informed": 0.419301187982263
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0139",
+            "cost": 0.5,
+            "total_cost_cumulative": 12.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.2293,
+            "raw_hig_nats": 0.2519,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 1.0896,
+            "beliefs": {
+              "precursor_thermodynamics": 0.3609109044732033,
+              "process_kinetics": 0.36776029778988656,
+              "structure_phase_informed": 0.27132879773691015
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0139' (Net Scientific Value: 0.459). Expected Hypothesis Information Gain is 0.252 nats (expected posterior entropy: 0.847 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 2,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0828",
+            "cost": 0.5,
+            "total_cost_cumulative": 13.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.3039,
+            "raw_hig_nats": 0.3338,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.8335,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5457224657281284,
+              "process_kinetics": 0.044009463429947035,
+              "structure_phase_informed": 0.41026807084192457
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0828' (Net Scientific Value: 0.608). Expected Hypothesis Information Gain is 0.334 nats (expected posterior entropy: 0.756 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 3,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_1930",
+            "cost": 0.5,
+            "total_cost_cumulative": 13.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.1229,
+            "raw_hig_nats": 0.135,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.9157,
+            "beliefs": {
+              "precursor_thermodynamics": 0.21310198970993277,
+              "process_kinetics": 0.6266903082043228,
+              "structure_phase_informed": 0.16020770208574436
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_1930' (Net Scientific Value: 0.246). Expected Hypothesis Information Gain is 0.135 nats (expected posterior entropy: 0.698 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0839",
+            "cost": 2.0,
+            "total_cost_cumulative": 15.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.415,
+            "raw_hig_nats": 0.4559,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6831,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5709014030841887,
+              "process_kinetics": 1.0406025600758412e-134,
+              "structure_phase_informed": 0.42909859691581137
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0839' (Net Scientific Value: 0.207). Expected Hypothesis Information Gain is 0.456 nats (expected posterior entropy: 0.460 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0817",
+            "cost": 2.0,
+            "total_cost_cumulative": 17.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0001,
+            "raw_hig_nats": 0.0002,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5807000275385308,
+              "process_kinetics": 1.5040331194084453e-136,
+              "structure_phase_informed": 0.4192999724614693
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0817' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.683 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 6,
+            "action_type": "XRD",
+            "candidate_id": "PG_0102",
+            "cost": 1.0,
+            "total_cost_cumulative": 18.5,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5807000275385308,
+              "process_kinetics": 1.6248225437162605e-136,
+              "structure_phase_informed": 0.4192999724614693
+            },
+            "rationale": "Selects XRD for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.680 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 7,
+            "action_type": "REFINEMENT",
+            "candidate_id": "PG_0102",
+            "cost": 0.5,
+            "total_cost_cumulative": 19.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5807000275385308,
+              "process_kinetics": 2.656294693228807e-137,
+              "structure_phase_informed": 0.4192999724614693
+            },
+            "rationale": "Selects REFINEMENT for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.680 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 8,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0102",
+            "cost": 2.0,
+            "total_cost_cumulative": 21.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5807000377322805,
+              "process_kinetics": 2.6183695195816347e-137,
+              "structure_phase_informed": 0.41929996226771943
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0102' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.680 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 9,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1721",
+            "cost": 2.0,
+            "total_cost_cumulative": 23.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5806996487339651,
+              "process_kinetics": 7.881639280985967e-139,
+              "structure_phase_informed": 0.4193003512660349
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1721' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.680 nats) under policy mode 'pure_falsification'."
+          },
+          {
+            "step": 10,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0818",
+            "cost": 2.0,
+            "total_cost_cumulative": 25.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 0.0,
+            "hypothesis_entropy_nats": 0.6801,
+            "beliefs": {
+              "precursor_thermodynamics": 0.580698812017737,
+              "process_kinetics": 7.440615501850674e-139,
+              "structure_phase_informed": 0.419301187982263
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0818' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.680 nats) under policy mode 'pure_falsification'."
+          }
+        ]
       }
-    ],
-    "final_hypothesis_beliefs": {
-      "precursor_thermodynamics": 0.0,
-      "process_kinetics": 0.0,
-      "structure_phase_informed": 1.0
+    },
+    "summary": {
+      "mean_final_utility": 0.917,
+      "std_final_utility": 0.118,
+      "mean_first_discovery_budget": 12.0,
+      "std_first_discovery_budget": 0.0,
+      "mean_budget_spent": 25.0,
+      "mean_final_entropy_nats": 0.4569,
+      "discovery_success_rate": 0.67
     }
   },
-  "RANDOM": {
-    "policy": "RANDOM",
-    "final_max_conversion": 1.0,
-    "total_budget_spent": 18.0,
-    "steps": [
-      {
-        "step": 1,
-        "action_type": "XRD",
-        "candidate_id": "PG_0445",
-        "total_cost_cumulative": 10.0,
-        "max_conversion": 0.0
+  "HYBRID": {
+    "policy": "HYBRID",
+    "seeds": {
+      "42": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 24.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6931,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.5003755279619185,
+          "process_kinetics": 3.5649636810282473e-218,
+          "structure_phase_informed": 0.4996244720380814
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0547",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0748,
+            "raw_hig_nats": 0.0821,
+            "discovery_value": 0.9763,
+            "hypothesis_entropy_nats": 0.8829,
+            "beliefs": {
+              "precursor_thermodynamics": 0.46891895744286083,
+              "process_kinetics": 0.062162073347295836,
+              "structure_phase_informed": 0.46891896920984333
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0547' (Net Scientific Value: 0.536). Expected Hypothesis Information Gain is 0.082 nats (expected posterior entropy: 1.016 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0517",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.1597,
+            "raw_hig_nats": 0.1755,
+            "discovery_value": 0.8317,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.500375526379584,
+              "process_kinetics": 3.564963669754716e-218,
+              "structure_phase_informed": 0.49962447362041607
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0517' (Net Scientific Value: 0.505). Expected Hypothesis Information Gain is 0.175 nats (expected posterior entropy: 0.707 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0118",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003755263795847,
+              "process_kinetics": 3.564963669754716e-218,
+              "structure_phase_informed": 0.4996244736204154
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0118' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0147",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003755270861993,
+              "process_kinetics": 3.564963674789019e-218,
+              "structure_phase_informed": 0.4996244729138008
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0147' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1247",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 0.75,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003755280319488,
+              "process_kinetics": 3.5649636815271585e-218,
+              "structure_phase_informed": 0.4996244719680511
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1247' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1011",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003755278747001,
+              "process_kinetics": 3.564963680406736e-218,
+              "structure_phase_informed": 0.4996244721252999
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1011' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1014",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5003755279619185,
+              "process_kinetics": 3.5649636810282473e-218,
+              "structure_phase_informed": 0.4996244720380814
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1014' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          }
+        ]
       },
-      {
-        "step": 2,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_3945",
-        "total_cost_cumulative": 12.0,
-        "max_conversion": 0.5
+      "101": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.3429,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.8917090414128684,
+          "process_kinetics": 6.353049198128152e-218,
+          "structure_phase_informed": 0.10829095858713153
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0547",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0585,
+            "raw_hig_nats": 0.0643,
+            "discovery_value": 0.9904,
+            "hypothesis_entropy_nats": 0.8483,
+            "beliefs": {
+              "precursor_thermodynamics": 0.47689961469693476,
+              "process_kinetics": 0.04618596784205749,
+              "structure_phase_informed": 0.47691441746100777
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0547' (Net Scientific Value: 0.531). Expected Hypothesis Information Gain is 0.064 nats (expected posterior entropy: 1.034 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0405",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.1319,
+            "raw_hig_nats": 0.1449,
+            "discovery_value": 0.9552,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001369447226935,
+              "process_kinetics": 3.563263876511043e-218,
+              "structure_phase_informed": 0.4998630552773065
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0405' (Net Scientific Value: 0.576). Expected Hypothesis Information Gain is 0.145 nats (expected posterior entropy: 0.703 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1011",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001369939880407,
+              "process_kinetics": 3.563264227505651e-218,
+              "structure_phase_informed": 0.49986300601195927
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1011' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1422",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001368742289325,
+              "process_kinetics": 3.5632633742728066e-218,
+              "structure_phase_informed": 0.49986312577106745
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1422' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2235",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001368512672133,
+              "process_kinetics": 3.5632632106802006e-218,
+              "structure_phase_informed": 0.49986314873278676
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_2235' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1222",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001366267004813,
+              "process_kinetics": 3.5632616107374076e-218,
+              "structure_phase_informed": 0.49986337329951874
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1222' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_1122",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0193,
+            "raw_hig_nats": 0.0212,
+            "discovery_value": 0.9978,
+            "hypothesis_entropy_nats": 0.3429,
+            "beliefs": {
+              "precursor_thermodynamics": 0.8917090414128684,
+              "process_kinetics": 6.353049198128152e-218,
+              "structure_phase_informed": 0.10829095858713153
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_1122' (Net Scientific Value: 0.498). Expected Hypothesis Information Gain is 0.021 nats (expected posterior entropy: 0.672 nats) under policy mode 'hybrid'."
+          }
+        ]
       },
-      {
-        "step": 3,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_2231",
-        "total_cost_cumulative": 14.0,
-        "max_conversion": 1.0
-      },
-      {
-        "step": 4,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_4648",
-        "total_cost_cumulative": 16.0,
-        "max_conversion": 1.0
-      },
-      {
-        "step": 5,
-        "action_type": "OUTCOME_TEST",
-        "candidate_id": "PG_0722",
-        "total_cost_cumulative": 18.0,
-        "max_conversion": 1.0
+      "2024": {
+        "final_max_utility": 1.0,
+        "first_discovery_cost": 12.0,
+        "total_budget_spent": 26.0,
+        "total_steps": 7,
+        "initial_actions_cost": 12.0,
+        "final_entropy_nats": 0.6931,
+        "final_hypothesis_beliefs": {
+          "precursor_thermodynamics": 0.5007000964939364,
+          "process_kinetics": 3.5672760943338303e-218,
+          "structure_phase_informed": 0.49929990350606357
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0839",
+            "cost": 2.0,
+            "total_cost_cumulative": 14.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.4019,
+            "raw_hig_nats": 0.4416,
+            "discovery_value": 0.7717,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5001033878588597,
+              "process_kinetics": 3.099688860645784e-135,
+              "structure_phase_informed": 0.49989661214114034
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0839' (Net Scientific Value: 0.699). Expected Hypothesis Information Gain is 0.442 nats (expected posterior entropy: 0.657 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 2,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0830",
+            "cost": 2.0,
+            "total_cost_cumulative": 16.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5007038579636754,
+              "process_kinetics": 3.567302893212365e-218,
+              "structure_phase_informed": 0.49929614203632455
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0830' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 3,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0919",
+            "cost": 2.0,
+            "total_cost_cumulative": 18.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5007038663168069,
+              "process_kinetics": 3.567302952724779e-218,
+              "structure_phase_informed": 0.49929613368319314
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0919' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 4,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2230",
+            "cost": 2.0,
+            "total_cost_cumulative": 20.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5007038603040802,
+              "process_kinetics": 3.5673029098867744e-218,
+              "structure_phase_informed": 0.4992961396959198
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_2230' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 5,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_3040",
+            "cost": 2.0,
+            "total_cost_cumulative": 22.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5007038750262216,
+              "process_kinetics": 3.5673030147757685e-218,
+              "structure_phase_informed": 0.4992961249737784
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_3040' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 6,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_0430",
+            "cost": 2.0,
+            "total_cost_cumulative": 24.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.500703889980519,
+              "process_kinetics": 3.5673031213188233e-218,
+              "structure_phase_informed": 0.49929611001948104
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_0430' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          },
+          {
+            "step": 7,
+            "action_type": "OUTCOME_TEST",
+            "candidate_id": "PG_2239",
+            "cost": 2.0,
+            "total_cost_cumulative": 26.0,
+            "max_utility": 1.0,
+            "normalized_hig": 0.0,
+            "raw_hig_nats": 0.0,
+            "discovery_value": 1.0,
+            "hypothesis_entropy_nats": 0.6931,
+            "beliefs": {
+              "precursor_thermodynamics": 0.5007000964939364,
+              "process_kinetics": 3.5672760943338303e-218,
+              "structure_phase_informed": 0.49929990350606357
+            },
+            "rationale": "Selects OUTCOME_TEST for candidate 'PG_2239' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
+          }
+        ]
       }
-    ],
-    "final_hypothesis_beliefs": {
-      "untracked": 1.0
+    },
+    "summary": {
+      "mean_final_utility": 1.0,
+      "std_final_utility": 0.0,
+      "mean_first_discovery_budget": 16.0,
+      "std_first_discovery_budget": 5.66,
+      "mean_budget_spent": 26.0,
+      "mean_final_entropy_nats": 0.5764,
+      "discovery_success_rate": 1.0
     }
   }
 }
