@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -110,12 +109,11 @@ def compute_monte_carlo_js_divergence(
         - Bounded: 0.0 <= JS(p1, p2) <= ln(2) ~ 0.69315 nats
         - Zero if and only if p1 == p2 almost everywhere
 
-    Tolerance derivation:
-        When `tol` is None, numerical tolerance scales with the Monte Carlo standard error:
-        effective_tol = max(0.01, 0.5 / sqrt(n_samples)).
-        For n_samples=256, effective_tol ~ 0.03125 nats (~4.5% of the total [0, ln(2)] range),
-        which comfortably accommodates normal statistical fluctuations (3-sigma) while strictly
-        rejecting structural/unnormalized mathematical violations.
+    Tolerance behavior:
+        When `tol` is None, a conservative Monte Carlo tolerance proportional to
+        1/sqrt(n_samples) is used: effective_tol = max(0.01, 0.5 / sqrt(n_samples))
+        to accommodate expected finite-sample numerical fluctuations while still
+        rejecting material violations of the theoretical JS bounds.
 
     Parameters
     ----------
@@ -124,6 +122,9 @@ def compute_monte_carlo_js_divergence(
         If None, automatically derived from n_samples.
         Excursions beyond tolerance raise RuntimeError rather than being silently clipped.
     """
+    if tol is not None and tol < 0:
+        raise ValueError("tol must be non-negative")
+
     effective_tol = tol if tol is not None else max(0.01, 0.5 / np.sqrt(max(1, n_samples)))
     raw_js = _compute_raw_monte_carlo_js(p1, p2, n_samples=n_samples, seed=seed)
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Mapping, Protocol, Sequence
 
 import numpy as np
@@ -238,15 +237,17 @@ def _build_candidate_maps(
     if xrd_embeddings is not None:
         if xrd_candidate_ids is not None:
             x_cids = xrd_candidate_ids
+        elif property_targets is not None:
+            raise ValueError(
+                "Explicit xrd_candidate_ids are required when property_targets "
+                "and xrd_embeddings are supplied together."
+            )
         elif candidate_ids is not None:
-            if property_targets is not None and len(candidate_ids) != len(xrd_embeddings):
-                raise ValueError(
-                    f"XRD candidate IDs must be provided when xrd_embeddings count ({len(xrd_embeddings)}) "
-                    f"differs from candidate_ids / property count ({len(candidate_ids)})."
-                )
             x_cids = candidate_ids
         else:
-            raise ValueError("XRD candidate IDs must be provided when using positional XRD embeddings.")
+            raise ValueError(
+                "XRD candidate IDs must be provided when using positional XRD embeddings."
+            )
 
         if len(x_cids) != len(xrd_embeddings):
             raise ValueError(f"Length mismatch: {len(x_cids)} XRD candidate IDs vs {len(xrd_embeddings)} XRD embeddings.")

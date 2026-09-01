@@ -562,36 +562,71 @@ def test_predictive_distribution_case_c_multivariate_xrd_consistency() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 7. Candidate Map Legacy Edge Cases & TypeError Prevention
 # ---------------------------------------------------------------------------
-def test_build_candidate_maps_legacy_edge_cases_and_no_typeerror() -> None:
-    """Tests P2 legacy candidate map edge cases to ensure descriptive ValueError without TypeError."""
-    # 1. xrd_embeddings provided with no candidate IDs
-    with pytest.raises(ValueError, match="XRD candidate IDs must be provided"):
-        _build_candidate_maps(
-            xrd_embeddings=np.zeros((3, 8)),
-        )
-
-    # 2. property_targets present with candidate_ids, but xrd_embeddings has different length and no xrd_candidate_ids
-    with pytest.raises(ValueError, match="XRD candidate IDs must be provided"):
+# 7. Candidate Map Legacy Edge Cases & Ambiguity Prevention (Cases A-F)
+# ---------------------------------------------------------------------------
+def test_build_candidate_maps_case_a_ambiguous_equal_count_multimodal_rejected() -> None:
+    """Case A: Equal-count multimodal legacy input without explicit XRD candidate IDs MUST raise ValueError."""
+    with pytest.raises(ValueError, match="Explicit xrd_candidate_ids are required"):
         _build_candidate_maps(
             property_targets=np.array([0.01, 0.02]),
-            candidate_ids=["C1", "C2"],
+            candidate_ids=["P1", "P2"],
+            xrd_embeddings=np.zeros((2, 8)),
+        )
+
+
+def test_build_candidate_maps_case_b_unequal_count_multimodal_rejected() -> None:
+    """Case B: Unequal-count multimodal legacy input without explicit XRD candidate IDs MUST raise ValueError."""
+    with pytest.raises(ValueError, match="Explicit xrd_candidate_ids are required"):
+        _build_candidate_maps(
+            property_targets=np.array([0.01, 0.02]),
+            candidate_ids=["P1", "P2"],
             xrd_embeddings=np.zeros((3, 8)),
         )
 
-    # 3. Equal counts with explicit different XRD candidate IDs
+
+def test_build_candidate_maps_case_c_explicit_disjoint_modality_identities() -> None:
+    """Case C: Explicit disjoint modality candidate IDs MUST succeed and separate correctly."""
+    comp, prop, xrd = _build_candidate_maps(
+        property_targets=np.array([0.01, 0.02]),
+        property_candidate_ids=["P1", "P2"],
+        xrd_embeddings=np.ones((2, 8)),
+        xrd_candidate_ids=["X1", "X2"],
+    )
+    assert set(prop.keys()) == {"P1", "P2"}
+    assert set(xrd.keys()) == {"X1", "X2"}
+    assert "P1" not in xrd and "P2" not in xrd
+    assert "X1" not in prop and "X2" not in prop
+
+
+def test_build_candidate_maps_case_d_overlapping_explicit_identities() -> None:
+    """Case D: Overlapping explicit candidate IDs MUST succeed with overlap occurring only on specified IDs."""
     comp, prop, xrd = _build_candidate_maps(
         property_targets=np.array([0.01, 0.02]),
         property_candidate_ids=["C1", "C2"],
         xrd_embeddings=np.ones((2, 8)),
-        xrd_candidate_ids=["C3", "C4"],
+        xrd_candidate_ids=["C1", "C3"],
     )
-    assert "C1" in prop and "C2" in prop
-    assert "C3" in xrd and "C4" in xrd
-    assert "C1" not in xrd
+    assert set(prop.keys()) == {"C1", "C2"}
+    assert set(xrd.keys()) == {"C1", "C3"}
+    overlap = set(prop.keys()) & set(xrd.keys())
+    assert overlap == {"C1"}
 
-    # 4. Conflicting explicit XRD map + legacy embeddings
+
+def test_build_candidate_maps_case_e_xrd_only_legacy_positional_input() -> None:
+    """Case E: XRD-only legacy positional input MUST succeed for backward compatibility."""
+    comp, prop, xrd = _build_candidate_maps(
+        candidate_ids=["C1", "C2"],
+        xrd_embeddings=np.ones((2, 8)),
+        property_targets=None,
+    )
+    assert len(prop) == 0
+    assert set(xrd.keys()) == {"C1", "C2"}
+
+
+def test_build_candidate_maps_case_f_explicit_map_precedence() -> None:
+    """Case F: Explicit map precedence MUST be preserved; conflicting legacy inputs MUST raise ValueError."""
+    # Conflicting explicit XRD map + legacy embeddings
     with pytest.raises(ValueError, match="Conflicting explicit and legacy"):
         _build_candidate_maps(
             xrd_embedding_by_id={"C1": np.zeros(8)},
@@ -599,7 +634,16 @@ def test_build_candidate_maps_legacy_edge_cases_and_no_typeerror() -> None:
             xrd_candidate_ids=["C1"],
         )
 
-    # 5. Mixed combinations with None candidate IDs never raise TypeError
+
+def test_build_candidate_maps_legacy_edge_cases_and_no_typeerror() -> None:
+    """Tests legacy candidate map edge cases to ensure descriptive ValueError without TypeError."""
+    # 1. xrd_embeddings provided with no candidate IDs at all
+    with pytest.raises(ValueError, match="XRD candidate IDs must be provided"):
+        _build_candidate_maps(
+            xrd_embeddings=np.zeros((3, 8)),
+        )
+
+    # 2. Mixed combinations with None candidate IDs never raise TypeError
     with pytest.raises(ValueError):
         _build_candidate_maps(
             property_targets=np.array([0.01]),
@@ -610,8 +654,17 @@ def test_build_candidate_maps_legacy_edge_cases_and_no_typeerror() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 8. Monte Carlo JS Divergence Boundary Violation Enforcement
+# 8. Monte Carlo JS Divergence Boundary Violation Enforcement & Tolerance Validation
 # ---------------------------------------------------------------------------
+def test_monte_carlo_js_divergence_tol_validation() -> None:
+    """Verifies that negative tol raises ValueError."""
+    p1 = PredictiveDistribution("H1", "C1", ExperimentActionType.PROPERTY, np.array([0.0]), np.array([1.0]))
+    p2 = PredictiveDistribution("H2", "C1", ExperimentActionType.PROPERTY, np.array([3.0]), np.array([1.0]))
+
+    with pytest.raises(ValueError, match="tol must be non-negative"):
+        compute_monte_carlo_js_divergence(p1, p2, tol=-0.01)
+
+
 def test_monte_carlo_js_divergence_rejects_material_bound_violations(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verifies that compute_monte_carlo_js_divergence raises RuntimeError for material bound violations."""
     p1 = PredictiveDistribution("H1", "C1", ExperimentActionType.PROPERTY, np.array([0.0]), np.array([1.0]))
