@@ -69,6 +69,10 @@ class HypothesisInformationGainEstimator:
         current_entropy = ensemble.get_entropy()
         hids = list(ensemble.hypotheses.keys())
         p_vec = np.array([current_beliefs[hid] for hid in hids], dtype=np.float64)
+        if np.isnan(p_vec).any() or np.sum(p_vec) <= 0:
+            p_vec = np.ones(len(hids), dtype=np.float64) / len(hids)
+        else:
+            p_vec = p_vec / np.sum(p_vec)
 
         # 2. Get predictive distributions from all hypotheses
         preds = ensemble.predict_all(
@@ -150,9 +154,15 @@ class HypothesisInformationGainEstimator:
                 log_likes[j] = preds[hid].log_pdf(y_hypothetical)
 
             # Updated unnormalized log-posterior: log P(H_j) + log p(y | H_j)
-            unnorm_log_post = np.log(p_vec + 1e-12) + log_likes
+            log_likes = np.clip(log_likes, -500.0, 500.0)
+            unnorm_log_post = np.log(np.maximum(p_vec, 1e-12)) + log_likes
+            unnorm_log_post = np.clip(unnorm_log_post, -500.0, 500.0)
             norm_log_post = unnorm_log_post - logsumexp(unnorm_log_post)
             post_probs = np.exp(norm_log_post)
+            if np.isnan(post_probs).any() or np.sum(post_probs) <= 0:
+                post_probs = np.ones(len(hids), dtype=np.float64) / len(hids)
+            else:
+                post_probs = post_probs / np.sum(post_probs)
             post_probs = np.maximum(post_probs, 1e-12)
 
             # Compute posterior entropy

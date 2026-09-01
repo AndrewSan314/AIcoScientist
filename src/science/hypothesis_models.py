@@ -96,7 +96,9 @@ class PredictiveDistribution:
         log_det = float(np.sum(np.log(var)))
         log_prob = -0.5 * (dim * np.log(2.0 * np.pi) + log_det + quad)
 
-        return float(log_prob)
+        if not np.isfinite(log_prob):
+            return -1000.0
+        return float(np.clip(log_prob, -1000.0, 1000.0))
 
 
 class ScientificHypothesisModel(Protocol):
@@ -943,9 +945,20 @@ class HypothesisEnsemble:
     def get_beliefs(self) -> dict[str, float]:
         """Returns normalized posterior hypothesis probabilities P(H_i | D_t) via Log-Sum-Exp."""
         log_evs = np.array([self.cumulative_log_evidence[hid] for hid in self.hypotheses], dtype=np.float64)
-        lse = logsumexp(log_evs)
-        norm_log_p = log_evs - lse
+        if np.isnan(log_evs).any() or not np.any(np.isfinite(log_evs)):
+            return dict(self.prior_beliefs)
+
+        max_log = np.max(log_evs[np.isfinite(log_evs)])
+        log_evs_shifted = np.where(np.isfinite(log_evs), log_evs - max_log, -500.0)
+        log_evs_shifted = np.maximum(log_evs_shifted, -500.0)
+
+        lse = logsumexp(log_evs_shifted)
+        norm_log_p = log_evs_shifted - lse
         probs = np.exp(norm_log_p)
+
+        if np.isnan(probs).any() or np.sum(probs) <= 0:
+            probs = np.array([self.prior_beliefs[hid] for hid in self.hypotheses], dtype=np.float64)
+        probs = probs / np.sum(probs)
         return {hid: float(p) for hid, p in zip(self.hypotheses.keys(), probs)}
 
     def get_entropy(self) -> float:

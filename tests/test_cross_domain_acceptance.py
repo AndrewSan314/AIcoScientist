@@ -47,8 +47,6 @@ def test_same_engine_runs_auirh_toy_and_alab(tmp_path):
     adapter_alab = ALabDomainAdapter(
         data_dir=fixture_dir,
         cache_dir=cache_dir,
-        samples=samples,
-        min_pca_samples=2,
     )
     engine_alab = ScientificDecisionEngine(domain=adapter_alab, seed=42)
     init_alab = adapter_alab.get_default_initial_actions(n_candidates=2, seed=42)
@@ -61,7 +59,7 @@ def test_same_engine_runs_auirh_toy_and_alab(tmp_path):
     # Verify diversity of domain schemas and hypotheses across engines
     assert engine_auirh.objectives[0].name == "k0"
     assert engine_toy.objectives[0].name == "capacity"
-    assert engine_alab.objectives[0].name == "reaction_conversion"
+    assert engine_alab.objectives[0].name == "reaction_outcome_utility"
 
     assert list(engine_auirh.ensemble.hypotheses.keys()) == ["H1", "H2", "H3"]
     assert list(engine_toy.ensemble.hypotheses.keys()) == [

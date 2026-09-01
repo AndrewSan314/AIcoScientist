@@ -11,6 +11,39 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from src.domains.alab.artifact_index import ALabArtifactIndex, ArtifactRef
+from src.domains.alab.chemistry import parse_chemical_formula, parse_refinement_phases
+from src.domains.alab.config import (
+    ALAB_CANONICAL_PRECURSORS,
+    ALAB_CANDIDATE_FEATURE_NAMES,
+    ALAB_DOMAIN_CONFIG,
+    ALAB_OBJECTIVE_REACTION_OUTCOME,
+)
+from src.domains.alab.feature_encoder import ALabFeatureEncoder
+from src.domains.alab.hypotheses import ALabHypothesisProvider
+from src.science.actions import (
+    ActionType,
+    ExperimentActionType,
+    ExperimentOutcome,
+    ScientificAction,
+    normalize_action_type,
+)
+from src.science.domain import (
+    HypothesisProvider,
+    HypothesisTrainingContext,
+    MaterialDomainAdapter,
+    MaterialDomainConfig,
+    ModalityDefinition,
+    ObjectiveDefinition,
+)
+from src.science.representation import (
+    ObservationRepresentationManager,
+    RepresentationSnapshot,
+)
+from src.science.xrd_representation import XRDRepresentationExtractor
+
+logger = logging.getLogger(__name__)
+
 
 class _SafeALabUnpickler(pickle.Unpickler):
     """Custom unpickler that gracefully mocks external dara/pymatgen classes without requiring dependencies."""
@@ -31,229 +64,250 @@ class _SafeALabUnpickler(pickle.Unpickler):
             _DummyRefinementObject.__module__ = module
             return _DummyRefinementObject
 
-from src.domains.alab.artifact_index import ALabArtifactIndex, ArtifactRef
-from src.domains.alab.config import (
-    ALAB_DOMAIN_CONFIG,
-    ALAB_MODALITY_OUTCOME_TEST,
-    ALAB_MODALITY_REFINEMENT,
-    ALAB_MODALITY_XRD,
-    ALAB_OBJECTIVE_REACTION_CONVERSION,
-)
-from src.domains.alab.feature_encoder import ALabFeatureEncoder
-from src.domains.alab.hypotheses import ALabHypothesisProvider
-from src.science.actions import (
-    ExperimentActionType,
-    ExperimentOutcome,
-    ScientificAction,
-    normalize_action_type,
-)
-from src.science.domain import (
-    HypothesisProvider,
-    MaterialDomainAdapter,
-    MaterialDomainConfig,
-    ModalityDefinition,
-    ObjectiveDefinition,
-)
-from src.science.representation import (
-    ObservationRepresentationManager,
-    RepresentationSnapshot,
-)
-from src.science.xrd_representation import XRDRepresentationExtractor
 
-logger = logging.getLogger(__name__)
+class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager):
+    """Scientific domain adapter for the autonomous A-Lab Precursor Genome solid-state synthesis campaign.
 
-
-class ALabDomainAdapter(ObservationRepresentationManager):
-    """Multimodal domain adapter for the A-Lab Precursor Genome solid-state synthesis dataset.
-
-    Implements the generic `MaterialDomainAdapter` and `ObservationRepresentationManager`
-    contracts over real external offline experimental archives.
+    Implements:
+    1. Offline candidate pool firewall (strictly pre-experiment features).
+    2. Modality prerequisite enforcement (REFINEMENT strictly requires completed XRD).
+    3. Physical 2theta axis extraction and interpolation for powder XRD scans.
+    4. Deterministic chemical phase matching for Rietveld refinements.
+    5. ObservationRepresentationManager protocol with frozen PCA snapshots.
     """
 
     def __init__(
         self,
         data_dir: str = "data/external/precursor_genome_2026",
         cache_dir: str = "data/derived/alab",
-        samples: list[dict[str, Any]] | None = None,
-        hypothesis_provider: HypothesisProvider | None = None,
-        min_pca_samples: int = 3,
+        xrd_embedding_dim: int = 8,
+        config: MaterialDomainConfig | None = None,
     ) -> None:
-        self.data_dir = data_dir
-        self.cache_dir = cache_dir
-        self._samples_list = samples
-        self._hypothesis_provider = (
-            hypothesis_provider
-            if hypothesis_provider is not None
-            else ALabHypothesisProvider()
-        )
+        self._data_dir = data_dir
+        self._cache_dir = cache_dir
+        self._config = config or ALAB_DOMAIN_CONFIG
 
-        # Load samples from ledger if not explicitly provided
-        if self._samples_list is None:
-            ledger_path = os.path.join(self.data_dir, "ledger_precursor_genome.json")
-            if os.path.exists(ledger_path):
-                with open(ledger_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                self._samples_list = data.get("samples", [])
-            else:
-                self._samples_list = []
+        self._encoder = ALabFeatureEncoder(ALAB_CANONICAL_PRECURSORS)
+        self._artifact_index = ALabArtifactIndex(data_dir=self._data_dir, cache_dir=self._cache_dir)
+        self._hypothesis_provider = ALabHypothesisProvider()
 
-        self._samples_map: dict[str, dict[str, Any]] = {
-            s["sample_id"]: s for s in self._samples_list if "sample_id" in s
-        }
+        # State collections
+        self._samples_by_id: dict[str, dict[str, Any]] = {}
+        self._candidate_features: dict[str, np.ndarray] = {}
+        self._candidate_pool_df: pd.DataFrame | None = None
 
-        # Initialize feature encoder
-        self._encoder = ALabFeatureEncoder()
-        self._encoder.fit(self._samples_list)
-
-        # Initialize artifact index
-        self._artifact_index = ALabArtifactIndex(data_dir=self.data_dir, cache_dir=self.cache_dir)
-        self._artifact_index.build_or_load(samples=self._samples_list)
-
-        # XRD representation manager (leakage-free basis lifecycle)
-        self._xrd_extractor = XRDRepresentationExtractor(
-            n_components=8,
-            min_pca_samples=min_pca_samples,
-            representation_id="alab_xrd_pca",
-        )
+        # Revealed observations (offline simulation state)
         self._revealed_xrd_spectra: dict[str, np.ndarray] = {}
         self._xrd_embeddings: dict[str, np.ndarray] = {}
         self._revealed_refinements: dict[str, np.ndarray] = {}
         self._revealed_outcomes: dict[str, float] = {}
 
-        # Build candidate pool DataFrame (strictly firewalled: pre-experiment features ONLY)
-        pool_rows = []
-        for s in self._samples_list:
-            sid = s["sample_id"]
-            feat_vec = self._encoder.encode_candidate(s)
-            raw_meta = self._encoder.extract_raw_metadata(s)
-            row = {
-                "candidate_id": sid,
-                "reaction_energy_ev_per_atom": float(feat_vec[0]),
-                "heating_temperature_c": float(raw_meta.get("heating_temperature_c") or 200.0),
-                "heating_time_minutes": float(raw_meta.get("heating_time_minutes") or 60.0),
-                "precursor_1_idx": float(feat_vec[3]),
-                "precursor_2_idx": float(feat_vec[4]),
-                "target_compound": str(raw_meta.get("target_compound") or ""),
-                "precursor_1": str(raw_meta.get("precursor_1") or ""),
-                "precursor_2": str(raw_meta.get("precursor_2") or ""),
-            }
-            pool_rows.append(row)
+        # Representation manager for powder XRD
+        self._xrd_extractor = XRDRepresentationExtractor(
+            n_components=xrd_embedding_dim,
+            num_grid_points=450,
+            representation_id="alab_xrd_pca",
+        )
 
-        self._candidate_pool_df = pd.DataFrame(pool_rows)
+        self._load_dataset()
+
+    def _load_dataset(self) -> None:
+        """Loads and indexes samples from ledger_precursor_genome.json or test fixtures."""
+        ledger_path = os.path.join(self._data_dir, "ledger_precursor_genome.json")
+        if not os.path.exists(ledger_path):
+            fixture_path = os.path.join(self._data_dir, "samples.json")
+            if os.path.exists(fixture_path):
+                ledger_path = fixture_path
+            else:
+                logger.warning("No A-Lab ledger found at '%s' or fixture '%s'. Empty domain.", ledger_path, fixture_path)
+                self._candidate_pool_df = pd.DataFrame()
+                return
+
+        with open(ledger_path, "r", encoding="utf-8") as f:
+            raw_data = json.load(f)
+
+        samples: list[dict[str, Any]] = []
+        if isinstance(raw_data, dict):
+            samples = raw_data.get("samples", [])
+        elif isinstance(raw_data, list):
+            samples = raw_data
+
+        # Build or load streaming artifact index
+        self._artifact_index.build_or_load(samples=samples)
+
+        rows = []
+        for s in samples:
+            cid = str(s.get("sample_id"))
+            self._samples_by_id[cid] = s
+            feat_vec = self._encoder.encode_candidate(s)
+            self._candidate_features[cid] = feat_vec
+
+            raw_meta = self._encoder.extract_raw_metadata(s)
+            row_dict = {
+                "candidate_id": cid,
+                "target_compound": raw_meta.get("target_compound", ""),
+                "precursor_1": raw_meta.get("precursor_1", ""),
+                "precursor_2": raw_meta.get("precursor_2", ""),
+                "heating_temperature_c": raw_meta.get("heating_temperature_c", 200.0),
+                "heating_time_minutes": raw_meta.get("heating_time_minutes", 60.0),
+            }
+            # Populate exact canonical feature columns
+            for i, col_name in enumerate(self._encoder.feature_names):
+                row_dict[col_name] = float(feat_vec[i])
+
+            rows.append(row_dict)
+
+        self._candidate_pool_df = pd.DataFrame(rows)
+        logger.info("Loaded A-Lab candidate pool with %d candidates.", len(self._candidate_pool_df))
 
     @property
     def domain_id(self) -> str:
-        return "alab_precursor_genome"
+        return self._config.domain_id
 
     def get_config(self) -> MaterialDomainConfig:
-        return ALAB_DOMAIN_CONFIG
+        return self._config
+
+    @property
+    def config(self) -> MaterialDomainConfig:
+        return self._config
+
+    @property
+    def candidate_features(self) -> tuple[str, ...]:
+        return self._config.candidate_features
+
+    @property
+    def objectives(self) -> tuple[ObjectiveDefinition, ...]:
+        return self._config.objectives
+
+    def get_objectives(self) -> Sequence[ObjectiveDefinition]:
+        return self._config.objectives
+
+    @property
+    def modalities(self) -> tuple[ModalityDefinition, ...]:
+        return self._config.modalities
+
+    def get_modality_schema(self) -> Sequence[ModalityDefinition]:
+        return self._config.modalities
 
     def get_candidate_pool(self) -> pd.DataFrame:
-        """Returns the pre-experiment candidate pool (firewalled against post-experiment observations)."""
+        """Returns candidate pool containing strictly pre-experiment features."""
+        if self._candidate_pool_df is None:
+            return pd.DataFrame()
         return self._candidate_pool_df.copy()
 
-    def get_candidate_features(self, candidate_id: str) -> Mapping[str, float]:
-        """Returns numeric candidate feature vector."""
-        if candidate_id not in self._samples_map:
-            raise KeyError(f"Candidate '{candidate_id}' not found in A-Lab dataset.")
-        sample = self._samples_map[candidate_id]
-        feat_vec = self._encoder.encode_candidate(sample)
-        return {
-            "reaction_energy_ev_per_atom": float(feat_vec[0]),
-            "heating_temperature_c": float(feat_vec[1]),
-            "heating_time_minutes": float(feat_vec[2]),
-            "precursor_1_idx": float(feat_vec[3]),
-            "precursor_2_idx": float(feat_vec[4]),
-        }
+    def get_candidate_features(self, candidate_id: str) -> np.ndarray:
+        """Returns pre-experiment feature vector for candidate_id matching candidate_features."""
+        if candidate_id not in self._candidate_features:
+            raise KeyError(f"Candidate '{candidate_id}' not found in A-Lab domain.")
+        return np.copy(self._candidate_features[candidate_id])
 
-    def list_valid_actions(self, state: Any = None) -> Sequence[ScientificAction]:
-        """Lists valid unrevealed measurement actions.
+    def get_hypothesis_provider(self) -> HypothesisProvider:
+        return self._hypothesis_provider
 
-        PREREQUISITE CONTRACT:
-        - OUTCOME_TEST: available if not yet revealed.
-        - XRD: available if unrevealed and raw scan exists in artifact index.
-        - REFINEMENT: available if unrevealed, refinement artifact exists, AND XRD is already observed.
-        """
+    def list_valid_actions(self) -> list[ScientificAction]:
+        """Lists currently eligible actions enforcing prerequisite: REFINEMENT requires XRD."""
         actions: list[ScientificAction] = []
-        for sid in self._samples_map:
-            # 1. OUTCOME_TEST
-            if sid not in self._revealed_outcomes:
-                actions.append(
-                    ScientificAction(
-                        action_id=f"act_outcome_{sid}",
-                        candidate_id=sid,
-                        action_type="OUTCOME_TEST",
-                        estimated_cost=ALAB_MODALITY_OUTCOME_TEST.cost,
-                        metadata={"modality": "OUTCOME_TEST"},
-                    )
-                )
+        if self._candidate_pool_df is None or self._candidate_pool_df.empty:
+            return actions
 
-            # 2. XRD
-            if sid not in self._revealed_xrd_spectra and self._artifact_index.has_artifact(sid, "XRD"):
+        for cid in self._candidate_pool_df["candidate_id"]:
+            # 1. XRD action (if not yet measured and artifact exists)
+            if cid not in self._revealed_xrd_spectra and self._artifact_index.get_artifact_ref(cid, "XRD") is not None:
                 actions.append(
                     ScientificAction(
-                        action_id=f"act_xrd_{sid}",
-                        candidate_id=sid,
+                        action_id=f"XRD_{cid}",
+                        candidate_id=cid,
                         action_type="XRD",
-                        estimated_cost=ALAB_MODALITY_XRD.cost,
-                        metadata={"modality": "XRD"},
+                        estimated_cost=1.0,
+                        metadata={"description": f"Powder XRD 2theta scan for {cid}", "modality_hint": "XRD"},
                     )
                 )
 
-            # 3. REFINEMENT (Requires XRD prerequisite)
-            if (
-                sid in self._revealed_xrd_spectra
-                and sid not in self._revealed_refinements
-                and self._artifact_index.has_artifact(sid, "REFINEMENT")
-            ):
+            # 2. REFINEMENT action (strictly requires completed XRD on cid and available refinement data)
+            sample_obj = self._samples_by_id.get(cid, {})
+            scans = sample_obj.get("characterization", {}).get("xrd", {}).get("scans", [])
+            has_ref = (
+                (bool(scans) and bool(scans[0].get("refinement_cases")))
+                or self._artifact_index.get_artifact_ref(cid, "REFINEMENT") is not None
+            )
+            if cid in self._revealed_xrd_spectra and cid not in self._revealed_refinements and has_ref:
                 actions.append(
                     ScientificAction(
-                        action_id=f"act_ref_{sid}",
-                        candidate_id=sid,
+                        action_id=f"REFINEMENT_{cid}",
+                        candidate_id=cid,
                         action_type="REFINEMENT",
-                        estimated_cost=ALAB_MODALITY_REFINEMENT.cost,
-                        metadata={"modality": "REFINEMENT"},
+                        estimated_cost=0.5,
+                        metadata={"description": f"Rietveld phase refinement for {cid}", "modality_hint": "REFINEMENT"},
+                    )
+                )
+
+            # 3. OUTCOME_TEST action (if not yet tested)
+            if cid not in self._revealed_outcomes:
+                actions.append(
+                    ScientificAction(
+                        action_id=f"OUTCOME_{cid}",
+                        candidate_id=cid,
+                        action_type="OUTCOME_TEST",
+                        estimated_cost=2.0,
+                        metadata={"description": f"Synthesis outcome test for {cid}", "modality_hint": "OUTCOME_TEST"},
                     )
                 )
 
         return actions
 
     def execute_or_reveal(self, action: ScientificAction) -> ExperimentOutcome:
-        """Reveals historical experimental evidence for the requested candidate and modality."""
-        cid = action.candidate_id
-        if cid not in self._samples_map:
-            raise KeyError(f"Candidate '{cid}' not found in A-Lab dataset.")
+        """Executes experimental observation action in offline replay mode with strict physical parsing."""
+        cid = str(action.candidate_id)
+        if cid not in self._samples_by_id:
+            raise KeyError(f"Candidate '{cid}' not found in A-Lab domain.")
 
-        sample = self._samples_map[cid]
+        sample = self._samples_by_id[cid]
         norm_type = normalize_action_type(action.action_type)
-        mod_hint = action.metadata.get("modality", norm_type)
+        mod_hint = str(action.metadata.get("modality_hint") or action.action_type).upper()
 
-        if mod_hint == "OUTCOME_TEST" or norm_type in ("PROPERTY", "OUTCOME_TEST"):
-            # Quantitative reaction conversion from ledger outcome
-            cat = sample.get("outcome", {}).get("reaction_category")
-            if cat == "completely_reacted":
-                score = 1.0
-            elif cat == "transformed":
-                score = 0.75
-            elif cat == "partially_reacted":
-                score = 0.5
+        if mod_hint == "OUTCOME_TEST" or norm_type in ("OUTCOME_TEST", "PROPERTY"):
+            outcome_dict = sample.get("outcome") or {}
+            cat = outcome_dict.get("reaction_category")
+
+            category_utility_map = {
+                "completely_reacted": 1.0,
+                "transformed": 0.75,
+                "partially_reacted": 0.5,
+                "unreacted": 0.0,
+            }
+
+            if cat is None:
+                # Unlabeled / physical failure outcome
+                utility_val = None
+                is_labeled = False
+                canonical_obs = None
             else:
-                score = 0.0
+                utility_val = float(category_utility_map.get(cat, 0.0))
+                is_labeled = True
+                self._revealed_outcomes[cid] = utility_val
+                canonical_obs = utility_val
 
-            self._revealed_outcomes[cid] = score
             return ExperimentOutcome(
                 action_id=action.action_id,
                 candidate_id=cid,
                 action_type=action.action_type,
                 revealed_data={
-                    "reaction_conversion": score,
-                    "reaction_category": str(cat),
+                    "reaction_outcome_utility": utility_val,
+                    "reaction_category": cat,
+                    "is_labeled": is_labeled,
+                    "category_notes": outcome_dict.get("category_notes"),
+                    "physical_failure": sample.get("physical_failure"),
                 },
-                canonical_observation=score,
+                canonical_observation=canonical_obs,
                 provenance={
                     "dataset": "A-Lab Precursor Genome",
+                    "dataset_key": "precursor_genome_2026",
                     "execution_mode": "offline_replay",
                     "sample_id": cid,
+                    "is_labeled": is_labeled,
+                    "reaction_category": cat,
+                    "reaction_outcome_utility": utility_val,
+                    "domain_version": "1.0.0",
                 },
             )
 
@@ -262,9 +316,24 @@ class ALabDomainAdapter(ObservationRepresentationManager):
             if ref is None:
                 raise RuntimeError(f"No XRD artifact found for candidate '{cid}'.")
 
-            # Parse XRD spectrum from XML bytes
             raw_bytes = self._artifact_index.read_artifact_bytes(ref)
-            root = ET.fromstring(raw_bytes)
+            try:
+                root = ET.fromstring(raw_bytes)
+            except Exception as e:
+                raise ValueError(f"Malformed XRD XML file for candidate '{cid}': {e}") from e
+
+            # Extract physical 2theta axis start and end positions
+            start_pos = 10.0
+            end_pos = 100.0
+            for elem in root.iter():
+                if elem.tag.endswith("positions") and elem.attrib.get("axis") == "2Theta":
+                    for child in elem:
+                        if child.tag.endswith("startPosition") and child.text:
+                            start_pos = float(child.text.strip())
+                        elif child.tag.endswith("endPosition") and child.text:
+                            end_pos = float(child.text.strip())
+
+            # Extract raw intensities / counts
             intensities: list[float] = []
             for elem in root.iter():
                 tag = elem.tag.split("}")[-1]
@@ -273,18 +342,16 @@ class ALabDomainAdapter(ObservationRepresentationManager):
                     break
 
             if not intensities:
-                intensities = [0.0] * 450
+                raise ValueError(f"Empty or missing XRD intensity counts in scan for candidate '{cid}'.")
 
-            # Resample / standardize to 450 grid points
             raw_arr = np.asarray(intensities, dtype=np.float64)
-            if len(raw_arr) != 450:
-                grid_indices = np.linspace(0, len(raw_arr) - 1, 450)
-                norm_spec = np.interp(grid_indices, np.arange(len(raw_arr)), raw_arr)
-            else:
-                norm_spec = raw_arr
+            # Physical 2theta axis interpolation onto canonical 450-point 10-100 deg grid
+            phys_2theta = np.linspace(start_pos, end_pos, len(raw_arr))
+            canonical_grid = np.linspace(10.0, 100.0, 450)
+            norm_spec = np.interp(canonical_grid, phys_2theta, raw_arr)
 
             # Normalize intensity
-            max_val = np.max(norm_spec)
+            max_val = float(np.max(norm_spec))
             if max_val > 0:
                 norm_spec = norm_spec / max_val
 
@@ -292,6 +359,7 @@ class ALabDomainAdapter(ObservationRepresentationManager):
             self._revealed_xrd_spectra[cid] = norm_spec
             self._xrd_embeddings[cid] = emb
 
+            snapshot = self.get_representation_snapshot("XRD")
             return ExperimentOutcome(
                 action_id=action.action_id,
                 candidate_id=cid,
@@ -299,67 +367,91 @@ class ALabDomainAdapter(ObservationRepresentationManager):
                 revealed_data={
                     "normalized_intensity": norm_spec.tolist(),
                     "xrd_embedding": emb.tolist(),
+                    "two_theta_start": start_pos,
+                    "two_theta_end": end_pos,
                 },
                 canonical_observation=emb,
                 provenance={
                     "dataset": "A-Lab Precursor Genome",
+                    "dataset_key": "precursor_genome_2026",
                     "execution_mode": "offline_replay",
                     "sample_id": cid,
-                    "artifact_ref": ref.to_dict(),
+                    "source_archive": ref.archive_path,
+                    "archive_member_path": ref.member_path,
+                    "member_size_bytes": ref.size_bytes,
+                    "archive_checksum": ref.checksum,
+                    "preprocessing_version": "physical_2theta_v1",
+                    "representation_id": "alab_xrd_pca",
+                    "representation_version": snapshot.version if snapshot else 0,
+                    "representation_fingerprint": snapshot.fingerprint if snapshot else None,
+                    "domain_version": "1.0.0",
                 },
             )
 
         elif mod_hint == "REFINEMENT" or norm_type in ("REFINEMENT", "CHARACTERIZATION"):
-            ref = self._artifact_index.get_artifact_ref(cid, "REFINEMENT")
-            if ref is None:
-                raise RuntimeError(f"No Refinement artifact found for candidate '{cid}'.")
+            # Enforce prerequisite
+            if cid not in self._revealed_xrd_spectra:
+                raise RuntimeError(f"Prerequisite not met: REFINEMENT on '{cid}' requires completed XRD observation.")
 
-            raw_bytes = self._artifact_index.read_artifact_bytes(ref)
-            try:
-                pkl_data = _SafeALabUnpickler(io.BytesIO(raw_bytes)).load()
-            except Exception:
-                pkl_data = {}
+            target_compound = str(sample.get("target_compound", ""))
+            precursors = [p.get("formula", "") if isinstance(p, dict) else str(p) for p in sample.get("precursors", [])]
 
-            phase_weights = {}
-            if isinstance(pkl_data, dict):
-                phase_weights = pkl_data.get("phase_weights", {})
-                rwp = float(pkl_data.get("best_rwp", 5.0))
+            # 1. Prefer structured refinement data in ledger
+            xrd_data = sample.get("characterization", {}).get("xrd", {})
+            scans = xrd_data.get("scans", [])
+            phase_weights: dict[str, float] = {}
+            rwp = 5.0
+            used_source = "ledger"
+
+            if scans and len(scans) > 0 and scans[0].get("refinement_cases"):
+                ref_case = scans[0]["refinement_cases"][0]
+                phase_weights = {str(k): float(v) for k, v in ref_case.get("phase_weights", {}).items()}
+                rwp = float(ref_case.get("rwp", 5.0))
             else:
-                phase_weights = getattr(pkl_data, "phase_weights", {})
-                rwp = float(getattr(pkl_data, "best_rwp", 5.0))
+                # 2. Fallback to reading pickle artifact
+                ref = self._artifact_index.get_artifact_ref(cid, "REFINEMENT")
+                if ref is None:
+                    raise RuntimeError(f"No Refinement artifact found for candidate '{cid}'.")
+
+                raw_bytes = self._artifact_index.read_artifact_bytes(ref)
+                try:
+                    pkl_data = _SafeALabUnpickler(io.BytesIO(raw_bytes)).load()
+                except Exception as e:
+                    raise ValueError(f"Failed to parse refinement pickle for candidate '{cid}': {e}") from e
+
+                if isinstance(pkl_data, dict):
+                    phase_weights = pkl_data.get("phase_weights", {})
+                    rwp = float(pkl_data.get("best_rwp", 5.0))
+                else:
+                    phase_weights = getattr(pkl_data, "phase_weights", {})
+                    rwp = float(getattr(pkl_data, "best_rwp", 5.0))
+                used_source = "pickle_artifact"
 
             if not isinstance(phase_weights, dict):
                 phase_weights = {}
 
-            # Target fraction estimate from non-precursor phases
-            target_frac = 0.0
-            precursor_frac = 0.0
-            for pname, w in phase_weights.items():
-                if any(p in str(pname) for p in ["Ag2O", "BaO", "Al", "Fe", "Mn", "Co", "Ti", "precursor"]):
-                    precursor_frac += float(w)
-                else:
-                    target_frac += float(w)
+            # Perform exact chemical phase matching
+            ref_parsed = parse_refinement_phases(
+                phase_weights=phase_weights,
+                target_formula=target_compound,
+                precursor_formulas=precursors,
+                rwp=rwp,
+            )
 
-            target_frac = float(np.clip(target_frac, 0.0, 1.0))
-            ref_vec = np.array([target_frac, precursor_frac, float(len(phase_weights)), rwp], dtype=np.float64)
+            ref_vec = np.asarray(ref_parsed["feature_vector"], dtype=np.float64)
             self._revealed_refinements[cid] = ref_vec
 
             return ExperimentOutcome(
                 action_id=action.action_id,
                 candidate_id=cid,
                 action_type=action.action_type,
-                revealed_data={
-                    "refinement_features": ref_vec.tolist(),
-                    "phase_weights": {str(k): float(v) for k, v in phase_weights.items()},
-                    "rwp": rwp,
-                    "target_fraction": target_frac,
-                },
+                revealed_data=ref_parsed,
                 canonical_observation=ref_vec,
                 provenance={
                     "dataset": "A-Lab Precursor Genome",
                     "execution_mode": "offline_replay",
                     "sample_id": cid,
-                    "artifact_ref": ref.to_dict(),
+                    "refinement_source": used_source,
                 },
             )
 
@@ -377,15 +469,18 @@ class ALabDomainAdapter(ObservationRepresentationManager):
         raw_observation: Any,
         snapshot: RepresentationSnapshot,
     ) -> Any:
-        """Transforms a raw measurement under the frozen snapshot basis."""
+        """Transforms a raw measurement using the specific frozen representation snapshot basis."""
         if normalize_action_type(modality_name) == "XRD":
             if isinstance(raw_observation, dict) and "normalized_intensity" in raw_observation:
                 spec = raw_observation["normalized_intensity"]
-            elif isinstance(raw_observation, (list, tuple, np.ndarray)):
-                spec = raw_observation
             else:
-                return raw_observation
-            return self._xrd_extractor.transform_with_snapshot(spec, snapshot)
+                spec = raw_observation
+            raw_arr = np.asarray(spec, dtype=np.float64)
+            return self._xrd_extractor.transform_with_snapshot(raw_arr, snapshot)
+        elif normalize_action_type(modality_name) == "REFINEMENT":
+            if isinstance(raw_observation, dict) and "feature_vector" in raw_observation:
+                return np.asarray(raw_observation["feature_vector"], dtype=np.float64)
+            return np.asarray(raw_observation, dtype=np.float64)
         return raw_observation
 
     def update_representation_after_evidence(
@@ -394,69 +489,75 @@ class ALabDomainAdapter(ObservationRepresentationManager):
         candidate_id: str,
         raw_observation: Any,
     ) -> None:
-        """Refits representation basis strictly after Bayesian evidence update."""
+        """Updates the representation basis using newly confirmed evidence (called strictly after Bayesian update)."""
         if normalize_action_type(modality_name) == "XRD":
             if isinstance(raw_observation, dict) and "normalized_intensity" in raw_observation:
                 spec = raw_observation["normalized_intensity"]
-            elif isinstance(raw_observation, (list, tuple, np.ndarray)):
-                spec = raw_observation
             else:
-                return
-            self._revealed_xrd_spectra[candidate_id] = np.asarray(spec, dtype=np.float64)
-            self._xrd_extractor.fit(list(self._revealed_xrd_spectra.values()))
-            self._xrd_embeddings = self._xrd_extractor.transform_batch(self._revealed_xrd_spectra)
+                spec = raw_observation
+            raw_arr = np.asarray(spec, dtype=np.float64)
+            self._revealed_xrd_spectra[candidate_id] = raw_arr
+            if len(self._revealed_xrd_spectra) >= 2:
+                self._xrd_extractor.fit(list(self._revealed_xrd_spectra.values()))
+                self._xrd_embeddings = self._xrd_extractor.transform_batch(self._revealed_xrd_spectra)
 
-    def get_observations_by_modality(self) -> dict[str, dict[str, Any]]:
-        """Returns all revealed observations grouped by modality name."""
-        return {
-            "OUTCOME_TEST": dict(self._revealed_outcomes),
-            "XRD": dict(self._xrd_embeddings),
-            "REFINEMENT": dict(self._revealed_refinements),
-        }
+    def get_revealed_xrd_embeddings(self) -> dict[str, np.ndarray]:
+        """Returns current embeddings for all revealed XRD candidates under the unified current basis."""
+        return dict(self._xrd_embeddings)
 
-    def get_current_observations(self) -> Mapping[str, Mapping[str, Any]]:
+    def get_current_observations(self) -> dict[str, dict[str, Any]]:
+        """Returns all currently revealed candidate observations in the latest representation basis."""
         return self.get_observations_by_modality()
-
-    def get_objectives(self) -> Sequence[ObjectiveDefinition]:
-        return [ALAB_OBJECTIVE_REACTION_CONVERSION]
-
-    def get_modality_schema(self) -> Sequence[ModalityDefinition]:
-        return [ALAB_MODALITY_XRD, ALAB_MODALITY_REFINEMENT, ALAB_MODALITY_OUTCOME_TEST]
-
-    def get_hypothesis_provider(self) -> HypothesisProvider:
-        return self._hypothesis_provider
 
     def get_default_initial_actions(
         self,
-        n_candidates: int = 3,
+        n_candidates: int = 4,
         pairing_strategy: str = "joint",
         seed: int = 42,
     ) -> list[ScientificAction]:
-        """Generates reproducible bootstrap actions for A-Lab campaign initialization."""
-        rng = np.random.default_rng(seed)
-        cids = [s for s in self._samples_map if self._artifact_index.has_artifact(s, "XRD")]
-        rng.shuffle(cids)
-        chosen_cids = cids[:n_candidates]
+        """Generates reproducible bootstrap initial actions."""
+        if self._candidate_pool_df is None or self._candidate_pool_df.empty:
+            return []
 
-        actions: list[ScientificAction] = []
+        rng = np.random.default_rng(seed)
+        all_cids = list(self._candidate_pool_df["candidate_id"])
+        # Filter for candidates that actually have an XRD artifact available
+        valid_cids = [
+            cid for cid in all_cids
+            if self._artifact_index.get_artifact_ref(cid, "XRD") is not None
+        ]
+        if not valid_cids:
+            valid_cids = all_cids
+        chosen_indices = rng.choice(len(valid_cids), size=min(n_candidates, len(valid_cids)), replace=False)
+        chosen_cids = [valid_cids[i] for i in chosen_indices]
+
+        actions = []
         for cid in chosen_cids:
             actions.append(
                 ScientificAction(
-                    action_id=f"init_outcome_{cid}",
+                    action_id=f"BOOTSTRAP_XRD_{cid}",
                     candidate_id=cid,
-                    action_type="OUTCOME_TEST",
-                    estimated_cost=ALAB_MODALITY_OUTCOME_TEST.cost,
-                    metadata={"modality": "OUTCOME_TEST"},
+                    action_type="XRD",
+                    estimated_cost=1.0,
+                    metadata={"modality_hint": "XRD"},
                 )
             )
             if pairing_strategy == "joint":
                 actions.append(
                     ScientificAction(
-                        action_id=f"init_xrd_{cid}",
+                        action_id=f"BOOTSTRAP_OUTCOME_{cid}",
                         candidate_id=cid,
-                        action_type="XRD",
-                        estimated_cost=ALAB_MODALITY_XRD.cost,
-                        metadata={"modality": "XRD"},
+                        action_type="OUTCOME_TEST",
+                        estimated_cost=2.0,
+                        metadata={"modality_hint": "OUTCOME_TEST"},
                     )
                 )
         return actions
+
+    def get_observations_by_modality(self) -> dict[str, dict[str, Any]]:
+        """Returns revealed observations structured by modality name."""
+        return {
+            "XRD": dict(self._xrd_embeddings),
+            "REFINEMENT": dict(self._revealed_refinements),
+            "OUTCOME_TEST": dict(self._revealed_outcomes),
+        }

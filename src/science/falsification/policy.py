@@ -32,6 +32,19 @@ class FalsificationPolicyMode(str, Enum):
     HYBRID = "hybrid"
 
 
+def _is_objective_action(action_type: ActionType) -> bool:
+    norm = normalize_action_type(action_type).upper()
+    return norm in (
+        "PROPERTY",
+        "CAPACITY_TEST",
+        "OUTCOME_TEST",
+        "ACTIVITY",
+        "BANDGAP",
+        "STABILITY",
+        "OVERPOTENTIAL",
+    )
+
+
 class FalsificationFirstPolicy:
     """Falsification-First Scientific Experiment Selection Policy.
 
@@ -230,46 +243,75 @@ class FalsificationFirstPolicy:
                         }
                     )
 
+        return self._score_candidate_actions(candidate_actions, ensemble=ensemble)
+
+    def _score_candidate_actions(
+        self,
+        candidate_actions: list[dict[str, Any]],
+        ensemble: HypothesisEnsemble | None = None,
+    ) -> list[dict[str, Any]]:
+        """Scores and ranks candidate actions according to current policy mode and calibrated HIG."""
         if not candidate_actions:
             return []
 
-        # Normalization over available action space
+        # Normalization and scoring over available action space
         all_higs = [a["raw_hig"] for a in candidate_actions]
+        min_hig = min(all_higs) if all_higs else 0.0
+        max_hig = max(all_higs) if all_higs else 0.0
         prop_discs = [a["raw_disc"] for a in candidate_actions if _is_objective_action(a["action_type"])]
         all_costs = [a["raw_cost"] for a in candidate_actions]
 
-        min_hig, max_hig = min(all_higs), max(all_higs)
         min_p_disc = min(prop_discs) if prop_discs else 0.0
         max_p_disc = max(prop_discs) if prop_discs else 1.0
         max_cost = max(all_costs + [self.cost_xrd, self.cost_property, 1.0])
 
+        active_k = 3
+        if ensemble is not None:
+            active_k = max(1, len(ensemble.active_hypotheses) if hasattr(ensemble, "active_hypotheses") else len(ensemble.hypotheses))
+        max_possible_info = float(np.log(float(active_k))) if active_k > 1 else 1.0
+
         scored_actions: list[dict[str, Any]] = []
         for a in candidate_actions:
-            # Min-max normalized HIG
-            hig_norm = (a["raw_hig"] - min_hig) / (max_hig - min_hig + 1e-12) if max_hig > min_hig else a["raw_hig"]
+            raw_h = float(max(0.0, a["raw_hig"]))
+            # Calibrated HIG normalization:
+            # If significant hypothesis discrimination exists across action candidates, use min-max scaling.
+            # Otherwise, scale against theoretical maximum info to prevent inflating near-zero (e.g. 1e-9) nats to 1.0.
+            if max_hig > 0.01 and max_hig > min_hig:
+                hig_norm = float((raw_h - min_hig) / (max_hig - min_hig + 1e-12))
+            elif max_hig > 1e-6:
+                hig_norm = float(np.clip(raw_h / (max_possible_info + 1e-12), 0.0, 1.0))
+            else:
+                hig_norm = 0.0
 
-            # Min-max normalized Discovery score
-            if _is_objective_action(a["action_type"]) and prop_discs and max_p_disc > min_p_disc:
-                disc_norm = (a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12)
+            # Discovery score normalization
+            is_obj_action = _is_objective_action(a["action_type"])
+            if is_obj_action and prop_discs and max_p_disc > min_p_disc:
+                disc_norm = float((a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12))
+            elif is_obj_action and a["raw_disc"] > 0.0:
+                disc_norm = float(a["raw_disc"])
             else:
                 disc_norm = 0.0
 
-            cost_norm = a["raw_cost"] / max_cost
+            cost_norm = float(a["raw_cost"] / max_cost)
 
             # Score by policy mode
             if self.mode == FalsificationPolicyMode.PURE_FALSIFICATION:
                 total_val = float(a["raw_hig"] / (a["raw_cost"] ** self.cost_exponent))
             elif self.mode == FalsificationPolicyMode.DISCOVERY_ONLY:
-                total_val = float(disc_norm - 0.1 * cost_norm)
+                if is_obj_action:
+                    total_val = float(disc_norm - 0.1 * cost_norm)
+                else:
+                    # Non-objective characterization actions cannot satisfy DISCOVERY_ONLY
+                    total_val = -1e9
             else:  # HYBRID
                 total_val = float(
                     (self.w_hig * hig_norm) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
                 )
 
             a["total_value"] = total_val
-            a["normalized_hig"] = float(hig_norm)
-            a["normalized_disc"] = float(disc_norm)
-            a["normalized_cost"] = float(cost_norm)
+            a["normalized_hig"] = hig_norm
+            a["normalized_disc"] = disc_norm
+            a["normalized_cost"] = cost_norm
             a["cost_penalty"] = float(self.w_cost * cost_norm)
             scored_actions.append(a)
 

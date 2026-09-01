@@ -38,13 +38,19 @@ logger = logging.getLogger(__name__)
 
 
 def _to_optimizer_objective(obj: ObjectiveDefinition) -> OptimizationObjective:
-    """Converts a science domain ObjectiveDefinition into an optimization OptimizationObjective."""
+    """Converts a science domain ObjectiveDefinition into an optimization OptimizationObjective.
+
+    Preserves domain threshold semantics in metadata while leaving optimizer acquisition unconstrained.
+    """
+    meta = dict(obj.metadata)
+    if getattr(obj, "threshold", None) is not None:
+        meta["threshold"] = obj.threshold
     return OptimizationObjective(
         target_name=obj.name,
         minimize=(obj.direction == ObjectiveDirection.MINIMIZE),
         units=obj.units,
-        threshold=getattr(obj, "threshold", None),
-        metadata=dict(obj.metadata),
+        threshold=None,
+        metadata=meta,
     )
 
 

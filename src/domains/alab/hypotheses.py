@@ -18,13 +18,20 @@ logger = logging.getLogger(__name__)
 
 
 class PrecursorThermodynamicsHypothesis:
-    """Hypothesis A: Reaction conversion is determined primarily by precursor chemistry & thermodynamic driving force."""
+    """Hypothesis A: Solid-state synthesis outcome is governed predominantly by precursor chemistry and thermodynamic driving force.
+
+    Thermal processing parameters (furnace temperature and time) are treated as secondary or non-explanatory.
+    """
 
     def __init__(self, hypothesis_id: str = "precursor_thermodynamics") -> None:
         self._id = hypothesis_id
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
+        self._revealed_xrd_mean: np.ndarray | None = None
+        self._revealed_xrd_var: np.ndarray | None = None
+        self._revealed_ref_mean: np.ndarray | None = None
+        self._revealed_ref_var: np.ndarray | None = None
 
     @property
     def hypothesis_id(self) -> str:
@@ -48,6 +55,23 @@ class PrecursorThermodynamicsHypothesis:
             or context.observations_by_modality.get("PROPERTY")
             or {}
         )
+        xrd_obs = context.observations_by_modality.get("XRD", {})
+        ref_obs = context.observations_by_modality.get("REFINEMENT", {})
+
+        # 1. Empirical characterization statistics from revealed observations
+        if xrd_obs:
+            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
+            if len(xrd_mat) > 0:
+                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
+                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+
+        if ref_obs:
+            ref_mat = np.array([np.asarray(v, dtype=np.float64) for v in ref_obs.values() if v is not None])
+            if len(ref_mat) > 0:
+                self._revealed_ref_mean = np.mean(ref_mat, axis=0)
+                self._revealed_ref_var = np.maximum(np.var(ref_mat, axis=0), 0.02)
+
+        # 2. Fit outcome GP excluding thermal conditions (features 1 and 2: temp and time)
         if len(conv_obs) < 2:
             self._is_fitted = False
             self._training_sample_count = len(conv_obs)
@@ -58,8 +82,9 @@ class PrecursorThermodynamicsHypothesis:
         for cid, val in conv_obs.items():
             if cid in context.candidate_features_by_id and isinstance(val, (int, float, np.number)):
                 feat = np.asarray(context.candidate_features_by_id[cid], dtype=np.float64)
-                # Use thermodynamic energy and precursor indices (feat[0], feat[3], feat[4])
-                X_rows.append([feat[0], feat[3], feat[4]])
+                # Feature subset: [energy] + [multi-hot precursors]
+                thermo_feat = np.concatenate(([feat[0]], feat[3:]))
+                X_rows.append(thermo_feat)
                 y_rows.append(float(val))
 
         if len(y_rows) < 2:
@@ -70,7 +95,7 @@ class PrecursorThermodynamicsHypothesis:
         X = np.array(X_rows, dtype=np.float64)
         y = np.array(y_rows, dtype=np.float64)
 
-        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * RBF(length_scale=[1.0, 5.0, 5.0]) + WhiteKernel(0.05, (1e-4, 1.0))
+        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * RBF(length_scale=2.0) + WhiteKernel(0.05, (1e-4, 1.0))
         self._gp = GaussianProcessRegressor(kernel=kernel, alpha=1e-6, normalize_y=True, random_state=42)
         self._gp.fit(X, y)
         self._is_fitted = True
@@ -79,9 +104,20 @@ class PrecursorThermodynamicsHypothesis:
 
     def fit(self, **kwargs: Any) -> PrecursorThermodynamicsHypothesis:
         context = kwargs.get("context")
+        if context is None and "composition_by_id" in kwargs:
+            from src.science.domain import HypothesisTrainingContext
+            context = HypothesisTrainingContext(
+                candidate_features_by_id=kwargs.get("composition_by_id", {}),
+                observations_by_modality=kwargs.get("observations_by_modality", {}),
+                modality_definitions={m.name: m for m in kwargs.get("modality_definitions", [])} if isinstance(kwargs.get("modality_definitions"), (list, tuple)) else kwargs.get("modality_definitions", {}),
+                objective_definitions={o.name: o for o in kwargs.get("objective_definitions", [])} if isinstance(kwargs.get("objective_definitions"), (list, tuple)) else kwargs.get("objective_definitions", {}),
+            )
         if context is not None:
             return self.fit_context(context)
         return self
+
+    def predict(self, candidate_id: str, action_type: ActionType, candidate_composition: np.ndarray | None = None, **kwargs: Any) -> PredictiveDistribution:
+        return self.predict_observation(candidate_id=candidate_id, action_type=action_type, composition=candidate_composition, **kwargs)
 
     def predict_observation(
         self,
@@ -91,17 +127,19 @@ class PrecursorThermodynamicsHypothesis:
         **kwargs: Any,
     ) -> PredictiveDistribution:
         norm = normalize_action_type(action_type)
-        comp = composition if composition is not None else np.zeros(5)
+        comp = composition if composition is not None else np.zeros(49)
 
         if norm in ("OUTCOME_TEST", "PROPERTY"):
             if self._is_fitted and self._gp is not None:
-                feat_sub = np.array([[comp[0], comp[3], comp[4]]], dtype=np.float64)
-                m, s = self._gp.predict(feat_sub, return_std=True)
+                thermo_feat = np.concatenate(([comp[0]], comp[3:])).reshape(1, -1)
+                m, s = self._gp.predict(thermo_feat, return_std=True)
                 mean_val = float(np.clip(m[0], 0.0, 1.0))
                 var_val = float(max(s[0] ** 2, 1e-4))
             else:
-                mean_val = 0.5
-                var_val = 0.25
+                # Prior: negative reaction energy promotes reaction
+                energy = float(comp[0]) if len(comp) > 0 else 0.0
+                mean_val = float(np.clip(0.5 - 2.0 * energy, 0.05, 0.95))
+                var_val = 0.20
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -109,28 +147,31 @@ class PrecursorThermodynamicsHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "precursor_thermodynamics_gp"},
+                metadata={"model": "precursor_thermodynamics_gp", "training_count": self._training_sample_count},
             )
         elif norm == "XRD":
-            # Baseline structural expectation
             emb_dim = 8
+            mean_vec = self._revealed_xrd_mean if self._revealed_xrd_mean is not None else np.zeros(emb_dim, dtype=np.float64)
+            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.3
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
-                mean=np.zeros(emb_dim, dtype=np.float64),
-                variance=np.ones(emb_dim, dtype=np.float64) * 0.5,
-                metadata={"model": "unstructured_thermodynamic_prior"},
+                mean=mean_vec,
+                variance=var_vec,
+                metadata={"model": "thermodynamics_empirical_xrd", "training_count": self._training_sample_count},
             )
         elif norm == "REFINEMENT":
             ref_dim = 4
+            mean_vec = self._revealed_ref_mean if self._revealed_ref_mean is not None else np.array([0.1, 0.7, 0.2, 0.5], dtype=np.float64)
+            var_vec = self._revealed_ref_var if self._revealed_ref_var is not None else np.array([0.05, 0.05, 0.05, 0.05], dtype=np.float64)
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
-                mean=np.array([0.5, 0.0, 0.0, 5.0], dtype=np.float64),
-                variance=np.ones(ref_dim, dtype=np.float64) * 0.4,
-                metadata={"model": "unstructured_refinement_prior"},
+                mean=mean_vec,
+                variance=var_vec,
+                metadata={"model": "thermodynamics_empirical_refinement", "training_count": self._training_sample_count},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")
@@ -139,17 +180,19 @@ class PrecursorThermodynamicsHypothesis:
         return prediction.log_pdf(observation)
 
     def falsification_summary(self, candidate_id: str, action_type: ActionType, composition: np.ndarray) -> str:
-        return "Synthesis conversion significantly deviates across temperature conditions despite identical precursor thermodynamics."
+        return "Synthesis outcome significantly deviates across thermal conditions despite favorable precursor thermodynamics."
 
 
 class ProcessKineticsHypothesis:
-    """Hypothesis B: Synthesis thermal program (heating temperature & time) governs solid-state kinetics."""
+    """Hypothesis B: Synthesis thermal processing conditions (heating temperature & time) govern solid-state reaction kinetics."""
 
     def __init__(self, hypothesis_id: str = "process_kinetics") -> None:
         self._id = hypothesis_id
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
+        self._revealed_xrd_mean: np.ndarray | None = None
+        self._revealed_xrd_var: np.ndarray | None = None
 
     @property
     def hypothesis_id(self) -> str:
@@ -173,6 +216,14 @@ class ProcessKineticsHypothesis:
             or context.observations_by_modality.get("PROPERTY")
             or {}
         )
+        xrd_obs = context.observations_by_modality.get("XRD", {})
+
+        if xrd_obs:
+            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
+            if len(xrd_mat) > 0:
+                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
+                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+
         if len(conv_obs) < 2:
             self._is_fitted = False
             self._training_sample_count = len(conv_obs)
@@ -194,7 +245,12 @@ class ProcessKineticsHypothesis:
         X = np.array(X_rows, dtype=np.float64)
         y = np.array(y_rows, dtype=np.float64)
 
-        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * Matern(length_scale=[1.0, 0.5, 0.5, 5.0, 5.0], nu=2.5) + WhiteKernel(0.03, (1e-4, 1.0))
+        # Matern kernel with ARD emphasizing temperature and time (features 1 and 2)
+        length_scales = np.ones(X.shape[1]) * 2.0
+        length_scales[1] = 0.5  # temperature sensitivity
+        length_scales[2] = 0.5  # time sensitivity
+
+        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * Matern(length_scale=length_scales, nu=2.5) + WhiteKernel(0.03, (1e-4, 1.0))
         self._gp = GaussianProcessRegressor(kernel=kernel, alpha=1e-6, normalize_y=True, random_state=42)
         self._gp.fit(X, y)
         self._is_fitted = True
@@ -203,9 +259,20 @@ class ProcessKineticsHypothesis:
 
     def fit(self, **kwargs: Any) -> ProcessKineticsHypothesis:
         context = kwargs.get("context")
+        if context is None and "composition_by_id" in kwargs:
+            from src.science.domain import HypothesisTrainingContext
+            context = HypothesisTrainingContext(
+                candidate_features_by_id=kwargs.get("composition_by_id", {}),
+                observations_by_modality=kwargs.get("observations_by_modality", {}),
+                modality_definitions={m.name: m for m in kwargs.get("modality_definitions", [])} if isinstance(kwargs.get("modality_definitions"), (list, tuple)) else kwargs.get("modality_definitions", {}),
+                objective_definitions={o.name: o for o in kwargs.get("objective_definitions", [])} if isinstance(kwargs.get("objective_definitions"), (list, tuple)) else kwargs.get("objective_definitions", {}),
+            )
         if context is not None:
             return self.fit_context(context)
         return self
+
+    def predict(self, candidate_id: str, action_type: ActionType, candidate_composition: np.ndarray | None = None, **kwargs: Any) -> PredictiveDistribution:
+        return self.predict_observation(candidate_id=candidate_id, action_type=action_type, composition=candidate_composition, **kwargs)
 
     def predict_observation(
         self,
@@ -215,7 +282,7 @@ class ProcessKineticsHypothesis:
         **kwargs: Any,
     ) -> PredictiveDistribution:
         norm = normalize_action_type(action_type)
-        comp = composition if composition is not None else np.zeros(5)
+        comp = composition if composition is not None else np.zeros(49)
 
         if norm in ("OUTCOME_TEST", "PROPERTY"):
             if self._is_fitted and self._gp is not None:
@@ -224,10 +291,11 @@ class ProcessKineticsHypothesis:
                 mean_val = float(np.clip(m[0], 0.0, 1.0))
                 var_val = float(max(s[0] ** 2, 1e-4))
             else:
-                # Prior: higher temperature yields higher kinetic conversion
+                # Prior: higher temperature & longer duration promote solid-state kinetics
                 temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
-                mean_val = float(np.clip(0.3 + 0.5 * temp_norm, 0.0, 1.0))
-                var_val = 0.20
+                time_norm = float(comp[2]) if len(comp) > 2 else 0.5
+                mean_val = float(np.clip(0.2 + 0.5 * temp_norm + 0.2 * time_norm, 0.05, 0.95))
+                var_val = 0.18
 
             return PredictiveDistribution(
                 hypothesis_id=self._id,
@@ -235,32 +303,39 @@ class ProcessKineticsHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "process_kinetics_matern_gp"},
+                metadata={"model": "process_kinetics_matern_gp", "training_count": self._training_sample_count},
             )
         elif norm == "XRD":
             emb_dim = 8
-            # Thermal gradient influences peak sharpening / embedding drift
-            temp_norm = float(comp[1]) if len(comp) > 1 else 0.0
             mean_vec = np.zeros(emb_dim, dtype=np.float64)
-            mean_vec[0] = temp_norm * 0.5
+            if self._revealed_xrd_mean is not None:
+                mean_vec = np.copy(self._revealed_xrd_mean)
+            # Temperature correlates with crystalline peak sharpening / PC1
+            temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
+            mean_vec[0] = (temp_norm - 0.5) * 0.4
+            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.25
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
-                variance=np.ones(emb_dim, dtype=np.float64) * 0.35,
-                metadata={"model": "kinetics_thermal_xrd_prior"},
+                variance=var_vec,
+                metadata={"model": "kinetics_thermal_xrd", "training_count": self._training_sample_count},
             )
         elif norm == "REFINEMENT":
-            ref_dim = 4
             temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
+            target_est = float(np.clip(0.1 + 0.4 * temp_norm, 0.0, 1.0))
+            prec_est = float(np.clip(0.8 - 0.4 * temp_norm, 0.0, 1.0))
+            other_est = float(np.clip(1.0 - (target_est + prec_est), 0.0, 1.0))
+            mean_vec = np.array([target_est, prec_est, other_est, 0.4], dtype=np.float64)
+            var_vec = np.array([0.04, 0.04, 0.04, 0.04], dtype=np.float64)
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
-                mean=np.array([0.3 + 0.5 * temp_norm, 0.0, 0.0, 4.0], dtype=np.float64),
-                variance=np.ones(ref_dim, dtype=np.float64) * 0.3,
-                metadata={"model": "kinetics_refinement_prior"},
+                mean=mean_vec,
+                variance=var_vec,
+                metadata={"model": "kinetics_refinement_prior", "training_count": self._training_sample_count},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")
@@ -269,17 +344,21 @@ class ProcessKineticsHypothesis:
         return prediction.log_pdf(observation)
 
     def falsification_summary(self, candidate_id: str, action_type: ActionType, composition: np.ndarray) -> str:
-        return "High-temperature heating conditions fail to promote expected reaction conversion or exhibit kinetic stagnation."
+        return "High-temperature heating conditions fail to accelerate target reaction formation or exhibit kinetic stagnation."
 
 
 class StructurePhaseInformedHypothesis:
-    """Hypothesis C: Observed crystalline structure & Rietveld phase evolution provide decisive explanatory evidence."""
+    """Hypothesis C: Measured crystalline structure and Rietveld phase evolution provide decisive explanatory evidence for reaction outcome."""
 
     def __init__(self, hypothesis_id: str = "structure_phase_informed") -> None:
         self._id = hypothesis_id
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
+        self._revealed_xrd_mean: np.ndarray | None = None
+        self._revealed_xrd_var: np.ndarray | None = None
+        self._revealed_ref_mean: np.ndarray | None = None
+        self._revealed_ref_var: np.ndarray | None = None
 
     @property
     def hypothesis_id(self) -> str:
@@ -297,6 +376,39 @@ class StructurePhaseInformedHypothesis:
         norm = normalize_action_type(action_type)
         return norm in ("OUTCOME_TEST", "PROPERTY", "XRD", "REFINEMENT")
 
+    def _build_multimodal_feature(
+        self,
+        candidate_features: np.ndarray,
+        xrd_val: Any | None,
+        ref_val: Any | None,
+    ) -> list[float]:
+        """Builds explicit multimodal descriptor vector with boolean missingness indicators."""
+        feat = list(np.asarray(candidate_features, dtype=np.float64))
+
+        # Explicit XRD evidence block: [has_xrd: 1.0/0.0, pc0, pc1, pc2, pc3]
+        if xrd_val is not None and isinstance(xrd_val, (list, tuple, np.ndarray)):
+            xrd_arr = list(np.asarray(xrd_val, dtype=np.float64)[:4])
+            if len(xrd_arr) < 4:
+                xrd_arr.extend([0.0] * (4 - len(xrd_arr)))
+            feat.append(1.0)
+            feat.extend(xrd_arr)
+        else:
+            feat.append(0.0)
+            feat.extend([0.0, 0.0, 0.0, 0.0])
+
+        # Explicit Refinement evidence block: [has_ref: 1.0/0.0, target_frac, prec_frac, other_frac, rwp_scaled]
+        if ref_val is not None and isinstance(ref_val, (list, tuple, np.ndarray)):
+            ref_arr = list(np.asarray(ref_val, dtype=np.float64)[:4])
+            if len(ref_arr) < 4:
+                ref_arr.extend([0.0] * (4 - len(ref_arr)))
+            feat.append(1.0)
+            feat.extend(ref_arr)
+        else:
+            feat.append(0.0)
+            feat.extend([0.0, 0.0, 0.0, 0.0])
+
+        return feat
+
     def fit_context(self, context: HypothesisTrainingContext) -> StructurePhaseInformedHypothesis:
         conv_obs = (
             context.observations_by_modality.get("OUTCOME_TEST")
@@ -305,6 +417,18 @@ class StructurePhaseInformedHypothesis:
         )
         xrd_obs = context.observations_by_modality.get("XRD", {})
         ref_obs = context.observations_by_modality.get("REFINEMENT", {})
+
+        if xrd_obs:
+            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
+            if len(xrd_mat) > 0:
+                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
+                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+
+        if ref_obs:
+            ref_mat = np.array([np.asarray(v, dtype=np.float64) for v in ref_obs.values() if v is not None])
+            if len(ref_mat) > 0:
+                self._revealed_ref_mean = np.mean(ref_mat, axis=0)
+                self._revealed_ref_var = np.maximum(np.var(ref_mat, axis=0), 0.02)
 
         if len(conv_obs) < 2:
             self._is_fitted = False
@@ -315,20 +439,11 @@ class StructurePhaseInformedHypothesis:
         y_rows = []
         for cid, val in conv_obs.items():
             if cid in context.candidate_features_by_id and isinstance(val, (int, float, np.number)):
-                feat = list(np.asarray(context.candidate_features_by_id[cid], dtype=np.float64))
-                # Add XRD embedding if observed, otherwise zeros
-                if cid in xrd_obs and isinstance(xrd_obs[cid], (list, tuple, np.ndarray)):
-                    feat.extend(list(np.asarray(xrd_obs[cid], dtype=np.float64)[:4]))
-                else:
-                    feat.extend([0.0, 0.0, 0.0, 0.0])
-
-                # Add refinement target fraction if observed
-                if cid in ref_obs and isinstance(ref_obs[cid], (list, tuple, np.ndarray)):
-                    feat.append(float(ref_obs[cid][0]))
-                else:
-                    feat.append(0.0)
-
-                X_rows.append(feat)
+                cand_feat = np.asarray(context.candidate_features_by_id[cid], dtype=np.float64)
+                xrd_v = xrd_obs.get(cid)
+                ref_v = ref_obs.get(cid)
+                mm_feat = self._build_multimodal_feature(cand_feat, xrd_v, ref_v)
+                X_rows.append(mm_feat)
                 y_rows.append(float(val))
 
         if len(y_rows) < 2:
@@ -339,7 +454,7 @@ class StructurePhaseInformedHypothesis:
         X = np.array(X_rows, dtype=np.float64)
         y = np.array(y_rows, dtype=np.float64)
 
-        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * RBF(length_scale=np.ones(X.shape[1]) * 2.0) + WhiteKernel(0.02, (1e-4, 1.0))
+        kernel = ConstantKernel(1.0, (1e-3, 10.0)) * RBF(length_scale=2.0) + WhiteKernel(0.02, (1e-4, 1.0))
         self._gp = GaussianProcessRegressor(kernel=kernel, alpha=1e-6, normalize_y=True, random_state=42)
         self._gp.fit(X, y)
         self._is_fitted = True
@@ -348,9 +463,20 @@ class StructurePhaseInformedHypothesis:
 
     def fit(self, **kwargs: Any) -> StructurePhaseInformedHypothesis:
         context = kwargs.get("context")
+        if context is None and "composition_by_id" in kwargs:
+            from src.science.domain import HypothesisTrainingContext
+            context = HypothesisTrainingContext(
+                candidate_features_by_id=kwargs.get("composition_by_id", {}),
+                observations_by_modality=kwargs.get("observations_by_modality", {}),
+                modality_definitions={m.name: m for m in kwargs.get("modality_definitions", [])} if isinstance(kwargs.get("modality_definitions"), (list, tuple)) else kwargs.get("modality_definitions", {}),
+                objective_definitions={o.name: o for o in kwargs.get("objective_definitions", [])} if isinstance(kwargs.get("objective_definitions"), (list, tuple)) else kwargs.get("objective_definitions", {}),
+            )
         if context is not None:
             return self.fit_context(context)
         return self
+
+    def predict(self, candidate_id: str, action_type: ActionType, candidate_composition: np.ndarray | None = None, **kwargs: Any) -> PredictiveDistribution:
+        return self.predict_observation(candidate_id=candidate_id, action_type=action_type, composition=candidate_composition, **kwargs)
 
     def predict_observation(
         self,
@@ -362,9 +488,9 @@ class StructurePhaseInformedHypothesis:
         **kwargs: Any,
     ) -> PredictiveDistribution:
         norm = normalize_action_type(action_type)
-        comp = list(composition) if composition is not None else [0.0] * 5
+        comp = composition if composition is not None else np.zeros(49)
 
-        # Check for characterization evidence on this candidate
+        # Extract revealed structural evidence for this candidate
         xrd_val = None
         ref_val = None
         if observed_modalities is not None:
@@ -375,28 +501,17 @@ class StructurePhaseInformedHypothesis:
 
         if norm in ("OUTCOME_TEST", "PROPERTY"):
             if self._is_fitted and self._gp is not None:
-                feat = list(comp)
-                if xrd_val is not None and isinstance(xrd_val, (list, tuple, np.ndarray)):
-                    feat.extend(list(np.asarray(xrd_val, dtype=np.float64)[:4]))
-                else:
-                    feat.extend([0.0, 0.0, 0.0, 0.0])
-
-                if ref_val is not None and isinstance(ref_val, (list, tuple, np.ndarray)):
-                    feat.append(float(ref_val[0]))
-                else:
-                    feat.append(0.0)
-
-                feat_vec = np.asarray(feat, dtype=np.float64).reshape(1, -1)
-                m, s = self._gp.predict(feat_vec, return_std=True)
+                mm_feat = np.array([self._build_multimodal_feature(comp, xrd_val, ref_val)], dtype=np.float64)
+                m, s = self._gp.predict(mm_feat, return_std=True)
                 mean_val = float(np.clip(m[0], 0.0, 1.0))
-                # Structural evidence tightens predictive uncertainty
                 var_floor = 1e-4 if (xrd_val is not None or ref_val is not None) else 5e-3
                 var_val = float(max(s[0] ** 2, var_floor))
             else:
-                # If refinement is revealed and has high target fraction, high conversion
                 if ref_val is not None and isinstance(ref_val, (list, tuple, np.ndarray)):
-                    mean_val = float(ref_val[0])
-                    var_val = 0.08
+                    # Target phase fraction directly anchors outcome expectation
+                    target_frac = float(ref_val[0])
+                    mean_val = float(np.clip(0.1 + 0.9 * target_frac, 0.05, 0.95))
+                    var_val = 0.06
                 else:
                     mean_val = 0.5
                     var_val = 0.22
@@ -407,31 +522,31 @@ class StructurePhaseInformedHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "structure_phase_informed_gp", "has_xrd": xrd_val is not None},
+                metadata={"model": "structure_phase_informed_gp", "training_count": self._training_sample_count},
             )
         elif norm == "XRD":
             emb_dim = 8
-            # Specific distinctive structural expectation based on chemical precursors
-            mean_vec = np.zeros(emb_dim, dtype=np.float64)
-            p1_idx = float(comp[3]) if len(comp) > 3 else 0.0
-            mean_vec[0] = (p1_idx % 5.0) * 0.2
+            mean_vec = self._revealed_xrd_mean if self._revealed_xrd_mean is not None else np.zeros(emb_dim, dtype=np.float64)
+            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.25
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
-                variance=np.ones(emb_dim, dtype=np.float64) * 0.25,
-                metadata={"model": "structural_phase_xrd_model"},
+                variance=var_vec,
+                metadata={"model": "structure_empirical_xrd", "training_count": self._training_sample_count},
             )
         elif norm == "REFINEMENT":
             ref_dim = 4
+            mean_vec = self._revealed_ref_mean if self._revealed_ref_mean is not None else np.array([0.2, 0.5, 0.3, 0.5], dtype=np.float64)
+            var_vec = self._revealed_ref_var if self._revealed_ref_var is not None else np.array([0.04, 0.04, 0.04, 0.04], dtype=np.float64)
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
-                mean=np.array([0.7, 0.1, 0.1, 3.2], dtype=np.float64),
-                variance=np.ones(ref_dim, dtype=np.float64) * 0.2,
-                metadata={"model": "structural_phase_refinement_model"},
+                mean=mean_vec,
+                variance=var_vec,
+                metadata={"model": "structure_empirical_refinement", "training_count": self._training_sample_count},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")
@@ -440,18 +555,18 @@ class StructurePhaseInformedHypothesis:
         return prediction.log_pdf(observation)
 
     def falsification_summary(self, candidate_id: str, action_type: ActionType, composition: np.ndarray) -> str:
-        return "Crystalline diffraction features and Rietveld phase evolution fail to correlate with quantitative reaction conversion."
+        return "Measured diffraction profile or Rietveld phase evolution contradicts predicted crystalline reaction pathway."
 
 
-class ALabHypothesisProvider:
-    """Hypothesis provider generating the three competing A-Lab scientific hypotheses."""
+class ALabHypothesisProvider(HypothesisProvider):
+    """Factory provider creating the 3 canonical competing A-Lab solid-state hypotheses."""
 
-    def build_hypotheses(self) -> Mapping[str, ScientificHypothesisModel]:
+    def build_hypotheses(self) -> dict[str, ScientificHypothesisModel]:
         return {
             "precursor_thermodynamics": PrecursorThermodynamicsHypothesis(),
             "process_kinetics": ProcessKineticsHypothesis(),
             "structure_phase_informed": StructurePhaseInformedHypothesis(),
         }
 
-    def get_hypotheses(self) -> Sequence[ScientificHypothesisModel]:
+    def get_hypotheses(self) -> list[ScientificHypothesisModel]:
         return list(self.build_hypotheses().values())
