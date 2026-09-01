@@ -54,31 +54,35 @@ def test_sequential_and_parallel_modes_produce_identical_logical_results(tmp_pat
         assert np.allclose(df_seq[col], df_par[col], atol=1e-5), f"Numerical difference in column {col}"
 
 
+def _faulty_test_worker(args: tuple[str, str, int, int]) -> list[dict[str, Any]]:
+    world_type, policy_name, n_steps, seed = args
+    if policy_name == "pure_falsification":
+        raise RuntimeError(f"Simulated worker failure for policy {policy_name}")
+    return benchmark_module._run_single_job(args)
+
+
 def test_sequential_worker_failure_fail_closed(tmp_path: Path) -> None:
     """Verifies sequential fail-closed behavior when worker fails."""
     out_dir = tmp_path / "fail_seq"
-    real_worker = benchmark_module._run_single_job
 
-    def faulty_worker(args: tuple[str, str, int, int]):
-        _, policy, _, _ = args
-        if policy == "pure_falsification":
-            raise RuntimeError("Artificial simulated sequential worker crash")
-        return real_worker(args)
+    with pytest.raises(RuntimeError, match="Falsification benchmark failed"):
+        run_full_falsification_benchmark(
+            seeds=(42,),
+            n_steps=2,
+            output_dir=out_dir,
+            parallel=False,
+            _worker_fn=_faulty_test_worker,
+        )
 
-    with patch.object(benchmark_module, "_run_single_job", side_effect=faulty_worker):
-        with pytest.raises(RuntimeError, match="Falsification benchmark failed"):
-            run_full_falsification_benchmark(
-                seeds=(42,),
-                n_steps=2,
-                output_dir=out_dir,
-                parallel=False,
-            )
+    # Verify fail-closed invariant: no report artifacts generated
+    assert not (out_dir / "benchmark_report.md").exists()
+    assert not (out_dir / "benchmark_summary.csv").exists()
+    assert not (out_dir / "benchmark_runs.json").exists()
 
 
-def test_parallel_worker_failure_fail_closed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parallel_worker_failure_fail_closed(tmp_path: Path) -> None:
     """Verifies parallel ProcessPoolExecutor fail-closed behavior when a worker raises an exception."""
     out_dir = tmp_path / "fail_par"
-    monkeypatch.setenv("_TEST_BENCHMARK_SIMULATE_FAILURE_POLICY", "pure_falsification")
 
     with pytest.raises(RuntimeError, match="Falsification benchmark failed"):
         run_full_falsification_benchmark(
@@ -86,7 +90,13 @@ def test_parallel_worker_failure_fail_closed(tmp_path: Path, monkeypatch: pytest
             n_steps=2,
             output_dir=out_dir,
             parallel=True,
+            _worker_fn=_faulty_test_worker,
         )
+
+    # Verify fail-closed invariant: no report artifacts generated
+    assert not (out_dir / "benchmark_report.md").exists()
+    assert not (out_dir / "benchmark_summary.csv").exists()
+    assert not (out_dir / "benchmark_runs.json").exists()
 
 
 def test_completeness_validation_without_digit_heuristics() -> None:

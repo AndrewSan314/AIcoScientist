@@ -17,7 +17,7 @@ We evaluate the mathematical implementation and empirical behavior of the falsif
 3. **True Multivariate Gaussian Likelihood**: Restored exact multivariate diagonal Gaussian log-density without dimension tempering.
 4. **Fail-Closed Parallel Benchmark Execution**: Enforced strict validation ensuring all expected trajectories complete successfully without relying on world-name substring heuristics.
 5. **Controlled Synthetic Truth Recovery**:
-   - **World 3 ($H_3$ Local Regime)**: Falsification-First (`pure_falsification` & `hybrid`) policies achieve **100% Top-1 Accuracy** and **100% Identification Rate @ 90% confidence** ($P(H_3) = 1.000 \pm 0.000$) while reducing experimental cost by **44.4%** relative to unguided exploration.
+   - **World 3 ($H_3$ Local Regime)**: Falsification-First policies achieve **100% Top-1 accuracy and 100% ID@90 across the three evaluated seeds** ($P(H_3) = 1.000 \pm 0.000$). Specifically, `pure_falsification` reduces mean experimental cost by **40.0%** relative to random-action exploration (30.0 vs. 50.0 cost units) and by **44.4%** relative to discovery-only (30.0 vs. 54.0 cost units), while `hybrid` achieves mean cost 43.3 units.
    - **World 1 & World 2 ($H_1$ vs. $H_2$)**: At the evaluated six-step horizon, H1 and H2 remain poorly identifiable. The current results are consistent with a sample-complexity limitation of the higher-dimensional structure-informed model, but longer-horizon and targeted joint-characterization experiments are required to test that explanation.
 
 ---
@@ -51,7 +51,7 @@ Evaluating 6-step adaptive trajectories across 3 random seeds (`[42, 101, 2024]`
 ### 3.1 World 3 Identification
 In World 3 ($H_3$: Localized Structural Regimes), candidate compositions in distinct chemical clusters exhibit sharp transitions in crystal structure and electrocatalytic properties.
 - **Mechanism**: The Falsification policy selects candidate experiments where local regime GPs ($H_3$) make distinct predictions from smooth global models ($H_1, H_2$).
-- **Outcome**: The expected HIG ($I(H; Y_a)$) guides the agent to boundary candidates, driving posterior entropy to $0.000$ nats and isolating $H_3$ with high confidence.
+- **Outcome**: The expected HIG ($I(H; Y_a)$) guides the agent to boundary candidates, driving posterior entropy to $0.000$ nats and isolating $H_3$ with 100% Top-1 accuracy and 100% ID@90 across evaluated seeds.
 
 ### 3.2 Identifiability in World 1 vs. World 2
 Between $H_1$ (3D composition surrogate) and $H_2$ (11D joint surrogate):

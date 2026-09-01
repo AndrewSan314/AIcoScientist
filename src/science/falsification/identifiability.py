@@ -97,7 +97,7 @@ def compute_monte_carlo_js_divergence(
     p2: PredictiveDistribution,
     n_samples: int = 256,
     seed: int = 42,
-    tol: float = 0.05,
+    tol: float | None = None,
 ) -> float:
     """Computes true Shannon-base-e Jensen-Shannon Divergence using Monte Carlo sampling.
 
@@ -110,20 +110,29 @@ def compute_monte_carlo_js_divergence(
         - Bounded: 0.0 <= JS(p1, p2) <= ln(2) ~ 0.69315 nats
         - Zero if and only if p1 == p2 almost everywhere
 
+    Tolerance derivation:
+        When `tol` is None, numerical tolerance scales with the Monte Carlo standard error:
+        effective_tol = max(0.01, 0.5 / sqrt(n_samples)).
+        For n_samples=256, effective_tol ~ 0.03125 nats (~4.5% of the total [0, ln(2)] range),
+        which comfortably accommodates normal statistical fluctuations (3-sigma) while strictly
+        rejecting structural/unnormalized mathematical violations.
+
     Parameters
     ----------
-    tol : float
+    tol : float | None
         Tolerance for Monte Carlo sampling variance around [0, ln(2)] bounds.
+        If None, automatically derived from n_samples.
         Excursions beyond tolerance raise RuntimeError rather than being silently clipped.
     """
+    effective_tol = tol if tol is not None else max(0.01, 0.5 / np.sqrt(max(1, n_samples)))
     raw_js = _compute_raw_monte_carlo_js(p1, p2, n_samples=n_samples, seed=seed)
 
     # Validate against theoretical bounds with numerical tolerance
     ln2 = float(np.log(2.0))
-    if raw_js < -tol or raw_js > ln2 + tol:
+    if raw_js < -effective_tol or raw_js > ln2 + effective_tol:
         raise RuntimeError(
             f"Monte Carlo JS divergence estimate ({raw_js:.5f}) exceeded theoretical bounds "
-            f"[0.0, {ln2:.5f}] beyond tolerance ({tol:.5f})."
+            f"[0.0, {ln2:.5f}] beyond tolerance ({effective_tol:.5f})."
         )
 
     # Clamp tiny epsilon-scale Monte Carlo sampling noise to exact mathematical bounds [0, ln(2)]

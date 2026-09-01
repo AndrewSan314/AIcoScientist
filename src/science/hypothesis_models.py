@@ -43,10 +43,20 @@ class PredictiveDistribution:
     variance: np.ndarray
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def _effective_variance(self) -> np.ndarray:
+        """Returns the numerical floor-adjusted effective diagonal variance array.
+
+        Unifies effective variance flooring across both sampling and density evaluations.
+        Floor: 1e-10 for scalar (dim=1) observations, 1e-8 for multivariate (dim>1) observations.
+        """
+        dim = len(self.mean)
+        floor = 1e-10 if dim == 1 else 1e-8
+        return np.maximum(np.asarray(self.variance, dtype=np.float64), floor)
+
     def sample(self, n_samples: int = 1, rng: np.random.Generator | None = None) -> np.ndarray:
         """Draws Monte Carlo samples from the predictive Gaussian distribution."""
         gen = rng if rng is not None else np.random.default_rng()
-        std = np.sqrt(np.maximum(self.variance, 1e-8))
+        std = np.sqrt(self._effective_variance())
         return gen.normal(loc=self.mean, scale=std, size=(n_samples, len(self.mean)))
 
     def log_pdf(self, observation: np.ndarray | float) -> float:
@@ -70,8 +80,7 @@ class PredictiveDistribution:
         if len(obs) != dim:
             raise ValueError(f"Observation dimension mismatch: expected {dim}, got {len(obs)}")
 
-        min_var = 1e-10 if dim == 1 else 1e-8
-        var = np.maximum(self.variance, min_var)
+        var = self._effective_variance()
         diff = obs - self.mean
 
         quad = float(np.sum((diff**2) / var))
@@ -227,11 +236,18 @@ def _build_candidate_maps(
 
     # Legacy XRD embeddings resolution
     if xrd_embeddings is not None:
-        x_cids = xrd_candidate_ids if xrd_candidate_ids is not None else (
-            candidate_ids if (property_targets is None or len(candidate_ids) == len(xrd_embeddings)) else None
-        )
-        if x_cids is None:
-            raise ValueError("XRD candidate IDs must be provided when passing xrd_embeddings array with distinct property targets.")
+        if xrd_candidate_ids is not None:
+            x_cids = xrd_candidate_ids
+        elif candidate_ids is not None:
+            if property_targets is not None and len(candidate_ids) != len(xrd_embeddings):
+                raise ValueError(
+                    f"XRD candidate IDs must be provided when xrd_embeddings count ({len(xrd_embeddings)}) "
+                    f"differs from candidate_ids / property count ({len(candidate_ids)})."
+                )
+            x_cids = candidate_ids
+        else:
+            raise ValueError("XRD candidate IDs must be provided when using positional XRD embeddings.")
+
         if len(x_cids) != len(xrd_embeddings):
             raise ValueError(f"Length mismatch: {len(x_cids)} XRD candidate IDs vs {len(xrd_embeddings)} XRD embeddings.")
         if len(x_cids) != len(set(x_cids)):

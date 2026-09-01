@@ -25,6 +25,6 @@
 | Synthetic_World_3_H3_True | H3 | uncertainty_only | 0.5089 | 0.4987 | 0.0211 | 0.0000 | 0.0000 | 0.3333 | 0.6924 | 54.0000 | 0.0124 | 0.0129 | 0.0018 | 0.0139 |
 
 ## Scientific Findings & Methodological Boundaries
-- **World 3 ($H_3$ Local Regime)**: Falsification and Hybrid policies achieve high true-hypothesis recovery ($P(H_3) \approx 1.0$) by characterizing regime boundaries with high HIG, significantly outperforming random exploration.
-- **World 1 & World 2 ($H_1$ vs. $H_2$)**: Uncovers sample-complexity limits where 11-dimensional joint models require longer observation horizons to overcome the Bayesian Occam penalty on sparse data.
-- **Discovery vs. Falsification**: `pure_falsification` operates with lowest experimental cost, while `hybrid` balances discovery potential with information gain.
+- **World 3 ($H_3$ Local Regime)**: Falsification-First policies achieve 100% Top-1 accuracy and 100% ID@90 across evaluated seeds ($P(H_3) \approx 1.0$) by identifying transition candidates with high Expected HIG, outperforming unguided exploration while pure falsification reduces mean experimental cost by 40.0% relative to random exploration (30.0 vs. 50.0 cost units).
+- **World 1 & World 2 ($H_1$ vs. $H_2$)**: At the evaluated six-step horizon, H1 and H2 remain poorly identifiable. The current results are consistent with a sample-complexity limitation of the higher-dimensional structure-informed model, but longer-horizon and targeted joint-characterization experiments are required to test that explanation.
+- **Discovery vs. Falsification Trade-off**: `pure_falsification` operates with lowest experimental cost, while `hybrid` balances discovery potential with information gain.

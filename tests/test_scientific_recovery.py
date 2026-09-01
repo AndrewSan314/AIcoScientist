@@ -468,3 +468,170 @@ def test_h3_partial_fit_states() -> None:
     x_prop = h3_prop.predict_observation("C1", ExperimentActionType.XRD, comp1)
     assert "gp" in p_prop.metadata["model_type"]
     assert x_prop.metadata["model_type"] == "unfitted_structure_prior"
+
+
+# ---------------------------------------------------------------------------
+# 6. PredictiveDistribution Variance Floor & Sampling Invariant Tests
+# ---------------------------------------------------------------------------
+def test_predictive_distribution_case_a_variance_below_floor() -> None:
+    """Case A: Variance below floor uses effective floor for both sampling and log_pdf."""
+    dist_1d = PredictiveDistribution(
+        hypothesis_id="H1",
+        candidate_id="C1",
+        action_type=ExperimentActionType.PROPERTY,
+        mean=np.array([0.0]),
+        variance=np.array([1e-12]),  # Below 1e-10 floor
+    )
+
+    # 1. Effective variance must be 1e-10
+    eff_var = dist_1d._effective_variance()
+    assert np.isclose(eff_var[0], 1e-10)
+
+    # 2. Monte Carlo sampling empirical variance matches 1e-10 floor
+    rng = np.random.default_rng(42)
+    samples = dist_1d.sample(n_samples=50000, rng=rng)
+    emp_var = np.var(samples)
+    assert np.isclose(emp_var, 1e-10, rtol=0.20)
+
+    # 3. log_pdf evaluates using the exact same 1e-10 effective floor
+    expected_log_prob = -0.5 * (np.log(2.0 * np.pi) + np.log(1e-10))
+    actual_log_prob = dist_1d.log_pdf(0.0)
+    assert np.isclose(actual_log_prob, expected_log_prob, atol=1e-6)
+
+
+def test_predictive_distribution_case_b_variance_above_floor() -> None:
+    """Case B: Valid variance above floor is preserved unchanged in sampling and log_pdf."""
+    dist = PredictiveDistribution(
+        hypothesis_id="H1",
+        candidate_id="C1",
+        action_type=ExperimentActionType.PROPERTY,
+        mean=np.array([2.5]),
+        variance=np.array([0.25]),
+    )
+
+    eff_var = dist._effective_variance()
+    assert np.isclose(eff_var[0], 0.25)
+
+    rng = np.random.default_rng(42)
+    samples = dist.sample(n_samples=50000, rng=rng)
+    assert np.isclose(np.mean(samples), 2.5, atol=0.05)
+    assert np.isclose(np.var(samples), 0.25, rtol=0.10)
+
+    # Density at 3.0: diff = 0.5, quad = 0.25 / 0.25 = 1.0
+    expected_log_prob = -0.5 * (np.log(2.0 * np.pi) + np.log(0.25) + 1.0)
+    actual_log_prob = dist.log_pdf(3.0)
+    assert np.isclose(actual_log_prob, expected_log_prob, atol=1e-6)
+
+
+def test_predictive_distribution_case_c_multivariate_xrd_consistency() -> None:
+    """Case C: Multivariate XRD distribution uses identical effective variance vector in sampling and log_pdf."""
+    mean_8d = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])
+    # Mix of variances: some above 1e-8, some below 1e-8
+    raw_var_8d = np.array([1e-12, 1e-9, 1e-8, 0.01, 0.04, 1e-11, 0.09, 0.16])
+    dist_8d = PredictiveDistribution(
+        hypothesis_id="H2",
+        candidate_id="C1",
+        action_type=ExperimentActionType.XRD,
+        mean=mean_8d,
+        variance=raw_var_8d,
+    )
+
+    eff_var = dist_8d._effective_variance()
+    expected_eff_var = np.maximum(raw_var_8d, 1e-8)
+    assert np.allclose(eff_var, expected_eff_var)
+
+    rng = np.random.default_rng(42)
+    samples = dist_8d.sample(n_samples=50000, rng=rng)
+    assert samples.shape == (50000, 8)
+    emp_vars = np.var(samples, axis=0)
+    # Check regular elements (index 3, 4, 6, 7) have expected empirical variances
+    assert np.isclose(emp_vars[3], 0.01, rtol=0.15)
+    assert np.isclose(emp_vars[4], 0.04, rtol=0.15)
+    assert np.isclose(emp_vars[6], 0.09, rtol=0.15)
+    assert np.isclose(emp_vars[7], 0.16, rtol=0.15)
+
+    # Check log_pdf evaluates with exact effective variance vector
+    test_obs = mean_8d + np.array([0.0, 0.0, 0.0, 0.1, 0.2, 0.0, 0.3, 0.4])
+    diff = test_obs - mean_8d
+    expected_quad = float(np.sum((diff**2) / expected_eff_var))
+    expected_log_det = float(np.sum(np.log(expected_eff_var)))
+    expected_log_prob = -0.5 * (8 * np.log(2.0 * np.pi) + expected_log_det + expected_quad)
+
+    actual_log_prob = dist_8d.log_pdf(test_obs)
+    assert np.isclose(actual_log_prob, expected_log_prob, atol=1e-5)
+
+
+# ---------------------------------------------------------------------------
+# 7. Candidate Map Legacy Edge Cases & TypeError Prevention
+# ---------------------------------------------------------------------------
+def test_build_candidate_maps_legacy_edge_cases_and_no_typeerror() -> None:
+    """Tests P2 legacy candidate map edge cases to ensure descriptive ValueError without TypeError."""
+    # 1. xrd_embeddings provided with no candidate IDs
+    with pytest.raises(ValueError, match="XRD candidate IDs must be provided"):
+        _build_candidate_maps(
+            xrd_embeddings=np.zeros((3, 8)),
+        )
+
+    # 2. property_targets present with candidate_ids, but xrd_embeddings has different length and no xrd_candidate_ids
+    with pytest.raises(ValueError, match="XRD candidate IDs must be provided"):
+        _build_candidate_maps(
+            property_targets=np.array([0.01, 0.02]),
+            candidate_ids=["C1", "C2"],
+            xrd_embeddings=np.zeros((3, 8)),
+        )
+
+    # 3. Equal counts with explicit different XRD candidate IDs
+    comp, prop, xrd = _build_candidate_maps(
+        property_targets=np.array([0.01, 0.02]),
+        property_candidate_ids=["C1", "C2"],
+        xrd_embeddings=np.ones((2, 8)),
+        xrd_candidate_ids=["C3", "C4"],
+    )
+    assert "C1" in prop and "C2" in prop
+    assert "C3" in xrd and "C4" in xrd
+    assert "C1" not in xrd
+
+    # 4. Conflicting explicit XRD map + legacy embeddings
+    with pytest.raises(ValueError, match="Conflicting explicit and legacy"):
+        _build_candidate_maps(
+            xrd_embedding_by_id={"C1": np.zeros(8)},
+            xrd_embeddings=np.ones((1, 8)),
+            xrd_candidate_ids=["C1"],
+        )
+
+    # 5. Mixed combinations with None candidate IDs never raise TypeError
+    with pytest.raises(ValueError):
+        _build_candidate_maps(
+            property_targets=np.array([0.01]),
+            xrd_embeddings=np.zeros((1, 8)),
+            candidate_ids=None,
+            xrd_candidate_ids=None,
+        )
+
+
+# ---------------------------------------------------------------------------
+# 8. Monte Carlo JS Divergence Boundary Violation Enforcement
+# ---------------------------------------------------------------------------
+def test_monte_carlo_js_divergence_rejects_material_bound_violations(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that compute_monte_carlo_js_divergence raises RuntimeError for material bound violations."""
+    p1 = PredictiveDistribution("H1", "C1", ExperimentActionType.PROPERTY, np.array([0.0]), np.array([1.0]))
+    p2 = PredictiveDistribution("H2", "C1", ExperimentActionType.PROPERTY, np.array([3.0]), np.array([1.0]))
+
+    # Monkeypatch _compute_raw_monte_carlo_js to return negative value exceeding tolerance
+    with monkeypatch.context() as m:
+        m.setattr(
+            "src.science.falsification.identifiability._compute_raw_monte_carlo_js",
+            lambda *args, **kwargs: -0.15,
+        )
+        with pytest.raises(RuntimeError, match="exceeded theoretical bounds"):
+            compute_monte_carlo_js_divergence(p1, p2, n_samples=256)
+
+    # Monkeypatch _compute_raw_monte_carlo_js to return value exceeding ln(2) + tol
+    with monkeypatch.context() as m:
+        m.setattr(
+            "src.science.falsification.identifiability._compute_raw_monte_carlo_js",
+            lambda *args, **kwargs: 1.25,
+        )
+        with pytest.raises(RuntimeError, match="exceeded theoretical bounds"):
+            compute_monte_carlo_js_divergence(p1, p2, n_samples=256)
+
