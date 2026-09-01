@@ -11,7 +11,8 @@ AUIRH_MODALITY_XRD = ModalityDefinition(
     name="XRD",
     observation_kind="characterization",
     cost=1.0,
-    metadata={"format": "xy_diffractogram", "embedding_dim": 8},
+    observation_key="xrd_embedding",
+    metadata={"format": "xy_diffractogram", "embedding_dim": 8, "observation_key": "xrd_embedding"},
 )
 
 AUIRH_MODALITY_PROPERTY = ModalityDefinition(
@@ -19,7 +20,8 @@ AUIRH_MODALITY_PROPERTY = ModalityDefinition(
     observation_kind="objective_measurement",
     cost=5.0,
     objective_names=("k0",),
-    metadata={"target": "k0", "units": "cm/s", "method": "SECCM"},
+    observation_key="k0",
+    metadata={"target": "k0", "units": "cm/s", "method": "SECCM", "observation_key": "k0"},
 )
 
 AUIRH_OBJECTIVE_K0 = ObjectiveDefinition(
