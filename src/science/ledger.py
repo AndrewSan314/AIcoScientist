@@ -242,12 +242,18 @@ class ExperimentLedger:
         record: ScientificExperimentRecord,
         spec: DatasetSpec | None = None,
     ) -> ScientificExperimentRecord:
-        """Records pre-existing baseline experimental evidence directly into the ledger with explicit provenance."""
+        """Records pre-existing baseline experimental evidence directly into the ledger with explicit provenance.
+
+        Validates that the record is already in COMPLETED stage before spec validation and storage.
+        """
+        if record.stage != ExperimentStage.COMPLETED:
+            raise ValueError(
+                f"Cannot record baseline evidence: record stage must be '{ExperimentStage.COMPLETED.value}', "
+                f"got '{record.stage.value}'."
+            )
+
         if spec is not None:
             validate_record_against_spec(record, spec)
-
-        if record.stage != ExperimentStage.COMPLETED:
-            record.stage = ExperimentStage.COMPLETED
 
         prev_hash = self._get_latest_event_hash()
         payload = record.to_dict()
@@ -641,6 +647,34 @@ class ExperimentLedger:
                 "event_hash": r["event_hash"],
             })
         return history
+
+    def get_all_events(self) -> list[dict[str, Any]]:
+        """Returns the full chronological event log of all scientific experiments."""
+        cursor = self._conn.execute(
+            """
+            SELECT event_id, experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash
+            FROM experiment_events
+            ORDER BY event_id ASC
+            """
+        )
+        events: list[dict[str, Any]] = []
+        for r in cursor.fetchall():
+            events.append({
+                "event_id": r["event_id"],
+                "experiment_id": r["experiment_id"],
+                "event_type": r["event_type"],
+                "created_at": r["created_at"],
+                "payload": json.loads(r["payload_json"]),
+                "previous_event_hash": r["previous_event_hash"],
+                "event_hash": r["event_hash"],
+            })
+        return events
+
+    def get_event_stream(self) -> list[Any]:
+        """Returns event objects representing the chronological stream of events."""
+        from types import SimpleNamespace
+        raw_events = self.get_all_events()
+        return [SimpleNamespace(**e) for e in raw_events]
 
     def get_record(self, experiment_id: str) -> ScientificExperimentRecord | None:
         """Reconstructs the current state of an experiment from its event history."""

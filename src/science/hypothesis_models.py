@@ -11,6 +11,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RBF, WhiteKernel
 
 from src.science.actions import ActionType, ExperimentActionType, normalize_action_type
+from src.science.representation import RepresentationMismatchError
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,12 @@ class PredictiveDistribution:
         Predictive variance array (diagonal variance elements; shape (1,) or (D,)).
     metadata : dict[str, Any]
         Additional context such as component uncertainties or regime indices.
+    representation_fingerprint : str | None
+        Deterministic cryptographic fingerprint of the coordinate basis used for this prediction.
+    representation_version : int | None
+        Monotonic version index of the coordinate basis.
+    representation_id : str | None
+        Identifier of the representation model.
     """
 
     hypothesis_id: str
@@ -41,6 +48,9 @@ class PredictiveDistribution:
     mean: np.ndarray
     variance: np.ndarray
     metadata: dict[str, Any] = field(default_factory=dict)
+    representation_fingerprint: str | None = None
+    representation_version: int | None = None
+    representation_id: str | None = None
 
     def _effective_variance(self) -> np.ndarray:
         """Returns the numerical floor-adjusted effective diagonal variance array.
@@ -1066,8 +1076,23 @@ class HypothesisEnsemble:
         action_type: ActionType,
         observation: np.ndarray | float,
         pre_predictions: dict[str, PredictiveDistribution],
+        observation_representation_fingerprint: str | None = None,
     ) -> dict[str, Any]:
-        """Updates sequential predictive log-evidence and computes new hypothesis beliefs."""
+        """Updates sequential predictive log-evidence and computes new hypothesis beliefs.
+
+        FAIL-CLOSED INVARIANT:
+        If predictions specify a representation fingerprint or an observation representation fingerprint is supplied,
+        they must match identically. Mismatch fails closed by raising RepresentationMismatchError.
+        """
+        for hid, pred in pre_predictions.items():
+            if pred.representation_fingerprint is not None or observation_representation_fingerprint is not None:
+                if pred.representation_fingerprint != observation_representation_fingerprint:
+                    raise RepresentationMismatchError(
+                        f"Representation mismatch for hypothesis '{hid}' during evidence update on candidate '{candidate_id}': "
+                        f"prediction basis '{pred.representation_fingerprint}' does not match "
+                        f"realized observation basis '{observation_representation_fingerprint}'"
+                    )
+
         before_beliefs = self.get_beliefs()
         before_entropy = self.get_entropy()
 
@@ -1093,6 +1118,7 @@ class HypothesisEnsemble:
             "before_entropy": before_entropy,
             "after_entropy": after_entropy,
             "realized_entropy_reduction": realized_entropy_reduction,
+            "representation_fingerprint": observation_representation_fingerprint,
         }
         self.evidence_history.append(record)
         return record

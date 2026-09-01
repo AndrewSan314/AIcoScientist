@@ -69,6 +69,11 @@ from src.science.two_stage import (
 )
 from src.science.validation import InformationHorizonError, validate_record_against_spec
 from src.science.xrd_representation import XRDRepresentationExtractor
+from src.science.representation import (
+    ObservationRepresentationManager,
+    RepresentationMismatchError,
+    RepresentationSnapshot,
+)
 
 __all__ = [
     "ActionRecommendation",
@@ -98,7 +103,10 @@ __all__ = [
     "NextBestExperimentPolicy",
     "ObjectiveDefinition",
     "ObjectiveDirection",
+    "ObservationRepresentationManager",
     "PendingExperimentError",
+    "RepresentationMismatchError",
+    "RepresentationSnapshot",
     "ScientificAction",
     "ScientificClosedLoopCoordinator",
     "ScientificDecisionEngine",
