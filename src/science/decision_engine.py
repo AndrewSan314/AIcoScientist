@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.optimization.backend import OptimizerBackend
+from src.optimization.objective import OptimizationObjective
 from src.science.actions import (
     ActionRecommendation,
     ActionType,
@@ -15,6 +16,7 @@ from src.science.actions import (
     normalize_action_type,
 )
 from src.science.domain import (
+    HypothesisTrainingContext,
     MaterialDomainAdapter,
     MaterialDomainConfig,
     ModalityDefinition,
@@ -33,6 +35,17 @@ from src.science.ledger import ExperimentLedger
 from src.science.records import ExperimentStage, ScientificExperimentRecord
 
 logger = logging.getLogger(__name__)
+
+
+def _to_optimizer_objective(obj: ObjectiveDefinition) -> OptimizationObjective:
+    """Converts a science domain ObjectiveDefinition into an optimization OptimizationObjective."""
+    return OptimizationObjective(
+        target_name=obj.name,
+        minimize=(obj.direction == ObjectiveDirection.MINIMIZE),
+        units=obj.units,
+        threshold=getattr(obj, "threshold", None),
+        metadata=dict(obj.metadata),
+    )
 
 
 class ScientificDecisionEngine:
@@ -77,6 +90,10 @@ class ScientificDecisionEngine:
         self.modalities: Sequence[ModalityDefinition] = domain.get_modality_schema()
         self.objectives: Sequence[ObjectiveDefinition] = domain.get_objectives()
 
+        # Map modality names to definitions
+        self._modality_map: dict[str, ModalityDefinition] = {m.name: m for m in self.modalities}
+        self._objective_map: dict[str, ObjectiveDefinition] = {o.name: o for o in self.objectives}
+
         # Positional candidate mapping (safe against arbitrary DataFrame index labels)
         cids = self.candidate_pool_df["candidate_id"].tolist()
         feat_matrix = self.candidate_pool_df[list(self.feature_cols)].to_numpy(dtype=np.float64)
@@ -109,6 +126,12 @@ class ScientificDecisionEngine:
         # Optimization & Ledger
         self.optimizer_backend = optimizer_backend
         self.ledger = ledger or ExperimentLedger()
+        self.last_optimizer_status: dict[str, Any] = {
+            "used": False,
+            "success": True,
+            "reason": "Not yet evaluated",
+            "num_scored": 0,
+        }
 
         # State tracking
         self.step = 0
@@ -126,33 +149,57 @@ class ScientificDecisionEngine:
 
     def _is_objective_action(self, action_type: ActionType) -> bool:
         norm_type = normalize_action_type(action_type)
-        for m in self.modalities:
-            if m.name == norm_type:
-                return m.measures_objective()
-        return norm_type in ("PROPERTY", "CAPACITY_TEST")
+        if norm_type in self._modality_map:
+            return self._modality_map[norm_type].measures_objective()
+        for obj in self.objectives:
+            if obj.name == norm_type:
+                return True
+        return False
 
-    def _extract_observation_data(self, action_type: ActionType, revealed_data: Mapping[str, Any]) -> Any:
-        """Extracts the primary numeric/vector payload from revealed measurement data."""
-        if "xrd_embedding" in revealed_data:
-            return np.asarray(revealed_data["xrd_embedding"], dtype=np.float64)
-        if "sem_features" in revealed_data:
-            return np.asarray(revealed_data["sem_features"], dtype=np.float64)
-        if "embedding" in revealed_data:
-            return np.asarray(revealed_data["embedding"], dtype=np.float64)
+    def _extract_observation_data(
+        self,
+        action_type: ActionType,
+        revealed_data: Mapping[str, Any],
+        outcome: ExperimentOutcome | None = None,
+    ) -> Any:
+        """Extracts the primary numeric/vector payload from revealed measurement data driven by domain metadata."""
+        if outcome is not None and getattr(outcome, "canonical_observation", None) is not None:
+            return outcome.canonical_observation
 
-        # Check domain objectives
+        norm_type = normalize_action_type(action_type)
+        m_def = self._modality_map.get(norm_type)
+
+        if m_def is not None:
+            # 1. Direct observation_key specified by modality definition
+            if m_def.observation_key and m_def.observation_key in revealed_data:
+                val = revealed_data[m_def.observation_key]
+                return np.asarray(val, dtype=np.float64) if isinstance(val, (list, tuple, np.ndarray)) else val
+
+            # 2. Key in metadata dictionary
+            obs_key_meta = m_def.metadata.get("observation_key")
+            if obs_key_meta and obs_key_meta in revealed_data:
+                val = revealed_data[obs_key_meta]
+                return np.asarray(val, dtype=np.float64) if isinstance(val, (list, tuple, np.ndarray)) else val
+
+            # 3. Objective names specified by modality definition
+            for obj_name in m_def.objective_names:
+                if obj_name in revealed_data:
+                    val = revealed_data[obj_name]
+                    return float(val) if isinstance(val, (int, float, np.number)) else val
+
+        # 4. Domain objective targets matching keys
         for obj in self.objectives:
             if obj.name in revealed_data:
-                return float(revealed_data[obj.name])
+                val = revealed_data[obj.name]
+                return float(val) if isinstance(val, (int, float, np.number)) else val
 
-        for key in ("k0", "capacity", "measured_k0", "measured_capacity", "value", "target"):
-            if key in revealed_data:
-                val = revealed_data[key]
-                return float(val) if isinstance(val, (int, float)) else val
-
+        # 5. Metadata fallback: check generic payload keys if non-empty
         for k, v in revealed_data.items():
-            if k not in ("two_theta", "intensity", "downsampled_two_theta", "downsampled_intensity", "normalized_intensity"):
-                return v
+            if isinstance(v, (int, float, np.number)):
+                return float(v)
+            if isinstance(v, (list, tuple, np.ndarray)) and len(v) <= 64:
+                return np.asarray(v, dtype=np.float64)
+
         return next(iter(revealed_data.values())) if revealed_data else 0.0
 
     def initialize(
@@ -168,12 +215,12 @@ class ScientificDecisionEngine:
                 self.observations_by_modality[norm_act] = {}
 
             # Store revealed measurement
-            data_val = self._extract_observation_data(act.action_type, outcome.revealed_data)
+            data_val = self._extract_observation_data(act.action_type, outcome.revealed_data, outcome)
             self.observations_by_modality[norm_act][act.candidate_id] = data_val
             self.revealed_outcomes[act.action_id] = outcome
             outcomes.append(outcome)
 
-            # Record to ledger
+            # Record baseline imported evidence in ledger with explicit semantic lifecycle
             cand_comp = self._get_candidate_composition(act.candidate_id)
             record = ScientificExperimentRecord(
                 experiment_id=act.action_id,
@@ -184,25 +231,31 @@ class ScientificDecisionEngine:
                 proposal_metadata=act.to_dict(),
                 provenance=dict(outcome.provenance),
             )
-            delta = {"performance" if self._is_objective_action(act.action_type) else "characterization": outcome.revealed_data}
             if self.ledger is not None:
                 try:
-                    self.ledger.record_proposal(record)
-                    self.ledger.append_transition(
-                        experiment_id=act.action_id,
-                        new_stage=ExperimentStage.COMPLETED,
-                        event_type="INITIAL_BASELINE_EXPERIMENT",
-                        delta_payload=delta,
-                    )
+                    if hasattr(self.ledger, "record_baseline_evidence"):
+                        self.ledger.record_baseline_evidence(record)
+                    else:
+                        self.ledger.record_proposal(record)
                 except Exception as e:
-                    logger.debug("Ledger recording notice: %s", e)
+                    logger.warning("Ledger baseline recording notice: %s", e)
             self.recorded_experiments.append(record)
+
+        # Synchronize multi-modal representation state from domain adapter if supported
+        if hasattr(self.domain, "get_observations_by_modality"):
+            domain_obs = self.domain.get_observations_by_modality()
+            for m_name, obs_dict in domain_obs.items():
+                if m_name not in self.observations_by_modality:
+                    self.observations_by_modality[m_name] = {}
+                self.observations_by_modality[m_name].update(obs_dict)
 
         # Fit hypotheses on initial observations
         comp_by_id = {cid: self._get_candidate_composition(cid) for cid in self._candidate_features_map}
         self.ensemble.fit_all(
             composition_by_id=comp_by_id,
             observations_by_modality=self.observations_by_modality,
+            modality_definitions=self.modalities,
+            objective_definitions=self.objectives,
         )
         return outcomes
 
@@ -217,42 +270,74 @@ class ScientificDecisionEngine:
         if not valid_actions:
             raise RuntimeError(f"All valid experimental actions have been exhausted in domain '{self.domain_id}'.")
 
+        # Synchronize domain representation state before policy evaluation
+        if hasattr(self.domain, "get_observations_by_modality"):
+            domain_obs = self.domain.get_observations_by_modality()
+            for m_name, obs_dict in domain_obs.items():
+                if m_name not in self.observations_by_modality:
+                    self.observations_by_modality[m_name] = {}
+                self.observations_by_modality[m_name].update(obs_dict)
+
         # Extract discovery scores from optimizer backend if available
         disc_scores: dict[str, float] = {}
         if self.optimizer_backend is not None and len(self.objectives) > 0:
             primary_obj = self.objectives[0]
-            # Identify candidates with observed objective measurements
             obj_obs: dict[str, float] = {}
             for m in self.modalities:
                 if m.measures_objective(primary_obj.name):
-                    obj_obs.update(self.observations_by_modality.get(m.name, {}))
+                    for cid, val in self.observations_by_modality.get(m.name, {}).items():
+                        if isinstance(val, (int, float, np.number)):
+                            obj_obs[cid] = float(val)
 
             if len(obj_obs) >= 3:
-                try:
-                    cand_pool_features = self.candidate_pool_df[list(self.feature_cols)]
-                    acq_scores = self.optimizer_backend.score_candidates(
-                        candidate_features=cand_pool_features,
-                        observed_candidate_ids=set(obj_obs.keys()),
-                        observed_values=obj_obs,
-                    )
-                    cids = self.candidate_pool_df["candidate_id"].tolist()
-                    disc_scores = {cid: float(acq_scores[i]) for i, cid in enumerate(cids) if i < len(acq_scores)}
-                except Exception as e:
-                    logger.debug("Optimizer scoring skipped: %s", e)
+                obs_rows = []
+                for cid, val in obj_obs.items():
+                    feat_vec = self._get_candidate_composition(cid)
+                    row = {"candidate_id": cid, primary_obj.name: float(val)}
+                    for i, col in enumerate(self.feature_cols):
+                        row[col] = float(feat_vec[i])
+                    obs_rows.append(row)
+                obs_df = pd.DataFrame(obs_rows)
 
-        # Observed characterization embeddings map
-        char_embs_map: dict[str, np.ndarray] = {}
-        for m in self.modalities:
-            if m.observation_kind in ("characterization", "spectrum", "embedding", "image_features"):
-                for cid, emb in self.observations_by_modality.get(m.name, {}).items():
-                    char_embs_map[cid] = np.asarray(emb, dtype=np.float64)
+                try:
+                    opt_obj = _to_optimizer_objective(primary_obj)
+                    disc_scores = self.optimizer_backend.score_candidates(
+                        observations=obs_df,
+                        candidate_pool=self.candidate_pool_df,
+                        objective=opt_obj,
+                        feature_columns=list(self.feature_cols),
+                        candidate_id_column="candidate_id",
+                        seed=self.seed + self.step,
+                    )
+                    self.last_optimizer_status = {
+                        "used": True,
+                        "success": True,
+                        "reason": "OK",
+                        "num_scored": len(disc_scores),
+                    }
+                except Exception as e:
+                    logger.warning("Optimizer backend acquisition evaluation notice in domain '%s': %s", self.domain_id, e)
+                    self.last_optimizer_status = {
+                        "used": True,
+                        "success": False,
+                        "reason": str(e),
+                        "num_scored": 0,
+                    }
+                    disc_scores = {}
+            else:
+                self.last_optimizer_status = {
+                    "used": True,
+                    "success": False,
+                    "reason": f"Insufficient objective observations ({len(obj_obs)} < 3)",
+                    "num_scored": 0,
+                }
 
         # Policy recommendation
         rec = self.policy.recommend_next_experiment(
             candidate_pool_df=self.candidate_pool_df,
             ensemble=self.ensemble,
             property_discovery_scores=disc_scores,
-            observed_xrd_embeddings_map=char_embs_map,
+            observed_modalities_map=self.observations_by_modality,
             fast_mode=use_fast,
             seed=self.seed + self.step,
             step=self.step,
@@ -264,7 +349,7 @@ class ScientificDecisionEngine:
         )
         self._last_recommendation = rec
 
-        # Create proposal record in ledger
+        # Create proposal record in ledger with PROPOSED stage
         rec_action = rec.action
         cand_comp = self._get_candidate_composition(rec_action.candidate_id)
         proposal_rec = ScientificExperimentRecord(
@@ -280,7 +365,7 @@ class ScientificDecisionEngine:
             try:
                 self.ledger.record_proposal(proposal_rec)
             except Exception as e:
-                logger.debug("Ledger record_proposal notice: %s", e)
+                logger.warning("Ledger record_proposal notice: %s", e)
 
         return rec
 
@@ -311,9 +396,17 @@ class ScientificDecisionEngine:
         if norm_act not in self.observations_by_modality:
             self.observations_by_modality[norm_act] = {}
 
-        data_val = self._extract_observation_data(action.action_type, outcome.revealed_data)
+        data_val = self._extract_observation_data(action.action_type, outcome.revealed_data, outcome)
         self.observations_by_modality[norm_act][cand_id] = data_val
         self.revealed_outcomes[action.action_id] = outcome
+
+        # Synchronize updated representations from adapter if available (e.g. PCA recomputed on all revealed spectra)
+        if hasattr(self.domain, "get_observations_by_modality"):
+            domain_obs = self.domain.get_observations_by_modality()
+            for m_name, obs_dict in domain_obs.items():
+                if m_name not in self.observations_by_modality:
+                    self.observations_by_modality[m_name] = {}
+                self.observations_by_modality[m_name].update(obs_dict)
 
         # Observation array for evidence calculation
         obs_array = np.atleast_1d(np.asarray(data_val, dtype=np.float64))
@@ -332,9 +425,11 @@ class ScientificDecisionEngine:
         self.ensemble.fit_all(
             composition_by_id=comp_by_id,
             observations_by_modality=self.observations_by_modality,
+            modality_definitions=self.modalities,
+            objective_definitions=self.objectives,
         )
 
-        # 5. Record execution and completion in ledger
+        # 5. Record execution and completion transitions in ledger
         delta = {"performance" if self._is_objective_action(action.action_type) else "characterization": outcome.revealed_data}
         if self.ledger is not None:
             try:
@@ -351,7 +446,7 @@ class ScientificDecisionEngine:
                     delta_payload=delta,
                 )
             except Exception as e:
-                logger.debug("Ledger transition notice: %s", e)
+                logger.warning("Ledger transition notice: %s", e)
 
         record = ScientificExperimentRecord(
             experiment_id=action.action_id,
@@ -381,7 +476,7 @@ class ScientificDecisionEngine:
             for m in self.modalities:
                 if m.measures_objective(primary_obj.name):
                     for v in self.observations_by_modality.get(m.name, {}).values():
-                        if isinstance(v, (int, float)):
+                        if isinstance(v, (int, float, np.number)):
                             all_obj_obs.append(float(v))
             if all_obj_obs:
                 best_obj_val = max(all_obj_obs) if primary_obj.direction == ObjectiveDirection.MAXIMIZE else min(all_obj_obs)
@@ -397,4 +492,5 @@ class ScientificDecisionEngine:
             "active_hypotheses": list(self.ensemble.hypotheses.keys()),
             "evidence_history_length": len(self.ensemble.evidence_history),
             "ledger_records_count": len(self.recorded_experiments),
+            "last_optimizer_status": dict(self.last_optimizer_status),
         }

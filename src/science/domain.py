@@ -26,6 +26,7 @@ class ObjectiveDefinition:
     direction: ObjectiveDirection = ObjectiveDirection.MAXIMIZE
     units: str | None = None
     target_col: str | None = None
+    threshold: float | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,6 +35,7 @@ class ObjectiveDefinition:
             "direction": self.direction.value,
             "units": self.units,
             "target_col": self.target_col or self.name,
+            "threshold": self.threshold,
             "metadata": dict(self.metadata),
         }
 
@@ -46,6 +48,7 @@ class ObjectiveDefinition:
             direction=direction,
             units=data.get("units"),
             target_col=data.get("target_col"),
+            threshold=data.get("threshold"),
             metadata=dict(data.get("metadata", {})),
         )
 
@@ -59,6 +62,7 @@ class ModalityDefinition:
     cost: float = 1.0
     requires: tuple[str, ...] = ()
     objective_names: tuple[str, ...] = ()
+    observation_key: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def measures_objective(self, obj_name: str | None = None) -> bool:
@@ -74,6 +78,7 @@ class ModalityDefinition:
             "cost": self.cost,
             "requires": list(self.requires),
             "objective_names": list(self.objective_names),
+            "observation_key": self.observation_key,
             "metadata": dict(self.metadata),
         }
 
@@ -85,8 +90,19 @@ class ModalityDefinition:
             cost=float(data.get("cost", 1.0)),
             requires=tuple(str(r) for r in data.get("requires", ())),
             objective_names=tuple(str(o) for o in data.get("objective_names", ())),
+            observation_key=data.get("observation_key"),
             metadata=dict(data.get("metadata", {})),
         )
+
+
+@dataclass(frozen=True)
+class HypothesisTrainingContext:
+    """Domain-generic training context passed to hypothesis models during Bayesian updates."""
+
+    candidate_features_by_id: Mapping[str, np.ndarray]
+    observations_by_modality: Mapping[str, Mapping[str, Any]]
+    modality_definitions: Mapping[str, ModalityDefinition] = field(default_factory=dict)
+    objective_definitions: Mapping[str, ObjectiveDefinition] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
