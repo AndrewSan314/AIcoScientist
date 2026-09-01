@@ -9,15 +9,16 @@ from src.science.domain import (
 
 AUIRH_MODALITY_XRD = ModalityDefinition(
     name="XRD",
-    observation_kind="spectrum",
+    observation_kind="characterization",
     cost=1.0,
     metadata={"format": "xy_diffractogram", "embedding_dim": 8},
 )
 
 AUIRH_MODALITY_PROPERTY = ModalityDefinition(
     name="PROPERTY",
-    observation_kind="scalar_property",
+    observation_kind="objective_measurement",
     cost=5.0,
+    objective_names=("k0",),
     metadata={"target": "k0", "units": "cm/s", "method": "SECCM"},
 )
 

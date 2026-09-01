@@ -26,6 +26,7 @@ def test_core_does_not_import_auirh_domain() -> None:
     core_modules = [
         Path("src/science/actions.py"),
         Path("src/science/domain.py"),
+        Path("src/science/decision_engine.py"),
         Path("src/science/records.py"),
         Path("src/science/hypothesis_models.py"),
         Path("src/science/falsification/information_gain.py"),
@@ -51,3 +52,16 @@ def test_core_does_not_import_auirh_domain() -> None:
                 assert not imp.startswith(forbidden), (
                     f"Architecture Boundary Violation: Core module '{mod_path}' statically imports '{imp}'."
                 )
+
+
+def test_domains_may_import_core() -> None:
+    """Verifies expected architecture direction: domain adapters may import generic core abstractions."""
+    domain_modules = [
+        Path("src/domains/auirh/adapter.py"),
+        Path("src/domains/toy_material/adapter.py"),
+    ]
+    for mod_path in domain_modules:
+        assert mod_path.is_file()
+        imports = _get_imports_from_file(mod_path)
+        core_imports = [imp for imp in imports if imp.startswith("src.science")]
+        assert len(core_imports) > 0, f"Domain module '{mod_path}' expected to import generic core abstractions."

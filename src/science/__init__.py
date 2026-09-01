@@ -40,6 +40,7 @@ from src.science.agents import (
 from src.science.coordinator import PendingExperimentError, ScientificClosedLoopCoordinator
 from src.science.direct_baseline import DirectPerformanceModel
 from src.science.discovery_engine import AutonomousDiscoveryEngine
+from src.science.decision_engine import ScientificDecisionEngine
 from src.science.evaluation import evaluate_two_stage_model
 from src.science.experiment_policy import NextBestExperimentPolicy
 from src.science.hypotheses import (
@@ -98,6 +99,7 @@ __all__ = [
     "PendingExperimentError",
     "ScientificAction",
     "ScientificClosedLoopCoordinator",
+    "ScientificDecisionEngine",
     "ScientificExperimentRecord",
     "ScientificHypothesis",
     "ScientificModelBundle",

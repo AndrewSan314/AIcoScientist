@@ -82,6 +82,43 @@ class ToyMaterialDomainAdapter:
     def domain_id(self) -> str:
         return "toy_material"
 
+    def get_config(self) -> MaterialDomainConfig:
+        """Returns the typed configuration contract for this domain."""
+        from src.domains.toy_material.config import TOY_MATERIAL_DOMAIN_CONFIG
+        return TOY_MATERIAL_DOMAIN_CONFIG
+
+    def get_default_initial_actions(
+        self,
+        n_cap: int = 3,
+        n_sem: int = 3,
+        seed: int = 42,
+    ) -> list[ScientificAction]:
+        """Constructs curated initial actions for offline scenarios."""
+        pool_df = self.get_candidate_pool()
+        shuffled = pool_df.sample(n=min(n_cap + n_sem, len(pool_df)), random_state=seed)
+        cids = shuffled["candidate_id"].tolist()
+        actions: list[ScientificAction] = []
+        for i, cid in enumerate(cids):
+            if i < n_cap:
+                actions.append(
+                    ScientificAction(
+                        action_id=f"init_cap_{cid}",
+                        candidate_id=cid,
+                        action_type="CAPACITY_TEST",
+                        estimated_cost=TOY_MODALITY_CAPACITY.cost,
+                    )
+                )
+            if i < n_sem:
+                actions.append(
+                    ScientificAction(
+                        action_id=f"init_sem_{cid}",
+                        candidate_id=cid,
+                        action_type="SEM",
+                        estimated_cost=TOY_MODALITY_SEM.cost,
+                    )
+                )
+        return actions
+
     def get_candidate_pool(self) -> pd.DataFrame:
         """Returns visible candidate pool containing pre-experiment features ONLY."""
         return pd.DataFrame(self._candidate_pool_records).copy()

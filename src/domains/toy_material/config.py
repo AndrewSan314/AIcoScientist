@@ -9,15 +9,16 @@ from src.science.domain import (
 
 TOY_MODALITY_SEM = ModalityDefinition(
     name="SEM",
-    observation_kind="image_features",
+    observation_kind="characterization",
     cost=2.0,
     metadata={"description": "Scanning electron microscopy 4D morphology representation"},
 )
 
 TOY_MODALITY_CAPACITY = ModalityDefinition(
     name="CAPACITY_TEST",
-    observation_kind="scalar_property",
+    observation_kind="objective_measurement",
     cost=6.0,
+    objective_names=("capacity",),
     metadata={"description": "Galvanostatic cycling capacity measurement", "units": "mAh/g"},
 )
 

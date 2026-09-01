@@ -55,10 +55,17 @@ class ModalityDefinition:
     """Domain-agnostic specification of a physical characterization or property measurement modality."""
 
     name: str
-    observation_kind: str  # e.g. "scalar_property", "spectrum", "embedding", "image_features"
+    observation_kind: str  # e.g. "characterization", "objective_measurement", "spectrum", "embedding"
     cost: float = 1.0
     requires: tuple[str, ...] = ()
+    objective_names: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    def measures_objective(self, obj_name: str | None = None) -> bool:
+        """Returns True if this modality measures an optimization/discovery objective."""
+        if obj_name is None:
+            return self.observation_kind == "objective_measurement" or bool(self.objective_names)
+        return obj_name in self.objective_names
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -66,6 +73,7 @@ class ModalityDefinition:
             "observation_kind": self.observation_kind,
             "cost": self.cost,
             "requires": list(self.requires),
+            "objective_names": list(self.objective_names),
             "metadata": dict(self.metadata),
         }
 
@@ -73,9 +81,10 @@ class ModalityDefinition:
     def from_dict(cls, data: Mapping[str, Any]) -> ModalityDefinition:
         return cls(
             name=str(data["name"]),
-            observation_kind=str(data.get("observation_kind", "scalar_property")),
+            observation_kind=str(data.get("observation_kind", "characterization")),
             cost=float(data.get("cost", 1.0)),
             requires=tuple(str(r) for r in data.get("requires", ())),
+            objective_names=tuple(str(o) for o in data.get("objective_names", ())),
             metadata=dict(data.get("metadata", {})),
         )
 
@@ -131,6 +140,10 @@ class MaterialDomainAdapter(Protocol):
         """Unique identifier of the material system / domain."""
         ...
 
+    def get_config(self) -> MaterialDomainConfig:
+        """Returns the typed configuration contract for this domain."""
+        ...
+
     def get_candidate_pool(self) -> pd.DataFrame:
         """Returns the visible candidate pool containing pre-experiment features only.
 
@@ -164,3 +177,4 @@ class MaterialDomainAdapter(Protocol):
     def get_hypothesis_provider(self) -> HypothesisProvider | None:
         """Returns the domain-specific hypothesis factory, or None if domain uses external hypotheses."""
         ...
+

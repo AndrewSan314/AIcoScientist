@@ -6,6 +6,7 @@ import pandas as pd
 
 from src.datasets.auirh_actions import AuIrRhMultimodalOracle
 from src.domains.auirh.config import (
+    AUIRH_DOMAIN_CONFIG,
     AUIRH_MODALITY_PROPERTY,
     AUIRH_MODALITY_XRD,
     AUIRH_OBJECTIVE_K0,
@@ -15,10 +16,12 @@ from src.science.actions import (
     ExperimentActionType,
     ExperimentOutcome,
     ScientificAction,
+    normalize_action_type,
 )
 from src.science.domain import (
     HypothesisProvider,
     MaterialDomainAdapter,
+    MaterialDomainConfig,
     ModalityDefinition,
     ObjectiveDefinition,
 )
@@ -46,10 +49,46 @@ class AuIrRhDomainAdapter:
         """Unique identifier for the Au-Ir-Rh domain."""
         return "auirh"
 
+    def get_config(self) -> MaterialDomainConfig:
+        """Returns the typed configuration contract for this domain."""
+        return AUIRH_DOMAIN_CONFIG
+
     @property
     def oracle(self) -> AuIrRhMultimodalOracle:
         """Underlying multimodal oracle instance."""
         return self._oracle
+
+    def get_default_initial_actions(
+        self,
+        n_prop: int = 5,
+        n_xrd: int = 5,
+        seed: int = 42,
+    ) -> list[ScientificAction]:
+        """Constructs curated initial actions for offline scenarios."""
+        pool_df = self.get_candidate_pool()
+        shuffled = pool_df.sample(n=min(n_prop + n_xrd, len(pool_df)), random_state=seed)
+        cids = shuffled["candidate_id"].tolist()
+        actions: list[ScientificAction] = []
+        for i, cid in enumerate(cids):
+            if i < n_prop:
+                actions.append(
+                    ScientificAction(
+                        action_id=f"init_prop_{cid}",
+                        candidate_id=cid,
+                        action_type=ExperimentActionType.PROPERTY,
+                        estimated_cost=AUIRH_MODALITY_PROPERTY.cost,
+                    )
+                )
+            if i < n_xrd:
+                actions.append(
+                    ScientificAction(
+                        action_id=f"init_xrd_{cid}",
+                        candidate_id=cid,
+                        action_type=ExperimentActionType.XRD,
+                        estimated_cost=AUIRH_MODALITY_XRD.cost,
+                    )
+                )
+        return actions
 
     def get_candidate_pool(self) -> pd.DataFrame:
         """Returns the visible candidate pool containing pre-experiment features only.
@@ -103,7 +142,16 @@ class AuIrRhDomainAdapter:
 
     def execute_or_reveal(self, action: ScientificAction) -> ExperimentOutcome:
         """Executes a scientific measurement action via the offline oracle."""
-        return self._oracle.execute(action)
+        outcome = self._oracle.execute(action)
+        norm_type = normalize_action_type(action.action_type)
+        if norm_type == "XRD" and "normalized_intensity" in outcome.revealed_data:
+            if "xrd_embedding" not in outcome.revealed_data:
+                from src.science.xrd_representation import XRDRepresentationExtractor
+                if not hasattr(self, "_xrd_extractor"):
+                    self._xrd_extractor = XRDRepresentationExtractor()
+                emb = self._xrd_extractor.transform(outcome.revealed_data["normalized_intensity"])
+                outcome.revealed_data["xrd_embedding"] = emb.tolist()
+        return outcome
 
     def get_objectives(self) -> Sequence[ObjectiveDefinition]:
         """Returns the domain objective definitions."""

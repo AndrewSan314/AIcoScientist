@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
 import numpy as np
@@ -26,6 +26,8 @@ class DiscriminationEvaluation:
     structure_disagreement: float
     predictions: dict[str, PredictiveDistribution]
     metadata: dict[str, Any]
+    observation_disagreement: float = 0.0
+    disagreement_by_modality: dict[str, float] = field(default_factory=dict)
 
 
 class HypothesisInformationGainEstimator:
@@ -86,6 +88,8 @@ class HypothesisInformationGainEstimator:
                 structure_disagreement=0.0,
                 predictions=preds,
                 metadata={"reason": "insufficient_hypotheses"},
+                observation_disagreement=0.0,
+                disagreement_by_modality={},
             )
 
         # 3. Compute pairwise disagreement metrics
@@ -94,6 +98,7 @@ class HypothesisInformationGainEstimator:
             means = [preds[hid].mean[0] for hid in hids if hid in preds]
             prop_disagreement = float(np.var(means)) if len(means) > 1 else 0.0
             struct_disagreement = 0.0
+            obs_disagreement = prop_disagreement
         else:
             emb_means = [preds[hid].mean for hid in hids if hid in preds]
             if len(emb_means) >= 2:
@@ -102,6 +107,10 @@ class HypothesisInformationGainEstimator:
             else:
                 struct_disagreement = 0.0
             prop_disagreement = 0.0
+            obs_disagreement = struct_disagreement
+
+        mod_name = str(action_type.value if hasattr(action_type, "value") else action_type)
+        disagreement_by_modality = {mod_name: obs_disagreement}
 
         # If all hypotheses have virtually identical predictions, HIG is analytically zero
         all_means = np.array([preds[hid].mean for hid in hids if hid in preds])
@@ -119,6 +128,8 @@ class HypothesisInformationGainEstimator:
                 structure_disagreement=struct_disagreement,
                 predictions=preds,
                 metadata={"analytic_zero": True},
+                observation_disagreement=obs_disagreement,
+                disagreement_by_modality=disagreement_by_modality,
             )
 
         # 4. Monte Carlo integration over the predictive mixture
@@ -160,4 +171,6 @@ class HypothesisInformationGainEstimator:
             structure_disagreement=struct_disagreement,
             predictions=preds,
             metadata={"n_mc_samples": n_samples},
+            observation_disagreement=obs_disagreement,
+            disagreement_by_modality=disagreement_by_modality,
         )

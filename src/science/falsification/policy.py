@@ -71,8 +71,14 @@ class FalsificationFirstPolicy:
         self.cost_exponent = float(cost_exponent)
         self.hig_estimator = HypothesisInformationGainEstimator()
 
-    def _resolve_feature_cols(self, candidate_pool_df: pd.DataFrame) -> list[str]:
-        """Resolves feature columns dynamically from candidate pool schema."""
+    def _resolve_feature_cols(
+        self,
+        candidate_pool_df: pd.DataFrame,
+        feature_cols: Sequence[str] | None = None,
+    ) -> list[str]:
+        """Resolves feature columns explicitly or dynamically from candidate pool schema."""
+        if feature_cols:
+            return list(feature_cols)
         if all(col in candidate_pool_df.columns for col in ["Au", "Ir", "Rh"]):
             return ["Au", "Ir", "Rh"]
         non_feature_cols = {"candidate_id", "Library", "Area", "step", "created_at"}
@@ -90,9 +96,12 @@ class FalsificationFirstPolicy:
         seed: int | None = None,
         step: int = 0,
         valid_actions: Sequence[ScientificAction] | None = None,
+        feature_cols: Sequence[str] | None = None,
+        modality_definitions: Sequence[Any] | None = None,
+        objective_definitions: Sequence[Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Evaluates and ranks all valid candidate actions under current scientific hypotheses."""
-        comp_cols = self._resolve_feature_cols(candidate_pool_df)
+        comp_cols = self._resolve_feature_cols(candidate_pool_df, feature_cols=feature_cols)
         cids = candidate_pool_df["candidate_id"].tolist()
         comps = candidate_pool_df[comp_cols].to_numpy(dtype=np.float64)
         disc_scores = property_discovery_scores or {}
@@ -103,10 +112,20 @@ class FalsificationFirstPolicy:
         if ensemble is None:
             ensemble = HypothesisEnsemble()
 
+        mod_map = {m.name: m for m in modality_definitions} if modality_definitions else {}
+
+        def _is_objective_action(action_type: ActionType) -> bool:
+            norm_type = normalize_action_type(action_type)
+            if norm_type in mod_map:
+                m = mod_map[norm_type]
+                return getattr(m, "observation_kind", "") == "objective_measurement" or bool(getattr(m, "objective_names", ()))
+            return norm_type in ("PROPERTY", "CAPACITY_TEST")
+
         candidate_actions: list[dict[str, Any]] = []
 
         if valid_actions is not None:
-            cand_map = {row["candidate_id"]: comps[idx] for idx, row in candidate_pool_df.iterrows()}
+            # Fix: map candidate IDs directly to row positions to prevent DataFrame index label mismatch bugs
+            cand_map = {cid: comps[pos] for pos, cid in enumerate(cids)}
             for act in valid_actions:
                 cid = act.candidate_id
                 comp = cand_map.get(cid)
@@ -132,6 +151,8 @@ class FalsificationFirstPolicy:
                         "raw_cost": float(act.estimated_cost),
                         "property_disagreement": eval_res.property_disagreement,
                         "structure_disagreement": eval_res.structure_disagreement,
+                        "observation_disagreement": eval_res.observation_disagreement,
+                        "disagreement_by_modality": eval_res.disagreement_by_modality,
                         "current_entropy": eval_res.current_entropy,
                         "expected_entropy": eval_res.expected_posterior_entropy,
                         "predictions": eval_res.predictions,
@@ -161,6 +182,8 @@ class FalsificationFirstPolicy:
                         "raw_cost": self.cost_xrd,
                         "property_disagreement": eval_res.property_disagreement,
                         "structure_disagreement": eval_res.structure_disagreement,
+                        "observation_disagreement": eval_res.observation_disagreement,
+                        "disagreement_by_modality": eval_res.disagreement_by_modality,
                         "current_entropy": eval_res.current_entropy,
                         "expected_entropy": eval_res.expected_posterior_entropy,
                         "predictions": eval_res.predictions,
@@ -194,6 +217,8 @@ class FalsificationFirstPolicy:
                         "raw_cost": self.cost_property,
                         "property_disagreement": eval_res.property_disagreement,
                         "structure_disagreement": eval_res.structure_disagreement,
+                        "observation_disagreement": eval_res.observation_disagreement,
+                        "disagreement_by_modality": eval_res.disagreement_by_modality,
                         "current_entropy": eval_res.current_entropy,
                         "expected_entropy": eval_res.expected_posterior_entropy,
                         "predictions": eval_res.predictions,
@@ -207,8 +232,7 @@ class FalsificationFirstPolicy:
         all_higs = [a["raw_hig"] for a in candidate_actions]
         min_hig, max_hig = min(all_higs), max(all_higs)
 
-        is_prop_act = lambda a: normalize_action_type(a["action_type"]) in ("PROPERTY", "CAPACITY_TEST") or a["raw_disc"] > 0.0
-        prop_discs = [a["raw_disc"] for a in candidate_actions if is_prop_act(a)]
+        prop_discs = [a["raw_disc"] for a in candidate_actions if _is_objective_action(a["action_type"])]
         min_p_disc = min(prop_discs) if prop_discs else 0.0
         max_p_disc = max(prop_discs) if prop_discs else 1.0
 
@@ -221,7 +245,7 @@ class FalsificationFirstPolicy:
             hig_norm = (a["raw_hig"] - min_hig) / (max_hig - min_hig + 1e-12) if max_hig > min_hig else a["raw_hig"]
 
             # Min-max normalized Discovery score
-            if is_prop_act(a) and prop_discs and max_p_disc > min_p_disc:
+            if _is_objective_action(a["action_type"]) and prop_discs and max_p_disc > min_p_disc:
                 disc_norm = (a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12)
             else:
                 disc_norm = 0.0
@@ -261,6 +285,10 @@ class FalsificationFirstPolicy:
         seed: int | None = None,
         step: int = 0,
         valid_actions: Sequence[ScientificAction] | None = None,
+        feature_cols: Sequence[str] | None = None,
+        modality_definitions: Sequence[Any] | None = None,
+        objective_definitions: Sequence[Any] | None = None,
+        domain_id: str | None = None,
     ) -> ActionRecommendation:
         """Selects top-ranked next experiment, generating contrastive counterfactuals and falsification criteria."""
         if ensemble is None:
@@ -277,6 +305,9 @@ class FalsificationFirstPolicy:
             seed=seed,
             step=step,
             valid_actions=valid_actions,
+            feature_cols=feature_cols,
+            modality_definitions=modality_definitions,
+            objective_definitions=objective_definitions,
         )
 
         if not scored:
@@ -299,6 +330,7 @@ class FalsificationFirstPolicy:
                 "hypothesis_information_gain": top["raw_hig"],
                 "policy_mode": self.mode.value,
                 "hypothesis_id": dominant_h,
+                "domain_id": domain_id or "generic",
             },
         )
 
@@ -310,10 +342,10 @@ class FalsificationFirstPolicy:
 
             alt_act_str = normalize_action_type(alt["action_type"])
             if alt["action_type"] != top["action_type"]:
-                if alt["action_type"] == ExperimentActionType.PROPERTY:
+                if alt["normalized_disc"] > top["normalized_disc"]:
                     trait = f"higher predicted discovery score ({alt['normalized_disc']:.2f})"
                 else:
-                    trait = "lower measurement cost"
+                    trait = "different measurement modality"
                 contrast = (
                     f"Action {alt_act_str} on {alt['candidate_id']} has {trait} "
                     f"but net scientific value ({alt['total_value']:.2f}) is lower than recommended {top_act_str} ({top['total_value']:.2f})."
@@ -338,7 +370,7 @@ class FalsificationFirstPolicy:
             )
 
         # Falsification conditions
-        comp_cols = self._resolve_feature_cols(candidate_pool_df)
+        comp_cols = self._resolve_feature_cols(candidate_pool_df, feature_cols=feature_cols)
         cand_comp = candidate_pool_df[candidate_pool_df["candidate_id"] == top["candidate_id"]][comp_cols].iloc[0].to_numpy(dtype=np.float64)
         falsification = ensemble.hypotheses[dominant_h].falsification_summary(
             candidate_id=top["candidate_id"],
@@ -346,12 +378,14 @@ class FalsificationFirstPolicy:
             composition=cand_comp,
         )
 
-        if top_act_str == "XRD":
-            action_name = "XRD Characterization"
-        elif top_act_str == "PROPERTY":
-            action_name = "SECCM Property Test"
-        else:
-            action_name = f"{top_act_str} Test"
+        mod_map = {m.name: m for m in modality_definitions} if modality_definitions else {}
+        action_name = mod_map[top_act_str].name if top_act_str in mod_map else f"{top_act_str} Test"
+
+        primary_obj_name = "objective"
+        primary_obj_units = ""
+        if objective_definitions and len(objective_definitions) > 0:
+            primary_obj_name = getattr(objective_definitions[0], "name", "objective")
+            primary_obj_units = getattr(objective_definitions[0], "units", "") or ""
 
         rationale = (
             f"Selects {action_name} for candidate '{top['candidate_id']}' (Net Scientific Value: {top['total_value']:.3f}). "
@@ -367,9 +401,11 @@ class FalsificationFirstPolicy:
         ]
         for hid, pred in top["predictions"].items():
             if len(pred.mean) == 1:
-                evidence.append(f"{hid} predicted k0 mean: {pred.mean[0]:.5f} cm/s (var: {pred.variance[0]:.2e})")
+                unit_str = f" {primary_obj_units}" if primary_obj_units else ""
+                obj_label = primary_obj_name if primary_obj_name != "objective" else "property"
+                evidence.append(f"{hid} predicted {obj_label} mean: {pred.mean[0]:.5f}{unit_str} (var: {pred.variance[0]:.2e})")
             else:
-                evidence.append(f"{hid} predicted XRD emb[0]: {pred.mean[0]:.3f} (var: {pred.variance[0]:.2e})")
+                evidence.append(f"{hid} predicted {top_act_str} emb[0]: {pred.mean[0]:.3f} (var: {pred.variance[0]:.2e})")
 
         return ActionRecommendation(
             action=act,
@@ -387,6 +423,8 @@ class FalsificationFirstPolicy:
                 "expected_posterior_entropy": top["expected_entropy"],
                 "property_disagreement": top["property_disagreement"],
                 "structure_disagreement": top["structure_disagreement"],
+                "observation_disagreement": top.get("observation_disagreement", top["property_disagreement"]),
+                "disagreement_by_modality": top.get("disagreement_by_modality", {}),
             },
             alternatives=alternatives,
         )

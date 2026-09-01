@@ -169,15 +169,16 @@ def _build_candidate_maps(
     composition_by_id: Mapping[str, np.ndarray] | None = None,
     property_by_id: Mapping[str, float] | None = None,
     xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
+    observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
+    **kwargs: Any,
 ) -> tuple[dict[str, np.ndarray], dict[str, float], dict[str, np.ndarray]]:
-    """Helper to safely build candidate ID maps from explicit mappings or validated legacy arrays.
+    """Helper to safely build candidate ID maps from explicit mappings or validated legacy arrays."""
+    if observations_by_modality is not None:
+        if property_by_id is None and "PROPERTY" in observations_by_modality:
+            property_by_id = {k: float(v) for k, v in observations_by_modality["PROPERTY"].items()}
+        if xrd_embedding_by_id is None and "XRD" in observations_by_modality:
+            xrd_embedding_by_id = {k: np.asarray(v, dtype=np.float64) for k, v in observations_by_modality["XRD"].items()}
 
-    Precedence order:
-        Explicit map > legacy positional source.
-    If explicit map and legacy arrays are both provided with conflicting values, raises ValueError.
-    Legacy positional arrays are validated for exact length match and unique candidate IDs
-    to prevent silent identity cross-contamination.
-    """
     has_explicit_comp = composition_by_id is not None
     has_explicit_prop = property_by_id is not None
     has_explicit_xrd = xrd_embedding_by_id is not None
@@ -951,9 +952,16 @@ class HypothesisEnsemble:
         xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
+        observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
         """Fits all underlying hypothesis models strictly on candidate ID maps."""
+        if observations_by_modality is not None:
+            if property_by_id is None and "PROPERTY" in observations_by_modality:
+                property_by_id = {k: float(v) for k, v in observations_by_modality["PROPERTY"].items()}
+            if xrd_embedding_by_id is None and "XRD" in observations_by_modality:
+                xrd_embedding_by_id = {k: np.asarray(v) for k, v in observations_by_modality["XRD"].items()}
+
         for h in self.hypotheses.values():
             h.fit(
                 composition_by_id=composition_by_id,
@@ -961,6 +969,7 @@ class HypothesisEnsemble:
                 xrd_embedding_by_id=xrd_embedding_by_id,
                 observed_xrd_ids=observed_xrd_ids,
                 observed_property_ids=observed_property_ids,
+                observations_by_modality=observations_by_modality,
                 **kwargs,
             )
 
@@ -970,9 +979,26 @@ class HypothesisEnsemble:
         action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
+        observed_modalities: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> dict[str, PredictiveDistribution]:
         """Generates predictive distributions for all hypotheses for a given action."""
+        if observed_xrd_embedding is None and observed_modalities is not None:
+            if "XRD" in observed_modalities:
+                xrd_data = observed_modalities["XRD"]
+                if isinstance(xrd_data, Mapping):
+                    if candidate_id in xrd_data:
+                        observed_xrd_embedding = np.asarray(xrd_data[candidate_id], dtype=np.float64)
+                elif xrd_data is not None:
+                    observed_xrd_embedding = np.asarray(xrd_data, dtype=np.float64)
+            elif "SEM" in observed_modalities:
+                sem_data = observed_modalities["SEM"]
+                if isinstance(sem_data, Mapping):
+                    if candidate_id in sem_data:
+                        observed_xrd_embedding = np.asarray(sem_data[candidate_id], dtype=np.float64)
+                elif sem_data is not None:
+                    observed_xrd_embedding = np.asarray(sem_data, dtype=np.float64)
+
         res: dict[str, PredictiveDistribution] = {}
         for hid, h in self.hypotheses.items():
             if h.supports_action(action_type):
