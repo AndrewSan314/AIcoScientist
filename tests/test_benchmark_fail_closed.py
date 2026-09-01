@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import numpy as np
 import pandas as pd
@@ -138,3 +138,10 @@ def test_deterministic_record_ordering(tmp_path: Path) -> None:
         k1 = (r1["world"], r1["policy"], r1["seed"], r1["step"])
         k2 = (r2["world"], r2["policy"], r2["seed"], r2["step"])
         assert k1 <= k2
+
+
+def test_falsification_benchmark_type_hints_resolve() -> None:
+    """Verifies that type annotations on benchmark functions resolve without NameError."""
+    hints = get_type_hints(run_full_falsification_benchmark)
+    assert "seeds" in hints
+    assert "return" in hints
