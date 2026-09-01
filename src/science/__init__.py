@@ -23,6 +23,7 @@ from src.science.actions import (
 from src.science.domain import (
     ExperimentExecutor,
     HypothesisProvider,
+    HypothesisTrainingContext,
     MaterialDomainAdapter,
     MaterialDomainConfig,
     ModalityDefinition,
@@ -88,6 +89,7 @@ __all__ = [
     "HypothesisProvider",
     "HypothesisScientistAgent",
     "HypothesisStatus",
+    "HypothesisTrainingContext",
     "InformationHorizonError",
     "MaterialDomainAdapter",
     "MaterialDomainConfig",

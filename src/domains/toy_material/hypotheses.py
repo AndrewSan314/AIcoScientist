@@ -7,7 +7,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
 
 from src.science.actions import ActionType, normalize_action_type
-from src.science.domain import HypothesisProvider
+from src.science.domain import HypothesisProvider, HypothesisTrainingContext
 from src.science.hypothesis_models import (
     PredictiveDistribution,
     ScientificHypothesisModel,
@@ -24,6 +24,7 @@ class CompositionOnlyHypothesis:
             random_state=42,
         )
         self._fitted_capacity = False
+        self._training_sample_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -41,6 +42,24 @@ class CompositionOnlyHypothesis:
     def assumptions(self) -> list[str]:
         return ["Sintering temperature does not induce material phase transitions", "Morphology is irrelevant to bulk capacity"]
 
+    @property
+    def is_fitted(self) -> bool:
+        return self._fitted_capacity
+
+    @property
+    def fitted_capacity(self) -> bool:
+        return self._fitted_capacity
+
+    @property
+    def training_sample_count(self) -> int:
+        return self._training_sample_count
+
+    def fit_context(self, context: HypothesisTrainingContext) -> None:
+        """Fits hypothesis using generic domain training context."""
+        cap_obs = context.observations_by_modality.get("CAPACITY_TEST", {})
+        comp_map = context.candidate_features_by_id
+        self.fit(composition_by_id=comp_map, property_by_id=cap_obs)
+
     def fit(
         self,
         composition_by_id: Mapping[str, np.ndarray],
@@ -48,15 +67,24 @@ class CompositionOnlyHypothesis:
         xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
+        observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
-        props = property_by_id or {}
+        props = dict(property_by_id or {})
+        if observations_by_modality and "CAPACITY_TEST" in observations_by_modality:
+            for cid, v in observations_by_modality["CAPACITY_TEST"].items():
+                if isinstance(v, (int, float, np.number)):
+                    props[cid] = float(v)
+
         obs_ids = [cid for cid in (observed_property_ids or props.keys()) if cid in props and cid in composition_by_id]
         if len(obs_ids) >= 2:
             X = np.array([composition_by_id[cid][:2] for cid in obs_ids], dtype=np.float64)  # Li_ratio, doping
             y = np.array([props[cid] for cid in obs_ids], dtype=np.float64)
             self.gp_capacity.fit(X, y)
             self._fitted_capacity = True
+            self._training_sample_count = len(obs_ids)
+        else:
+            self._training_sample_count = len(obs_ids)
 
     def predict_observation(
         self,
@@ -64,6 +92,7 @@ class CompositionOnlyHypothesis:
         action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
+        observed_modalities: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> PredictiveDistribution:
         act_norm = normalize_action_type(action_type)
@@ -72,9 +101,8 @@ class CompositionOnlyHypothesis:
             if self._fitted_capacity:
                 mean_val, std_val = self.gp_capacity.predict(comp2, return_std=True)
                 mean = np.array([float(mean_val[0])])
-                variance = np.array([float(std_val[0] ** 2)])
+                variance = np.array([float(max(std_val[0] ** 2, 1.0))])
             else:
-                # Prior belief: 150 mAh/g nominal baseline
                 base = 140.0 + 30.0 * float(composition[0]) - 20.0 * float(composition[1])
                 mean = np.array([base])
                 variance = np.array([36.0])
@@ -86,7 +114,6 @@ class CompositionOnlyHypothesis:
                 variance=variance,
             )
         else:  # SEM morphology
-            # Predict nominal baseline 4D morphology vector
             return PredictiveDistribution(
                 hypothesis_id=self.hypothesis_id,
                 candidate_id=candidate_id,
@@ -123,7 +150,14 @@ class TemperatureMediatedHypothesis:
             normalize_y=True,
             random_state=42,
         )
+        self.gp_sem = GaussianProcessRegressor(
+            kernel=ConstantKernel(1.0) * RBF(length_scale=50.0) + WhiteKernel(noise_level=0.1),
+            normalize_y=True,
+            random_state=42,
+        )
         self._fitted_capacity = False
+        self._fitted_sem = False
+        self._training_sample_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -141,6 +175,29 @@ class TemperatureMediatedHypothesis:
     def assumptions(self) -> list[str]:
         return ["Under-sintering produces unreacted precursors", "Over-sintering causes Li loss and phase degradation"]
 
+    @property
+    def is_fitted(self) -> bool:
+        return self._fitted_capacity or self._fitted_sem
+
+    @property
+    def fitted_capacity(self) -> bool:
+        return self._fitted_capacity
+
+    @property
+    def fitted_sem(self) -> bool:
+        return self._fitted_sem
+
+    @property
+    def training_sample_count(self) -> int:
+        return self._training_sample_count
+
+    def fit_context(self, context: HypothesisTrainingContext) -> None:
+        """Fits hypothesis using generic domain training context."""
+        cap_obs = context.observations_by_modality.get("CAPACITY_TEST", {})
+        sem_obs = context.observations_by_modality.get("SEM", {})
+        comp_map = context.candidate_features_by_id
+        self.fit(composition_by_id=comp_map, property_by_id=cap_obs, xrd_embedding_by_id=sem_obs)
+
     def fit(
         self,
         composition_by_id: Mapping[str, np.ndarray],
@@ -148,15 +205,37 @@ class TemperatureMediatedHypothesis:
         xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
+        observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
-        props = property_by_id or {}
-        obs_ids = [cid for cid in (observed_property_ids or props.keys()) if cid in props and cid in composition_by_id]
-        if len(obs_ids) >= 3:
-            X = np.array([composition_by_id[cid][:3] for cid in obs_ids], dtype=np.float64)
-            y = np.array([props[cid] for cid in obs_ids], dtype=np.float64)
+        props = dict(property_by_id or {})
+        sem_map = dict(xrd_embedding_by_id or {})
+
+        if observations_by_modality:
+            if "CAPACITY_TEST" in observations_by_modality:
+                for cid, v in observations_by_modality["CAPACITY_TEST"].items():
+                    if isinstance(v, (int, float, np.number)):
+                        props[cid] = float(v)
+            if "SEM" in observations_by_modality:
+                for cid, v in observations_by_modality["SEM"].items():
+                    if v is not None and not isinstance(v, (dict, Mapping)):
+                        sem_map[cid] = np.asarray(v, dtype=np.float64)
+
+        obs_cap_ids = [cid for cid in (observed_property_ids or props.keys()) if cid in props and cid in composition_by_id]
+        if len(obs_cap_ids) >= 3:
+            X = np.array([composition_by_id[cid][:3] for cid in obs_cap_ids], dtype=np.float64)
+            y = np.array([props[cid] for cid in obs_cap_ids], dtype=np.float64)
             self.gp_capacity.fit(X, y)
             self._fitted_capacity = True
+
+        obs_sem_ids = [cid for cid in (observed_xrd_ids or sem_map.keys()) if cid in sem_map and cid in composition_by_id]
+        if len(obs_sem_ids) >= 2:
+            X_temp = np.array([[composition_by_id[cid][2]] for cid in obs_sem_ids], dtype=np.float64)
+            Y_sem = np.array([sem_map[cid] for cid in obs_sem_ids], dtype=np.float64)
+            self.gp_sem.fit(X_temp, Y_sem)
+            self._fitted_sem = True
+
+        self._training_sample_count = len(obs_cap_ids) + len(obs_sem_ids)
 
     def predict_observation(
         self,
@@ -164,6 +243,7 @@ class TemperatureMediatedHypothesis:
         action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
+        observed_modalities: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> PredictiveDistribution:
         act_norm = normalize_action_type(action_type)
@@ -172,9 +252,8 @@ class TemperatureMediatedHypothesis:
             if self._fitted_capacity:
                 mean_val, std_val = self.gp_capacity.predict(comp3, return_std=True)
                 mean = np.array([float(mean_val[0])])
-                variance = np.array([float(std_val[0] ** 2)])
+                variance = np.array([float(max(std_val[0] ** 2, 1.0))])
             else:
-                # Prior belief: bell curve peaked around 800 C
                 temp = float(composition[2]) if len(composition) > 2 else 800.0
                 temp_factor = np.exp(-0.5 * ((temp - 800.0) / 40.0) ** 2)
                 base = 130.0 + 50.0 * temp_factor + 20.0 * float(composition[0])
@@ -189,14 +268,25 @@ class TemperatureMediatedHypothesis:
             )
         else:  # SEM morphology
             temp = float(composition[2]) if len(composition) > 2 else 800.0
-            grain_size = float(np.clip((temp - 600.0) / 400.0, 0.1, 1.0))
-            return PredictiveDistribution(
-                hypothesis_id=self.hypothesis_id,
-                candidate_id=candidate_id,
-                action_type=action_type,
-                mean=np.array([grain_size, 0.6, 0.4, grain_size * 0.8]),
-                variance=np.array([0.1, 0.1, 0.1, 0.1]),
-            )
+            if self._fitted_sem:
+                t_in = np.array([[temp]], dtype=np.float64)
+                mean_sem, std_sem = self.gp_sem.predict(t_in, return_std=True)
+                return PredictiveDistribution(
+                    hypothesis_id=self.hypothesis_id,
+                    candidate_id=candidate_id,
+                    action_type=action_type,
+                    mean=mean_sem[0],
+                    variance=np.maximum(std_sem[0] ** 2, 0.01),
+                )
+            else:
+                grain_size = float(np.clip((temp - 600.0) / 400.0, 0.1, 1.0))
+                return PredictiveDistribution(
+                    hypothesis_id=self.hypothesis_id,
+                    candidate_id=candidate_id,
+                    action_type=action_type,
+                    mean=np.array([grain_size, 0.6, 0.4, grain_size * 0.8]),
+                    variance=np.array([0.1, 0.1, 0.1, 0.1]),
+                )
 
     def log_predictive_density(
         self,
@@ -227,6 +317,7 @@ class MicrostructureInformedHypothesis:
             random_state=42,
         )
         self._fitted_capacity = False
+        self._training_sample_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -244,6 +335,25 @@ class MicrostructureInformedHypothesis:
     def assumptions(self) -> list[str]:
         return ["SEM morphology vector reflects lithium ion diffusion path lengths"]
 
+    @property
+    def is_fitted(self) -> bool:
+        return self._fitted_capacity
+
+    @property
+    def fitted_capacity(self) -> bool:
+        return self._fitted_capacity
+
+    @property
+    def training_sample_count(self) -> int:
+        return self._training_sample_count
+
+    def fit_context(self, context: HypothesisTrainingContext) -> None:
+        """Fits hypothesis using generic domain training context."""
+        cap_obs = context.observations_by_modality.get("CAPACITY_TEST", {})
+        sem_obs = context.observations_by_modality.get("SEM", {})
+        comp_map = context.candidate_features_by_id
+        self.fit(composition_by_id=comp_map, property_by_id=cap_obs, xrd_embedding_by_id=sem_obs)
+
     def fit(
         self,
         composition_by_id: Mapping[str, np.ndarray],
@@ -251,16 +361,31 @@ class MicrostructureInformedHypothesis:
         xrd_embedding_by_id: Mapping[str, np.ndarray] | None = None,
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
+        observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
         **kwargs: Any,
     ) -> None:
-        props = property_by_id or {}
-        char_map = xrd_embedding_by_id or {}
+        props = dict(property_by_id or {})
+        char_map = dict(xrd_embedding_by_id or {})
+
+        if observations_by_modality:
+            if "CAPACITY_TEST" in observations_by_modality:
+                for cid, v in observations_by_modality["CAPACITY_TEST"].items():
+                    if isinstance(v, (int, float, np.number)):
+                        props[cid] = float(v)
+            if "SEM" in observations_by_modality:
+                for cid, v in observations_by_modality["SEM"].items():
+                    if v is not None and not isinstance(v, (dict, Mapping)):
+                        char_map[cid] = np.asarray(v, dtype=np.float64)
+
         obs_ids = [cid for cid in (observed_property_ids or props.keys()) if cid in props and cid in char_map]
         if len(obs_ids) >= 2:
             X = np.array([char_map[cid] for cid in obs_ids], dtype=np.float64)
             y = np.array([props[cid] for cid in obs_ids], dtype=np.float64)
             self.gp_capacity.fit(X, y)
             self._fitted_capacity = True
+            self._training_sample_count = len(obs_ids)
+        else:
+            self._training_sample_count = len(obs_ids)
 
     def predict_observation(
         self,
@@ -268,22 +393,28 @@ class MicrostructureInformedHypothesis:
         action_type: ActionType,
         composition: np.ndarray,
         observed_xrd_embedding: np.ndarray | None = None,
+        observed_modalities: Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> PredictiveDistribution:
         act_norm = normalize_action_type(action_type)
+        # Check if candidate has observed SEM in observed_modalities
+        emb = observed_xrd_embedding
+        if emb is None and observed_modalities is not None and "SEM" in observed_modalities:
+            sem_data = observed_modalities["SEM"]
+            if isinstance(sem_data, Mapping) and candidate_id in sem_data:
+                emb = np.asarray(sem_data[candidate_id], dtype=np.float64)
+
         if act_norm == "CAPACITY_TEST":
-            if observed_xrd_embedding is not None and self._fitted_capacity:
-                emb = observed_xrd_embedding.reshape(1, -1)
-                mean_val, std_val = self.gp_capacity.predict(emb, return_std=True)
+            if emb is not None and self._fitted_capacity:
+                emb_2d = emb.reshape(1, -1)
+                mean_val, std_val = self.gp_capacity.predict(emb_2d, return_std=True)
                 mean = np.array([float(mean_val[0])])
-                variance = np.array([float(std_val[0] ** 2)])
-            elif observed_xrd_embedding is not None:
-                # Structure observed: boost prediction based on morphology metric
-                morph_score = float(np.sum(observed_xrd_embedding))
+                variance = np.array([float(max(std_val[0] ** 2, 1.0))])
+            elif emb is not None:
+                morph_score = float(np.sum(emb))
                 mean = np.array([135.0 + 25.0 * morph_score])
                 variance = np.array([12.0])
             else:
-                # Structure unobserved: wider uncertainty
                 mean = np.array([155.0])
                 variance = np.array([49.0])
             return PredictiveDistribution(
@@ -294,7 +425,6 @@ class MicrostructureInformedHypothesis:
                 variance=variance,
             )
         else:  # SEM morphology
-            # Predict structured 4D morphology vector
             return PredictiveDistribution(
                 hypothesis_id=self.hypothesis_id,
                 candidate_id=candidate_id,

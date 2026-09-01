@@ -953,25 +953,75 @@ class HypothesisEnsemble:
         observed_xrd_ids: set[str] | None = None,
         observed_property_ids: set[str] | None = None,
         observations_by_modality: Mapping[str, Mapping[str, Any]] | None = None,
+        modality_definitions: Sequence[Any] | Mapping[str, Any] | None = None,
+        objective_definitions: Sequence[Any] | Mapping[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         """Fits all underlying hypothesis models strictly on candidate ID maps."""
+        mod_map: dict[str, Any] = {}
+        if isinstance(modality_definitions, Mapping):
+            mod_map = dict(modality_definitions)
+        elif modality_definitions is not None:
+            mod_map = {getattr(m, "name", str(m)): m for m in modality_definitions}
+
+        obj_map: dict[str, Any] = {}
+        if isinstance(objective_definitions, Mapping):
+            obj_map = dict(objective_definitions)
+        elif objective_definitions is not None:
+            obj_map = {getattr(o, "name", str(o)): o for o in objective_definitions}
+
         if observations_by_modality is not None:
-            if property_by_id is None and "PROPERTY" in observations_by_modality:
-                property_by_id = {k: float(v) for k, v in observations_by_modality["PROPERTY"].items()}
-            if xrd_embedding_by_id is None and "XRD" in observations_by_modality:
-                xrd_embedding_by_id = {k: np.asarray(v) for k, v in observations_by_modality["XRD"].items()}
+            prop_dict: dict[str, float] = dict(property_by_id or {})
+            char_dict: dict[str, np.ndarray] = dict(xrd_embedding_by_id or {})
+
+            for mod_name, mod_obs in observations_by_modality.items():
+                m_def = mod_map.get(mod_name)
+                is_obj = False
+                is_char = False
+                if m_def is not None:
+                    if (hasattr(m_def, "measures_objective") and m_def.measures_objective()) or getattr(m_def, "observation_kind", "") == "objective_measurement":
+                        is_obj = True
+                    elif getattr(m_def, "observation_kind", "") in ("characterization", "spectrum", "embedding", "image_features"):
+                        is_char = True
+                else:
+                    if mod_name in ("PROPERTY", "CAPACITY_TEST"):
+                        is_obj = True
+                    elif mod_name in ("XRD", "SEM"):
+                        is_char = True
+
+                for cid, val in mod_obs.items():
+                    if is_obj and isinstance(val, (int, float, np.number)):
+                        prop_dict[cid] = float(val)
+                    elif is_char and val is not None and not isinstance(val, (dict, Mapping)):
+                        char_dict[cid] = np.asarray(val, dtype=np.float64)
+
+            property_by_id = prop_dict
+            xrd_embedding_by_id = char_dict
+
+        from src.science.domain import HypothesisTrainingContext
+
+        context = HypothesisTrainingContext(
+            candidate_features_by_id=composition_by_id or {},
+            observations_by_modality=observations_by_modality or {},
+            modality_definitions=mod_map,
+            objective_definitions=obj_map,
+        )
 
         for h in self.hypotheses.values():
-            h.fit(
-                composition_by_id=composition_by_id,
-                property_by_id=property_by_id,
-                xrd_embedding_by_id=xrd_embedding_by_id,
-                observed_xrd_ids=observed_xrd_ids,
-                observed_property_ids=observed_property_ids,
-                observations_by_modality=observations_by_modality,
-                **kwargs,
-            )
+            if hasattr(h, "fit_context"):
+                h.fit_context(context)
+            else:
+                h.fit(
+                    composition_by_id=composition_by_id,
+                    property_by_id=property_by_id,
+                    xrd_embedding_by_id=xrd_embedding_by_id,
+                    observed_xrd_ids=observed_xrd_ids,
+                    observed_property_ids=observed_property_ids,
+                    observations_by_modality=observations_by_modality,
+                    modality_definitions=modality_definitions,
+                    objective_definitions=objective_definitions,
+                    **kwargs,
+                )
 
     def predict_all(
         self,
@@ -984,30 +1034,28 @@ class HypothesisEnsemble:
     ) -> dict[str, PredictiveDistribution]:
         """Generates predictive distributions for all hypotheses for a given action."""
         if observed_xrd_embedding is None and observed_modalities is not None:
-            if "XRD" in observed_modalities:
-                xrd_data = observed_modalities["XRD"]
-                if isinstance(xrd_data, Mapping):
-                    if candidate_id in xrd_data:
-                        observed_xrd_embedding = np.asarray(xrd_data[candidate_id], dtype=np.float64)
-                elif xrd_data is not None:
-                    observed_xrd_embedding = np.asarray(xrd_data, dtype=np.float64)
-            elif "SEM" in observed_modalities:
-                sem_data = observed_modalities["SEM"]
-                if isinstance(sem_data, Mapping):
-                    if candidate_id in sem_data:
-                        observed_xrd_embedding = np.asarray(sem_data[candidate_id], dtype=np.float64)
-                elif sem_data is not None:
-                    observed_xrd_embedding = np.asarray(sem_data, dtype=np.float64)
+            for mod_name, mod_data in observed_modalities.items():
+                if isinstance(mod_data, Mapping) and candidate_id in mod_data:
+                    c_val = mod_data[candidate_id]
+                    if isinstance(c_val, (list, tuple, np.ndarray)) and not isinstance(c_val, (dict, Mapping)):
+                        observed_xrd_embedding = np.asarray(c_val, dtype=np.float64)
+                        break
+
+        import inspect
 
         res: dict[str, PredictiveDistribution] = {}
         for hid, h in self.hypotheses.items():
             if h.supports_action(action_type):
+                sig = inspect.signature(h.predict_observation)
+                call_kwargs = dict(kwargs)
+                if "observed_modalities" in sig.parameters:
+                    call_kwargs["observed_modalities"] = observed_modalities
                 res[hid] = h.predict_observation(
                     candidate_id=candidate_id,
                     action_type=action_type,
                     composition=composition,
                     observed_xrd_embedding=observed_xrd_embedding,
-                    **kwargs,
+                    **call_kwargs,
                 )
         return res
 
