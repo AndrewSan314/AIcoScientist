@@ -1,0 +1,313 @@
+{
+  "samples": [
+    {
+      "sample_id": "PG_TEST_01",
+      "description": "Test sample 1",
+      "target_compound": "Al2Ag2H6O7",
+      "reaction_energy_ev_per_atom": -0.45,
+      "synthesis": {
+        "heating_temperature": 200.0,
+        "heating_time": 60.0,
+        "furnace_name": "Box_Furnace_1"
+      },
+      "precursors": [
+        {
+          "formula": "Ag2O",
+          "name": "silver(i) oxide"
+        },
+        {
+          "formula": "Al(OH)3",
+          "name": "aluminum hydroxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "transformed",
+        "phases": [
+          {
+            "name": "Ag",
+            "weight_percent": 0.46
+          },
+          {
+            "name": "Al(OH)3",
+            "weight_percent": 0.47
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_01.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 5.36,
+                  "phase_weights": {
+                    "Ag": 0.46,
+                    "Al(OH)3": 0.47
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_01/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sample_id": "PG_TEST_02",
+      "description": "Test sample 2",
+      "target_compound": "Ba2Fe2O7",
+      "reaction_energy_ev_per_atom": -0.85,
+      "synthesis": {
+        "heating_temperature": 800.0,
+        "heating_time": 120.0,
+        "furnace_name": "Box_Furnace_2"
+      },
+      "precursors": [
+        {
+          "formula": "BaO2",
+          "name": "barium peroxide"
+        },
+        {
+          "formula": "Fe2O3",
+          "name": "iron(iii) oxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "completely_reacted",
+        "phases": [
+          {
+            "name": "Ba2Fe2O7",
+            "weight_percent": 0.95
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_02.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 3.12,
+                  "phase_weights": {
+                    "Ba2Fe2O7": 0.95
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_02/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sample_id": "PG_TEST_03",
+      "description": "Test sample 3",
+      "target_compound": "MnCoO2",
+      "reaction_energy_ev_per_atom": -0.15,
+      "synthesis": {
+        "heating_temperature": 300.0,
+        "heating_time": 60.0,
+        "furnace_name": "Box_Furnace_1"
+      },
+      "precursors": [
+        {
+          "formula": "CoO",
+          "name": "cobalt(ii) oxide"
+        },
+        {
+          "formula": "MnO",
+          "name": "manganese(ii) oxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "unreacted",
+        "phases": [
+          {
+            "name": "CoO",
+            "weight_percent": 0.5
+          },
+          {
+            "name": "MnO",
+            "weight_percent": 0.5
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_03.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 4.8,
+                  "phase_weights": {
+                    "CoO": 0.5,
+                    "MnO": 0.5
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_03/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sample_id": "PG_TEST_04",
+      "description": "Test sample 4",
+      "target_compound": "VSbO4",
+      "reaction_energy_ev_per_atom": -0.62,
+      "synthesis": {
+        "heating_temperature": 600.0,
+        "heating_time": 90.0,
+        "furnace_name": "Box_Furnace_3"
+      },
+      "precursors": [
+        {
+          "formula": "Sb2O3",
+          "name": "antimony trioxide"
+        },
+        {
+          "formula": "V2O5",
+          "name": "vanadium pentoxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "partially_reacted",
+        "phases": [
+          {
+            "name": "VSbO4",
+            "weight_percent": 0.6
+          },
+          {
+            "name": "V2O5",
+            "weight_percent": 0.4
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_04.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 4.1,
+                  "phase_weights": {
+                    "VSbO4": 0.6,
+                    "V2O5": 0.4
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_04/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sample_id": "PG_TEST_05",
+      "description": "Test sample 5",
+      "target_compound": "TiO2-Al2O3",
+      "reaction_energy_ev_per_atom": -0.3,
+      "synthesis": {
+        "heating_temperature": 500.0,
+        "heating_time": 60.0,
+        "furnace_name": "Box_Furnace_1"
+      },
+      "precursors": [
+        {
+          "formula": "TiO2",
+          "name": "titanium dioxide"
+        },
+        {
+          "formula": "Al(OH)3",
+          "name": "aluminum hydroxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "transformed",
+        "phases": [
+          {
+            "name": "Al2TiO5",
+            "weight_percent": 0.7
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_05.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 3.9,
+                  "phase_weights": {
+                    "Al2TiO5": 0.7
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_05/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "sample_id": "PG_TEST_06",
+      "description": "Test sample 6",
+      "target_compound": "FeTiO3",
+      "reaction_energy_ev_per_atom": -0.7,
+      "synthesis": {
+        "heating_temperature": 900.0,
+        "heating_time": 180.0,
+        "furnace_name": "Box_Furnace_2"
+      },
+      "precursors": [
+        {
+          "formula": "Fe2O3",
+          "name": "iron(iii) oxide"
+        },
+        {
+          "formula": "TiO2",
+          "name": "titanium dioxide"
+        }
+      ],
+      "outcome": {
+        "reaction_category": "completely_reacted",
+        "phases": [
+          {
+            "name": "FeTiO3",
+            "weight_percent": 0.98
+          }
+        ]
+      },
+      "characterization": {
+        "xrd": {
+          "scans": [
+            {
+              "filename": "data/xrd/raw_scans/PG_TEST_06.xrdml",
+              "refinement_cases": [
+                {
+                  "rank": 1,
+                  "rwp": 2.85,
+                  "phase_weights": {
+                    "FeTiO3": 0.98
+                  },
+                  "pkl_path": "data/xrd/refinement_pkls/PG_TEST_06/refinement.pkl"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

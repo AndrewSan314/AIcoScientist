@@ -1,0 +1,263 @@
+{
+  "HYBRID": {
+    "policy": "HYBRID",
+    "final_max_conversion": 1.0,
+    "total_budget_spent": 13.5,
+    "steps": [
+      {
+        "step": 1,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_1239",
+        "total_cost_cumulative": 9.5,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0017955094441303074,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 0.9982044905558692
+        }
+      },
+      {
+        "step": 2,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_2044",
+        "total_cost_cumulative": 10.0,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.9999998404105795,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.5958942119775046e-07
+        }
+      },
+      {
+        "step": 3,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_4546",
+        "total_cost_cumulative": 12.0,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      },
+      {
+        "step": 4,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_4450",
+        "total_cost_cumulative": 12.5,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      },
+      {
+        "step": 5,
+        "action_type": "XRD",
+        "candidate_id": "PG_0102",
+        "total_cost_cumulative": 13.5,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      }
+    ],
+    "final_hypothesis_beliefs": {
+      "precursor_thermodynamics": 0.0,
+      "process_kinetics": 0.0,
+      "structure_phase_informed": 1.0
+    }
+  },
+  "DISCOVERY_ONLY": {
+    "policy": "DISCOVERY_ONLY",
+    "final_max_conversion": 0.0,
+    "total_budget_spent": 12.0,
+    "steps": [
+      {
+        "step": 1,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_1239",
+        "total_cost_cumulative": 9.5,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0017955094441303074,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 0.9982044905558692
+        }
+      },
+      {
+        "step": 2,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_2044",
+        "total_cost_cumulative": 10.0,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.9999998404105795,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.5958942119775046e-07
+        }
+      },
+      {
+        "step": 3,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_4450",
+        "total_cost_cumulative": 10.5,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 1.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.7393573174209092e-28
+        }
+      },
+      {
+        "step": 4,
+        "action_type": "XRD",
+        "candidate_id": "PG_0102",
+        "total_cost_cumulative": 11.5,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 1.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 5.570756249204868e-29
+        }
+      },
+      {
+        "step": 5,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_0102",
+        "total_cost_cumulative": 12.0,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 1.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 9.968941516772225e-38
+        }
+      }
+    ],
+    "final_hypothesis_beliefs": {
+      "precursor_thermodynamics": 1.0,
+      "process_kinetics": 0.0,
+      "structure_phase_informed": 9.968941516772225e-38
+    }
+  },
+  "PURE_FALSIFICATION": {
+    "policy": "PURE_FALSIFICATION",
+    "final_max_conversion": 1.0,
+    "total_budget_spent": 15.0,
+    "steps": [
+      {
+        "step": 1,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_1239",
+        "total_cost_cumulative": 9.5,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0017955094441303074,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 0.9982044905558692
+        }
+      },
+      {
+        "step": 2,
+        "action_type": "REFINEMENT",
+        "candidate_id": "PG_2044",
+        "total_cost_cumulative": 10.0,
+        "max_conversion": 0.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.9999998404105795,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.5958942119775046e-07
+        }
+      },
+      {
+        "step": 3,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_4546",
+        "total_cost_cumulative": 12.0,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      },
+      {
+        "step": 4,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_0102",
+        "total_cost_cumulative": 14.0,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      },
+      {
+        "step": 5,
+        "action_type": "XRD",
+        "candidate_id": "PG_0102",
+        "total_cost_cumulative": 15.0,
+        "max_conversion": 1.0,
+        "beliefs": {
+          "precursor_thermodynamics": 0.0,
+          "process_kinetics": 0.0,
+          "structure_phase_informed": 1.0
+        }
+      }
+    ],
+    "final_hypothesis_beliefs": {
+      "precursor_thermodynamics": 0.0,
+      "process_kinetics": 0.0,
+      "structure_phase_informed": 1.0
+    }
+  },
+  "RANDOM": {
+    "policy": "RANDOM",
+    "final_max_conversion": 1.0,
+    "total_budget_spent": 18.0,
+    "steps": [
+      {
+        "step": 1,
+        "action_type": "XRD",
+        "candidate_id": "PG_0445",
+        "total_cost_cumulative": 10.0,
+        "max_conversion": 0.0
+      },
+      {
+        "step": 2,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_3945",
+        "total_cost_cumulative": 12.0,
+        "max_conversion": 0.5
+      },
+      {
+        "step": 3,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_2231",
+        "total_cost_cumulative": 14.0,
+        "max_conversion": 1.0
+      },
+      {
+        "step": 4,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_4648",
+        "total_cost_cumulative": 16.0,
+        "max_conversion": 1.0
+      },
+      {
+        "step": 5,
+        "action_type": "OUTCOME_TEST",
+        "candidate_id": "PG_0722",
+        "total_cost_cumulative": 18.0,
+        "max_conversion": 1.0
+      }
+    ],
+    "final_hypothesis_beliefs": {
+      "untracked": 1.0
+    }
+  }
+}

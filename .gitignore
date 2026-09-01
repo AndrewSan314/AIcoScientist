@@ -35,11 +35,13 @@ data/external/attia_2020/*
 !data/external/attia_2020/manifest.json
 *.mat
 *.zip
+!tests/fixtures/**
 *.crdownload
 .DS_Store
 remi/
 
 # Real Materials Raw Datasets
+data/derived/
 EDX_dataset/
 SECCM_dataset/
 XRD_dataset/
