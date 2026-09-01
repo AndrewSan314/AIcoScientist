@@ -63,14 +63,17 @@ class ScientificAction:
 
 @dataclass(frozen=True)
 class ExperimentOutcome:
-    """The ground-truth experimental outcome revealed by executing an action via the offline oracle."""
+    """The revealed observation returned by the oracle or domain connector."""
 
     action_id: str
     candidate_id: str
     action_type: ActionType
-    revealed_data: dict[str, Any]  # e.g., {'k0': 0.0142} or {'two_theta': [...], 'intensity': [...]}
+    revealed_data: dict[str, Any]
     provenance: dict[str, Any] = field(default_factory=dict)
-    oracle_timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    oracle_timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    canonical_observation: Any | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -81,16 +84,17 @@ class ExperimentOutcome:
             "revealed_data": dict(self.revealed_data),
             "provenance": dict(self.provenance),
             "oracle_timestamp": self.oracle_timestamp,
+            "canonical_observation": self.canonical_observation,
             "metadata": dict(self.metadata),
         }
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> ExperimentOutcome:
-        raw_act = data["action_type"]
+        act_type_raw = data.get("action_type", "XRD")
         try:
-            act_type: ActionType = ExperimentActionType(raw_act)
+            act_type = ExperimentActionType(str(act_type_raw).upper())
         except ValueError:
-            act_type = str(raw_act)
+            act_type = str(act_type_raw)
         return cls(
             action_id=str(data["action_id"]),
             candidate_id=str(data["candidate_id"]),
@@ -98,6 +102,7 @@ class ExperimentOutcome:
             revealed_data=dict(data["revealed_data"]),
             provenance=dict(data.get("provenance", {})),
             oracle_timestamp=str(data.get("oracle_timestamp", datetime.now(timezone.utc).isoformat())),
+            canonical_observation=data.get("canonical_observation"),
             metadata=dict(data.get("metadata", {})),
         )
 
@@ -143,6 +148,15 @@ class ActionRecommendation:
     supporting_evidence: list[str] = field(default_factory=list)
     uncertainty_summary: dict[str, float] = field(default_factory=dict)
     alternatives: list[CounterfactualAlternative] = field(default_factory=list)
+    domain_id: str | None = None
+    modality_name: str | None = None
+    objective_name: str | None = None
+    objective_units: str | None = None
+    raw_hig: float | None = None
+    expected_posterior_entropy: float | None = None
+    current_beliefs: dict[str, float] = field(default_factory=dict)
+    optimizer_status: dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -157,4 +171,13 @@ class ActionRecommendation:
             "supporting_evidence": list(self.supporting_evidence),
             "uncertainty_summary": dict(self.uncertainty_summary),
             "alternatives": [alt.to_dict() for alt in self.alternatives],
+            "domain_id": self.domain_id,
+            "modality_name": self.modality_name,
+            "objective_name": self.objective_name,
+            "objective_units": self.objective_units,
+            "raw_hig": self.raw_hig,
+            "expected_posterior_entropy": self.expected_posterior_entropy,
+            "current_beliefs": dict(self.current_beliefs),
+            "optimizer_status": dict(self.optimizer_status),
+            "metadata": dict(self.metadata),
         }

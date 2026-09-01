@@ -92,6 +92,7 @@ class FalsificationFirstPolicy:
         ensemble: HypothesisEnsemble | None = None,
         property_discovery_scores: Mapping[str, float] | None = None,
         observed_xrd_embeddings_map: Mapping[str, np.ndarray] | None = None,
+        observed_modalities_map: Mapping[str, Mapping[str, Any]] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
         step: int = 0,
@@ -105,7 +106,13 @@ class FalsificationFirstPolicy:
         cids = candidate_pool_df["candidate_id"].tolist()
         comps = candidate_pool_df[comp_cols].to_numpy(dtype=np.float64)
         disc_scores = property_discovery_scores or {}
-        xrd_embs_map = observed_xrd_embeddings_map or {}
+        xrd_embs_map = dict(observed_xrd_embeddings_map or {})
+        if observed_modalities_map is not None:
+            if "XRD" in observed_modalities_map and not xrd_embs_map:
+                xrd_embs_map = {k: np.asarray(v) for k, v in observed_modalities_map["XRD"].items() if v is not None and not isinstance(v, Mapping)}
+            elif "SEM" in observed_modalities_map and not xrd_embs_map:
+                xrd_embs_map = {k: np.asarray(v) for k, v in observed_modalities_map["SEM"].items() if v is not None and not isinstance(v, Mapping)}
+
         obs_xrd = observed_xrd_ids or set()
         obs_prop = observed_property_ids or set()
 
@@ -124,7 +131,6 @@ class FalsificationFirstPolicy:
         candidate_actions: list[dict[str, Any]] = []
 
         if valid_actions is not None:
-            # Fix: map candidate IDs directly to row positions to prevent DataFrame index label mismatch bugs
             cand_map = {cid: comps[pos] for pos, cid in enumerate(cids)}
             for act in valid_actions:
                 cid = act.candidate_id
@@ -138,6 +144,7 @@ class FalsificationFirstPolicy:
                     composition=comp,
                     ensemble=ensemble,
                     observed_xrd_embedding=obs_emb,
+                    observed_modalities=observed_modalities_map,
                     fast_mode=fast_mode,
                     seed=seed,
                 )
@@ -159,84 +166,81 @@ class FalsificationFirstPolicy:
                     }
                 )
         else:
-            # 1. Evaluate valid XRD actions
+            # Canonical fallback: iterate through candidates for XRD and PROPERTY actions
             for i, cid in enumerate(cids):
-                if cid in obs_xrd:
-                    continue
-
-                eval_res = self.hig_estimator.evaluate_action_discrimination(
-                    candidate_id=cid,
-                    action_type=ExperimentActionType.XRD,
-                    composition=comps[i],
-                    ensemble=ensemble,
-                    fast_mode=fast_mode,
-                    seed=seed,
-                )
-
-                candidate_actions.append(
-                    {
-                        "candidate_id": cid,
-                        "action_type": ExperimentActionType.XRD,
-                        "raw_hig": eval_res.hypothesis_information_gain,
-                        "raw_disc": 0.0,  # Characterization does not measure property k0
-                        "raw_cost": self.cost_xrd,
-                        "property_disagreement": eval_res.property_disagreement,
-                        "structure_disagreement": eval_res.structure_disagreement,
-                        "observation_disagreement": eval_res.observation_disagreement,
-                        "disagreement_by_modality": eval_res.disagreement_by_modality,
-                        "current_entropy": eval_res.current_entropy,
-                        "expected_entropy": eval_res.expected_posterior_entropy,
-                        "predictions": eval_res.predictions,
-                    }
-                )
-
-            # 2. Evaluate valid PROPERTY actions
-            for i, cid in enumerate(cids):
-                if cid in obs_prop:
-                    continue
-
+                comp = comps[i]
                 obs_emb = xrd_embs_map.get(cid)
-                eval_res = self.hig_estimator.evaluate_action_discrimination(
-                    candidate_id=cid,
-                    action_type=ExperimentActionType.PROPERTY,
-                    composition=comps[i],
-                    ensemble=ensemble,
-                    observed_xrd_embedding=obs_emb,
-                    fast_mode=fast_mode,
-                    seed=seed,
-                )
 
-                raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+                # XRD action evaluation
+                if cid not in obs_xrd:
+                    xrd_eval = self.hig_estimator.evaluate_action_discrimination(
+                        candidate_id=cid,
+                        action_type=ExperimentActionType.XRD,
+                        composition=comp,
+                        ensemble=ensemble,
+                        observed_xrd_embedding=obs_emb,
+                        observed_modalities=observed_modalities_map,
+                        fast_mode=fast_mode,
+                        seed=seed,
+                    )
+                    candidate_actions.append(
+                        {
+                            "candidate_id": cid,
+                            "action_type": ExperimentActionType.XRD,
+                            "raw_hig": xrd_eval.hypothesis_information_gain,
+                            "raw_disc": 0.0,
+                            "raw_cost": self.cost_xrd,
+                            "property_disagreement": xrd_eval.property_disagreement,
+                            "structure_disagreement": xrd_eval.structure_disagreement,
+                            "observation_disagreement": xrd_eval.observation_disagreement,
+                            "disagreement_by_modality": xrd_eval.disagreement_by_modality,
+                            "current_entropy": xrd_eval.current_entropy,
+                            "expected_entropy": xrd_eval.expected_posterior_entropy,
+                            "predictions": xrd_eval.predictions,
+                        }
+                    )
 
-                candidate_actions.append(
-                    {
-                        "candidate_id": cid,
-                        "action_type": ExperimentActionType.PROPERTY,
-                        "raw_hig": eval_res.hypothesis_information_gain,
-                        "raw_disc": raw_botorch_acq,
-                        "raw_cost": self.cost_property,
-                        "property_disagreement": eval_res.property_disagreement,
-                        "structure_disagreement": eval_res.structure_disagreement,
-                        "observation_disagreement": eval_res.observation_disagreement,
-                        "disagreement_by_modality": eval_res.disagreement_by_modality,
-                        "current_entropy": eval_res.current_entropy,
-                        "expected_entropy": eval_res.expected_posterior_entropy,
-                        "predictions": eval_res.predictions,
-                    }
-                )
+                # Property action evaluation
+                if cid not in obs_prop:
+                    prop_eval = self.hig_estimator.evaluate_action_discrimination(
+                        candidate_id=cid,
+                        action_type=ExperimentActionType.PROPERTY,
+                        composition=comp,
+                        ensemble=ensemble,
+                        observed_xrd_embedding=obs_emb,
+                        observed_modalities=observed_modalities_map,
+                        fast_mode=fast_mode,
+                        seed=seed,
+                    )
+                    raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+                    candidate_actions.append(
+                        {
+                            "candidate_id": cid,
+                            "action_type": ExperimentActionType.PROPERTY,
+                            "raw_hig": prop_eval.hypothesis_information_gain,
+                            "raw_disc": raw_botorch_acq,
+                            "raw_cost": self.cost_property,
+                            "property_disagreement": prop_eval.property_disagreement,
+                            "structure_disagreement": prop_eval.structure_disagreement,
+                            "observation_disagreement": prop_eval.observation_disagreement,
+                            "disagreement_by_modality": prop_eval.disagreement_by_modality,
+                            "current_entropy": prop_eval.current_entropy,
+                            "expected_entropy": prop_eval.expected_posterior_entropy,
+                            "predictions": prop_eval.predictions,
+                        }
+                    )
 
         if not candidate_actions:
             return []
 
-        # 3. Normalization and Mode-Specific Scoring
+        # Normalization over available action space
         all_higs = [a["raw_hig"] for a in candidate_actions]
-        min_hig, max_hig = min(all_higs), max(all_higs)
-
         prop_discs = [a["raw_disc"] for a in candidate_actions if _is_objective_action(a["action_type"])]
+        all_costs = [a["raw_cost"] for a in candidate_actions]
+
+        min_hig, max_hig = min(all_higs), max(all_higs)
         min_p_disc = min(prop_discs) if prop_discs else 0.0
         max_p_disc = max(prop_discs) if prop_discs else 1.0
-
-        all_costs = [a["raw_cost"] for a in candidate_actions]
         max_cost = max(all_costs + [self.cost_xrd, self.cost_property, 1.0])
 
         scored_actions: list[dict[str, Any]] = []
@@ -281,6 +285,7 @@ class FalsificationFirstPolicy:
         ensemble: HypothesisEnsemble | None = None,
         property_discovery_scores: Mapping[str, float] | None = None,
         observed_xrd_embeddings_map: Mapping[str, np.ndarray] | None = None,
+        observed_modalities_map: Mapping[str, Mapping[str, Any]] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
         step: int = 0,
@@ -301,6 +306,7 @@ class FalsificationFirstPolicy:
             ensemble=ensemble,
             property_discovery_scores=property_discovery_scores,
             observed_xrd_embeddings_map=observed_xrd_embeddings_map,
+            observed_modalities_map=observed_modalities_map,
             fast_mode=fast_mode,
             seed=seed,
             step=step,
@@ -427,4 +433,11 @@ class FalsificationFirstPolicy:
                 "disagreement_by_modality": top.get("disagreement_by_modality", {}),
             },
             alternatives=alternatives,
+            domain_id=domain_id,
+            modality_name=top_act_str,
+            objective_name=primary_obj_name if primary_obj_name != "objective" else None,
+            objective_units=primary_obj_units or None,
+            raw_hig=top["raw_hig"],
+            expected_posterior_entropy=top["expected_entropy"],
+            current_beliefs=beliefs,
         )

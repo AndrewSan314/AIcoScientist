@@ -11,7 +11,8 @@ TOY_MODALITY_SEM = ModalityDefinition(
     name="SEM",
     observation_kind="characterization",
     cost=2.0,
-    metadata={"description": "Scanning electron microscopy 4D morphology representation"},
+    observation_key="sem_features",
+    metadata={"description": "Scanning electron microscopy 4D morphology representation", "observation_key": "sem_features"},
 )
 
 TOY_MODALITY_CAPACITY = ModalityDefinition(
@@ -19,7 +20,8 @@ TOY_MODALITY_CAPACITY = ModalityDefinition(
     observation_kind="objective_measurement",
     cost=6.0,
     objective_names=("capacity",),
-    metadata={"description": "Galvanostatic cycling capacity measurement", "units": "mAh/g"},
+    observation_key="capacity",
+    metadata={"description": "Galvanostatic cycling capacity measurement", "units": "mAh/g", "observation_key": "capacity"},
 )
 
 TOY_OBJECTIVE_CAPACITY = ObjectiveDefinition(

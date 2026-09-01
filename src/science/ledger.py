@@ -177,6 +177,11 @@ class ExperimentLedger:
         spec: DatasetSpec | None = None,
     ) -> ScientificExperimentRecord:
         """Validates and records a new experiment proposal event in the ledger transactionally."""
+        if record.stage != ExperimentStage.PROPOSED:
+            raise ValueError(
+                f"Cannot record proposal: record stage must be {ExperimentStage.PROPOSED.value}, got {record.stage.value}"
+            )
+
         # 1. Validate record against spec BEFORE database mutation
         if spec is not None:
             validate_record_against_spec(record, spec)
@@ -222,6 +227,68 @@ class ExperimentLedger:
                 (
                     record.experiment_id,
                     "PROPOSAL_CREATED",
+                    now_iso,
+                    _canonical_json(payload),
+                    prev_hash,
+                    event_hash,
+                ),
+            )
+            self._update_head_metadata(event_hash)
+
+        return record
+
+    def record_baseline_evidence(
+        self,
+        record: ScientificExperimentRecord,
+        spec: DatasetSpec | None = None,
+    ) -> ScientificExperimentRecord:
+        """Records pre-existing baseline experimental evidence directly into the ledger with explicit provenance."""
+        if spec is not None:
+            validate_record_against_spec(record, spec)
+
+        if record.stage != ExperimentStage.COMPLETED:
+            record.stage = ExperimentStage.COMPLETED
+
+        prev_hash = self._get_latest_event_hash()
+        payload = record.to_dict()
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        event_envelope = {
+            "experiment_id": record.experiment_id,
+            "event_type": "BASELINE_EVIDENCE_IMPORTED",
+            "created_at": now_iso,
+            "payload": payload,
+        }
+        canon_envelope = _canonical_json(event_envelope)
+
+        hasher = hashlib.sha256()
+        hasher.update(prev_hash.encode("utf-8"))
+        hasher.update(canon_envelope.encode("utf-8"))
+        event_hash = hasher.hexdigest()
+
+        with self._conn:
+            self._conn.execute(
+                """
+                INSERT INTO experiments (experiment_id, candidate_id, dataset_name, current_stage, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.experiment_id,
+                    record.candidate_id,
+                    record.dataset_name,
+                    record.stage.value,
+                    record.created_at,
+                    now_iso,
+                ),
+            )
+            self._conn.execute(
+                """
+                INSERT INTO experiment_events (experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.experiment_id,
+                    "BASELINE_EVIDENCE_IMPORTED",
                     now_iso,
                     _canonical_json(payload),
                     prev_hash,
@@ -546,6 +613,34 @@ class ExperimentLedger:
         if not row:
             return None
         return json.loads(row["snapshot_json"])
+
+    def get_experiment_by_id(self, experiment_id: str) -> ScientificExperimentRecord | None:
+        """Convenience alias for get_record."""
+        return self.get_record(experiment_id)
+
+    def get_experiment_history(self, experiment_id: str) -> list[dict[str, Any]]:
+        """Returns the chronological list of event envelopes for a given experiment ID."""
+        cursor = self._conn.execute(
+            """
+            SELECT event_id, experiment_id, event_type, created_at, payload_json, previous_event_hash, event_hash
+            FROM experiment_events
+            WHERE experiment_id = ?
+            ORDER BY event_id ASC
+            """,
+            (experiment_id,),
+        )
+        history: list[dict[str, Any]] = []
+        for r in cursor.fetchall():
+            history.append({
+                "event_id": r["event_id"],
+                "experiment_id": r["experiment_id"],
+                "event_type": r["event_type"],
+                "created_at": r["created_at"],
+                "payload": json.loads(r["payload_json"]),
+                "previous_event_hash": r["previous_event_hash"],
+                "event_hash": r["event_hash"],
+            })
+        return history
 
     def get_record(self, experiment_id: str) -> ScientificExperimentRecord | None:
         """Reconstructs the current state of an experiment from its event history."""

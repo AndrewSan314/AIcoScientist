@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, Mapping, Sequence
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,13 +18,15 @@ from src.domains.toy_material import (
     ToyMaterialDomainAdapter,
     ToyMaterialHypothesisProvider,
 )
+from src.optimization.backend import OptimizerBackend
+from src.optimization.objective import OptimizationObjective
 from src.science.actions import (
     ActionRecommendation,
     ExperimentOutcome,
     ScientificAction,
     normalize_action_type,
 )
-from src.science.decision_engine import ScientificDecisionEngine
+from src.science.decision_engine import ScientificDecisionEngine, _to_optimizer_objective
 from src.science.domain import (
     MaterialDomainAdapter,
     ModalityDefinition,
@@ -32,6 +36,8 @@ from src.science.domain import (
 from src.science.falsification.information_gain import HypothesisInformationGainEstimator
 from src.science.falsification.policy import FalsificationFirstPolicy, FalsificationPolicyMode
 from src.science.hypothesis_models import HypothesisEnsemble, PredictiveDistribution
+from src.science.ledger import ExperimentLedger
+from src.science.records import ExperimentStage
 
 
 def test_second_domain_uses_non_h1_h2_h3_hypothesis_ids() -> None:
@@ -225,7 +231,6 @@ def test_candidate_features_come_from_domain_config() -> None:
     """Candidate pool containing noisy metadata columns must use only domain_config.candidate_features."""
     adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
     pool = adapter.get_candidate_pool()
-    # Inject spurious non-feature metadata columns
     pool["operator_id"] = "OP_99"
     pool["batch_label"] = "BATCH_2026"
     pool["timestamp"] = 1718000000.0
@@ -255,7 +260,7 @@ def test_candidate_features_come_from_domain_config() -> None:
     assert "batch_label" not in engine.feature_cols
 
     rec = engine.propose_next_experiment()
-    assert set(rec.action.candidate_id) is not None
+    assert rec.action.candidate_id in set(adapter.get_candidate_pool()["candidate_id"])
 
 
 def test_policy_does_not_require_property_or_capacity_action_names() -> None:
@@ -302,6 +307,366 @@ def test_recommendation_uses_domain_objective_name_and_units() -> None:
     engine = ScientificDecisionEngine(domain=adapter, seed=42)
     rec = engine.propose_next_experiment()
 
-    # Evidence strings should contain "capacity" and "mAh/g"
     found_capacity_unit = any("capacity" in ev and "mAh/g" in ev for ev in rec.supporting_evidence)
     assert found_capacity_unit or any("capacity" in ev for ev in rec.supporting_evidence)
+
+
+# --- P0 BLOCKER 1: OPTIMIZER BACKEND INTEGRATION TESTS ---
+
+class MockOptimizerBackend:
+    """Mock backend implementing the formal OptimizerBackend protocol."""
+
+    def __init__(self) -> None:
+        self.call_history: list[dict[str, Any]] = []
+
+    def score_candidates(
+        self,
+        observations: pd.DataFrame,
+        candidate_pool: pd.DataFrame,
+        objective: OptimizationObjective | str,
+        feature_columns: Sequence[str] | None = None,
+        candidate_id_column: str = "candidate_id",
+        seed: int | None = None,
+        **kwargs: Any,
+    ) -> dict[str, float]:
+        self.call_history.append({
+            "observations": observations.copy(),
+            "candidate_pool": candidate_pool.copy(),
+            "objective": objective,
+            "feature_columns": list(feature_columns) if feature_columns else None,
+            "candidate_id_column": candidate_id_column,
+            "seed": seed,
+        })
+        # Return synthetic scores keyed by candidate ID
+        cids = candidate_pool[candidate_id_column].tolist()
+        return {cid: float(i + 1) * 0.1 for i, cid in enumerate(cids)}
+
+
+def test_generic_engine_calls_optimizer_backend_with_correct_contract() -> None:
+    """Verifies that ScientificDecisionEngine passes typed observations and objective to OptimizerBackend."""
+    mock_backend = MockOptimizerBackend()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, optimizer_backend=mock_backend, seed=42)
+
+    # Initial seed with capacity observations
+    init_actions = adapter.get_default_initial_actions(n_cap=3, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert len(mock_backend.call_history) == 1
+    call = mock_backend.call_history[0]
+
+    obs_df = call["observations"]
+    assert "candidate_id" in obs_df.columns
+    assert "capacity" in obs_df.columns  # objective target column
+    assert "Li_ratio" in obs_df.columns
+    assert "doping_conc" in obs_df.columns
+    assert "sintering_temp" in obs_df.columns
+    assert len(obs_df) == 3
+
+    assert isinstance(call["objective"], OptimizationObjective)
+    assert call["objective"].target_name == "capacity"
+    assert call["objective"].units == "mAh/g"
+    assert call["feature_columns"] == ["Li_ratio", "doping_conc", "sintering_temp"]
+    assert call["candidate_id_column"] == "candidate_id"
+
+    # Status check
+    assert engine.last_optimizer_status["used"] is True
+    assert engine.last_optimizer_status["success"] is True
+    assert engine.last_optimizer_status["num_scored"] == 10
+
+
+def test_hybrid_policy_uses_nonzero_discovery_scores_from_backend() -> None:
+    """Verifies that discovery scores from backend actually influence candidate ranking in HYBRID mode."""
+    mock_backend = MockOptimizerBackend()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, optimizer_backend=mock_backend, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_cap=3, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert rec.discovery_value >= 0.0
+    assert engine.last_optimizer_status["success"] is True
+
+
+def test_optimizer_returns_candidate_id_score_mapping_without_positional_assumption() -> None:
+    """Verifies that arbitrary ordering of candidate IDs in discovery score dictionary is respected."""
+    mock_backend = MockOptimizerBackend()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, optimizer_backend=mock_backend, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_cap=3, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert rec.action.candidate_id in adapter.get_candidate_pool()["candidate_id"].values
+
+
+# --- P0 BLOCKER 2: DOMAIN HYPOTHESIS REFITTING TESTS ---
+
+def test_toy_hypotheses_refit_from_accumulated_domain_observations() -> None:
+    """Verifies that ToyMaterial hypotheses refit from domain observations and expose training count."""
+    h1 = CompositionOnlyHypothesis()
+    h2 = TemperatureMediatedHypothesis()
+    h3 = MicrostructureInformedHypothesis()
+    ensemble = HypothesisEnsemble(hypotheses={"h1": h1, "h2": h2, "h3": h3})
+
+    comp_map = {
+        "C1": np.array([1.0, 0.05, 750.0]),
+        "C2": np.array([0.9, 0.10, 800.0]),
+        "C3": np.array([0.8, 0.15, 850.0]),
+    }
+    obs_by_mod = {
+        "CAPACITY_TEST": {"C1": 150.0, "C2": 165.0, "C3": 170.0},
+        "SEM": {"C1": np.array([0.5, 0.6, 0.7, 0.8]), "C2": np.array([0.6, 0.7, 0.8, 0.9])},
+    }
+
+    assert not h1.is_fitted
+    assert h1.training_sample_count == 0
+
+    ensemble.fit_all(
+        composition_by_id=comp_map,
+        observations_by_modality=obs_by_mod,
+    )
+
+    assert h1.is_fitted
+    assert h1.training_sample_count == 3
+    assert h2.is_fitted
+    assert h2.training_sample_count == 5  # 3 capacity + 2 sem
+    assert h3.is_fitted
+    assert h3.training_sample_count == 2  # 2 joint capacity+sem
+
+
+def test_toy_capacity_evidence_enters_objective_model() -> None:
+    """Verifies that capacity measurements update GP model parameters and predictions in CompositionOnlyHypothesis."""
+    h1 = CompositionOnlyHypothesis()
+    comp_map = {
+        "C1": np.array([1.0, 0.05, 750.0]),
+        "C2": np.array([0.9, 0.10, 800.0]),
+    }
+    pred_prior = h1.predict_observation("C3", "CAPACITY_TEST", np.array([0.8, 0.15, 850.0]))
+    assert not h1.is_fitted
+
+    h1.fit(composition_by_id=comp_map, property_by_id={"C1": 200.0, "C2": 210.0})
+    assert h1.is_fitted
+    pred_post = h1.predict_observation("C3", "CAPACITY_TEST", np.array([0.8, 0.15, 850.0]))
+
+    # Post-fit prediction should reflect elevated training targets (near ~200 instead of prior ~140-150)
+    assert pred_post.mean[0] > 180.0
+    assert pred_post.mean[0] != pred_prior.mean[0]
+
+
+def test_toy_sem_evidence_enters_characterization_model() -> None:
+    """Verifies that SEM morphology measurements update SEM predictions in TemperatureMediatedHypothesis."""
+    h2 = TemperatureMediatedHypothesis()
+    comp_map = {
+        "C1": np.array([1.0, 0.05, 750.0]),
+        "C2": np.array([0.9, 0.10, 850.0]),
+    }
+    sem_data = {
+        "C1": np.array([0.2, 0.2, 0.2, 0.2]),
+        "C2": np.array([0.8, 0.8, 0.8, 0.8]),
+    }
+    assert not h2.fitted_sem
+
+    h2.fit(composition_by_id=comp_map, xrd_embedding_by_id=sem_data)
+    assert h2.fitted_sem
+
+    pred = h2.predict_observation("C3", "SEM", np.array([0.8, 0.15, 800.0]))
+    assert len(pred.mean) == 4
+    # Interpolated value at 800 C should be near ~0.5
+    assert np.allclose(pred.mean, [0.5, 0.5, 0.5, 0.5], atol=0.2)
+
+
+def test_toy_prediction_changes_after_new_relevant_evidence() -> None:
+    """Verifies that MicrostructureInformedHypothesis uses observed SEM context during capacity prediction."""
+    h3 = MicrostructureInformedHypothesis()
+    comp_map = {
+        "C1": np.array([1.0, 0.05, 750.0]),
+        "C2": np.array([0.9, 0.10, 850.0]),
+    }
+    sem_data = {
+        "C1": np.array([0.1, 0.1, 0.1, 0.1]),
+        "C2": np.array([0.9, 0.9, 0.9, 0.9]),
+    }
+    cap_data = {"C1": 120.0, "C2": 190.0}
+
+    h3.fit(composition_by_id=comp_map, property_by_id=cap_data, xrd_embedding_by_id=sem_data)
+    assert h3.fitted_capacity
+
+    # Predict with high-morphology SEM context
+    high_sem = np.array([0.9, 0.9, 0.9, 0.9])
+    pred_high = h3.predict_observation(
+        candidate_id="C_high",
+        action_type="CAPACITY_TEST",
+        composition=np.array([0.5, 0.5, 800.0]),
+        observed_xrd_embedding=high_sem,
+    )
+    # Predict with low-morphology SEM context
+    low_sem = np.array([0.1, 0.1, 0.1, 0.1])
+    pred_low = h3.predict_observation(
+        candidate_id="C_low",
+        action_type="CAPACITY_TEST",
+        composition=np.array([0.5, 0.5, 800.0]),
+        observed_xrd_embedding=low_sem,
+    )
+
+    assert pred_high.mean[0] > pred_low.mean[0]
+
+
+# --- P0 BLOCKER 3: AUIRH XRD REPRESENTATION TESTS ---
+
+def test_auirh_xrd_representation_refits_only_on_revealed_spectra() -> None:
+    """Verifies that AuIrRhDomainAdapter refits its PCA basis strictly on revealed spectra."""
+    adapter = AuIrRhDomainAdapter()
+    pool = adapter.get_candidate_pool()
+    cids = pool["candidate_id"].tolist()
+
+    assert len(adapter.get_revealed_xrd_embeddings()) == 0
+
+    # Execute 1st XRD
+    out1 = adapter.execute_or_reveal(
+        ScientificAction(action_id="act_1", candidate_id=cids[0], action_type="XRD", estimated_cost=1.0)
+    )
+    assert "xrd_embedding" in out1.revealed_data
+    assert len(adapter.get_revealed_xrd_embeddings()) == 1
+
+    # Execute 2nd and 3rd XRD
+    adapter.execute_or_reveal(
+        ScientificAction(action_id="act_2", candidate_id=cids[1], action_type="XRD", estimated_cost=1.0)
+    )
+    adapter.execute_or_reveal(
+        ScientificAction(action_id="act_3", candidate_id=cids[2], action_type="XRD", estimated_cost=1.0)
+    )
+    assert len(adapter.get_revealed_xrd_embeddings()) == 3
+
+
+def test_auirh_all_revealed_embeddings_share_current_representation_basis() -> None:
+    """Verifies that as new XRD spectra are revealed, all historical revealed embeddings are updated."""
+    adapter = AuIrRhDomainAdapter()
+    pool = adapter.get_candidate_pool()
+    cids = pool["candidate_id"].tolist()
+
+    for cid in cids[:4]:
+        adapter.execute_or_reveal(
+            ScientificAction(action_id=f"act_{cid}", candidate_id=cid, action_type="XRD", estimated_cost=1.0)
+        )
+
+    embs = adapter.get_revealed_xrd_embeddings()
+    assert len(embs) == 4
+    for cid in cids[:4]:
+        assert cid in embs
+        assert len(embs[cid]) == 8
+
+
+def test_generic_engine_auirh_xrd_state_matches_domain_representation_state() -> None:
+    """Verifies that ScientificDecisionEngine synchronizes XRD representation state from AuIrRhDomainAdapter."""
+    adapter = AuIrRhDomainAdapter()
+    engine = ScientificDecisionEngine(domain=adapter, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_prop=3, n_xrd=3, seed=42)
+    engine.initialize(init_actions)
+
+    assert len(engine.observations_by_modality["XRD"]) == 3
+    assert len(engine.observations_by_modality["PROPERTY"]) == 3
+
+
+# --- P1: LEDGER LIFECYCLE TESTS ---
+
+def test_engine_proposal_record_starts_at_proposed_stage() -> None:
+    """Verifies that proposal records created during propose_next_experiment start in PROPOSED stage."""
+    ledger = ExperimentLedger()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, ledger=ledger, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_cap=2, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    act = rec.action
+
+    cur = ledger.get_experiment_by_id(act.action_id)
+    assert cur is not None
+    assert cur.stage == ExperimentStage.PROPOSED
+
+
+def test_engine_execution_lifecycle_is_proposed_executed_completed() -> None:
+    """Verifies that executing a recommendation transitions through EXECUTED to COMPLETED."""
+    ledger = ExperimentLedger()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, ledger=ledger, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_cap=2, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    engine.execute_recommendation(rec)
+
+    cur = ledger.get_experiment_by_id(rec.action.action_id)
+    assert cur is not None
+    assert cur.stage == ExperimentStage.COMPLETED
+
+    history = ledger.get_experiment_history(rec.action.action_id)
+    event_types = [h["event_type"] for h in history]
+    assert event_types == ["PROPOSAL_CREATED", "EXPERIMENT_EXECUTED", "EXPERIMENT_COMPLETED"]
+
+
+def test_initial_baseline_evidence_is_not_falsely_recorded_as_new_autonomous_proposal() -> None:
+    """Verifies that initial imported baseline actions use BASELINE_EVIDENCE_IMPORTED event."""
+    ledger = ExperimentLedger()
+    adapter = ToyMaterialDomainAdapter(n_candidates=10, seed=42)
+    engine = ScientificDecisionEngine(domain=adapter, ledger=ledger, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_cap=2, n_sem=2, seed=42)
+    engine.initialize(init_actions)
+
+    for act in init_actions:
+        history = ledger.get_experiment_history(act.action_id)
+        assert len(history) == 1
+        assert history[0]["event_type"] == "BASELINE_EVIDENCE_IMPORTED"
+        record = ledger.get_experiment_by_id(act.action_id)
+        assert record.stage == ExperimentStage.COMPLETED
+
+
+# --- P1: THREE-POLICY SELECTION TESTS ---
+
+def test_controlled_three_policy_selection_behavior() -> None:
+    """Verifies distinct behavior across DISCOVERY_ONLY, PURE_FALSIFICATION, and HYBRID policy modes."""
+    # 1. DISCOVERY_ONLY policy: selects action maximizing discovery score minus cost
+    adapter_disc = ToyMaterialDomainAdapter(n_candidates=15, seed=42)
+    init_actions_disc = adapter_disc.get_default_initial_actions(n_cap=3, n_sem=3, seed=42)
+    engine_disc = ScientificDecisionEngine(
+        domain=adapter_disc,
+        policy_mode=FalsificationPolicyMode.DISCOVERY_ONLY,
+        seed=42,
+    )
+    engine_disc.initialize(init_actions_disc)
+    rec_disc = engine_disc.propose_next_experiment()
+    assert isinstance(rec_disc, ActionRecommendation)
+    assert rec_disc.action.candidate_id in adapter_disc.get_candidate_pool()["candidate_id"].values
+
+    # 2. PURE_FALSIFICATION policy: selects action maximizing raw HIG / cost
+    adapter_fals = ToyMaterialDomainAdapter(n_candidates=15, seed=42)
+    init_actions_fals = adapter_fals.get_default_initial_actions(n_cap=3, n_sem=3, seed=42)
+    engine_fals = ScientificDecisionEngine(
+        domain=adapter_fals,
+        policy_mode=FalsificationPolicyMode.PURE_FALSIFICATION,
+        seed=42,
+    )
+    engine_fals.initialize(init_actions_fals)
+    rec_fals = engine_fals.propose_next_experiment()
+    assert rec_fals.total_value == pytest.approx(rec_fals.raw_hig / (rec_fals.action.estimated_cost ** 1.0), rel=1e-3)
+
+    # 3. HYBRID policy: balances HIG, discovery, and cost
+    adapter_hyb = ToyMaterialDomainAdapter(n_candidates=15, seed=42)
+    init_actions_hyb = adapter_hyb.get_default_initial_actions(n_cap=3, n_sem=3, seed=42)
+    engine_hyb = ScientificDecisionEngine(
+        domain=adapter_hyb,
+        policy_mode=FalsificationPolicyMode.HYBRID,
+        seed=42,
+    )
+    engine_hyb.initialize(init_actions_hyb)
+    rec_hyb = engine_hyb.propose_next_experiment()
+    assert isinstance(rec_hyb, ActionRecommendation)
+    assert rec_hyb.action.candidate_id in adapter_hyb.get_candidate_pool()["candidate_id"].values

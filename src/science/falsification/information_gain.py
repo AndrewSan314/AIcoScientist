@@ -56,6 +56,7 @@ class HypothesisInformationGainEstimator:
         composition: np.ndarray,
         ensemble: HypothesisEnsemble,
         observed_xrd_embedding: np.ndarray | None = None,
+        observed_modalities: Mapping[str, Any] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
     ) -> DiscriminationEvaluation:
@@ -75,6 +76,7 @@ class HypothesisInformationGainEstimator:
             action_type=action_type,
             composition=composition,
             observed_xrd_embedding=observed_xrd_embedding,
+            observed_modalities=observed_modalities,
         )
 
         if not preds or len(preds) < 2:
