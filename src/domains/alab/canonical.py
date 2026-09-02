@@ -46,14 +46,13 @@ def get_canonical_scan(sample: Mapping[str, Any]) -> tuple[Mapping[str, Any] | N
 def get_canonical_refinement_case(scan: Mapping[str, Any] | None) -> tuple[Mapping[str, Any] | None, int | None, str]:
     """Retrieves the canonical Rietveld refinement case for an XRD scan.
 
-    Upstream A-Lab Ledger Semantics:
+    # Mirrors precursor-genome Scan.active_refinement property selection priority:
     1. ScanEntry.active_case_index specifies the verified/canonical refinement case if present and valid.
     2. Fallback Priority:
        a. Manual refinement (rank == -1 or origin == "manual")
-       b. Verified / accepted refinement (verification.is_accepted is True)
-       c. Best human quality score (lower is better, e.g. score 1 < score 2 < score 3)
-       d. Lowest Rwp (lower is better)
-       e. Case index tie-break
+       b. Best human quality score (lower is better: score 1 < score 2 < score 3; unverified = 999.0)
+       c. Lowest Rwp (lower is better)
+       d. Lowest case index tie-break
 
     Returns:
         tuple of (case_dict, case_index, selection_method)
@@ -70,7 +69,7 @@ def get_canonical_refinement_case(scan: Mapping[str, Any] | None) -> tuple[Mappi
     if isinstance(aci, int) and 0 <= aci < len(cases):
         return cases[aci], aci, "ledger_active_case_index"
 
-    # 2. Priority scoring function for fallback
+    # 2. Priority scoring function for fallback (Mirrors precursor-genome Scan.active_refinement)
     best_idx = None
     best_case = None
     best_key = None
@@ -78,28 +77,27 @@ def get_canonical_refinement_case(scan: Mapping[str, Any] | None) -> tuple[Mappi
     for idx, c in enumerate(cases):
         is_manual = 1 if (c.get("rank") == -1 or c.get("origin") == "manual") else 0
         verif = c.get("verification") or {}
-        is_accepted = 1 if verif.get("is_accepted") is True else 0
 
-        # Human quality score: lower is better; unverified gets large penalty
+        # Human quality score: lower is better; unverified gets large penalty (999.0)
         quality_score = verif.get("human_quality_score")
         q_val = float(quality_score) if isinstance(quality_score, (int, float)) else 999.0
 
         rwp = float(c.get("rwp", 999.0) or 999.0)
 
-        # Priority tuple: (higher manual, higher accepted, lower quality score, lower rwp, lower idx)
-        # We invert so that higher is better for max()
-        sort_key = (is_manual, is_accepted, -q_val, -rwp, -idx)
+        # Priority tuple: (higher manual, lower quality score, lower rwp, lower idx)
+        sort_key = (is_manual, -q_val, -rwp, -idx)
 
         if best_key is None or sort_key > best_key:
             best_key = sort_key
             best_idx = idx
             best_case = c
 
-    method = "fallback_priority"
-    if best_case and (best_case.get("rank") == -1 or best_case.get("origin") == "manual"):
-        method = "fallback_manual_preferred"
-    elif best_case and best_case.get("verification", {}).get("is_accepted") is True:
-        method = "fallback_human_accepted"
+    method = "upstream_fallback_lowest_rwp"
+    if best_case:
+        if best_case.get("rank") == -1 or best_case.get("origin") == "manual":
+            method = "upstream_fallback_manual"
+        elif best_case.get("verification", {}).get("human_quality_score") is not None:
+            method = "upstream_fallback_quality_score"
 
     return best_case, best_idx, method
 

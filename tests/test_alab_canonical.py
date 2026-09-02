@@ -116,7 +116,7 @@ def test_canonical_refinement_case_selection():
     assert case["rank"] == 2
     assert method == "ledger_active_case_index"
 
-    # 2. Manual case preferred over automated case
+    # 2. Manual case preferred over automated case (Mirrors precursor-genome)
     scan2 = {
         "active_case_index": None,
         "refinement_cases": [
@@ -127,20 +127,20 @@ def test_canonical_refinement_case_selection():
     case, idx, method = get_canonical_refinement_case(scan2)
     assert idx == 1
     assert case["rank"] == -1
-    assert method == "fallback_manual_preferred"
+    assert method == "upstream_fallback_manual"
 
-    # 3. Human accepted case preferred
+    # 3. Human quality score preferred (Mirrors precursor-genome)
     scan3 = {
         "active_case_index": None,
         "refinement_cases": [
-            {"rank": 1, "rwp": 0.08, "verification": {"is_accepted": False}},
-            {"rank": 2, "rwp": 0.12, "verification": {"is_accepted": True, "human_quality_score": 1}},
+            {"rank": 1, "rwp": 0.08, "verification": {"human_quality_score": 3}},
+            {"rank": 2, "rwp": 0.12, "verification": {"human_quality_score": 1}},
         ],
     }
     case, idx, method = get_canonical_refinement_case(scan3)
     assert idx == 1
     assert case["rank"] == 2
-    assert method == "fallback_human_accepted"
+    assert method == "upstream_fallback_quality_score"
 
     # 4. Lowest Rwp tie-break
     scan4 = {
@@ -496,3 +496,240 @@ def test_absolute_hig_independent_of_candidate_pool():
     # Invariance check: absolute HIG of c1 does NOT change when c2 is removed
     assert pytest.approx(c1_abs_hig_pool, abs=1e-9) == c1_abs_hig_single
     assert pytest.approx(c1_abs_hig_single, rel=1e-4) == 0.45 / np.log(3.0)
+
+
+def test_canonical_xrd_missing_artifact_fails_closed(tmp_path):
+    from src.domains.alab.adapter import ALabDomainAdapter
+    from src.domains.alab.artifact_index import ALabArtifactIndex
+
+    # Sample has active_scan_index = 0, with filename scan0.xrdml
+    sample = {
+        "sample_id": "TEST_001",
+        "active_scan_index": 0,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {"filename": "missing_scan0.xrdml", "status": "valid"},
+                    {"filename": "available_scan1.xrdml", "status": "valid"},
+                ]
+            }
+        },
+        "synthesis": {"outcome": "completely_reacted"},
+    }
+
+    idx = ALabArtifactIndex(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    idx._initialized = True
+    idx._index["TEST_001"] = {}  # Canonical scan is missing_scan0, so XRD is NOT indexed
+
+    adapter = ALabDomainAdapter(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    adapter._samples_by_id["TEST_001"] = sample
+    adapter._artifact_index = idx
+
+    # 1. list_valid_actions must NOT offer XRD since canonical artifact is missing
+    actions = adapter.list_valid_actions()
+    xrd_actions = [a for a in actions if a.action_type == "XRD"]
+    assert len(xrd_actions) == 0
+
+    # 2. execute_or_reveal must fail closed with RuntimeError, not fallback to scan 1
+    act = ScientificAction(
+        action_id="XRD_TEST_001",
+        candidate_id="TEST_001",
+        action_type="XRD",
+        estimated_cost=1.0,
+        metadata={"modality_hint": "XRD"},
+    )
+    with pytest.raises(RuntimeError, match="No XRD artifact found"):
+        adapter.execute_or_reveal(act)
+
+
+def test_xrd_artifact_and_provenance_scan_index_match(tmp_path):
+    from src.domains.alab.adapter import ALabDomainAdapter
+    from src.domains.alab.artifact_index import ALabArtifactIndex, ArtifactRef
+
+    sample = {
+        "sample_id": "TEST_002",
+        "active_scan_index": 1,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {"filename": "scan0.xrdml", "status": "draft"},
+                    {
+                        "filename": "scan1.xrdml",
+                        "status": "valid",
+                        "xrd_settings": {"range_2theta": [10.0, 100.0]},
+                    },
+                ]
+            }
+        },
+        "synthesis": {"outcome": "completely_reacted"},
+    }
+
+    xml_content = b"""<?xml version="1.0" encoding="utf-8"?>
+    <xrdMeasurement>
+      <scan>
+        <dataPoints>
+          <positions axis="2Theta">
+            <startPosition>10.0</startPosition>
+            <endPosition>100.0</endPosition>
+          </positions>
+          <counts>10 20 30 40 50</counts>
+        </dataPoints>
+      </scan>
+    </xrdMeasurement>"""
+
+    idx = ALabArtifactIndex(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    idx._initialized = True
+    idx._index["TEST_002"] = {
+        "XRD": ArtifactRef(
+            archive_path="raw_scans.zip",
+            member_path="scan1.xrdml",
+            modality="XRD",
+            selected_scan_index=1,
+            selection_method="ledger_active_scan_index",
+            is_canonical=True,
+        )
+    }
+    idx.read_artifact_bytes = lambda ref: xml_content
+
+    adapter = ALabDomainAdapter(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    adapter._samples_by_id["TEST_002"] = sample
+    adapter._artifact_index = idx
+
+    act = ScientificAction(
+        action_id="XRD_TEST_002",
+        candidate_id="TEST_002",
+        action_type="XRD",
+        estimated_cost=1.0,
+        metadata={"modality_hint": "XRD"},
+    )
+    outcome = adapter.execute_or_reveal(act)
+    assert outcome.provenance["selected_scan_index"] == 1
+    assert outcome.provenance["canonical_scan"] is True
+    assert outcome.provenance["scan_selection_method"] == "ledger_active_scan_index"
+    assert outcome.provenance["archive_member_path"] == "scan1.xrdml"
+    assert outcome.provenance["physical_axis_source"] == "xml_positions_2theta"
+
+
+def test_refinement_case_and_provenance_match(tmp_path):
+    from src.domains.alab.adapter import ALabDomainAdapter
+
+    sample = {
+        "sample_id": "TEST_003",
+        "target_compound": "LiCoO2",
+        "precursors": [{"formula": "Li2CO3"}, {"formula": "Co3O4"}],
+        "active_scan_index": 0,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {
+                        "filename": "scan0.xrdml",
+                        "active_case_index": 0,
+                        "refinement_cases": [
+                            {
+                                "rank": -1,
+                                "origin": "manual",
+                                "rwp": 4.5,
+                                "phase_weights": {"LiCoO2": 0.85, "Co3O4": 0.15},
+                            }
+                        ],
+                    }
+                ]
+            }
+        },
+        "synthesis": {"outcome": "completely_reacted"},
+    }
+
+    adapter = ALabDomainAdapter(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    adapter._samples_by_id["TEST_003"] = sample
+    adapter._revealed_xrd_spectra["TEST_003"] = np.zeros(450)
+
+    act = ScientificAction(
+        action_id="REF_TEST_003",
+        candidate_id="TEST_003",
+        action_type="REFINEMENT",
+        estimated_cost=0.5,
+        metadata={"modality_hint": "REFINEMENT"},
+    )
+    outcome = adapter.execute_or_reveal(act)
+    assert outcome.provenance["selected_scan_index"] == 0
+    assert outcome.provenance["selected_case_index"] == 0
+    assert outcome.provenance["canonical_case"] is True
+    assert outcome.provenance["refinement_source"] == "structured_ledger"
+    assert outcome.provenance["case_selection_method"] == "ledger_active_case_index"
+    assert outcome.provenance["rwp"] == 4.5
+    assert outcome.provenance["refinement_rank"] == -1
+
+
+def test_refinement_fallback_matches_upstream_priority():
+    scan = {
+        "active_case_index": None,
+        "refinement_cases": [
+            {"rank": 1, "rwp": 2.0, "origin": "automated_db", "verification": {"human_quality_score": 3}},
+            {"rank": 2, "rwp": 8.0, "origin": "automated_db", "verification": {"human_quality_score": 1}},
+            {"rank": 3, "rwp": 5.0, "origin": "automated_db", "verification": {"human_quality_score": 2}},
+        ],
+    }
+    case, idx, method = get_canonical_refinement_case(scan)
+    assert idx == 1
+    assert case["rank"] == 2
+    assert method == "upstream_fallback_quality_score"
+
+    # Adding a manual case overrides automated quality score
+    scan["refinement_cases"].append({"rank": -1, "rwp": 9.5, "origin": "manual"})
+    case_m, idx_m, method_m = get_canonical_refinement_case(scan)
+    assert idx_m == 3
+    assert case_m["rank"] == -1
+    assert method_m == "upstream_fallback_manual"
+
+
+def test_canonical_refinement_missing_does_not_fallback_to_wrong_case(tmp_path):
+    from src.domains.alab.adapter import ALabDomainAdapter
+    from src.domains.alab.artifact_index import ALabArtifactIndex
+
+    # Canonical scan has no refinement cases, but other scan has refinement cases
+    sample = {
+        "sample_id": "TEST_004",
+        "target_compound": "LiCoO2",
+        "precursors": [{"formula": "Li2CO3"}, {"formula": "Co3O4"}],
+        "active_scan_index": 0,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {"filename": "scan0.xrdml", "refinement_cases": []},
+                    {
+                        "filename": "scan1.xrdml",
+                        "refinement_cases": [
+                            {"rank": 1, "phase_weights": {"LiCoO2": 0.9}, "rwp": 3.0}
+                        ],
+                    },
+                ]
+            }
+        },
+        "synthesis": {"outcome": "completely_reacted"},
+    }
+
+    idx = ALabArtifactIndex(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    idx._initialized = True
+    idx._index["TEST_004"] = {}
+
+    adapter = ALabDomainAdapter(data_dir=str(tmp_path), cache_dir=str(tmp_path))
+    adapter._samples_by_id["TEST_004"] = sample
+    adapter._artifact_index = idx
+    adapter._revealed_xrd_spectra["TEST_004"] = np.zeros(450)
+
+    # 1. list_valid_actions must not offer REFINEMENT for TEST_004
+    actions = adapter.list_valid_actions()
+    ref_actions = [a for a in actions if a.action_type == "REFINEMENT"]
+    assert len(ref_actions) == 0
+
+    # 2. execute_or_reveal must fail closed, NOT use scan 1's case
+    act = ScientificAction(
+        action_id="REF_TEST_004",
+        candidate_id="TEST_004",
+        action_type="REFINEMENT",
+        estimated_cost=0.5,
+        metadata={"modality_hint": "REFINEMENT"},
+    )
+    with pytest.raises(RuntimeError, match="No canonical refinement case found"):
+        adapter.execute_or_reveal(act)
+

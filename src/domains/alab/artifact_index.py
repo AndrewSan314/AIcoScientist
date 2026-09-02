@@ -19,19 +19,40 @@ class ArtifactRef:
     modality: str
     size_bytes: int | None = None
     checksum: str | None = None
+    selected_scan_index: int | None = None
+    selected_case_index: int | None = None
+    selection_method: str = "canonical"
+    is_canonical: bool = True
 
-    def to_dict(self) -> dict[str, str | int | None]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, str | int | None]) -> ArtifactRef:
+    def from_dict(cls, data: Mapping[str, Any]) -> ArtifactRef:
         return cls(
             archive_path=str(data["archive_path"]),
             member_path=str(data["member_path"]),
             modality=str(data["modality"]),
             size_bytes=int(data["size_bytes"]) if data.get("size_bytes") is not None else None,
             checksum=str(data["checksum"]) if data.get("checksum") is not None else None,
+            selected_scan_index=int(data["selected_scan_index"]) if data.get("selected_scan_index") is not None else None,
+            selected_case_index=int(data["selected_case_index"]) if data.get("selected_case_index") is not None else None,
+            selection_method=str(data.get("selection_method", "canonical")),
+            is_canonical=bool(data.get("is_canonical", True)),
         )
+
+
+@dataclass(frozen=True)
+class ResolvedArtifactSelection:
+    """Explicit resolved artifact selection contract linking metadata to artifact bytes."""
+
+    sample_id: str
+    requested_modality: str
+    selected_scan_index: int | None
+    selected_case_index: int | None
+    artifact_ref: ArtifactRef | None
+    selection_method: str
+    is_canonical: bool
 
 
 class ALabArtifactIndex:
@@ -152,18 +173,10 @@ class ALabArtifactIndex:
                 continue
             self._index[sid] = {}
 
-            # 1. Match canonical XRD scan
-            can_scan, can_scan_idx, _ = get_canonical_scan(s)
-            matched_xrd = False
-            candidate_scans = [can_scan] if can_scan else []
-            # Append other scans as fallbacks
-            all_scans = s.get("characterization", {}).get("xrd", {}).get("scans", [])
-            for sc in all_scans:
-                if sc not in candidate_scans:
-                    candidate_scans.append(sc)
-
-            for sc in candidate_scans:
-                fn = sc.get("filename", "")
+            # 1. Match canonical XRD scan strictly (fail closed if canonical scan artifact missing)
+            can_scan, can_scan_idx, scan_method = get_canonical_scan(s)
+            if can_scan is not None:
+                fn = can_scan.get("filename", "")
                 base = os.path.basename(fn)
                 if fn in xrd_members:
                     mem_path, sz = xrd_members[fn]
@@ -173,9 +186,10 @@ class ALabArtifactIndex:
                         modality="XRD",
                         size_bytes=sz,
                         checksum=manifest_checksums.get("raw_scans.zip"),
+                        selected_scan_index=can_scan_idx,
+                        selection_method=scan_method,
+                        is_canonical=True,
                     )
-                    matched_xrd = True
-                    break
                 elif base in xrd_members:
                     mem_path, sz = xrd_members[base]
                     self._index[sid]["XRD"] = ArtifactRef(
@@ -184,26 +198,15 @@ class ALabArtifactIndex:
                         modality="XRD",
                         size_bytes=sz,
                         checksum=manifest_checksums.get("raw_scans.zip"),
+                        selected_scan_index=can_scan_idx,
+                        selection_method=scan_method,
+                        is_canonical=True,
                     )
-                    matched_xrd = True
-                    break
 
-            # 2. Match canonical Refinement PKL
-            can_case, can_case_idx, _ = get_canonical_refinement_case(can_scan)
-            candidate_cases = [can_case] if can_case else []
-            # Append other cases as fallback
-            if can_scan:
-                for rc in can_scan.get("refinement_cases", []):
-                    if rc not in candidate_cases:
-                        candidate_cases.append(rc)
-            for sc in all_scans:
-                if sc != can_scan:
-                    for rc in sc.get("refinement_cases", []):
-                        if rc not in candidate_cases:
-                            candidate_cases.append(rc)
-
-            for rc in candidate_cases:
-                pkl = rc.get("pkl_path", "")
+            # 2. Match canonical Refinement PKL strictly (no cross-scan or cross-case fallback)
+            can_case, can_case_idx, case_method = get_canonical_refinement_case(can_scan)
+            if can_case is not None:
+                pkl = can_case.get("pkl_path", "")
                 base_pkl = os.path.basename(pkl)
                 if pkl in ref_members:
                     mem_path, sz = ref_members[pkl]
@@ -213,8 +216,11 @@ class ALabArtifactIndex:
                         modality="REFINEMENT",
                         size_bytes=sz,
                         checksum=manifest_checksums.get("refinement_pkls.zip"),
+                        selected_scan_index=can_scan_idx,
+                        selected_case_index=can_case_idx,
+                        selection_method=case_method,
+                        is_canonical=True,
                     )
-                    break
                 elif base_pkl in ref_members:
                     mem_path, sz = ref_members[base_pkl]
                     self._index[sid]["REFINEMENT"] = ArtifactRef(
@@ -223,8 +229,56 @@ class ALabArtifactIndex:
                         modality="REFINEMENT",
                         size_bytes=sz,
                         checksum=manifest_checksums.get("refinement_pkls.zip"),
+                        selected_scan_index=can_scan_idx,
+                        selected_case_index=can_case_idx,
+                        selection_method=case_method,
+                        is_canonical=True,
                     )
-                    break
+
+    def resolve_artifact(
+        self,
+        sample_id: str,
+        modality: str,
+        sample: Mapping[str, Any] | None = None,
+    ) -> ResolvedArtifactSelection:
+        """Resolves artifact selection guaranteeing strict provenance and byte identity alignment."""
+        ref = self.get_artifact_ref(sample_id, modality)
+        if ref is not None:
+            return ResolvedArtifactSelection(
+                sample_id=sample_id,
+                requested_modality=modality,
+                selected_scan_index=ref.selected_scan_index,
+                selected_case_index=ref.selected_case_index,
+                artifact_ref=ref,
+                selection_method=ref.selection_method,
+                is_canonical=ref.is_canonical,
+            )
+
+        # Fall closed: canonical artifact missing
+        scan_idx = None
+        case_idx = None
+        method = "unresolvable"
+        if sample:
+            from src.domains.alab.canonical import get_canonical_refinement_case, get_canonical_scan
+
+            can_scan, can_scan_idx, scan_m = get_canonical_scan(sample)
+            scan_idx = can_scan_idx
+            if modality == "XRD":
+                method = f"canonical_scan_{scan_m}_missing_artifact"
+            elif modality == "REFINEMENT":
+                can_case, can_case_idx, case_m = get_canonical_refinement_case(can_scan)
+                case_idx = can_case_idx
+                method = f"canonical_case_{case_m}_missing_artifact"
+
+        return ResolvedArtifactSelection(
+            sample_id=sample_id,
+            requested_modality=modality,
+            selected_scan_index=scan_idx,
+            selected_case_index=case_idx,
+            artifact_ref=None,
+            selection_method=method,
+            is_canonical=True,
+        )
 
     def _save_cache(self, cache_file: str, signature: dict[str, Any] | None = None) -> None:
         try:

@@ -231,14 +231,13 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     )
                 )
 
-            # 2. REFINEMENT action (strictly requires completed XRD on cid and canonical/artifact refinement data)
+            # 2. REFINEMENT action (strictly requires completed XRD on cid and canonical refinement data)
             sample_obj = self._samples_by_id.get(cid, {})
             can_scan, _, _ = get_canonical_scan(sample_obj)
             can_case, _, _ = get_canonical_refinement_case(can_scan)
-            has_ref = (
-                can_case is not None
-                or self._artifact_index.get_artifact_ref(cid, "REFINEMENT") is not None
-            )
+            has_structured_phase = bool(can_case and can_case.get("phase_weights"))
+            has_ref_artifact = self._artifact_index.get_artifact_ref(cid, "REFINEMENT") is not None
+            has_ref = has_structured_phase or has_ref_artifact
             if cid in self._revealed_xrd_spectra and cid not in self._revealed_refinements and has_ref:
                 actions.append(
                     ScientificAction(
@@ -324,6 +323,13 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             if ref is None:
                 raise RuntimeError(f"No XRD artifact found for candidate '{cid}'.")
 
+            can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
+            if ref.selected_scan_index is not None and can_scan_idx is not None and ref.selected_scan_index != can_scan_idx:
+                raise RuntimeError(
+                    f"XRD artifact scan index mismatch for candidate '{cid}': "
+                    f"artifact has scan {ref.selected_scan_index}, canonical selection is scan {can_scan_idx}."
+                )
+
             raw_bytes = self._artifact_index.read_artifact_bytes(ref)
             try:
                 root = ET.fromstring(raw_bytes)
@@ -333,6 +339,7 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             # Extract physical 2theta axis start and end positions
             start_pos: float | None = None
             end_pos: float | None = None
+            axis_source = "xml_positions_2theta"
             for elem in root.iter():
                 if elem.tag.endswith("positions") and elem.attrib.get("axis") == "2Theta":
                     for child in elem:
@@ -343,15 +350,16 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 elif elem.tag.endswith("startPosition") and elem.text and start_pos is None:
                     try:
                         start_pos = float(elem.text.strip())
+                        axis_source = "xml_datapoints"
                     except (ValueError, TypeError):
                         pass
                 elif elem.tag.endswith("endPosition") and elem.text and end_pos is None:
                     try:
                         end_pos = float(elem.text.strip())
+                        axis_source = "xml_datapoints"
                     except (ValueError, TypeError):
                         pass
 
-            can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
             # If 2theta axis missing in XML, check explicit scan metadata from canonical scan
             if start_pos is None or end_pos is None:
                 xrd_settings = (can_scan or {}).get("xrd_settings", {})
@@ -359,6 +367,7 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 if isinstance(r2t, (list, tuple)) and len(r2t) == 2:
                     start_pos = float(r2t[0])
                     end_pos = float(r2t[1])
+                    axis_source = "canonical_xrd_settings"
 
             if start_pos is None or end_pos is None:
                 raise ValueError(
@@ -415,6 +424,9 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     "archive_checksum": ref.checksum,
                     "preprocessing_version": "physical_2theta_v1",
                     "selected_scan_index": can_scan_idx,
+                    "scan_selection_method": scan_method,
+                    "canonical_scan": True,
+                    "physical_axis_source": axis_source,
                     "selection_method": scan_method,
                     "representation_id": "alab_xrd_pca",
                     "representation_version": snapshot.version if snapshot else 0,
@@ -435,20 +447,29 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
             can_case, can_case_idx, case_method = get_canonical_refinement_case(can_scan)
 
+            if can_case is None:
+                raise RuntimeError(f"No canonical refinement case found for candidate '{cid}'.")
+
             phase_weights: dict[str, float] = {}
             rwp = 5.0
             rank = None
-            used_source = "ledger"
+            used_source = "structured_ledger"
 
-            if can_case is not None:
+            if can_case.get("phase_weights"):
                 phase_weights = {str(k): float(v) for k, v in can_case.get("phase_weights", {}).items()}
                 rwp = float(can_case.get("rwp", 5.0) or 5.0)
                 rank = can_case.get("rank")
             else:
-                # 2. Fallback to reading pickle artifact
+                # 2. Fallback to reading pickle artifact for that exact canonical case
                 ref = self._artifact_index.get_artifact_ref(cid, "REFINEMENT")
                 if ref is None:
-                    raise RuntimeError(f"No Refinement artifact found for candidate '{cid}'.")
+                    raise RuntimeError(f"Neither structured ledger phase data nor canonical pickle artifact exists for candidate '{cid}'.")
+
+                if ref.selected_case_index is not None and can_case_idx is not None and ref.selected_case_index != can_case_idx:
+                    raise RuntimeError(
+                        f"Refinement artifact case index mismatch for candidate '{cid}': "
+                        f"artifact has case {ref.selected_case_index}, canonical selection is case {can_case_idx}."
+                    )
 
                 raw_bytes = self._artifact_index.read_artifact_bytes(ref)
                 try:
@@ -494,9 +515,13 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     "refinement_source": used_source,
                     "selected_scan_index": can_scan_idx,
                     "selected_case_index": can_case_idx,
+                    "scan_selection_method": scan_method,
+                    "case_selection_method": case_method,
                     "refinement_rank": rank,
+                    "rwp": rwp,
                     "r_wp": rwp,
                     "selection_method": case_method,
+                    "canonical_case": True,
                     "domain_version": "1.0.0",
                 },
             )
