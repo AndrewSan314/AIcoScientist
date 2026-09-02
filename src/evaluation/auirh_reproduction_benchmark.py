@@ -311,7 +311,9 @@ def run_auirh_reproduction_benchmark(
             (i, base_seed + i, init_indices[i], strat, target_name, library, total_budget)
             for i in range(n_seeds)
         ]
-        with ProcessPoolExecutor(max_workers=max_w) as executor:
+        import multiprocessing as mp
+        ctx = mp.get_context("spawn")
+        with ProcessPoolExecutor(max_workers=max_w, mp_context=ctx) as executor:
             for s_idx, traj in executor.map(_reproduction_worker, args_list):
                 traj_results[s_idx] = traj
 

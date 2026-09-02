@@ -285,7 +285,9 @@ def _execute_benchmark_jobs(
 
     if parallel and len(jobs) > 1:
         logger.info(f"Executing {expected_jobs_count} benchmark runs in parallel (max_workers=3)...")
-        with ProcessPoolExecutor(max_workers=3) as executor:
+        import multiprocessing as mp
+        ctx = mp.get_context("spawn")
+        with ProcessPoolExecutor(max_workers=3, mp_context=ctx) as executor:
             futures = {executor.submit(worker_fn, j): j for j in jobs}
             for f in as_completed(futures):
                 job_spec = futures[f]
