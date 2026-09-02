@@ -1,6 +1,6 @@
 # A-Lab Precursor Genome Real Dataset Audit
 
-**Audit Timestamp**: 2026-09-02T06:43:53.068360+00:00  
+**Audit Timestamp**: 2026-09-02T16:29:57.783345+00:00  
 **Source Dataset**: A-Lab Precursor Genome (`precursor_genome_2026`)  
 **Local Path**: `data/external/precursor_genome_2026`  
 
@@ -15,7 +15,10 @@
 
 - **Classified Synthesis Outcomes**: 1009 (97.5%)
 - **Unclassified Outcomes (Missing Reaction Categories)**: 26 (2.5%)
-- **Physical Failure Flag Presence**: 26 samples confirmed with `phases_unavailable_reason: 'physical_failure'` in raw ledger
+- **Physical Failure Records**: 26 samples with `physical_failure` metadata
+- **Phase Data Unavailable Due to Physical Failure**: 26 samples confirmed with `phases_unavailable_reason: 'physical_failure'`
+- **Unclassified and Physical Failure**: 26
+- **Unclassified without Physical Failure**: 0
 
 | Reaction Category | Count | Percentage | Utility Value |
 |---|---|---|---|
@@ -28,8 +31,16 @@
 ## 3. Physical Characterization Data Coverage & Canonical Usability
 
 - **Total Raw XRD Scans**: 1351 across 1035 samples (0 samples with 0 scans)
-- **Canonical XRD Resolvable & Usable for Replay**: 1035 / 1035 (100.0%)
-- **Canonical XRD Selection Methods**: {'ledger_active_scan_index': 1030, 'status_active_or_valid': 5}
+- **Canonical Scans vs Replay Fallbacks**:
+  - Ledger-canonical active scans: 1030
+  - Upstream-recomputed canonical scans: 0
+  - Deterministic replay-only fallback scans: 5
+  - Total replayable XRD: 1035 / 1035 (100.0%)
+  - Unusable XRD: 0
+- **Canonical XRD Selection Methods**: {'ledger_active_scan_index': 1030, 'replay_fallback_valid_scan': 5}
+- **XRD XML Parsable**: 1035 (0 malformed)
+- **Physical 2Theta Axis Extraction**: 1035 from XML positions, 0 from ledger settings, 0 missing
+- **XRD Intensity Counts**: 1035 valid, 0 missing
 - **Canonical Rietveld Refinements Usable for Replay**: 1030 / 1035 (99.5%)
 - **Refinement Source Breakdown**: 1030 structured ledger phase weights, 0 pickle artifacts, 5 missing
 - **Canonical Refinement Selection Methods**: {'ledger_active_case_index': 1030, 'no_refinement_cases': 5}

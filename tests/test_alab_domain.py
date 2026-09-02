@@ -692,3 +692,61 @@ def test_discovery_status_semantics_across_policies(alab_fixture_adapter):
     assert rec_pure.action.metadata["discovery_status"] == "not_applicable"
     assert rec_pure.uncertainty_summary["discovery_status"] == "not_applicable"
 
+
+def test_random_discovery_status_not_applicable(alab_fixture_adapter):
+    """Verifies that RANDOM policy sets discovery_status='not_applicable'."""
+    from scripts.run_alab_validation import RandomScientificPolicy
+    policy = RandomScientificPolicy(seed=42)
+    engine = ScientificDecisionEngine(domain=alab_fixture_adapter, policy=policy, seed=42)
+    engine.initialize(alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42))
+    rec = engine.propose_next_experiment()
+    assert rec.action.metadata["discovery_status"] == "not_applicable"
+    assert rec.uncertainty_summary["discovery_status"] == "not_applicable"
+    assert rec.action.metadata["degraded_mode"] is None
+
+
+def test_pure_falsification_discovery_status_not_applicable(alab_fixture_adapter):
+    """Verifies that PURE_FALSIFICATION policy sets discovery_status='not_applicable'."""
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        policy_mode=FalsificationPolicyMode.PURE_FALSIFICATION,
+        seed=42,
+    )
+    engine.initialize(alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42))
+    rec = engine.propose_next_experiment()
+    assert rec.action.metadata["discovery_status"] == "not_applicable"
+    assert rec.uncertainty_summary["discovery_status"] == "not_applicable"
+
+
+def test_hybrid_success_discovery_status_enabled(alab_fixture_adapter):
+    """Verifies that successful HYBRID policy sets discovery_status='enabled'."""
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=BoTorchBackend(),
+        policy_mode=FalsificationPolicyMode.HYBRID,
+        seed=42,
+    )
+    engine.initialize(alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42))
+    rec = engine.propose_next_experiment()
+    assert rec.action.metadata["discovery_status"] == "enabled"
+    assert rec.uncertainty_summary["discovery_status"] == "enabled"
+    assert rec.action.metadata["degraded_mode"] is None
+
+
+def test_hybrid_degraded_discovery_status_disabled_degraded(alab_fixture_adapter):
+    """Verifies that degraded HYBRID policy sets discovery_status='disabled_degraded'."""
+    class _FailingBackend:
+        def fit_and_score(self, *args, **kwargs):
+            raise RuntimeError("Simulated BoTorch optimization failure")
+
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=_FailingBackend(),
+        policy_mode=FalsificationPolicyMode.HYBRID,
+        seed=42,
+    )
+    engine.initialize(alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42))
+    rec = engine.propose_next_experiment()
+    assert rec.action.metadata["discovery_status"] == "disabled_degraded"
+    assert rec.uncertainty_summary["discovery_status"] == "disabled_degraded"
+    assert rec.action.metadata["degraded_mode"] == "epistemic_only"

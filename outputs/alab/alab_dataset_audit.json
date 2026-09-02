@@ -1,5 +1,5 @@
 {
-  "audit_timestamp": "2026-09-02T06:43:53.068360+00:00",
+  "audit_timestamp": "2026-09-02T16:29:57.783345+00:00",
   "dataset_identity": {
     "dataset_name": "A-Lab Precursor Genome",
     "dataset_key": "precursor_genome_2026",
@@ -23,6 +23,10 @@
     "classified_samples": 1009,
     "unclassified_samples": 26,
     "samples_with_physical_failure_field": 26,
+    "samples_with_physical_failure_record": 26,
+    "samples_with_phases_unavailable_due_to_physical_failure": 26,
+    "unclassified_and_physical_failure": 26,
+    "unclassified_without_physical_failure": 0,
     "category_distribution": {
       "completely_reacted": 143,
       "transformed": 384,
@@ -62,14 +66,18 @@
     "canonical_xrd_artifact_resolvable": 1035,
     "canonical_xrd_artifact_missing": 0,
     "canonical_xrd_xml_parsable": 1035,
-    "canonical_xrd_axis_from_xml": 0,
-    "canonical_xrd_axis_from_ledger_metadata": 1035,
+    "canonical_xrd_xml_malformed": 0,
+    "canonical_xrd_axis_from_xml": 1035,
+    "canonical_xrd_axis_from_ledger_metadata": 0,
     "canonical_xrd_axis_missing": 0,
     "canonical_xrd_intensity_missing": 0,
+    "canonical_xrd_preprocessing_failed": 0,
     "canonical_xrd_usable_for_replay": 1035,
+    "is_ledger_canonical_count": 1030,
+    "is_replay_fallback_count": 5,
     "scan_selection_methods": {
       "ledger_active_scan_index": 1030,
-      "status_active_or_valid": 5
+      "replay_fallback_valid_scan": 5
     }
   },
   "canonical_refinement_usability": {

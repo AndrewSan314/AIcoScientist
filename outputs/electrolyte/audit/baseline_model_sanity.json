@@ -1,0 +1,106 @@
+{
+  "feature_dimension": 22,
+  "features": [
+    "solv_ecfp_pca_0",
+    "solv_ecfp_pca_1",
+    "solv_ecfp_pca_2",
+    "solv_ecfp_pca_3",
+    "solv_ecfp_pca_4",
+    "solv_ecfp_pca_5",
+    "solv_ecfp_pca_6",
+    "solv_ecfp_pca_7",
+    "solv_ecfp_pca_8",
+    "solv_ecfp_pca_9",
+    "salt_ecfp_pca_0",
+    "salt_ecfp_pca_1",
+    "salt_ecfp_pca_2",
+    "salt_ecfp_pca_3",
+    "salt_ecfp_pca_4",
+    "salt_ecfp_pca_5",
+    "salt_ecfp_pca_6",
+    "salt_ecfp_pca_7",
+    "salt_ecfp_pca_8",
+    "salt_ecfp_pca_9",
+    "mol_wt_solv",
+    "mol_wt_salt"
+  ],
+  "batch0_n58_metrics": {
+    "Dummy (Mean)": {
+      "MAE": 0.2443,
+      "RMSE": 0.2757,
+      "R2": -0.0206,
+      "Spearman": -0.1721
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.2755,
+      "RMSE": 0.4166,
+      "R2": -1.3301,
+      "Spearman": 0.0853
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.1761,
+      "RMSE": 0.2205,
+      "R2": 0.347,
+      "Spearman": 0.4897
+    },
+    "Gaussian Process (Matern52)": {
+      "MAE": 0.1704,
+      "RMSE": 0.2164,
+      "R2": 0.3713,
+      "Spearman": 0.4744
+    }
+  },
+  "batches0_6_n199_metrics": {
+    "Dummy (Mean)": {
+      "MAE": 0.2675,
+      "RMSE": 0.2941,
+      "R2": -0.006,
+      "Spearman": -0.1299
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.1946,
+      "RMSE": 0.2373,
+      "R2": 0.345,
+      "Spearman": 0.6207
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.1142,
+      "RMSE": 0.1701,
+      "R2": 0.6635,
+      "Spearman": 0.7729
+    },
+    "Gaussian Process (Matern52)": {
+      "MAE": 0.1609,
+      "RMSE": 0.2242,
+      "R2": 0.4152,
+      "Spearman": 0.669
+    }
+  },
+  "all_batches_n208_metrics": {
+    "Dummy (Mean)": {
+      "MAE": 0.2751,
+      "RMSE": 0.3014,
+      "R2": -0.0071,
+      "Spearman": -0.0745
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.2002,
+      "RMSE": 0.2439,
+      "R2": 0.3405,
+      "Spearman": 0.6069
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.1211,
+      "RMSE": 0.1808,
+      "R2": 0.6378,
+      "Spearman": 0.7765
+    },
+    "Gaussian Process (Matern52)": {
+      "MAE": 0.1569,
+      "RMSE": 0.2232,
+      "R2": 0.4477,
+      "Spearman": 0.6788
+    }
+  },
+  "notes": "5-fold Cross-Validation with standard scaling. In N=208, Batch 7 features (9 rows) were retrieved from virtual_search_space_1million.csv."
+}
