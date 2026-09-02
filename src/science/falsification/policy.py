@@ -113,6 +113,7 @@ class FalsificationFirstPolicy:
         feature_cols: Sequence[str] | None = None,
         modality_definitions: Sequence[Any] | None = None,
         objective_definitions: Sequence[Any] | None = None,
+        degraded_mode: str | None = None,
     ) -> list[dict[str, Any]]:
         """Evaluates and ranks all valid candidate actions under current scientific hypotheses."""
         comp_cols = self._resolve_feature_cols(candidate_pool_df, feature_cols=feature_cols)
@@ -138,19 +139,21 @@ class FalsificationFirstPolicy:
             norm_type = normalize_action_type(action_type)
             if norm_type in mod_map:
                 m = mod_map[norm_type]
-                return getattr(m, "observation_kind", "") == "objective_measurement" or bool(getattr(m, "objective_names", ()))
-            return norm_type in ("PROPERTY", "CAPACITY_TEST")
+                return getattr(m, "is_target_property", False) or getattr(m, "observation_kind", "") in ("objective", "objective_measurement")
+            return norm_type in (ExperimentActionType.PROPERTY, "PROPERTY", "OUTCOME_TEST")
 
         candidate_actions: list[dict[str, Any]] = []
 
         if valid_actions is not None:
-            cand_map = {cid: comps[pos] for pos, cid in enumerate(cids)}
             for act in valid_actions:
                 cid = act.candidate_id
-                comp = cand_map.get(cid)
-                if comp is None:
+                if cid not in candidate_pool_df["candidate_id"].values:
                     continue
+
+                c_row = candidate_pool_df[candidate_pool_df["candidate_id"] == cid]
+                comp = c_row[comp_cols].iloc[0].to_numpy(dtype=np.float64)
                 obs_emb = xrd_embs_map.get(cid)
+
                 eval_res = self.hig_estimator.evaluate_action_discrimination(
                     candidate_id=cid,
                     action_type=act.action_type,
@@ -161,7 +164,11 @@ class FalsificationFirstPolicy:
                     fast_mode=fast_mode,
                     seed=seed,
                 )
-                raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+
+                raw_botorch_acq = 0.0
+                if _is_objective_action(act.action_type):
+                    raw_botorch_acq = float(disc_scores.get(cid, 0.0))
+
                 candidate_actions.append(
                     {
                         "candidate_id": cid,
@@ -195,6 +202,8 @@ class FalsificationFirstPolicy:
                         observed_modalities=observed_modalities_map,
                         fast_mode=fast_mode,
                         seed=seed,
+                        modality_definitions=modality_definitions,
+                        objective_definitions=objective_definitions,
                     )
                     candidate_actions.append(
                         {
@@ -224,6 +233,8 @@ class FalsificationFirstPolicy:
                         observed_modalities=observed_modalities_map,
                         fast_mode=fast_mode,
                         seed=seed,
+                        modality_definitions=modality_definitions,
+                        objective_definitions=objective_definitions,
                     )
                     raw_botorch_acq = float(disc_scores.get(cid, 0.0))
                     candidate_actions.append(
@@ -243,12 +254,13 @@ class FalsificationFirstPolicy:
                         }
                     )
 
-        return self._score_candidate_actions(candidate_actions, ensemble=ensemble)
+        return self._score_candidate_actions(candidate_actions, ensemble=ensemble, degraded_mode=degraded_mode)
 
     def _score_candidate_actions(
         self,
         candidate_actions: list[dict[str, Any]],
         ensemble: HypothesisEnsemble | None = None,
+        degraded_mode: str | None = None,
     ) -> list[dict[str, Any]]:
         """Scores and ranks candidate actions according to current policy mode and calibrated HIG."""
         if not candidate_actions:
@@ -296,9 +308,9 @@ class FalsificationFirstPolicy:
 
             # Discovery score normalization
             is_obj_action = _is_objective_action(a["action_type"])
-            if is_obj_action and prop_discs and max_p_disc > min_p_disc:
+            if is_obj_action and prop_discs and max_p_disc > min_p_disc and degraded_mode != "epistemic_only":
                 disc_norm = float((a["raw_disc"] - min_p_disc) / (max_p_disc - min_p_disc + 1e-12))
-            elif is_obj_action and a["raw_disc"] > 0.0:
+            elif is_obj_action and a["raw_disc"] > 0.0 and degraded_mode != "epistemic_only":
                 disc_norm = float(a["raw_disc"])
             else:
                 disc_norm = 0.0
@@ -309,15 +321,20 @@ class FalsificationFirstPolicy:
             if self.mode == FalsificationPolicyMode.PURE_FALSIFICATION:
                 total_val = float(raw_h / (a["raw_cost"] ** self.cost_exponent))
             elif self.mode == FalsificationPolicyMode.DISCOVERY_ONLY:
-                if is_obj_action:
+                if is_obj_action and degraded_mode != "epistemic_only":
                     total_val = float(disc_norm - 0.1 * cost_norm)
                 else:
-                    # Non-objective characterization actions cannot satisfy DISCOVERY_ONLY
+                    # Non-objective characterization actions or degraded discovery cannot satisfy DISCOVERY_ONLY
                     total_val = -1e9
-            else:  # HYBRID uses strictly absolute HIG
-                total_val = float(
-                    (self.w_hig * a["absolute_hig_normalized"]) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
-                )
+            else:  # HYBRID
+                if degraded_mode == "epistemic_only":
+                    total_val = float(
+                        (self.w_hig * a["absolute_hig_normalized"]) - (self.w_cost * cost_norm)
+                    )
+                else:
+                    total_val = float(
+                        (self.w_hig * a["absolute_hig_normalized"]) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
+                    )
 
             a["total_value"] = total_val
             a["normalized_disc"] = disc_norm
@@ -343,11 +360,12 @@ class FalsificationFirstPolicy:
         step: int = 0,
         valid_actions: Sequence[ScientificAction] | None = None,
         feature_cols: Sequence[str] | None = None,
-        modality_definitions: Sequence[Any] | None = None,
-        objective_definitions: Sequence[Any] | None = None,
+        modality_definitions: Sequence[ModalityDefinition] | None = None,
+        objective_definitions: Sequence[ObjectiveDefinition] | None = None,
         domain_id: str | None = None,
+        degraded_mode: str | None = None,
     ) -> ActionRecommendation:
-        """Selects top-ranked next experiment, generating contrastive counterfactuals and falsification criteria."""
+        """Recommends next scientific experiment balancing discovery, falsification, and cost."""
         if ensemble is None:
             ensemble = HypothesisEnsemble()
 
@@ -389,6 +407,8 @@ class FalsificationFirstPolicy:
                 "policy_mode": self.mode.value,
                 "hypothesis_id": dominant_h,
                 "domain_id": domain_id or "generic",
+                "discovery_status": "disabled" if degraded_mode == "epistemic_only" else "enabled",
+                "degraded_mode": degraded_mode,
             },
         )
 
@@ -488,6 +508,8 @@ class FalsificationFirstPolicy:
                 "structure_disagreement": top["structure_disagreement"],
                 "observation_disagreement": top.get("observation_disagreement", top["property_disagreement"]),
                 "disagreement_by_modality": top.get("disagreement_by_modality", {}),
+                "discovery_status": "disabled" if degraded_mode == "epistemic_only" else "enabled",
+                "degraded_mode": degraded_mode,
             },
             alternatives=alternatives,
             domain_id=domain_id,

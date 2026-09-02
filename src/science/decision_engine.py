@@ -339,12 +339,22 @@ class ScientificDecisionEngine:
                         candidate_id_column="candidate_id",
                         seed=self.seed + self.step,
                     )
-                    self.last_optimizer_status = {
-                        "used": True,
-                        "success": True,
-                        "reason": "OK",
-                        "num_scored": len(disc_scores),
-                    }
+                    if not disc_scores:
+                        self.last_optimizer_status = {
+                            "used": True,
+                            "success": False,
+                            "reason": "Optimizer returned zero scored candidates",
+                            "num_scored": 0,
+                            "degraded_mode": "epistemic_only",
+                        }
+                    else:
+                        self.last_optimizer_status = {
+                            "used": True,
+                            "success": True,
+                            "reason": "OK",
+                            "num_scored": len(disc_scores),
+                            "degraded_mode": None,
+                        }
                 except Exception as e:
                     logger.warning("Optimizer backend acquisition evaluation notice in domain '%s': %s", self.domain_id, e)
                     self.last_optimizer_status = {
@@ -352,6 +362,7 @@ class ScientificDecisionEngine:
                         "success": False,
                         "reason": str(e),
                         "num_scored": 0,
+                        "degraded_mode": "epistemic_only",
                     }
                     disc_scores = {}
             else:
@@ -360,10 +371,20 @@ class ScientificDecisionEngine:
                     "success": False,
                     "reason": f"Insufficient objective observations ({len(obj_obs)} < 3)",
                     "num_scored": 0,
+                    "degraded_mode": "epistemic_only",
                 }
+                disc_scores = {}
 
-        if self.policy.mode == FalsificationPolicyMode.DISCOVERY_ONLY and self.optimizer_backend is None:
-            raise RuntimeError("DISCOVERY_ONLY requires a functioning optimizer backend")
+        if self.policy.mode == FalsificationPolicyMode.DISCOVERY_ONLY:
+            if self.optimizer_backend is None:
+                raise RuntimeError("DISCOVERY_ONLY requires a functioning optimizer backend")
+            if not self.last_optimizer_status.get("used"):
+                raise RuntimeError("DISCOVERY_ONLY requires optimizer backend to be used")
+            if not self.last_optimizer_status.get("success"):
+                reason = self.last_optimizer_status.get("reason", "unknown error")
+                raise RuntimeError(f"DISCOVERY_ONLY unavailable: {reason}")
+            if self.last_optimizer_status.get("num_scored", 0) <= 0:
+                raise RuntimeError("DISCOVERY_ONLY requires at least one scored candidate from optimizer backend")
 
         # Policy recommendation
         rec = self.policy.recommend_next_experiment(
@@ -379,13 +400,21 @@ class ScientificDecisionEngine:
             modality_definitions=self.modalities,
             objective_definitions=self.objectives,
             domain_id=self.domain_id,
+            degraded_mode=self.last_optimizer_status.get("degraded_mode"),
         )
 
         if self.last_optimizer_status.get("degraded_mode") == "epistemic_only":
             rec.action.metadata["discovery_status"] = "disabled"
+            rec.action.metadata["degraded_mode"] = "epistemic_only"
             if rec.uncertainty_summary is not None:
                 rec.uncertainty_summary["discovery_status"] = "disabled"
                 rec.uncertainty_summary["degraded_mode"] = "epistemic_only"
+        else:
+            rec.action.metadata["discovery_status"] = "enabled"
+            rec.action.metadata["degraded_mode"] = None
+            if rec.uncertainty_summary is not None:
+                rec.uncertainty_summary["discovery_status"] = "enabled"
+                rec.uncertainty_summary["degraded_mode"] = None
         self._last_recommendation = rec
 
         # Create proposal record in ledger with PROPOSED stage

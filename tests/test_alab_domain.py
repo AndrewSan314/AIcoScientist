@@ -506,3 +506,108 @@ def test_discovery_only_fails_or_reports_degraded_when_optimizer_unavailable(ala
     engine.initialize(init_actions)
     with pytest.raises(RuntimeError, match="DISCOVERY_ONLY requires a functioning optimizer backend"):
         engine.propose_next_experiment()
+
+
+def test_discovery_only_fails_with_insufficient_objective_observations(alab_fixture_adapter):
+    """Verifies that DISCOVERY_ONLY fails closed when < 3 objective observations exist."""
+    from unittest.mock import MagicMock
+
+    mock_opt = MagicMock()
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=mock_opt,
+        policy_mode=FalsificationPolicyMode.DISCOVERY_ONLY,
+        seed=42,
+    )
+    # Initialize with only 1 candidate (1 XRD + 1 OUTCOME = 1 objective observation)
+    init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=1, pairing_strategy="joint", seed=42)
+    engine.initialize(init_actions)
+
+    with pytest.raises(RuntimeError, match="DISCOVERY_ONLY unavailable: Insufficient objective observations"):
+        engine.propose_next_experiment()
+
+
+def test_discovery_only_fails_when_optimizer_scoring_fails(alab_fixture_adapter):
+    """Verifies that DISCOVERY_ONLY fails closed when optimizer backend raises an exception."""
+    from unittest.mock import MagicMock
+
+    mock_opt = MagicMock()
+    mock_opt.score_candidates.side_effect = RuntimeError("BoTorch GP fitting failed")
+
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=mock_opt,
+        policy_mode=FalsificationPolicyMode.DISCOVERY_ONLY,
+        seed=42,
+    )
+    init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42)
+    engine.initialize(init_actions)
+
+    with pytest.raises(RuntimeError, match="DISCOVERY_ONLY unavailable: BoTorch GP fitting failed"):
+        engine.propose_next_experiment()
+
+
+def test_discovery_only_fails_with_zero_scored_candidates(alab_fixture_adapter):
+    """Verifies that DISCOVERY_ONLY fails closed when optimizer backend returns empty scores."""
+    from unittest.mock import MagicMock
+
+    mock_opt = MagicMock()
+    mock_opt.score_candidates.return_value = {}
+
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=mock_opt,
+        policy_mode=FalsificationPolicyMode.DISCOVERY_ONLY,
+        seed=42,
+    )
+    init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42)
+    engine.initialize(init_actions)
+
+    with pytest.raises(RuntimeError, match="DISCOVERY_ONLY unavailable"):
+        engine.propose_next_experiment()
+
+
+def test_hybrid_enters_explicit_epistemic_degraded_mode(alab_fixture_adapter):
+    """Verifies that HYBRID enters explicit epistemic degraded mode when optimizer backend fails."""
+    from unittest.mock import MagicMock
+
+    mock_opt = MagicMock()
+    mock_opt.score_candidates.side_effect = RuntimeError("CUDA OOM or scoring error")
+
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=mock_opt,
+        policy_mode=FalsificationPolicyMode.HYBRID,
+        seed=42,
+    )
+    init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert engine.last_optimizer_status["success"] is False
+    assert engine.last_optimizer_status["degraded_mode"] == "epistemic_only"
+    assert rec.action.metadata["discovery_status"] == "disabled"
+    assert rec.action.metadata["degraded_mode"] == "epistemic_only"
+    assert rec.uncertainty_summary["discovery_status"] == "disabled"
+    assert rec.uncertainty_summary["degraded_mode"] == "epistemic_only"
+
+
+def test_successful_hybrid_has_discovery_enabled(alab_fixture_adapter):
+    """Verifies that HYBRID marks discovery as enabled and degraded_mode as None upon optimizer success."""
+    engine = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        optimizer_backend=BoTorchBackend(),
+        policy_mode=FalsificationPolicyMode.HYBRID,
+        seed=42,
+    )
+    init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert engine.last_optimizer_status["success"] is True
+    assert engine.last_optimizer_status["degraded_mode"] is None
+    assert rec.action.metadata["discovery_status"] == "enabled"
+    assert rec.action.metadata["degraded_mode"] is None
+    assert rec.uncertainty_summary["discovery_status"] == "enabled"
+    assert rec.uncertainty_summary["degraded_mode"] is None
+
