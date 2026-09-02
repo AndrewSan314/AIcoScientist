@@ -143,6 +143,8 @@ class ALabArtifactIndex:
             else:
                 samples = []
 
+        from src.domains.alab.canonical import get_canonical_refinement_case, get_canonical_scan
+
         self._index.clear()
         for s in samples:
             sid = s.get("sample_id")
@@ -150,9 +152,17 @@ class ALabArtifactIndex:
                 continue
             self._index[sid] = {}
 
-            # Match XRD scan
-            scans = s.get("characterization", {}).get("xrd", {}).get("scans", [])
-            for sc in scans:
+            # 1. Match canonical XRD scan
+            can_scan, can_scan_idx, _ = get_canonical_scan(s)
+            matched_xrd = False
+            candidate_scans = [can_scan] if can_scan else []
+            # Append other scans as fallbacks
+            all_scans = s.get("characterization", {}).get("xrd", {}).get("scans", [])
+            for sc in all_scans:
+                if sc not in candidate_scans:
+                    candidate_scans.append(sc)
+
+            for sc in candidate_scans:
                 fn = sc.get("filename", "")
                 base = os.path.basename(fn)
                 if fn in xrd_members:
@@ -164,6 +174,7 @@ class ALabArtifactIndex:
                         size_bytes=sz,
                         checksum=manifest_checksums.get("raw_scans.zip"),
                     )
+                    matched_xrd = True
                     break
                 elif base in xrd_members:
                     mem_path, sz = xrd_members[base]
@@ -174,34 +185,45 @@ class ALabArtifactIndex:
                         size_bytes=sz,
                         checksum=manifest_checksums.get("raw_scans.zip"),
                     )
+                    matched_xrd = True
                     break
 
-            # Match Refinement PKL
-            for sc in scans:
-                for rc in sc.get("refinement_cases", []):
-                    pkl = rc.get("pkl_path", "")
-                    base_pkl = os.path.basename(pkl)
-                    if pkl in ref_members:
-                        mem_path, sz = ref_members[pkl]
-                        self._index[sid]["REFINEMENT"] = ArtifactRef(
-                            archive_path=ref_zip,
-                            member_path=mem_path,
-                            modality="REFINEMENT",
-                            size_bytes=sz,
-                            checksum=manifest_checksums.get("refinement_pkls.zip"),
-                        )
-                        break
-                    elif base_pkl in ref_members:
-                        mem_path, sz = ref_members[base_pkl]
-                        self._index[sid]["REFINEMENT"] = ArtifactRef(
-                            archive_path=ref_zip,
-                            member_path=mem_path,
-                            modality="REFINEMENT",
-                            size_bytes=sz,
-                            checksum=manifest_checksums.get("refinement_pkls.zip"),
-                        )
-                        break
-                if "REFINEMENT" in self._index[sid]:
+            # 2. Match canonical Refinement PKL
+            can_case, can_case_idx, _ = get_canonical_refinement_case(can_scan)
+            candidate_cases = [can_case] if can_case else []
+            # Append other cases as fallback
+            if can_scan:
+                for rc in can_scan.get("refinement_cases", []):
+                    if rc not in candidate_cases:
+                        candidate_cases.append(rc)
+            for sc in all_scans:
+                if sc != can_scan:
+                    for rc in sc.get("refinement_cases", []):
+                        if rc not in candidate_cases:
+                            candidate_cases.append(rc)
+
+            for rc in candidate_cases:
+                pkl = rc.get("pkl_path", "")
+                base_pkl = os.path.basename(pkl)
+                if pkl in ref_members:
+                    mem_path, sz = ref_members[pkl]
+                    self._index[sid]["REFINEMENT"] = ArtifactRef(
+                        archive_path=ref_zip,
+                        member_path=mem_path,
+                        modality="REFINEMENT",
+                        size_bytes=sz,
+                        checksum=manifest_checksums.get("refinement_pkls.zip"),
+                    )
+                    break
+                elif base_pkl in ref_members:
+                    mem_path, sz = ref_members[base_pkl]
+                    self._index[sid]["REFINEMENT"] = ArtifactRef(
+                        archive_path=ref_zip,
+                        member_path=mem_path,
+                        modality="REFINEMENT",
+                        size_bytes=sz,
+                        checksum=manifest_checksums.get("refinement_pkls.zip"),
+                    )
                     break
 
     def _save_cache(self, cache_file: str, signature: dict[str, Any] | None = None) -> None:

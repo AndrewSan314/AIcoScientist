@@ -83,6 +83,9 @@ def are_chemically_equivalent(formula_a: str, formula_b: str, tol: float = 0.02)
     return all(abs(comp_a[el] - comp_b[el]) <= tol for el in comp_a)
 
 
+from src.domains.alab.canonical import normalize_phase_weights
+
+
 def parse_refinement_phases(
     phase_weights: Mapping[str, float],
     target_formula: str,
@@ -99,11 +102,13 @@ def parse_refinement_phases(
     - num_identified_phases: total phase count
     - rwp_scaled: Rwp scaled to [0, 1] range (rwp / 10.0)
     """
+    norm_weights, residual, unit_detected = normalize_phase_weights(phase_weights)
+
     target_frac = 0.0
     precursor_frac = 0.0
     other_frac = 0.0
 
-    for phase_name, weight in phase_weights.items():
+    for phase_name, weight in norm_weights.items():
         w = float(weight)
         if are_chemically_equivalent(phase_name, target_formula):
             target_frac += w
@@ -115,8 +120,8 @@ def parse_refinement_phases(
     target_frac = float(max(0.0, min(1.0, target_frac)))
     precursor_frac = float(max(0.0, min(1.0, precursor_frac)))
     other_frac = float(max(0.0, min(1.0, other_frac)))
-    unknown_frac = float(max(0.0, 1.0 - (target_frac + precursor_frac + other_frac)))
-    rwp_scaled = float(max(0.0, min(2.0, rwp / 10.0)))
+    unknown_frac = float(max(0.0, min(1.0, 1.0 - (target_frac + precursor_frac + other_frac))))
+    rwp_scaled = float(max(0.0, min(2.0, float(rwp) / 10.0)))
 
     # Canonical 4-dimensional standardized refinement vector:
     # [target_phase_fraction, precursor_phase_fraction, other_phase_fraction, rwp_scaled]
@@ -127,9 +132,10 @@ def parse_refinement_phases(
         "precursor_phase_fraction": precursor_frac,
         "other_identified_phase_fraction": other_frac,
         "unknown_phase_fraction": unknown_frac,
-        "num_identified_phases": len(phase_weights),
+        "num_identified_phases": len(norm_weights),
         "rwp": float(rwp),
         "rwp_scaled": rwp_scaled,
         "feature_vector": feature_vector,
-        "phase_weights": {str(k): float(v) for k, v in phase_weights.items()},
+        "phase_weights": norm_weights,
+        "phase_weight_unit": unit_detected,
     }

@@ -1,5 +1,5 @@
 {
-  "audit_timestamp": "2026-09-01T18:33:21.527569+00:00",
+  "audit_timestamp": "2026-09-02T04:10:46.024879+00:00",
   "dataset_identity": {
     "dataset_name": "A-Lab Precursor Genome",
     "dataset_key": "precursor_genome_2026",
@@ -14,20 +14,48 @@
     "total_candidates": 1035,
     "unique_candidates": 1035,
     "is_unique": true,
-    "precursor_count_per_candidate": 2,
-    "unique_precursors": 0,
+    "unique_precursors_in_dataset": 46,
     "canonical_precursors_defined": 46,
     "unique_target_compounds": 1032
   },
+  "outcome_semantics": {
+    "total_samples": 1035,
+    "classified_samples": 1009,
+    "unclassified_samples": 26,
+    "category_distribution": {
+      "completely_reacted": 143,
+      "transformed": 384,
+      "partially_reacted": 113,
+      "unreacted": 369,
+      "unclassified": 26
+    },
+    "utility_mapping": {
+      "completely_reacted": 1.0,
+      "transformed": 0.75,
+      "partially_reacted": 0.5,
+      "unreacted": 0.0,
+      "unclassified": null
+    }
+  },
+  "characterization_coverage": {
+    "total_scans": 1351,
+    "samples_with_scans": 1035,
+    "samples_with_no_scans": 0,
+    "active_scan_distribution": {
+      "0": 900,
+      "1": 108,
+      "2": 22
+    },
+    "total_refinements": 1950,
+    "samples_with_refinements": 1030,
+    "phase_weight_units_distribution": {
+      "percentage": 0,
+      "fraction": 1950,
+      "unknown": 0
+    }
+  },
   "information_firewall_classification": {
     "pre_experiment_features": [
-      "sample_id",
-      "precursor_1_formula",
-      "precursor_2_formula",
-      "target_compound",
-      "heating_temperature_c",
-      "heating_time_minutes",
-      "reaction_energy_ev_per_atom",
       "reaction_energy_ev_per_atom",
       "heating_temperature_scaled",
       "heating_time_scaled",
@@ -78,57 +106,11 @@
       "prec_ZnO",
       "prec_ZrO2"
     ],
-    "hidden_post_experiment_modalities": [
-      "raw_xrd_scan (2theta intensity pattern on 450-pt grid)",
-      "xrd_refinement_cases (rwp, phase_weights, cif_names)",
-      "reaction_outcome_utility (ordinal decision utility)",
-      "phases (observed crystal phase weight fractions)"
+    "hidden_experimental_modalities": [
+      "XRD (2theta raw diffraction scan resampled to 450-pt grid)",
+      "REFINEMENT (Rietveld phase fractions matching target compound stoichiometry)",
+      "OUTCOME_TEST (Ordinal synthesis outcome utility: completely_reacted=1.0, transformed=0.75, partially_reacted=0.5, unreacted=0.0)"
     ],
-    "precursor_characterization_references": [
-      "sem_precursor_images (342 images)",
-      "eds_precursor_quantification (242 tables/spectra)"
-    ]
-  },
-  "experimental_modalities": {
-    "XRD": {
-      "description": "Powder X-ray diffraction scan standardized on 450-point 10-100 deg 2theta grid",
-      "available_samples": 1035,
-      "total_samples": 1035,
-      "coverage_pct": 100.0,
-      "archive": "raw_scans.zip",
-      "cost": 1.0
-    },
-    "REFINEMENT": {
-      "description": "Rietveld structural phase refinement with deterministic chemical formula matching",
-      "available_samples": 1030,
-      "total_samples": 1035,
-      "coverage_pct": 99.52,
-      "archive": "refinement_pkls.zip / ledger cases",
-      "requires": [
-        "XRD"
-      ],
-      "cost": 0.5
-    },
-    "OUTCOME_TEST": {
-      "description": "Synthesis outcome verification (ordinal decision utility: completely_reacted=1.0, transformed=0.75, partially_reacted=0.5, unreacted=0.0)",
-      "available_samples": 0,
-      "unlabeled_samples": 1035,
-      "total_samples": 1035,
-      "coverage_pct": 0.0,
-      "cost": 2.0
-    }
-  },
-  "objective_definition": {
-    "name": "reaction_outcome_utility",
-    "semantic_type": "ordinal_decision_utility",
-    "direction": "MAXIMIZE",
-    "range": [
-      0.0,
-      1.0
-    ],
-    "threshold": 0.8,
-    "category_distribution": {
-      "unlabeled": 1035
-    }
+    "firewall_guarantee": "Unrevealed experimental modalities and outcomes are strictly inaccessible to candidate feature extraction."
   }
 }

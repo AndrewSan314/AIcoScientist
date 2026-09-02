@@ -49,5 +49,6 @@ XRD_dataset/
 outputs/test_tmp/
 outputs/**/*trajectories.csv
 outputs/**/*per_step.csv
+outputs/**/cache/
 scratch/
 *.pdf

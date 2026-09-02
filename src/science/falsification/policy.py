@@ -273,15 +273,26 @@ class FalsificationFirstPolicy:
         scored_actions: list[dict[str, Any]] = []
         for a in candidate_actions:
             raw_h = float(max(0.0, a["raw_hig"]))
-            # Calibrated HIG normalization:
-            # If significant hypothesis discrimination exists across action candidates, use min-max scaling.
-            # Otherwise, scale against theoretical maximum info to prevent inflating near-zero (e.g. 1e-9) nats to 1.0.
-            if max_hig > 0.01 and max_hig > min_hig:
-                hig_norm = float((raw_h - min_hig) / (max_hig - min_hig + 1e-12))
-            elif max_hig > 1e-6:
-                hig_norm = float(np.clip(raw_h / (max_possible_info + 1e-12), 0.0, 1.0))
+            a["raw_hig_nats"] = raw_h
+
+            # Absolute HIG calibration: independent of candidate action pool composition
+            frac_max_info = float(np.clip(raw_h / (max_possible_info + 1e-12), 0.0, 1.0))
+            a["fraction_of_max_hypothesis_information"] = frac_max_info
+            a["absolute_hig_normalized"] = frac_max_info
+            a["normalized_hig"] = frac_max_info  # Backward compatibility alias
+
+            current_ent = float(a.get("current_entropy", 0.0) or 0.0)
+            if current_ent > 1e-6:
+                frac_ent_resolved = float(np.clip(raw_h / current_ent, 0.0, 1.0))
             else:
-                hig_norm = 0.0
+                frac_ent_resolved = 0.0
+            a["fraction_of_remaining_entropy_resolved"] = frac_ent_resolved
+
+            # Relative HIG rank across currently available actions
+            if max_hig > min_hig:
+                a["relative_hig_rank"] = float((raw_h - min_hig) / (max_hig - min_hig + 1e-12))
+            else:
+                a["relative_hig_rank"] = 0.0
 
             # Discovery score normalization
             is_obj_action = _is_objective_action(a["action_type"])
@@ -296,20 +307,19 @@ class FalsificationFirstPolicy:
 
             # Score by policy mode
             if self.mode == FalsificationPolicyMode.PURE_FALSIFICATION:
-                total_val = float(a["raw_hig"] / (a["raw_cost"] ** self.cost_exponent))
+                total_val = float(raw_h / (a["raw_cost"] ** self.cost_exponent))
             elif self.mode == FalsificationPolicyMode.DISCOVERY_ONLY:
                 if is_obj_action:
                     total_val = float(disc_norm - 0.1 * cost_norm)
                 else:
                     # Non-objective characterization actions cannot satisfy DISCOVERY_ONLY
                     total_val = -1e9
-            else:  # HYBRID
+            else:  # HYBRID uses strictly absolute HIG
                 total_val = float(
-                    (self.w_hig * hig_norm) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
+                    (self.w_hig * a["absolute_hig_normalized"]) + (self.w_disc * disc_norm) - (self.w_cost * cost_norm)
                 )
 
             a["total_value"] = total_val
-            a["normalized_hig"] = hig_norm
             a["normalized_disc"] = disc_norm
             a["normalized_cost"] = cost_norm
             a["cost_penalty"] = float(self.w_cost * cost_norm)
@@ -441,10 +451,10 @@ class FalsificationFirstPolicy:
             f"under policy mode '{self.mode.value}'."
         )
 
-        # Supporting evidence string list
+        unit_label = f" ({primary_obj_units})" if primary_obj_units else ""
         evidence = [
             f"Expected HIG: {top['raw_hig']:.4f} nats",
-            f"Property disagreement: {top['property_disagreement']:.6f}",
+            f"Domain objective {primary_obj_name}{unit_label} disagreement: {top['property_disagreement']:.6f}",
             f"Structure disagreement: {top['structure_disagreement']:.4f}",
         ]
         for hid, pred in top["predictions"].items():
@@ -467,6 +477,11 @@ class FalsificationFirstPolicy:
             supporting_evidence=evidence,
             uncertainty_summary={
                 "hypothesis_information_gain": top["raw_hig"],
+                "raw_hig_nats": top["raw_hig_nats"],
+                "absolute_hig_normalized": top["absolute_hig_normalized"],
+                "relative_hig_rank": top["relative_hig_rank"],
+                "fraction_of_max_hypothesis_information": top["fraction_of_max_hypothesis_information"],
+                "fraction_of_remaining_entropy_resolved": top["fraction_of_remaining_entropy_resolved"],
                 "current_entropy": top["current_entropy"],
                 "expected_posterior_entropy": top["expected_entropy"],
                 "property_disagreement": top["property_disagreement"],

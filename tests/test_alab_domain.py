@@ -495,7 +495,7 @@ def test_alab_hybrid_contains_nonzero_discovery_scores(alab_fixture_adapter):
 
 
 def test_discovery_only_fails_or_reports_degraded_when_optimizer_unavailable(alab_fixture_adapter):
-    """Verifies that DISCOVERY_ONLY without optimizer degrades safely."""
+    """Verifies that DISCOVERY_ONLY without optimizer fails closed with RuntimeError."""
     engine = ScientificDecisionEngine(
         domain=alab_fixture_adapter,
         optimizer_backend=None,
@@ -504,5 +504,5 @@ def test_discovery_only_fails_or_reports_degraded_when_optimizer_unavailable(ala
     )
     init_actions = alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42)
     engine.initialize(init_actions)
-    rec = engine.propose_next_experiment()
-    assert rec.action is not None
+    with pytest.raises(RuntimeError, match="DISCOVERY_ONLY requires a functioning optimizer backend"):
+        engine.propose_next_experiment()

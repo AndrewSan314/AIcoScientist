@@ -13,6 +13,7 @@ import pandas as pd
 
 from src.domains.alab.artifact_index import ALabArtifactIndex, ArtifactRef
 from src.domains.alab.chemistry import parse_chemical_formula, parse_refinement_phases
+from src.domains.alab.canonical import get_canonical_refinement_case, get_canonical_scan
 from src.domains.alab.config import (
     ALAB_CANONICAL_PRECURSORS,
     ALAB_CANDIDATE_FEATURE_NAMES,
@@ -204,8 +205,15 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
     def get_hypothesis_provider(self) -> HypothesisProvider:
         return self._hypothesis_provider
 
+    def has_revealable_outcome(self, candidate_id: str) -> bool:
+        """Determines whether a candidate has an experimentally classified reaction outcome."""
+        sample = self._samples_by_id.get(str(candidate_id), {})
+        outcome = sample.get("outcome") or {}
+        cat = outcome.get("reaction_category")
+        return cat is not None and str(cat).strip().lower() != "none"
+
     def list_valid_actions(self) -> list[ScientificAction]:
-        """Lists currently eligible actions enforcing prerequisite: REFINEMENT requires XRD."""
+        """Lists currently eligible actions enforcing prerequisites and outcome availability."""
         actions: list[ScientificAction] = []
         if self._candidate_pool_df is None or self._candidate_pool_df.empty:
             return actions
@@ -223,11 +231,12 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     )
                 )
 
-            # 2. REFINEMENT action (strictly requires completed XRD on cid and available refinement data)
+            # 2. REFINEMENT action (strictly requires completed XRD on cid and canonical/artifact refinement data)
             sample_obj = self._samples_by_id.get(cid, {})
-            scans = sample_obj.get("characterization", {}).get("xrd", {}).get("scans", [])
+            can_scan, _, _ = get_canonical_scan(sample_obj)
+            can_case, _, _ = get_canonical_refinement_case(can_scan)
             has_ref = (
-                (bool(scans) and bool(scans[0].get("refinement_cases")))
+                can_case is not None
                 or self._artifact_index.get_artifact_ref(cid, "REFINEMENT") is not None
             )
             if cid in self._revealed_xrd_spectra and cid not in self._revealed_refinements and has_ref:
@@ -241,8 +250,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     )
                 )
 
-            # 3. OUTCOME_TEST action (if not yet tested)
-            if cid not in self._revealed_outcomes:
+            # 3. OUTCOME_TEST action (strictly if outcome is classified in ledger and not yet tested)
+            if cid not in self._revealed_outcomes and self.has_revealable_outcome(cid):
                 actions.append(
                     ScientificAction(
                         action_id=f"OUTCOME_{cid}",
@@ -276,8 +285,7 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 "unreacted": 0.0,
             }
 
-            if cat is None:
-                # Unlabeled / physical failure outcome
+            if cat is None or str(cat).strip().lower() == "none":
                 utility_val = None
                 is_labeled = False
                 canonical_obs = None
@@ -323,8 +331,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 raise ValueError(f"Malformed XRD XML file for candidate '{cid}': {e}") from e
 
             # Extract physical 2theta axis start and end positions
-            start_pos = 10.0
-            end_pos = 100.0
+            start_pos: float | None = None
+            end_pos: float | None = None
             for elem in root.iter():
                 if elem.tag.endswith("positions") and elem.attrib.get("axis") == "2Theta":
                     for child in elem:
@@ -332,6 +340,31 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                             start_pos = float(child.text.strip())
                         elif child.tag.endswith("endPosition") and child.text:
                             end_pos = float(child.text.strip())
+                elif elem.tag.endswith("startPosition") and elem.text and start_pos is None:
+                    try:
+                        start_pos = float(elem.text.strip())
+                    except (ValueError, TypeError):
+                        pass
+                elif elem.tag.endswith("endPosition") and elem.text and end_pos is None:
+                    try:
+                        end_pos = float(elem.text.strip())
+                    except (ValueError, TypeError):
+                        pass
+
+            can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
+            # If 2theta axis missing in XML, check explicit scan metadata from canonical scan
+            if start_pos is None or end_pos is None:
+                xrd_settings = (can_scan or {}).get("xrd_settings", {})
+                r2t = xrd_settings.get("range_2theta")
+                if isinstance(r2t, (list, tuple)) and len(r2t) == 2:
+                    start_pos = float(r2t[0])
+                    end_pos = float(r2t[1])
+
+            if start_pos is None or end_pos is None:
+                raise ValueError(
+                    f"Missing physical 2Theta axis metadata for XRD scan of candidate '{cid}'. "
+                    f"Neither XML positions nor xrd_settings.range_2theta provide axis limits."
+                )
 
             # Extract raw intensities / counts
             intensities: list[float] = []
@@ -381,6 +414,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     "member_size_bytes": ref.size_bytes,
                     "archive_checksum": ref.checksum,
                     "preprocessing_version": "physical_2theta_v1",
+                    "selected_scan_index": can_scan_idx,
+                    "selection_method": scan_method,
                     "representation_id": "alab_xrd_pca",
                     "representation_version": snapshot.version if snapshot else 0,
                     "representation_fingerprint": snapshot.fingerprint if snapshot else None,
@@ -396,17 +431,19 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             target_compound = str(sample.get("target_compound", ""))
             precursors = [p.get("formula", "") if isinstance(p, dict) else str(p) for p in sample.get("precursors", [])]
 
-            # 1. Prefer structured refinement data in ledger
-            xrd_data = sample.get("characterization", {}).get("xrd", {})
-            scans = xrd_data.get("scans", [])
+            # 1. Prefer structured refinement data from canonical scan & case in ledger
+            can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
+            can_case, can_case_idx, case_method = get_canonical_refinement_case(can_scan)
+
             phase_weights: dict[str, float] = {}
             rwp = 5.0
+            rank = None
             used_source = "ledger"
 
-            if scans and len(scans) > 0 and scans[0].get("refinement_cases"):
-                ref_case = scans[0]["refinement_cases"][0]
-                phase_weights = {str(k): float(v) for k, v in ref_case.get("phase_weights", {}).items()}
-                rwp = float(ref_case.get("rwp", 5.0))
+            if can_case is not None:
+                phase_weights = {str(k): float(v) for k, v in can_case.get("phase_weights", {}).items()}
+                rwp = float(can_case.get("rwp", 5.0) or 5.0)
+                rank = can_case.get("rank")
             else:
                 # 2. Fallback to reading pickle artifact
                 ref = self._artifact_index.get_artifact_ref(cid, "REFINEMENT")
@@ -422,9 +459,11 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 if isinstance(pkl_data, dict):
                     phase_weights = pkl_data.get("phase_weights", {})
                     rwp = float(pkl_data.get("best_rwp", 5.0))
+                    rank = pkl_data.get("rank")
                 else:
                     phase_weights = getattr(pkl_data, "phase_weights", {})
                     rwp = float(getattr(pkl_data, "best_rwp", 5.0))
+                    rank = getattr(pkl_data, "rank", None)
                 used_source = "pickle_artifact"
 
             if not isinstance(phase_weights, dict):
@@ -449,9 +488,16 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                 canonical_observation=ref_vec,
                 provenance={
                     "dataset": "A-Lab Precursor Genome",
+                    "dataset_key": "precursor_genome_2026",
                     "execution_mode": "offline_replay",
                     "sample_id": cid,
                     "refinement_source": used_source,
+                    "selected_scan_index": can_scan_idx,
+                    "selected_case_index": can_case_idx,
+                    "refinement_rank": rank,
+                    "r_wp": rwp,
+                    "selection_method": case_method,
+                    "domain_version": "1.0.0",
                 },
             )
 
@@ -521,10 +567,11 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
 
         rng = np.random.default_rng(seed)
         all_cids = list(self._candidate_pool_df["candidate_id"])
-        # Filter for candidates that actually have an XRD artifact available
+        # Filter for candidates that have an XRD artifact available and revealable outcome for joint pairing
         valid_cids = [
             cid for cid in all_cids
             if self._artifact_index.get_artifact_ref(cid, "XRD") is not None
+            and (pairing_strategy != "joint" or self.has_revealable_outcome(cid))
         ]
         if not valid_cids:
             valid_cids = all_cids

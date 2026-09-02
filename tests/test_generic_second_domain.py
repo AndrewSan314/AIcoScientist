@@ -634,10 +634,12 @@ def test_initial_baseline_evidence_is_not_falsely_recorded_as_new_autonomous_pro
 def test_controlled_three_policy_selection_behavior() -> None:
     """Verifies distinct behavior across DISCOVERY_ONLY, PURE_FALSIFICATION, and HYBRID policy modes."""
     # 1. DISCOVERY_ONLY policy: selects action maximizing discovery score minus cost
+    from src.optimization.botorch_backend import BoTorchBackend
     adapter_disc = ToyMaterialDomainAdapter(n_candidates=15, seed=42)
     init_actions_disc = adapter_disc.get_default_initial_actions(n_cap=3, n_sem=3, seed=42)
     engine_disc = ScientificDecisionEngine(
         domain=adapter_disc,
+        optimizer_backend=BoTorchBackend(),
         policy_mode=FalsificationPolicyMode.DISCOVERY_ONLY,
         seed=42,
     )
@@ -663,6 +665,7 @@ def test_controlled_three_policy_selection_behavior() -> None:
     init_actions_hyb = adapter_hyb.get_default_initial_actions(n_cap=3, n_sem=3, seed=42)
     engine_hyb = ScientificDecisionEngine(
         domain=adapter_hyb,
+        optimizer_backend=BoTorchBackend(),
         policy_mode=FalsificationPolicyMode.HYBRID,
         seed=42,
     )

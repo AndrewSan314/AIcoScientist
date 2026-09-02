@@ -6,6 +6,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, RBF, WhiteKernel
+from sklearn.linear_model import Ridge
 
 from src.science.actions import ActionType, normalize_action_type
 from src.science.domain import HypothesisProvider, HypothesisTrainingContext
@@ -16,11 +17,18 @@ from src.science.hypothesis_models import (
 
 logger = logging.getLogger(__name__)
 
+# Non-discriminating broad priors across hypotheses when training sample count < 3
+DEFAULT_BROAD_XRD_MEAN = np.zeros(8, dtype=np.float64)
+DEFAULT_BROAD_XRD_VAR = np.ones(8, dtype=np.float64) * 0.5
+DEFAULT_BROAD_REF_MEAN = np.array([0.25, 0.25, 0.25, 0.5], dtype=np.float64)
+DEFAULT_BROAD_REF_VAR = np.array([0.10, 0.10, 0.10, 0.10], dtype=np.float64)
+
 
 class PrecursorThermodynamicsHypothesis:
     """Hypothesis A: Solid-state synthesis outcome is governed predominantly by precursor chemistry and thermodynamic driving force.
 
     Thermal processing parameters (furnace temperature and time) are treated as secondary or non-explanatory.
+    Characterization surrogate models predict XRD and Refinement from pre-experiment chemistry (energy + precursors).
     """
 
     def __init__(self, hypothesis_id: str = "precursor_thermodynamics") -> None:
@@ -28,10 +36,12 @@ class PrecursorThermodynamicsHypothesis:
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
-        self._revealed_xrd_mean: np.ndarray | None = None
-        self._revealed_xrd_var: np.ndarray | None = None
-        self._revealed_ref_mean: np.ndarray | None = None
-        self._revealed_ref_var: np.ndarray | None = None
+        self._xrd_surrogate: Ridge | None = None
+        self._xrd_var: np.ndarray = np.copy(DEFAULT_BROAD_XRD_VAR)
+        self._xrd_training_count = 0
+        self._ref_surrogate: Ridge | None = None
+        self._ref_var: np.ndarray = np.copy(DEFAULT_BROAD_REF_VAR)
+        self._ref_training_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -58,20 +68,61 @@ class PrecursorThermodynamicsHypothesis:
         xrd_obs = context.observations_by_modality.get("XRD", {})
         ref_obs = context.observations_by_modality.get("REFINEMENT", {})
 
-        # 1. Empirical characterization statistics from revealed observations
-        if xrd_obs:
-            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
-            if len(xrd_mat) > 0:
-                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
-                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+        # 1. Fit XRD surrogate on revealed XRD embeddings (excluding thermal conditions)
+        valid_xrd = {
+            cid: np.asarray(val, dtype=np.float64)
+            for cid, val in xrd_obs.items()
+            if val is not None and cid in context.candidate_features_by_id
+        }
+        if len(valid_xrd) >= 3:
+            X_xrd = []
+            Y_xrd = []
+            for cid, y_val in valid_xrd.items():
+                feat = np.asarray(context.candidate_features_by_id[cid], dtype=np.float64)
+                thermo_feat = np.concatenate(([feat[0]], feat[3:]))
+                X_xrd.append(thermo_feat)
+                Y_xrd.append(y_val)
+            X_mat = np.array(X_xrd, dtype=np.float64)
+            Y_mat = np.array(Y_xrd, dtype=np.float64)
+            ridge = Ridge(alpha=1.0)
+            ridge.fit(X_mat, Y_mat)
+            self._xrd_surrogate = ridge
+            res = Y_mat - ridge.predict(X_mat)
+            self._xrd_var = np.maximum(np.var(res, axis=0), 0.05)
+            self._xrd_training_count = len(valid_xrd)
+        else:
+            self._xrd_surrogate = None
+            self._xrd_var = np.copy(DEFAULT_BROAD_XRD_VAR)
+            self._xrd_training_count = len(valid_xrd)
 
-        if ref_obs:
-            ref_mat = np.array([np.asarray(v, dtype=np.float64) for v in ref_obs.values() if v is not None])
-            if len(ref_mat) > 0:
-                self._revealed_ref_mean = np.mean(ref_mat, axis=0)
-                self._revealed_ref_var = np.maximum(np.var(ref_mat, axis=0), 0.02)
+        # 2. Fit Refinement surrogate on revealed refinements (excluding thermal conditions)
+        valid_ref = {
+            cid: np.asarray(val, dtype=np.float64)
+            for cid, val in ref_obs.items()
+            if val is not None and cid in context.candidate_features_by_id
+        }
+        if len(valid_ref) >= 3:
+            X_ref = []
+            Y_ref = []
+            for cid, y_val in valid_ref.items():
+                feat = np.asarray(context.candidate_features_by_id[cid], dtype=np.float64)
+                thermo_feat = np.concatenate(([feat[0]], feat[3:]))
+                X_ref.append(thermo_feat)
+                Y_ref.append(y_val)
+            X_mat = np.array(X_ref, dtype=np.float64)
+            Y_mat = np.array(Y_ref, dtype=np.float64)
+            ridge = Ridge(alpha=1.0)
+            ridge.fit(X_mat, Y_mat)
+            self._ref_surrogate = ridge
+            res = Y_mat - ridge.predict(X_mat)
+            self._ref_var = np.maximum(np.var(res, axis=0), 0.02)
+            self._ref_training_count = len(valid_ref)
+        else:
+            self._ref_surrogate = None
+            self._ref_var = np.copy(DEFAULT_BROAD_REF_VAR)
+            self._ref_training_count = len(valid_ref)
 
-        # 2. Fit outcome GP excluding thermal conditions (features 1 and 2: temp and time)
+        # 3. Fit outcome GP excluding thermal conditions (features 1 and 2: temp and time)
         if len(conv_obs) < 2:
             self._is_fitted = False
             self._training_sample_count = len(conv_obs)
@@ -82,7 +133,6 @@ class PrecursorThermodynamicsHypothesis:
         for cid, val in conv_obs.items():
             if cid in context.candidate_features_by_id and isinstance(val, (int, float, np.number)):
                 feat = np.asarray(context.candidate_features_by_id[cid], dtype=np.float64)
-                # Feature subset: [energy] + [multi-hot precursors]
                 thermo_feat = np.concatenate(([feat[0]], feat[3:]))
                 X_rows.append(thermo_feat)
                 y_rows.append(float(val))
@@ -105,7 +155,6 @@ class PrecursorThermodynamicsHypothesis:
     def fit(self, **kwargs: Any) -> PrecursorThermodynamicsHypothesis:
         context = kwargs.get("context")
         if context is None and "composition_by_id" in kwargs:
-            from src.science.domain import HypothesisTrainingContext
             context = HypothesisTrainingContext(
                 candidate_features_by_id=kwargs.get("composition_by_id", {}),
                 observations_by_modality=kwargs.get("observations_by_modality", {}),
@@ -136,7 +185,6 @@ class PrecursorThermodynamicsHypothesis:
                 mean_val = float(np.clip(m[0], 0.0, 1.0))
                 var_val = float(max(s[0] ** 2, 1e-4))
             else:
-                # Prior: negative reaction energy promotes reaction
                 energy = float(comp[0]) if len(comp) > 0 else 0.0
                 mean_val = float(np.clip(0.5 - 2.0 * energy, 0.05, 0.95))
                 var_val = 0.20
@@ -147,31 +195,49 @@ class PrecursorThermodynamicsHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "precursor_thermodynamics_gp", "training_count": self._training_sample_count},
+                metadata={"model": "precursor_thermodynamics_gp", "training_count": self._training_sample_count, "fitted": self._is_fitted},
             )
         elif norm == "XRD":
-            emb_dim = 8
-            mean_vec = self._revealed_xrd_mean if self._revealed_xrd_mean is not None else np.zeros(emb_dim, dtype=np.float64)
-            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.3
+            if self._xrd_surrogate is not None and self._xrd_training_count >= 3:
+                tf = np.concatenate(([comp[0]], comp[3:])).reshape(1, -1)
+                mean_vec = self._xrd_surrogate.predict(tf)[0]
+                var_vec = np.copy(self._xrd_var)
+                model_name = "thermodynamics_ridge_xrd"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_XRD_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_XRD_VAR)
+                model_name = "thermodynamics_unfitted_broad_xrd"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "thermodynamics_empirical_xrd", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._xrd_training_count, "fitted": is_fitted},
             )
         elif norm == "REFINEMENT":
-            ref_dim = 4
-            mean_vec = self._revealed_ref_mean if self._revealed_ref_mean is not None else np.array([0.1, 0.7, 0.2, 0.5], dtype=np.float64)
-            var_vec = self._revealed_ref_var if self._revealed_ref_var is not None else np.array([0.05, 0.05, 0.05, 0.05], dtype=np.float64)
+            if self._ref_surrogate is not None and self._ref_training_count >= 3:
+                tf = np.concatenate(([comp[0]], comp[3:])).reshape(1, -1)
+                mean_vec = self._ref_surrogate.predict(tf)[0]
+                var_vec = np.copy(self._ref_var)
+                model_name = "thermodynamics_ridge_refinement"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_REF_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_REF_VAR)
+                model_name = "thermodynamics_unfitted_broad_refinement"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "thermodynamics_empirical_refinement", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._ref_training_count, "fitted": is_fitted},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")
@@ -184,15 +250,22 @@ class PrecursorThermodynamicsHypothesis:
 
 
 class ProcessKineticsHypothesis:
-    """Hypothesis B: Synthesis thermal processing conditions (heating temperature & time) govern solid-state reaction kinetics."""
+    """Hypothesis B: Synthesis thermal processing conditions (heating temperature & time) govern solid-state reaction kinetics.
+
+    Surrogate models predict XRD and Refinement from processing parameters and chemistry without hardcoding PCA PC1 directions.
+    """
 
     def __init__(self, hypothesis_id: str = "process_kinetics") -> None:
         self._id = hypothesis_id
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
-        self._revealed_xrd_mean: np.ndarray | None = None
-        self._revealed_xrd_var: np.ndarray | None = None
+        self._xrd_surrogate: Ridge | None = None
+        self._xrd_var: np.ndarray = np.copy(DEFAULT_BROAD_XRD_VAR)
+        self._xrd_training_count = 0
+        self._ref_surrogate: Ridge | None = None
+        self._ref_var: np.ndarray = np.copy(DEFAULT_BROAD_REF_VAR)
+        self._ref_training_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -217,13 +290,53 @@ class ProcessKineticsHypothesis:
             or {}
         )
         xrd_obs = context.observations_by_modality.get("XRD", {})
+        ref_obs = context.observations_by_modality.get("REFINEMENT", {})
 
-        if xrd_obs:
-            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
-            if len(xrd_mat) > 0:
-                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
-                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+        # 1. Fit XRD surrogate on full candidate features including thermal conditions
+        valid_xrd = {
+            cid: np.asarray(val, dtype=np.float64)
+            for cid, val in xrd_obs.items()
+            if val is not None and cid in context.candidate_features_by_id
+        }
+        if len(valid_xrd) >= 3:
+            X_xrd = [np.asarray(context.candidate_features_by_id[cid], dtype=np.float64) for cid in valid_xrd]
+            Y_xrd = list(valid_xrd.values())
+            X_mat = np.array(X_xrd, dtype=np.float64)
+            Y_mat = np.array(Y_xrd, dtype=np.float64)
+            ridge = Ridge(alpha=1.0)
+            ridge.fit(X_mat, Y_mat)
+            self._xrd_surrogate = ridge
+            res = Y_mat - ridge.predict(X_mat)
+            self._xrd_var = np.maximum(np.var(res, axis=0), 0.05)
+            self._xrd_training_count = len(valid_xrd)
+        else:
+            self._xrd_surrogate = None
+            self._xrd_var = np.copy(DEFAULT_BROAD_XRD_VAR)
+            self._xrd_training_count = len(valid_xrd)
 
+        # 2. Fit Refinement surrogate on full candidate features including thermal conditions
+        valid_ref = {
+            cid: np.asarray(val, dtype=np.float64)
+            for cid, val in ref_obs.items()
+            if val is not None and cid in context.candidate_features_by_id
+        }
+        if len(valid_ref) >= 3:
+            X_ref = [np.asarray(context.candidate_features_by_id[cid], dtype=np.float64) for cid in valid_ref]
+            Y_ref = list(valid_ref.values())
+            X_mat = np.array(X_ref, dtype=np.float64)
+            Y_mat = np.array(Y_ref, dtype=np.float64)
+            ridge = Ridge(alpha=1.0)
+            ridge.fit(X_mat, Y_mat)
+            self._ref_surrogate = ridge
+            res = Y_mat - ridge.predict(X_mat)
+            self._ref_var = np.maximum(np.var(res, axis=0), 0.02)
+            self._ref_training_count = len(valid_ref)
+        else:
+            self._ref_surrogate = None
+            self._ref_var = np.copy(DEFAULT_BROAD_REF_VAR)
+            self._ref_training_count = len(valid_ref)
+
+        # 3. Fit outcome GP with ARD emphasizing temperature and time (features 1 and 2)
         if len(conv_obs) < 2:
             self._is_fitted = False
             self._training_sample_count = len(conv_obs)
@@ -245,7 +358,6 @@ class ProcessKineticsHypothesis:
         X = np.array(X_rows, dtype=np.float64)
         y = np.array(y_rows, dtype=np.float64)
 
-        # Matern kernel with ARD emphasizing temperature and time (features 1 and 2)
         length_scales = np.ones(X.shape[1]) * 2.0
         length_scales[1] = 0.5  # temperature sensitivity
         length_scales[2] = 0.5  # time sensitivity
@@ -260,7 +372,6 @@ class ProcessKineticsHypothesis:
     def fit(self, **kwargs: Any) -> ProcessKineticsHypothesis:
         context = kwargs.get("context")
         if context is None and "composition_by_id" in kwargs:
-            from src.science.domain import HypothesisTrainingContext
             context = HypothesisTrainingContext(
                 candidate_features_by_id=kwargs.get("composition_by_id", {}),
                 observations_by_modality=kwargs.get("observations_by_modality", {}),
@@ -291,7 +402,6 @@ class ProcessKineticsHypothesis:
                 mean_val = float(np.clip(m[0], 0.0, 1.0))
                 var_val = float(max(s[0] ** 2, 1e-4))
             else:
-                # Prior: higher temperature & longer duration promote solid-state kinetics
                 temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
                 time_norm = float(comp[2]) if len(comp) > 2 else 0.5
                 mean_val = float(np.clip(0.2 + 0.5 * temp_norm + 0.2 * time_norm, 0.05, 0.95))
@@ -303,39 +413,49 @@ class ProcessKineticsHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "process_kinetics_matern_gp", "training_count": self._training_sample_count},
+                metadata={"model": "process_kinetics_matern_gp", "training_count": self._training_sample_count, "fitted": self._is_fitted},
             )
         elif norm == "XRD":
-            emb_dim = 8
-            mean_vec = np.zeros(emb_dim, dtype=np.float64)
-            if self._revealed_xrd_mean is not None:
-                mean_vec = np.copy(self._revealed_xrd_mean)
-            # Temperature correlates with crystalline peak sharpening / PC1
-            temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
-            mean_vec[0] = (temp_norm - 0.5) * 0.4
-            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.25
+            if self._xrd_surrogate is not None and self._xrd_training_count >= 3:
+                feat_vec = np.asarray(comp, dtype=np.float64).reshape(1, -1)
+                mean_vec = self._xrd_surrogate.predict(feat_vec)[0]
+                var_vec = np.copy(self._xrd_var)
+                model_name = "kinetics_ridge_xrd"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_XRD_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_XRD_VAR)
+                model_name = "kinetics_unfitted_broad_xrd"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "kinetics_thermal_xrd", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._xrd_training_count, "fitted": is_fitted},
             )
         elif norm == "REFINEMENT":
-            temp_norm = float(comp[1]) if len(comp) > 1 else 0.5
-            target_est = float(np.clip(0.1 + 0.4 * temp_norm, 0.0, 1.0))
-            prec_est = float(np.clip(0.8 - 0.4 * temp_norm, 0.0, 1.0))
-            other_est = float(np.clip(1.0 - (target_est + prec_est), 0.0, 1.0))
-            mean_vec = np.array([target_est, prec_est, other_est, 0.4], dtype=np.float64)
-            var_vec = np.array([0.04, 0.04, 0.04, 0.04], dtype=np.float64)
+            if self._ref_surrogate is not None and self._ref_training_count >= 3:
+                feat_vec = np.asarray(comp, dtype=np.float64).reshape(1, -1)
+                mean_vec = self._ref_surrogate.predict(feat_vec)[0]
+                var_vec = np.copy(self._ref_var)
+                model_name = "kinetics_ridge_refinement"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_REF_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_REF_VAR)
+                model_name = "kinetics_unfitted_broad_refinement"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "kinetics_refinement_prior", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._ref_training_count, "fitted": is_fitted},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")
@@ -348,17 +468,23 @@ class ProcessKineticsHypothesis:
 
 
 class StructurePhaseInformedHypothesis:
-    """Hypothesis C: Measured crystalline structure and Rietveld phase evolution provide decisive explanatory evidence for reaction outcome."""
+    """Hypothesis C: Measured crystalline structure and Rietveld phase evolution provide decisive explanatory evidence for reaction outcome.
+
+    Surrogate models predict XRD from empirical statistics and Refinement conditioned on measured diffraction profiles.
+    """
 
     def __init__(self, hypothesis_id: str = "structure_phase_informed") -> None:
         self._id = hypothesis_id
         self._gp: GaussianProcessRegressor | None = None
         self._is_fitted = False
         self._training_sample_count = 0
-        self._revealed_xrd_mean: np.ndarray | None = None
-        self._revealed_xrd_var: np.ndarray | None = None
-        self._revealed_ref_mean: np.ndarray | None = None
-        self._revealed_ref_var: np.ndarray | None = None
+        self._xrd_mean: np.ndarray | None = None
+        self._xrd_var: np.ndarray = np.copy(DEFAULT_BROAD_XRD_VAR)
+        self._xrd_training_count = 0
+        self._ref_mean: np.ndarray | None = None
+        self._ref_var: np.ndarray = np.copy(DEFAULT_BROAD_REF_VAR)
+        self._ref_from_xrd_surrogate: Ridge | None = None
+        self._ref_training_count = 0
 
     @property
     def hypothesis_id(self) -> str:
@@ -418,18 +544,42 @@ class StructurePhaseInformedHypothesis:
         xrd_obs = context.observations_by_modality.get("XRD", {})
         ref_obs = context.observations_by_modality.get("REFINEMENT", {})
 
-        if xrd_obs:
-            xrd_mat = np.array([np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None])
-            if len(xrd_mat) > 0:
-                self._revealed_xrd_mean = np.mean(xrd_mat, axis=0)
-                self._revealed_xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+        # 1. Fit empirical XRD statistics
+        valid_xrd = [np.asarray(v, dtype=np.float64) for v in xrd_obs.values() if v is not None]
+        if len(valid_xrd) >= 3:
+            xrd_mat = np.array(valid_xrd, dtype=np.float64)
+            self._xrd_mean = np.mean(xrd_mat, axis=0)
+            self._xrd_var = np.maximum(np.var(xrd_mat, axis=0), 0.05)
+            self._xrd_training_count = len(valid_xrd)
+        else:
+            self._xrd_mean = None
+            self._xrd_var = np.copy(DEFAULT_BROAD_XRD_VAR)
+            self._xrd_training_count = len(valid_xrd)
 
-        if ref_obs:
-            ref_mat = np.array([np.asarray(v, dtype=np.float64) for v in ref_obs.values() if v is not None])
-            if len(ref_mat) > 0:
-                self._revealed_ref_mean = np.mean(ref_mat, axis=0)
-                self._revealed_ref_var = np.maximum(np.var(ref_mat, axis=0), 0.02)
+        # 2. Fit empirical Refinement statistics and XRD->Refinement mapping
+        valid_ref = [np.asarray(v, dtype=np.float64) for v in ref_obs.values() if v is not None]
+        if len(valid_ref) >= 3:
+            ref_mat = np.array(valid_ref, dtype=np.float64)
+            self._ref_mean = np.mean(ref_mat, axis=0)
+            self._ref_var = np.maximum(np.var(ref_mat, axis=0), 0.02)
+            self._ref_training_count = len(valid_ref)
 
+            paired_cids = [cid for cid in ref_obs if cid in xrd_obs and xrd_obs[cid] is not None and ref_obs[cid] is not None]
+            if len(paired_cids) >= 3:
+                X_pair = np.array([np.asarray(xrd_obs[cid], dtype=np.float64) for cid in paired_cids])
+                Y_pair = np.array([np.asarray(ref_obs[cid], dtype=np.float64) for cid in paired_cids])
+                ridge = Ridge(alpha=1.0)
+                ridge.fit(X_pair, Y_pair)
+                self._ref_from_xrd_surrogate = ridge
+            else:
+                self._ref_from_xrd_surrogate = None
+        else:
+            self._ref_mean = None
+            self._ref_var = np.copy(DEFAULT_BROAD_REF_VAR)
+            self._ref_from_xrd_surrogate = None
+            self._ref_training_count = len(valid_ref)
+
+        # 3. Fit multimodal outcome GP
         if len(conv_obs) < 2:
             self._is_fitted = False
             self._training_sample_count = len(conv_obs)
@@ -464,7 +614,6 @@ class StructurePhaseInformedHypothesis:
     def fit(self, **kwargs: Any) -> StructurePhaseInformedHypothesis:
         context = kwargs.get("context")
         if context is None and "composition_by_id" in kwargs:
-            from src.science.domain import HypothesisTrainingContext
             context = HypothesisTrainingContext(
                 candidate_features_by_id=kwargs.get("composition_by_id", {}),
                 observations_by_modality=kwargs.get("observations_by_modality", {}),
@@ -508,7 +657,6 @@ class StructurePhaseInformedHypothesis:
                 var_val = float(max(s[0] ** 2, var_floor))
             else:
                 if ref_val is not None and isinstance(ref_val, (list, tuple, np.ndarray)):
-                    # Target phase fraction directly anchors outcome expectation
                     target_frac = float(ref_val[0])
                     mean_val = float(np.clip(0.1 + 0.9 * target_frac, 0.05, 0.95))
                     var_val = 0.06
@@ -522,31 +670,53 @@ class StructurePhaseInformedHypothesis:
                 action_type=action_type,
                 mean=np.array([mean_val], dtype=np.float64),
                 variance=np.array([var_val], dtype=np.float64),
-                metadata={"model": "structure_phase_informed_gp", "training_count": self._training_sample_count},
+                metadata={"model": "structure_phase_informed_gp", "training_count": self._training_sample_count, "fitted": self._is_fitted},
             )
         elif norm == "XRD":
-            emb_dim = 8
-            mean_vec = self._revealed_xrd_mean if self._revealed_xrd_mean is not None else np.zeros(emb_dim, dtype=np.float64)
-            var_vec = self._revealed_xrd_var if self._revealed_xrd_var is not None else np.ones(emb_dim, dtype=np.float64) * 0.25
+            if self._xrd_mean is not None and self._xrd_training_count >= 3:
+                mean_vec = np.copy(self._xrd_mean)
+                var_vec = np.copy(self._xrd_var)
+                model_name = "structure_empirical_xrd"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_XRD_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_XRD_VAR)
+                model_name = "structure_unfitted_broad_xrd"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "structure_empirical_xrd", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._xrd_training_count, "fitted": is_fitted},
             )
         elif norm == "REFINEMENT":
-            ref_dim = 4
-            mean_vec = self._revealed_ref_mean if self._revealed_ref_mean is not None else np.array([0.2, 0.5, 0.3, 0.5], dtype=np.float64)
-            var_vec = self._revealed_ref_var if self._revealed_ref_var is not None else np.array([0.04, 0.04, 0.04, 0.04], dtype=np.float64)
+            if self._ref_training_count >= 3:
+                if xrd_val is not None and self._ref_from_xrd_surrogate is not None:
+                    xrd_arr = np.asarray(xrd_val, dtype=np.float64).reshape(1, -1)
+                    mean_vec = self._ref_from_xrd_surrogate.predict(xrd_arr)[0]
+                    var_vec = np.copy(self._ref_var)
+                    model_name = "structure_xrd_to_refinement_ridge"
+                else:
+                    mean_vec = np.copy(self._ref_mean) if self._ref_mean is not None else np.copy(DEFAULT_BROAD_REF_MEAN)
+                    var_vec = np.copy(self._ref_var)
+                    model_name = "structure_empirical_refinement"
+                is_fitted = True
+            else:
+                mean_vec = np.copy(DEFAULT_BROAD_REF_MEAN)
+                var_vec = np.copy(DEFAULT_BROAD_REF_VAR)
+                model_name = "structure_unfitted_broad_refinement"
+                is_fitted = False
+
             return PredictiveDistribution(
                 hypothesis_id=self._id,
                 candidate_id=candidate_id,
                 action_type=action_type,
                 mean=mean_vec,
                 variance=var_vec,
-                metadata={"model": "structure_empirical_refinement", "training_count": self._training_sample_count},
+                metadata={"model": model_name, "training_count": self._ref_training_count, "fitted": is_fitted},
             )
 
         raise ValueError(f"Unsupported action type for {self._id}: {action_type}")

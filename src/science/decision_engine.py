@@ -156,10 +156,14 @@ class ScientificDecisionEngine:
     def _is_objective_action(self, action_type: ActionType) -> bool:
         norm_type = normalize_action_type(action_type)
         if norm_type in self._modality_map:
-            return self._modality_map[norm_type].measures_objective()
+            m_def = self._modality_map[norm_type]
+            if m_def.measures_objective() or m_def.observation_kind in ("objective", "objective_measurement"):
+                return True
         for obj in self.objectives:
             if obj.name == norm_type:
                 return True
+        if norm_type in ("OUTCOME_TEST", "PROPERTY", "CAPACITY_TEST"):
+            return True
         return False
 
     def _extract_observation_data(
@@ -237,9 +241,8 @@ class ScientificDecisionEngine:
             char_data: dict[str, Any] = {}
             is_obj = self._is_objective_action(act.action_type)
             if is_obj:
-                if len(self.objectives) > 0:
-                    val_num = float(data_val) if isinstance(data_val, (int, float, np.number)) else 0.0
-                    perf[self.objectives[0].name] = val_num
+                if len(self.objectives) > 0 and isinstance(data_val, (int, float, np.number)):
+                    perf[self.objectives[0].name] = float(data_val)
             else:
                 char_data[norm_act] = data_val.tolist() if isinstance(data_val, np.ndarray) else data_val
 
@@ -359,6 +362,9 @@ class ScientificDecisionEngine:
                     "num_scored": 0,
                 }
 
+        if self.policy.mode == FalsificationPolicyMode.DISCOVERY_ONLY and self.optimizer_backend is None:
+            raise RuntimeError("DISCOVERY_ONLY requires a functioning optimizer backend")
+
         # Policy recommendation
         rec = self.policy.recommend_next_experiment(
             candidate_pool_df=self.candidate_pool_df,
@@ -374,6 +380,12 @@ class ScientificDecisionEngine:
             objective_definitions=self.objectives,
             domain_id=self.domain_id,
         )
+
+        if self.last_optimizer_status.get("degraded_mode") == "epistemic_only":
+            rec.action.metadata["discovery_status"] = "disabled"
+            if rec.uncertainty_summary is not None:
+                rec.uncertainty_summary["discovery_status"] = "disabled"
+                rec.uncertainty_summary["degraded_mode"] = "epistemic_only"
         self._last_recommendation = rec
 
         # Create proposal record in ledger with PROPOSED stage
@@ -459,6 +471,13 @@ class ScientificDecisionEngine:
             data_val = self.domain.transform_with_snapshot(action.action_type, outcome.revealed_data, snapshot)
         else:
             data_val = self._extract_observation_data(action.action_type, outcome.revealed_data, outcome)
+
+        is_obj = self._is_objective_action(action.action_type)
+        if is_obj and (data_val is None or getattr(outcome, "canonical_observation", None) is None):
+            raise RuntimeError(
+                f"Objective action '{action.action_id}' on candidate '{cand_id}' unexpectedly returned "
+                f"None/missing canonical observation. Failing closed."
+            )
 
         self.revealed_outcomes[action.action_id] = outcome
         obs_array = np.atleast_1d(np.asarray(data_val, dtype=np.float64))
