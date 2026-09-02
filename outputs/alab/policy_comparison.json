@@ -47,6 +47,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 6,
+          "representation_fingerprint": "5e9bb363307756a36380cf032033980b2f52f94ae5fa748eb40d50069a070d08",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -66,7 +72,7 @@
               "process_kinetics": 0.547244608073428,
               "structure_phase_informed": 0.2264471449392058
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0908"
           },
@@ -88,9 +94,12 @@
               "process_kinetics": 7.691336446703739e-13,
               "structure_phase_informed": 0.9999999999989128
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_2243"
+            "rationale": "Uniform random action selection for candidate PG_2243",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "b59693f54b87275c45c069ef1b4c86ea9b4c98aa2e2f49fc91b3394edabaea67"
           },
           {
             "step": 3,
@@ -110,7 +119,7 @@
               "process_kinetics": 2.1822461163693462e-12,
               "structure_phase_informed": 0.9999999999971174
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1552"
           },
@@ -132,7 +141,7 @@
               "process_kinetics": 2.580120392499282e-12,
               "structure_phase_informed": 0.9999999999967195
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1216"
           },
@@ -154,9 +163,12 @@
               "process_kinetics": 1.5698292738178612e-14,
               "structure_phase_informed": 0.9999999999999799
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_1120"
+            "rationale": "Uniform random action selection for candidate PG_1120",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "639255e1e617e5ae8c3f95c8d2d1db1e38e37e2d0aea8f320f7a620c7d4a3d79"
           },
           {
             "step": 6,
@@ -176,9 +188,12 @@
               "process_kinetics": 6.285806219295224e-15,
               "structure_phase_informed": 0.9999999999999931
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_2646"
+            "rationale": "Uniform random action selection for candidate PG_2646",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "046d06e189a474dffe1eda4510fc07bad554465b4f71492d7deef6910e3fe63a"
           },
           {
             "step": 7,
@@ -198,7 +213,7 @@
               "process_kinetics": 5.917916047383614e-15,
               "structure_phase_informed": 0.9999999999999934
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0813"
           },
@@ -220,7 +235,7 @@
               "process_kinetics": 7.14175667914212e-15,
               "structure_phase_informed": 0.9999999999999922
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2229"
           }
@@ -271,6 +286,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 6,
+          "representation_fingerprint": "d0703d74fa763a210b4bbf2e2f401a62155c794565ccd2d98bcfcd4fe5b39b9d",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -290,9 +311,12 @@
               "process_kinetics": 0.0007959003588763892,
               "structure_phase_informed": 0.9957060702445744
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_0444"
+            "rationale": "Uniform random action selection for candidate PG_0444",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "fe9fb7c6a658918dafe8955ef14d7036f0cf7e6855ac8ef306888743fcc89ac0"
           },
           {
             "step": 2,
@@ -312,9 +336,12 @@
               "process_kinetics": 0.00015426205376285038,
               "structure_phase_informed": 0.9993071770496592
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_3944"
+            "rationale": "Uniform random action selection for candidate PG_3944",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "ee1372d90ceea139a67a4665d9d9e34b84ef9dc4d94f5183849186cdeef6c58a"
           },
           {
             "step": 3,
@@ -334,7 +361,7 @@
               "process_kinetics": 9.677927220091257e-05,
               "structure_phase_informed": 0.9993599544065652
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2228"
           },
@@ -356,9 +383,12 @@
               "process_kinetics": 9.565102958536101e-12,
               "structure_phase_informed": 0.99997317374111
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_4647"
+            "rationale": "Uniform random action selection for candidate PG_4647",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "ff515e65a161f30a61fd4c7be8af3b9cd0b51193ac7bec909333870061508932"
           },
           {
             "step": 5,
@@ -378,7 +408,7 @@
               "process_kinetics": 4.70765159247068e-12,
               "structure_phase_informed": 0.9999731795113086
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0720"
           },
@@ -400,7 +430,7 @@
               "process_kinetics": 8.537089716207614e-13,
               "structure_phase_informed": 0.9999728611140927
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2446"
           },
@@ -422,7 +452,7 @@
               "process_kinetics": 2.0432795033090862e-13,
               "structure_phase_informed": 0.9999728611141012
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_5152"
           },
@@ -444,7 +474,7 @@
               "process_kinetics": 1.8450177328354622e-13,
               "structure_phase_informed": 0.9999728611195179
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1145"
           }
@@ -495,6 +525,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 10,
+          "representation_fingerprint": "f4689f6353a7c75f22781eab1e4d4d2f5b92038a500d0528de24c1684c8d8921",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -514,9 +550,12 @@
               "process_kinetics": 0.47185490089146465,
               "structure_phase_informed": 0.024941418870790016
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_0139"
+            "rationale": "Uniform random action selection for candidate PG_0139",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "f299e6da6ef476c8e67f570f97dc21ef6932886c76a5d6d565cec4f88e07c3df"
           },
           {
             "step": 2,
@@ -536,7 +575,7 @@
               "process_kinetics": 0.468001858506081,
               "structure_phase_informed": 0.02512337709450473
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1928"
           },
@@ -558,7 +597,7 @@
               "process_kinetics": 0.5754404498717497,
               "structure_phase_informed": 0.02018710904344183
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0119"
           },
@@ -580,9 +619,12 @@
               "process_kinetics": 0.5931279830799682,
               "structure_phase_informed": 0.0006906320934407617
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_0828"
+            "rationale": "Uniform random action selection for candidate PG_0828",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "583408e9c66c44eef9325ce1fa2d0e9c25f4001d85433b26b47fa81714a3f846"
           },
           {
             "step": 5,
@@ -602,9 +644,12 @@
               "process_kinetics": 0.18897387357465698,
               "structure_phase_informed": 0.5352530937649739
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_0546"
+            "rationale": "Uniform random action selection for candidate PG_0546",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "1c567878532ee9dbbdaf35b3c2593356de1c513c44c92e4874a2431ad85e7a8d"
           },
           {
             "step": 6,
@@ -624,7 +669,7 @@
               "process_kinetics": 0.18490434654208926,
               "structure_phase_informed": 0.545466316719037
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0444"
           },
@@ -646,9 +691,12 @@
               "process_kinetics": 6.1106802520279205e-06,
               "structure_phase_informed": 0.9996852359602345
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_2851"
+            "rationale": "Uniform random action selection for candidate PG_2851",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 6,
+            "representation_fingerprint": "40611afb5af27ff36b8f562481c2a77da3250fddcfdf1500cc2bd2396f7cb32e"
           },
           {
             "step": 8,
@@ -668,9 +716,12 @@
               "process_kinetics": 5.1623272849004244e-08,
               "structure_phase_informed": 0.9999939090641673
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_2050"
+            "rationale": "Uniform random action selection for candidate PG_2050",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 7,
+            "representation_fingerprint": "b931cc873a569f92649e6d5463afaefc18232df28e3906852ba0682723b464db"
           },
           {
             "step": 9,
@@ -690,9 +741,12 @@
               "process_kinetics": 9.810653002254343e-06,
               "structure_phase_informed": 0.9987237983173409
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_3050"
+            "rationale": "Uniform random action selection for candidate PG_3050",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 8,
+            "representation_fingerprint": "aa240d4cb7ca130c96fca886ba12c2bfcdc853c859db611b10ac156f6aaee75c"
           },
           {
             "step": 10,
@@ -712,9 +766,12 @@
               "process_kinetics": 6.986066884501961e-05,
               "structure_phase_informed": 0.8641262587239177
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Uniform random action selection for candidate PG_4752"
+            "rationale": "Uniform random action selection for candidate PG_4752",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 9,
+            "representation_fingerprint": "725336ab1c9b2a3efb694a5aec399e051c03b54dd7a9b36f1a9464e21bacd111"
           }
         ]
       }
@@ -743,8 +800,13 @@
         "XRD": 13,
         "REFINEMENT": 0
       },
+      "optimizer_expected": false,
       "optimizer_calls": 0,
-      "optimizer_success_rate": 1.0,
+      "optimizer_success_count": 0,
+      "optimizer_failure_count": 0,
+      "optimizer_degraded_count": 0,
+      "optimizer_success_rate": null,
+      "optimizer_validation_status": "NOT_APPLICABLE",
       "degraded_run_count": 0
     }
   },
@@ -795,6 +857,12 @@
           "reason": "OK",
           "num_scored": 1025,
           "degraded_mode": null
+        },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "b59693f54b87275c45c069ef1b4c86ea9b4c98aa2e2f49fc91b3394edabaea67",
+          "representation_frozen": true
         },
         "steps": [
           {
@@ -976,6 +1044,12 @@
           "num_scored": 1025,
           "degraded_mode": null
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "fe9fb7c6a658918dafe8955ef14d7036f0cf7e6855ac8ef306888743fcc89ac0",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -1156,6 +1230,12 @@
           "num_scored": 1025,
           "degraded_mode": null
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "f299e6da6ef476c8e67f570f97dc21ef6932886c76a5d6d565cec4f88e07c3df",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -1316,8 +1396,13 @@
         "XRD": 0,
         "REFINEMENT": 0
       },
+      "optimizer_expected": true,
       "optimizer_calls": 18,
+      "optimizer_success_count": 18,
+      "optimizer_failure_count": 0,
+      "optimizer_degraded_count": 0,
       "optimizer_success_rate": 1.0,
+      "optimizer_validation_status": "VALIDATED",
       "degraded_run_count": 0
     }
   },
@@ -1368,6 +1453,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 16,
+          "representation_fingerprint": "d1d9b2427879a313f4abaca2c664bca3b2b8496b6f3bf17cdd1a933dbcc2e7f1",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -1387,9 +1478,12 @@
               "process_kinetics": 8.040891944261692e-06,
               "structure_phase_informed": 0.9999839182161114
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1245' (Net Scientific Value: 0.428). Expected Hypothesis Information Gain is 0.428 nats (expected posterior entropy: 0.670 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1245' (Net Scientific Value: 0.428). Expected Hypothesis Information Gain is 0.428 nats (expected posterior entropy: 0.670 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "b59693f54b87275c45c069ef1b4c86ea9b4c98aa2e2f49fc91b3394edabaea67"
           },
           {
             "step": 2,
@@ -1409,9 +1503,12 @@
               "process_kinetics": 3.743166745274847e-05,
               "structure_phase_informed": 0.999927374833271
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "fa259f4a13b62cffa0b9983de84175630de9836607dd6ef6a281a00bb9853d4c"
           },
           {
             "step": 3,
@@ -1431,9 +1528,12 @@
               "process_kinetics": 0.00013938604686277323,
               "structure_phase_informed": 0.9996864686948509
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0552' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0552' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "7237b85dc2e936410ad5ffd49778aebb01a1b13f8c14e0b6312f669040771be1"
           },
           {
             "step": 4,
@@ -1453,9 +1553,12 @@
               "process_kinetics": 6.603385662225937e-05,
               "structure_phase_informed": 0.9998996316688968
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1852' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1852' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 6,
+            "representation_fingerprint": "3a4a5475f4f8b47e0ec9aa966c29f08e6c959b4256316b587716b8d814bb1037"
           },
           {
             "step": 5,
@@ -1475,9 +1578,12 @@
               "process_kinetics": 0.0002731331028469914,
               "structure_phase_informed": 0.9994170155493264
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0818' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0818' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 7,
+            "representation_fingerprint": "4438fde45c90d99b9c9ba991c0bfeafee7b7dc6a0ab0d50356059b6703d43a29"
           },
           {
             "step": 6,
@@ -1497,9 +1603,12 @@
               "process_kinetics": 0.0912659736479278,
               "structure_phase_informed": 0.7944620031697424
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0512' (Net Scientific Value: 0.005). Expected Hypothesis Information Gain is 0.005 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0512' (Net Scientific Value: 0.005). Expected Hypothesis Information Gain is 0.005 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 8,
+            "representation_fingerprint": "0643e255b8b92f3da38a80882ce80e5af5ac3e8699de5bd8bbfb7f6278479eed"
           },
           {
             "step": 7,
@@ -1519,9 +1628,12 @@
               "process_kinetics": 0.0010617147602073164,
               "structure_phase_informed": 0.9884951847207951
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1821' (Net Scientific Value: 0.451). Expected Hypothesis Information Gain is 0.451 nats (expected posterior entropy: 0.198 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1821' (Net Scientific Value: 0.451). Expected Hypothesis Information Gain is 0.451 nats (expected posterior entropy: 0.198 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 9,
+            "representation_fingerprint": "f4c7be367a30f24e7c9442ac0ae57e1925dcd9f9b2a77c4fba12e88aec2d5e08"
           },
           {
             "step": 8,
@@ -1541,9 +1653,12 @@
               "process_kinetics": 7.556370684933886e-05,
               "structure_phase_informed": 0.9997623878318664
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1421' (Net Scientific Value: 0.059). Expected Hypothesis Information Gain is 0.059 nats (expected posterior entropy: 0.007 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1421' (Net Scientific Value: 0.059). Expected Hypothesis Information Gain is 0.059 nats (expected posterior entropy: 0.007 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 10,
+            "representation_fingerprint": "24300909f6382e01c30117a8f24ed72af4f73af8ef8a490a7c3e139d05357d5d"
           },
           {
             "step": 9,
@@ -1563,9 +1678,12 @@
               "process_kinetics": 0.05069971673399014,
               "structure_phase_informed": 0.8025684917451392
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0521' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0521' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 11,
+            "representation_fingerprint": "425afe1eb0a1b6b8e2a0fd18045e4f67240c4829e175648975ad6275b9837c64"
           },
           {
             "step": 10,
@@ -1585,9 +1703,12 @@
               "process_kinetics": 0.08783662330675877,
               "structure_phase_informed": 0.25628297556409385
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1252' (Net Scientific Value: 0.409). Expected Hypothesis Information Gain is 0.409 nats (expected posterior entropy: 0.201 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1252' (Net Scientific Value: 0.409). Expected Hypothesis Information Gain is 0.409 nats (expected posterior entropy: 0.201 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 12,
+            "representation_fingerprint": "dc3ce1b6b3597da062d4b1c0128cc85ac9b17d1d367445917dd8e5583683dd06"
           },
           {
             "step": 11,
@@ -1607,9 +1728,12 @@
               "process_kinetics": 0.3914489681455468,
               "structure_phase_informed": 0.13026738431168966
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1552' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.320 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1552' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.320 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 13,
+            "representation_fingerprint": "7e5696b27bb45fbb5f93cc4a13880f277f422b9c7b2c7d82f7ef3eb12fc52c8f"
           },
           {
             "step": 12,
@@ -1629,9 +1753,12 @@
               "process_kinetics": 0.040892790705689706,
               "structure_phase_informed": 0.07921027353715417
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0847' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.466 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0847' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.466 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 14,
+            "representation_fingerprint": "6999a2bd6481356a77e9090db829abcc8efa127eb838a4dd37a6be1df3597327"
           },
           {
             "step": 13,
@@ -1651,9 +1778,12 @@
               "process_kinetics": 8.862423992223769e-07,
               "structure_phase_informed": 0.03811763866807132
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0118' (Net Scientific Value: 0.299). Expected Hypothesis Information Gain is 0.299 nats (expected posterior entropy: 0.145 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0118' (Net Scientific Value: 0.299). Expected Hypothesis Information Gain is 0.299 nats (expected posterior entropy: 0.145 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 15,
+            "representation_fingerprint": "1acabd2b8d4768939724d0f3178e90c385aeeacdca084e40a0e9d7c3e8929d28"
           }
         ]
       },
@@ -1701,6 +1831,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 16,
+          "representation_fingerprint": "5e74777be2007dceddadcd78ccf7dcc517ef22aebe8938ff03a6dd40bb4b598f",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -1720,9 +1856,12 @@
               "process_kinetics": 0.04563576921142406,
               "structure_phase_informed": 0.9482847718197511
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_3850' (Net Scientific Value: 0.584). Expected Hypothesis Information Gain is 0.584 nats (expected posterior entropy: 0.514 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_3850' (Net Scientific Value: 0.584). Expected Hypothesis Information Gain is 0.584 nats (expected posterior entropy: 0.514 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "fe9fb7c6a658918dafe8955ef14d7036f0cf7e6855ac8ef306888743fcc89ac0"
           },
           {
             "step": 2,
@@ -1742,9 +1881,12 @@
               "process_kinetics": 0.00542272644972194,
               "structure_phase_informed": 0.9943383190610738
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_3147' (Net Scientific Value: 0.156). Expected Hypothesis Information Gain is 0.156 nats (expected posterior entropy: 0.066 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_3147' (Net Scientific Value: 0.156). Expected Hypothesis Information Gain is 0.156 nats (expected posterior entropy: 0.066 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "8b3334838c95397dbe4309b6b1ae89ab908da8adde810d17b480e92029da1c3e"
           },
           {
             "step": 3,
@@ -1764,9 +1906,12 @@
               "process_kinetics": 3.2468936404950666e-06,
               "structure_phase_informed": 0.9999954232480504
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_4750' (Net Scientific Value: 0.026). Expected Hypothesis Information Gain is 0.026 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_4750' (Net Scientific Value: 0.026). Expected Hypothesis Information Gain is 0.026 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "d5d471435c4e76e611e891571480d637b0a022de5621e965e8c5566c17f9018d"
           },
           {
             "step": 4,
@@ -1786,9 +1931,12 @@
               "process_kinetics": 3.566958314219016e-05,
               "structure_phase_informed": 0.9999532949378677
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_4550' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_4550' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 6,
+            "representation_fingerprint": "57f915570bc683f5005726c732675741fd5515fd7497d566ca258353ec3e0d30"
           },
           {
             "step": 5,
@@ -1808,9 +1956,12 @@
               "process_kinetics": 1.3248824621959025e-07,
               "structure_phase_informed": 0.9999962013302233
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_3150' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_3150' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 7,
+            "representation_fingerprint": "1805c05317a6b946a75245e15ebf74744dac39c12506e9c248c4b27eb59c0b48"
           },
           {
             "step": 6,
@@ -1830,9 +1981,12 @@
               "process_kinetics": 2.5140841386629653e-08,
               "structure_phase_informed": 0.9999944324252336
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_3845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_3845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 8,
+            "representation_fingerprint": "1602bf5c45230de8d8780568e8cbd284dcbbd6b429ac162e025a6d6ac7c897cf"
           },
           {
             "step": 7,
@@ -1852,9 +2006,12 @@
               "process_kinetics": 6.068081510139948e-09,
               "structure_phase_informed": 0.9999990304749381
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2148' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2148' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 9,
+            "representation_fingerprint": "990de34ca422634befaaebfcf3f2582de99f1acea8abbf166dd747bb29012fe8"
           },
           {
             "step": 8,
@@ -1874,9 +2031,12 @@
               "process_kinetics": 1.8502482259048741e-09,
               "structure_phase_informed": 0.9999994646610411
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_4850' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_4850' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 10,
+            "representation_fingerprint": "9b39e533e705053711afa15c1e2e92b7d8f20c9a34027946962ce5e4c2f18937"
           },
           {
             "step": 9,
@@ -1896,9 +2056,12 @@
               "process_kinetics": 9.65658042305721e-09,
               "structure_phase_informed": 0.9999974158641162
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2145' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2145' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 11,
+            "representation_fingerprint": "d8fdba87d59a22f4a31e4e7fb796550b562f6321949346b2c69398c2bab8773e"
           },
           {
             "step": 10,
@@ -1918,9 +2081,12 @@
               "process_kinetics": 5.226678380531818e-07,
               "structure_phase_informed": 0.9998239019658028
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2129' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2129' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 12,
+            "representation_fingerprint": "e7626a81a7b544ef2964cc2cc8e3d445df9cd7c3f08f2acff7cc3e5e057bd975"
           },
           {
             "step": 11,
@@ -1940,9 +2106,12 @@
               "process_kinetics": 1.9815735317948473e-06,
               "structure_phase_informed": 0.9998231276062457
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2147' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2147' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 13,
+            "representation_fingerprint": "72730f0d7e464d5e2c82c5d4a39b6831bc723f77718fb22da60fe4d0097c1f36"
           },
           {
             "step": 12,
@@ -1962,9 +2131,12 @@
               "process_kinetics": 0.00015024867460215164,
               "structure_phase_informed": 0.9930551258372875
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0450' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0450' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 14,
+            "representation_fingerprint": "759ebb8b330d4cb6d5db8bfa673024207f3768484574ba97a29fcdf6a493d634"
           },
           {
             "step": 13,
@@ -1984,9 +2156,12 @@
               "process_kinetics": 0.007484684095616256,
               "structure_phase_informed": 0.7357676483118415
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0421' (Net Scientific Value: 0.028). Expected Hypothesis Information Gain is 0.028 nats (expected posterior entropy: 0.014 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0421' (Net Scientific Value: 0.028). Expected Hypothesis Information Gain is 0.028 nats (expected posterior entropy: 0.014 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 15,
+            "representation_fingerprint": "b0937804fa6665946d0f8168e5793cf7ea6b494ab382ce2e5419bcca8b55df84"
           }
         ]
       },
@@ -2034,6 +2209,12 @@
           "reason": "Not yet evaluated",
           "num_scored": 0
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 16,
+          "representation_fingerprint": "2185e7a6db490dbbb889a88190085fcd09094683491cf4a7e808bd0350cd7af3",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -2053,9 +2234,12 @@
               "process_kinetics": 0.5803986458119716,
               "structure_phase_informed": 0.021684824643933526
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2631' (Net Scientific Value: 0.508). Expected Hypothesis Information Gain is 0.508 nats (expected posterior entropy: 0.590 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2631' (Net Scientific Value: 0.508). Expected Hypothesis Information Gain is 0.508 nats (expected posterior entropy: 0.590 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 3,
+            "representation_fingerprint": "f299e6da6ef476c8e67f570f97dc21ef6932886c76a5d6d565cec4f88e07c3df"
           },
           {
             "step": 2,
@@ -2075,9 +2259,12 @@
               "process_kinetics": 0.6928398212732272,
               "structure_phase_informed": 0.012719784734617863
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0821' (Net Scientific Value: 0.395). Expected Hypothesis Information Gain is 0.395 nats (expected posterior entropy: 0.371 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0821' (Net Scientific Value: 0.395). Expected Hypothesis Information Gain is 0.395 nats (expected posterior entropy: 0.371 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 4,
+            "representation_fingerprint": "9b27d524c3c1551a11fb4ff37c95a97004e17c910773314afd4a46386d3f1d3b"
           },
           {
             "step": 3,
@@ -2097,9 +2284,12 @@
               "process_kinetics": 0.024176319396847088,
               "structure_phase_informed": 0.0012037649251768524
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1718' (Net Scientific Value: 0.386). Expected Hypothesis Information Gain is 0.386 nats (expected posterior entropy: 0.284 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1718' (Net Scientific Value: 0.386). Expected Hypothesis Information Gain is 0.386 nats (expected posterior entropy: 0.284 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 5,
+            "representation_fingerprint": "1129027b270edd25f7755ac5189d373834187148ad712195db66cb7e75a92692"
           },
           {
             "step": 4,
@@ -2119,9 +2309,12 @@
               "process_kinetics": 0.007465633273210027,
               "structure_phase_informed": 0.0022888093284754414
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0121' (Net Scientific Value: 0.064). Expected Hypothesis Information Gain is 0.064 nats (expected posterior entropy: 0.060 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0121' (Net Scientific Value: 0.064). Expected Hypothesis Information Gain is 0.064 nats (expected posterior entropy: 0.060 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 6,
+            "representation_fingerprint": "b8779b7f577bc68c47324a581d3c08c1cf71ec9e3c6bddc35d9e0229ecec3c42"
           },
           {
             "step": 5,
@@ -2141,9 +2334,12 @@
               "process_kinetics": 3.046469238381423e-08,
               "structure_phase_informed": 0.999946398850404
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1734' (Net Scientific Value: 0.036). Expected Hypothesis Information Gain is 0.036 nats (expected posterior entropy: 0.024 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1734' (Net Scientific Value: 0.036). Expected Hypothesis Information Gain is 0.036 nats (expected posterior entropy: 0.024 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 7,
+            "representation_fingerprint": "1055cb9be4f15a8889ec1c999f3c02e57e567285611f5a0afa9ac47249b46b3f"
           },
           {
             "step": 6,
@@ -2163,9 +2359,12 @@
               "process_kinetics": 8.89308388170717e-06,
               "structure_phase_informed": 0.9876327922672228
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2130' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2130' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 8,
+            "representation_fingerprint": "f99b69a4e45010ba22d875bea6182006074108eb5463a06d5d9b7f203cecbbb7"
           },
           {
             "step": 7,
@@ -2185,9 +2384,12 @@
               "process_kinetics": 1.2412194944709934e-05,
               "structure_phase_informed": 0.7630084817637717
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0131' (Net Scientific Value: 0.057). Expected Hypothesis Information Gain is 0.057 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0131' (Net Scientific Value: 0.057). Expected Hypothesis Information Gain is 0.057 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 9,
+            "representation_fingerprint": "56145bad6b1a0f46ecdfd85d18c5af226aed856ed87a7f511261d1024ee7ff3b"
           },
           {
             "step": 8,
@@ -2207,9 +2409,12 @@
               "process_kinetics": 3.7919109266350067e-06,
               "structure_phase_informed": 0.012132959678535503
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1721' (Net Scientific Value: 0.459). Expected Hypothesis Information Gain is 0.459 nats (expected posterior entropy: 0.089 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1721' (Net Scientific Value: 0.459). Expected Hypothesis Information Gain is 0.459 nats (expected posterior entropy: 0.089 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 10,
+            "representation_fingerprint": "2e6f2eb08adf535ed450d56c69e9c1cba3cf5f90bc360fa42ea4069371024fdb"
           },
           {
             "step": 9,
@@ -2229,9 +2434,12 @@
               "process_kinetics": 5.984024703231154e-06,
               "structure_phase_informed": 0.0009679268722584006
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_2634' (Net Scientific Value: 0.060). Expected Hypothesis Information Gain is 0.060 nats (expected posterior entropy: 0.006 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_2634' (Net Scientific Value: 0.060). Expected Hypothesis Information Gain is 0.060 nats (expected posterior entropy: 0.006 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 11,
+            "representation_fingerprint": "9b2a39fa8a0c3dc8a6b5d036f61477a030824841cb1c35ce19d14c3b169ea5ab"
           },
           {
             "step": 10,
@@ -2251,9 +2459,12 @@
               "process_kinetics": 6.643169458655253e-06,
               "structure_phase_informed": 0.0010032102599289517
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0830' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0830' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 12,
+            "representation_fingerprint": "9d7e0a698c9d009d681793283bcbd5f17dc168bb471d624df0b8f088db5a122c"
           },
           {
             "step": 11,
@@ -2273,9 +2484,12 @@
               "process_kinetics": 3.5096685364032704e-07,
               "structure_phase_informed": 0.09099275942385304
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1826' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1826' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 13,
+            "representation_fingerprint": "5826ae086d7267e21572dbdce8af079464e566ab582f653e9da6b31547510d87"
           },
           {
             "step": 12,
@@ -2295,9 +2509,12 @@
               "process_kinetics": 2.3129046123094835e-10,
               "structure_phase_informed": 0.9921099657579188
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_1731' (Net Scientific Value: 0.279). Expected Hypothesis Information Gain is 0.279 nats (expected posterior entropy: 0.026 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_1731' (Net Scientific Value: 0.279). Expected Hypothesis Information Gain is 0.279 nats (expected posterior entropy: 0.026 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 14,
+            "representation_fingerprint": "0416e9a2a146fe26dc7f3ce2b3622369bcf23b1c1f8004200bb567cba84ccad7"
           },
           {
             "step": 13,
@@ -2317,9 +2534,12 @@
               "process_kinetics": 9.285895619426623e-12,
               "structure_phase_informed": 0.997753100467915
             },
-            "discovery_status": "enabled",
+            "discovery_status": "not_applicable",
             "degraded_mode": null,
-            "rationale": "Selects XRD for candidate 'PG_0130' (Net Scientific Value: 0.035). Expected Hypothesis Information Gain is 0.035 nats (expected posterior entropy: 0.011 nats) under policy mode 'pure_falsification'."
+            "rationale": "Selects XRD for candidate 'PG_0130' (Net Scientific Value: 0.035). Expected Hypothesis Information Gain is 0.035 nats (expected posterior entropy: 0.011 nats) under policy mode 'pure_falsification'.",
+            "representation_id": "alab_xrd_pca",
+            "representation_version": 15,
+            "representation_fingerprint": "b7c2a834745519e6ec36aabb7294148e1fa1e89429b3782404a745049fd37277"
           }
         ]
       }
@@ -2348,8 +2568,13 @@
         "XRD": 39,
         "REFINEMENT": 0
       },
+      "optimizer_expected": false,
       "optimizer_calls": 0,
-      "optimizer_success_rate": 1.0,
+      "optimizer_success_count": 0,
+      "optimizer_failure_count": 0,
+      "optimizer_degraded_count": 0,
+      "optimizer_success_rate": null,
+      "optimizer_validation_status": "NOT_APPLICABLE",
       "degraded_run_count": 0
     }
   },
@@ -2400,6 +2625,12 @@
           "reason": "OK",
           "num_scored": 1025,
           "degraded_mode": null
+        },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "b59693f54b87275c45c069ef1b4c86ea9b4c98aa2e2f49fc91b3394edabaea67",
+          "representation_frozen": true
         },
         "steps": [
           {
@@ -2581,6 +2812,12 @@
           "num_scored": 1025,
           "degraded_mode": null
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "fe9fb7c6a658918dafe8955ef14d7036f0cf7e6855ac8ef306888743fcc89ac0",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -2761,6 +2998,12 @@
           "num_scored": 1025,
           "degraded_mode": null
         },
+        "representation_checks": {
+          "representation_id": "alab_xrd_pca",
+          "representation_version": 3,
+          "representation_fingerprint": "f299e6da6ef476c8e67f570f97dc21ef6932886c76a5d6d565cec4f88e07c3df",
+          "representation_frozen": true
+        },
         "steps": [
           {
             "step": 1,
@@ -2921,8 +3164,13 @@
         "XRD": 0,
         "REFINEMENT": 0
       },
+      "optimizer_expected": true,
       "optimizer_calls": 18,
+      "optimizer_success_count": 18,
+      "optimizer_failure_count": 0,
+      "optimizer_degraded_count": 0,
       "optimizer_success_rate": 1.0,
+      "optimizer_validation_status": "VALIDATED",
       "degraded_run_count": 0
     }
   }
