@@ -7,8 +7,7 @@
       "size_mb": 0.03,
       "sha256": "97cfa251757f6fb6e14311207d24d3f51a13ed840a07b9162af48a93961c5db3",
       "rows": 58,
-      "columns": 51,
-      "role": "Initial experimentally labeled seed library (Batch 0, N=58) with 23-cycle decay curves and act_capacity_20"
+      "columns": 51
     },
     {
       "filename": "label_all_batches_feat.csv",
@@ -17,8 +16,7 @@
       "size_mb": 0.08,
       "sha256": "9aabe70c17401a2e0f1202d97059e6103be4ab7002cb5a65a221f76cf8bf9357",
       "rows": 208,
-      "columns": 52,
-      "role": "Full active-learning campaign ML representation dataset (Batches 0-7, N=208 rows, including target-copied rows)"
+      "columns": 52
     },
     {
       "filename": "label_batch1-6_feat.csv",
@@ -27,8 +25,7 @@
       "size_mb": 0.08,
       "sha256": "52eee47d3eb0c3fadfb041673fa790b8afe57ed423cf0440f430bd388e3b3896",
       "rows": 199,
-      "columns": 50,
-      "role": "Intermediate active-learning campaign dataset (Batches 0-6, N=199 rows) with complete feature columns"
+      "columns": 50
     },
     {
       "filename": "label_unlabel_all_uniq_solvents.csv",
@@ -37,8 +34,7 @@
       "size_mb": 10.93,
       "sha256": "511a206d72a78427ff8840ae9fd00e983c57d30b9218e4407c1e2121cf783904",
       "rows": 388013,
-      "columns": 2,
-      "role": "Master solvent catalog with test status indicator (-1 = unmeasured, 0..7 = batch tested, N=388,013)"
+      "columns": 2
     },
     {
       "filename": "label_unlabel_all_uniq_solvents_fgrp_class.csv",
@@ -47,8 +43,7 @@
       "size_mb": 18.63,
       "sha256": "e3d9c659ff8413c7b6b1b4adf354b51d3bd0e53d9c4fe4d43746eaf3806991f5",
       "rows": 388013,
-      "columns": 4,
-      "role": "Master solvent functional group classifications across 430 classes (N=388,013)"
+      "columns": 4
     },
     {
       "filename": "label_unlabel_all_uniq_solvents_fgrp_class_tsne.csv",
@@ -57,8 +52,7 @@
       "size_mb": 27.79,
       "sha256": "812e8d01d28d9bf83a952e1ca47ab7251e14445e786921097a52899cc24f87be",
       "rows": 388013,
-      "columns": 6,
-      "role": "2D t-SNE projection of master solvent catalog (N=388,013)"
+      "columns": 6
     },
     {
       "filename": "virtual_search_space_1million.csv",
@@ -67,8 +61,7 @@
       "size_mb": 457.4,
       "sha256": "68825ce89aacb09bf76a2ebcfeedc53a7eabb25aa2a7f4db3159180db04bb16c",
       "rows": 999999,
-      "columns": 27,
-      "role": "Virtual screening candidate space (N=999,999 formulation rows across 3 lithium salts)"
+      "columns": 27
     }
   ],
   "total_files": 7

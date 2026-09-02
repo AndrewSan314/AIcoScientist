@@ -1,0 +1,186 @@
+{
+  "raw_ml_rows": 208,
+  "unique_labeled_solvents": 97,
+  "total_deexpanded_campaign_outcomes": 132,
+  "batch0_seed_view": {
+    "raw_seed_rows": 58,
+    "unique_solvents": 25,
+    "unique_salts": 3,
+    "unique_condition_records": 40,
+    "replicate_condition_groups": 10,
+    "rows_in_replicate_groups": 28,
+    "replicates_sample": [
+      {
+        "condition": {
+          "solv_comb_sm": "CCOCCOC(C)C",
+          "salt_comb_sm": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "conc_salt_1": 2.0,
+          "theor_capacity": 150,
+          "amt_electrolyte": 50.0
+        },
+        "replicate_count": 3,
+        "targets": [
+          0.620446667,
+          0.643713333,
+          0.268066667
+        ]
+      },
+      {
+        "condition": {
+          "solv_comb_sm": "COCC(F)(F)C(F)(F)COC",
+          "salt_comb_sm": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "conc_salt_1": 1.0,
+          "theor_capacity": 150,
+          "amt_electrolyte": 50.0
+        },
+        "replicate_count": 4,
+        "targets": [
+          0.699386667,
+          0.67744,
+          0.5874,
+          0.570646667
+        ]
+      },
+      {
+        "condition": {
+          "solv_comb_sm": "COCCOC",
+          "salt_comb_sm": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "conc_salt_1": 1.0,
+          "theor_capacity": 150,
+          "amt_electrolyte": 50.0
+        },
+        "replicate_count": 2,
+        "targets": [
+          0.27658,
+          0.370866667
+        ]
+      },
+      {
+        "condition": {
+          "solv_comb_sm": "COCCOC",
+          "salt_comb_sm": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "conc_salt_1": 2.0,
+          "theor_capacity": 150,
+          "amt_electrolyte": 50.0
+        },
+        "replicate_count": 3,
+        "targets": [
+          0.6804,
+          0.709666667,
+          0.635333333
+        ]
+      },
+      {
+        "condition": {
+          "solv_comb_sm": "COCCOC(C)C",
+          "salt_comb_sm": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "conc_salt_1": 2.0,
+          "theor_capacity": 150,
+          "amt_electrolyte": 50.0
+        },
+        "replicate_count": 2,
+        "targets": [
+          0.7302,
+          0.745733333
+        ]
+      }
+    ],
+    "notes": "Batch 0 contains true physical replicates and deliberate protocol variants (e.g. 1.0M, 2.0M, 4.0M conc; 150, 161, 203 mAh/g cathodes). These condition variants are preserved and not collapsed."
+  },
+  "batch1_to_7_deexpanded_view": {
+    "raw_ml_rows": 150,
+    "unique_solvents": 72,
+    "de_expanded_campaign_outcomes": 74,
+    "status_breakdown": {
+      "TARGET_COPIED_ACROSS_SALTS": 39,
+      "SINGLE_ROW": 35
+    }
+  },
+  "campaign_summary_by_batch": [
+    {
+      "batch": 0,
+      "raw_ml_rows": 58,
+      "unique_solvents": 25,
+      "de_expanded_campaign_outcomes": 58,
+      "target_copied_groups": 0,
+      "target_median": 0.579,
+      "target_max": 0.8168,
+      "expansion_notes": "Seed batch / non-expanded representation"
+    },
+    {
+      "batch": 1,
+      "raw_ml_rows": 40,
+      "unique_solvents": 14,
+      "de_expanded_campaign_outcomes": 16,
+      "target_copied_groups": 12,
+      "target_median": 0.0,
+      "target_max": 0.0011,
+      "expansion_notes": "12 groups expanded across salts (40 raw ML rows -> 16 outcomes)"
+    },
+    {
+      "batch": 2,
+      "raw_ml_rows": 23,
+      "unique_solvents": 11,
+      "de_expanded_campaign_outcomes": 11,
+      "target_copied_groups": 6,
+      "target_median": 0.0,
+      "target_max": 0.4519,
+      "expansion_notes": "6 groups expanded across salts (23 raw ML rows -> 11 outcomes)"
+    },
+    {
+      "batch": 3,
+      "raw_ml_rows": 10,
+      "unique_solvents": 7,
+      "de_expanded_campaign_outcomes": 7,
+      "target_copied_groups": 2,
+      "target_median": 0.0,
+      "target_max": 0.5496,
+      "expansion_notes": "2 groups expanded across salts (10 raw ML rows -> 7 outcomes)"
+    },
+    {
+      "batch": 4,
+      "raw_ml_rows": 21,
+      "unique_solvents": 9,
+      "de_expanded_campaign_outcomes": 9,
+      "target_copied_groups": 6,
+      "target_median": 0.0001,
+      "target_max": 0.6343,
+      "expansion_notes": "6 groups expanded across salts (21 raw ML rows -> 9 outcomes)"
+    },
+    {
+      "batch": 5,
+      "raw_ml_rows": 31,
+      "unique_solvents": 11,
+      "de_expanded_campaign_outcomes": 11,
+      "target_copied_groups": 10,
+      "target_median": 0.0001,
+      "target_max": 0.7469,
+      "expansion_notes": "10 groups expanded across salts (31 raw ML rows -> 11 outcomes)"
+    },
+    {
+      "batch": 6,
+      "raw_ml_rows": 16,
+      "unique_solvents": 11,
+      "de_expanded_campaign_outcomes": 11,
+      "target_copied_groups": 3,
+      "target_median": 0.4624,
+      "target_max": 0.8276,
+      "expansion_notes": "3 groups expanded across salts (16 raw ML rows -> 11 outcomes)"
+    },
+    {
+      "batch": 7,
+      "raw_ml_rows": 9,
+      "unique_solvents": 9,
+      "de_expanded_campaign_outcomes": 9,
+      "target_copied_groups": 0,
+      "target_median": 0.726,
+      "target_max": 0.82,
+      "expansion_notes": "Seed batch / non-expanded representation"
+    }
+  ],
+  "limitations": [
+    "Exact physical cell IDs and wet-lab run serials are absent from the local CSVs.",
+    "In Batches 1-7, 115 rows are de-expanded into 74 acquisition outcomes based on identical solvent, batch, and target values.",
+    "Batch 0 condition records (40) reflect true physical protocol variations and are not collapsed into single solvent records."
+  ]
+}

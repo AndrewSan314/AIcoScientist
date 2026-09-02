@@ -1,5 +1,157 @@
 {
-  "primary_sanity_evaluation": "BASELINE B: Grouped Solvent Cross-Validation",
+  "primary_learnability_metric": "BASELINE C: De-expanded Grouped Solvent Cross-Validation",
+  "baseline_C_deexpanded_grouped_solvent_cv_PRIMARY": {
+    "Dummy (Mean)": {
+      "MAE": 0.2943,
+      "RMSE": 0.3146,
+      "R2": -0.0251,
+      "Spearman": -0.209
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.2739,
+      "RMSE": 0.3139,
+      "R2": -0.0207,
+      "Spearman": 0.23
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.265,
+      "RMSE": 0.3178,
+      "R2": -0.0465,
+      "Spearman": 0.2754
+    },
+    "Gaussian Process (RBF + WhiteKernel)": {
+      "MAE": 0.2377,
+      "RMSE": 0.2927,
+      "R2": 0.1122,
+      "Spearman": 0.3979
+    }
+  },
+  "baseline_D_deexpanded_temporal_campaign_generalization": [
+    {
+      "train_batches": "0..0",
+      "train_outcomes": 58,
+      "train_unique_solvents": 25,
+      "test_batch": 1,
+      "test_outcomes": 16,
+      "test_unique_solvents": 14,
+      "rf_MAE": 0.3793,
+      "rf_RMSE": 0.3839,
+      "rf_Spearman": -0.2399,
+      "true_batch_best": 0.0011,
+      "predicted_score_of_true_best": 0.3655,
+      "rank_of_true_best_within_test_batch": "6/16"
+    },
+    {
+      "train_batches": "0..1",
+      "train_outcomes": 74,
+      "train_unique_solvents": 39,
+      "test_batch": 2,
+      "test_outcomes": 11,
+      "test_unique_solvents": 11,
+      "rf_MAE": 0.3871,
+      "rf_RMSE": 0.4335,
+      "rf_Spearman": -0.1959,
+      "true_batch_best": 0.4519,
+      "predicted_score_of_true_best": 0.4418,
+      "rank_of_true_best_within_test_batch": "7/11"
+    },
+    {
+      "train_batches": "0..2",
+      "train_outcomes": 85,
+      "train_unique_solvents": 50,
+      "test_batch": 3,
+      "test_outcomes": 7,
+      "test_unique_solvents": 7,
+      "rf_MAE": 0.2494,
+      "rf_RMSE": 0.2913,
+      "rf_Spearman": 0.4144,
+      "true_batch_best": 0.5496,
+      "predicted_score_of_true_best": 0.6423,
+      "rank_of_true_best_within_test_batch": "1/7"
+    },
+    {
+      "train_batches": "0..3",
+      "train_outcomes": 92,
+      "train_unique_solvents": 57,
+      "test_batch": 4,
+      "test_outcomes": 9,
+      "test_unique_solvents": 9,
+      "rf_MAE": 0.2928,
+      "rf_RMSE": 0.3078,
+      "rf_Spearman": 0.4091,
+      "true_batch_best": 0.6343,
+      "predicted_score_of_true_best": 0.447,
+      "rank_of_true_best_within_test_batch": "1/9"
+    },
+    {
+      "train_batches": "0..4",
+      "train_outcomes": 101,
+      "train_unique_solvents": 66,
+      "test_batch": 5,
+      "test_outcomes": 11,
+      "test_unique_solvents": 11,
+      "rf_MAE": 0.2928,
+      "rf_RMSE": 0.3138,
+      "rf_Spearman": 0.1539,
+      "true_batch_best": 0.7469,
+      "predicted_score_of_true_best": 0.241,
+      "rank_of_true_best_within_test_batch": "7/11"
+    },
+    {
+      "train_batches": "0..5",
+      "train_outcomes": 112,
+      "train_unique_solvents": 77,
+      "test_batch": 6,
+      "test_outcomes": 11,
+      "test_unique_solvents": 11,
+      "rf_MAE": 0.2675,
+      "rf_RMSE": 0.3029,
+      "rf_Spearman": 0.1835,
+      "true_batch_best": 0.8276,
+      "predicted_score_of_true_best": 0.4528,
+      "rank_of_true_best_within_test_batch": "1/11"
+    },
+    {
+      "train_batches": "0..6",
+      "train_outcomes": 123,
+      "train_unique_solvents": 88,
+      "test_batch": 7,
+      "test_outcomes": 9,
+      "test_unique_solvents": 9,
+      "rf_MAE": 0.3138,
+      "rf_RMSE": 0.3427,
+      "rf_Spearman": 0.4667,
+      "true_batch_best": 0.82,
+      "predicted_score_of_true_best": 0.473,
+      "rank_of_true_best_within_test_batch": "2/9"
+    }
+  ],
+  "baseline_B_expanded_grouped_solvent_cv_COMPARISON": {
+    "Dummy (Mean)": {
+      "MAE": 0.2762,
+      "RMSE": 0.303,
+      "R2": -0.0175,
+      "Spearman": -0.1283
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.2337,
+      "RMSE": 0.2788,
+      "R2": 0.1381,
+      "Spearman": 0.466
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.2318,
+      "RMSE": 0.3001,
+      "R2": 0.0015,
+      "Spearman": 0.38
+    },
+    "Gaussian Process (RBF + WhiteKernel)": {
+      "MAE": 0.1809,
+      "RMSE": 0.2547,
+      "R2": 0.2809,
+      "Spearman": 0.5755
+    }
+  },
   "baseline_A_row_wise_cv_POTENTIAL_LEAKAGE": {
     "Dummy (Mean)": {
       "MAE": 0.2751,
@@ -19,38 +171,11 @@
       "R2": 0.6379,
       "Spearman": 0.7764
     },
-    "Gaussian Process (Matern52)": {
+    "Gaussian Process (RBF + WhiteKernel)": {
       "MAE": 0.1569,
       "RMSE": 0.2232,
       "R2": 0.4477,
       "Spearman": 0.6788
     }
-  },
-  "baseline_B_grouped_solvent_cv_PRIMARY": {
-    "Dummy (Mean)": {
-      "MAE": 0.2762,
-      "RMSE": 0.303,
-      "R2": -0.0175,
-      "Spearman": -0.1283
-    },
-    "Ridge (alpha=1.0)": {
-      "MAE": 0.2337,
-      "RMSE": 0.2788,
-      "R2": 0.1381,
-      "Spearman": 0.466
-    },
-    "Random Forest (100 trees)": {
-      "MAE": 0.2318,
-      "RMSE": 0.3001,
-      "R2": 0.0015,
-      "Spearman": 0.38
-    },
-    "Gaussian Process (Matern52)": {
-      "MAE": 0.1809,
-      "RMSE": 0.2547,
-      "R2": 0.2809,
-      "Spearman": 0.5755
-    }
-  },
-  "methodology_notes": "Row-wise CV exhibits severe data leakage because the same physical solvent with identical copied targets is split across train and test folds. Grouped Solvent CV guarantees zero chemical solvent overlap across folds, causing Random Forest R2 to drop from 0.6378 to 0.0015, while Gaussian Process achieves R2 = 0.2809 and Spearman = 0.5755."
+  }
 }
