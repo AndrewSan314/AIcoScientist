@@ -23,6 +23,8 @@ class ArtifactRef:
     selected_case_index: int | None = None
     selection_method: str = "canonical"
     is_canonical: bool = True
+    is_ledger_canonical: bool = True
+    is_replay_fallback: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -39,6 +41,8 @@ class ArtifactRef:
             selected_case_index=int(data["selected_case_index"]) if data.get("selected_case_index") is not None else None,
             selection_method=str(data.get("selection_method", "canonical")),
             is_canonical=bool(data.get("is_canonical", True)),
+            is_ledger_canonical=bool(data.get("is_ledger_canonical", data.get("is_canonical", True))),
+            is_replay_fallback=bool(data.get("is_replay_fallback", not data.get("is_canonical", True))),
         )
 
 
@@ -53,6 +57,8 @@ class ResolvedArtifactSelection:
     artifact_ref: ArtifactRef | None
     selection_method: str
     is_canonical: bool
+    is_ledger_canonical: bool = True
+    is_replay_fallback: bool = False
 
 
 class ALabArtifactIndex:
@@ -173,8 +179,12 @@ class ALabArtifactIndex:
                 continue
             self._index[sid] = {}
 
-            # 1. Match canonical XRD scan strictly (fail closed if canonical scan artifact missing)
-            can_scan, can_scan_idx, scan_method = get_canonical_scan(s)
+            # 1. Match canonical or replay fallback XRD scan
+            scan_res = get_canonical_scan(s)
+            can_scan, can_scan_idx, scan_method = scan_res
+            is_can = scan_res.is_canonical
+            is_ledger_can = scan_res.is_ledger_canonical
+            is_replay_fb = scan_res.is_replay_fallback
             if can_scan is not None:
                 fn = can_scan.get("filename", "")
                 base = os.path.basename(fn)
@@ -188,7 +198,9 @@ class ALabArtifactIndex:
                         checksum=manifest_checksums.get("raw_scans.zip"),
                         selected_scan_index=can_scan_idx,
                         selection_method=scan_method,
-                        is_canonical=True,
+                        is_canonical=is_can,
+                        is_ledger_canonical=is_ledger_can,
+                        is_replay_fallback=is_replay_fb,
                     )
                 elif base in xrd_members:
                     mem_path, sz = xrd_members[base]
@@ -200,7 +212,9 @@ class ALabArtifactIndex:
                         checksum=manifest_checksums.get("raw_scans.zip"),
                         selected_scan_index=can_scan_idx,
                         selection_method=scan_method,
-                        is_canonical=True,
+                        is_canonical=is_can,
+                        is_ledger_canonical=is_ledger_can,
+                        is_replay_fallback=is_replay_fb,
                     )
 
             # 2. Match canonical Refinement PKL strictly (no cross-scan or cross-case fallback)
@@ -252,23 +266,35 @@ class ALabArtifactIndex:
                 artifact_ref=ref,
                 selection_method=ref.selection_method,
                 is_canonical=ref.is_canonical,
+                is_ledger_canonical=ref.is_ledger_canonical,
+                is_replay_fallback=ref.is_replay_fallback,
             )
 
         # Fall closed: canonical artifact missing
         scan_idx = None
         case_idx = None
         method = "unresolvable"
+        is_can = True
+        is_ledger_can = False
+        is_replay_fb = False
         if sample:
             from src.domains.alab.canonical import get_canonical_refinement_case, get_canonical_scan
 
-            can_scan, can_scan_idx, scan_m = get_canonical_scan(sample)
+            scan_res = get_canonical_scan(sample)
+            can_scan, can_scan_idx, scan_m = scan_res
             scan_idx = can_scan_idx
             if modality == "XRD":
                 method = f"canonical_scan_{scan_m}_missing_artifact"
+                is_can = scan_res.is_canonical
+                is_ledger_can = scan_res.is_ledger_canonical
+                is_replay_fb = scan_res.is_replay_fallback
             elif modality == "REFINEMENT":
                 can_case, can_case_idx, case_m = get_canonical_refinement_case(can_scan)
                 case_idx = can_case_idx
                 method = f"canonical_case_{case_m}_missing_artifact"
+                is_can = True
+                is_ledger_can = (case_m == "ledger_active_case_index")
+                is_replay_fb = False
 
         return ResolvedArtifactSelection(
             sample_id=sample_id,
@@ -277,7 +303,9 @@ class ALabArtifactIndex:
             selected_case_index=case_idx,
             artifact_ref=None,
             selection_method=method,
-            is_canonical=True,
+            is_canonical=is_can,
+            is_ledger_canonical=is_ledger_can,
+            is_replay_fallback=is_replay_fb,
         )
 
     def _save_cache(self, cache_file: str, signature: dict[str, Any] | None = None) -> None:

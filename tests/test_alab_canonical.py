@@ -8,6 +8,7 @@ from src.domains.alab.canonical import (
     get_canonical_refinement_case,
     get_canonical_scan,
     normalize_phase_weights,
+    recompute_upstream_active_scan,
 )
 from src.domains.alab.chemistry import parse_refinement_phases
 from src.domains.alab.hypotheses import (
@@ -53,9 +54,32 @@ def test_canonical_scan_selection():
     assert idx == 1
     assert scan["filename"] == "scan1.xrdml"
     assert method == "ledger_active_scan_index"
+    res1 = get_canonical_scan(sample1)
+    assert res1.is_ledger_canonical is True
+    assert res1.is_replay_fallback is False
+    assert res1.is_canonical is True
 
-    # 2. Fallback to status valid / active
+    # 2. Recomputed upstream active scan from refinement
     sample2 = {
+        "active_scan_index": None,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {"filename": "scan0.xrdml"},
+                    {"filename": "scan1.xrdml", "refinement_cases": [{"rank": 1, "rwp": 0.08}]},
+                ]
+            }
+        },
+    }
+    res2 = get_canonical_scan(sample2)
+    assert res2.scan_index == 1
+    assert res2.selection_method == "upstream_recomputed_active_scan"
+    assert res2.is_ledger_canonical is False
+    assert res2.is_replay_fallback is False
+    assert res2.is_canonical is True
+
+    # 3. Fallback to status valid / active when no refinements exist (non-canonical replay fallback)
+    sample3 = {
         "active_scan_index": None,
         "characterization": {
             "xrd": {
@@ -66,27 +90,14 @@ def test_canonical_scan_selection():
             }
         },
     }
-    scan, idx, method = get_canonical_scan(sample2)
-    assert idx == 1
-    assert method == "status_active_or_valid"
+    res3 = get_canonical_scan(sample3)
+    assert res3.scan_index == 1
+    assert res3.selection_method == "replay_fallback_valid_scan"
+    assert res3.is_ledger_canonical is False
+    assert res3.is_replay_fallback is True
+    assert res3.is_canonical is False
 
-    # 3. Fallback to scan with refinement cases
-    sample3 = {
-        "active_scan_index": None,
-        "characterization": {
-            "xrd": {
-                "scans": [
-                    {"filename": "scan0.xrdml"},
-                    {"filename": "scan1.xrdml", "refinement_cases": [{"rank": 1}]},
-                ]
-            }
-        },
-    }
-    scan, idx, method = get_canonical_scan(sample3)
-    assert idx == 1
-    assert method == "has_refinement_cases"
-
-    # 4. Fallback to first scan
+    # 4. Fallback to first scan when no active scan, refinements, or valid status exist
     sample4 = {
         "characterization": {
             "xrd": {
@@ -97,9 +108,87 @@ def test_canonical_scan_selection():
             }
         }
     }
-    scan, idx, method = get_canonical_scan(sample4)
-    assert idx == 0
-    assert method == "fallback_first_scan"
+    res4 = get_canonical_scan(sample4)
+    assert res4.scan_index == 0
+    assert res4.selection_method == "replay_fallback_first_scan"
+    assert res4.is_ledger_canonical is False
+    assert res4.is_replay_fallback is True
+    assert res4.is_canonical is False
+
+
+def test_missing_active_scan_with_no_refinement_is_replay_fallback_not_canonical():
+    """Verifies that samples lacking active_scan_index and refinements are marked as fallback (is_canonical=False)."""
+    sample = {
+        "sample_id": "PG_TEST_FALLBACK",
+        "active_scan_index": None,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {"filename": "scan_fallback.xrdml", "status": "unverified"}
+                ]
+            }
+        }
+    }
+    res = get_canonical_scan(sample)
+    assert res.is_ledger_canonical is False
+    assert res.is_replay_fallback is True
+    assert res.is_canonical is False
+    assert res.selection_method == "replay_fallback_first_scan"
+
+
+def test_recomputed_active_scan_matches_upstream_quality_and_rwp_logic():
+    """Verifies that recompute_upstream_active_scan mirrors precursor-genome scan prioritization."""
+    sample = {
+        "sample_id": "PG_TEST_RECOMPUTE",
+        "active_scan_index": None,
+        "characterization": {
+            "xrd": {
+                "scans": [
+                    {
+                        "filename": "scan0.xrdml",
+                        "refinement_cases": [{"rank": 1, "rwp": 0.05, "verification": {"human_quality_score": 3}}]
+                    },
+                    {
+                        "filename": "scan1.xrdml",
+                        "refinement_cases": [{"rank": 1, "rwp": 0.09, "verification": {"human_quality_score": 1}}]
+                    },
+                ]
+            }
+        }
+    }
+    # scan1 should win because quality score 1 beats quality score 3, even though scan0 has lower Rwp
+    recomputed_scan, idx, method = recompute_upstream_active_scan(sample)
+    assert idx == 1
+    assert method == "upstream_recomputed_active_scan"
+    assert recomputed_scan["filename"] == "scan1.xrdml"
+
+
+def test_artifact_ref_marks_fallback_scan_noncanonical():
+    """Verifies that ArtifactRef and ALabArtifactIndex distinguish canonical and fallback scans."""
+    from src.domains.alab.artifact_index import ArtifactRef
+    ref_can = ArtifactRef(
+        archive_path="dummy.zip",
+        member_path="scan_can.xrdml",
+        modality="XRD",
+        is_canonical=True,
+        is_ledger_canonical=True,
+        is_replay_fallback=False,
+    )
+    assert ref_can.is_canonical is True
+    assert ref_can.is_ledger_canonical is True
+    assert ref_can.is_replay_fallback is False
+
+    ref_fallback = ArtifactRef(
+        archive_path="dummy.zip",
+        member_path="scan_fb.xrdml",
+        modality="XRD",
+        is_canonical=False,
+        is_ledger_canonical=False,
+        is_replay_fallback=True,
+    )
+    assert ref_fallback.is_canonical is False
+    assert ref_fallback.is_ledger_canonical is False
+    assert ref_fallback.is_replay_fallback is True
 
 
 def test_canonical_refinement_case_selection():
@@ -732,4 +821,73 @@ def test_canonical_refinement_missing_does_not_fallback_to_wrong_case(tmp_path):
     )
     with pytest.raises(RuntimeError, match="No canonical refinement case found"):
         adapter.execute_or_reveal(act)
+
+
+def test_audit_marks_malformed_xrd_unparsable():
+    """Verifies that malformed XML bytes fail closed with ValueError."""
+    from src.domains.alab.xrd_io import parse_alab_xrd
+    raw_bad = b"<not_valid_xml><unclosed>"
+    with pytest.raises(ValueError, match="Malformed XRD XML"):
+        parse_alab_xrd(raw_bad)
+
+
+def test_audit_detects_missing_xrd_intensity():
+    """Verifies that XRD scan with missing intensity counts raises ValueError."""
+    from src.domains.alab.xrd_io import parse_alab_xrd
+    xml = b"""<xrdMeasurements>
+        <scan>
+            <dataPoints>
+                <positions axis="2Theta">
+                    <startPosition>10.0</startPosition>
+                    <endPosition>80.0</endPosition>
+                </positions>
+            </dataPoints>
+        </scan>
+    </xrdMeasurements>"""
+    with pytest.raises(ValueError, match="Empty or missing XRD intensity"):
+        parse_alab_xrd(xml)
+
+
+def test_audit_detects_missing_physical_axis():
+    """Verifies that XRD scan without axis positions raises ValueError unless metadata provides it."""
+    from src.domains.alab.xrd_io import parse_alab_xrd
+    xml = b"""<xrdMeasurements>
+        <scan>
+            <dataPoints>
+                <intensities>10 20 30 40 50</intensities>
+            </dataPoints>
+        </scan>
+    </xrdMeasurements>"""
+    with pytest.raises(ValueError, match="Missing physical 2Theta axis"):
+        parse_alab_xrd(xml, scan_metadata=None)
+
+    # When range_2theta is in scan metadata, axis is recovered cleanly
+    parsed = parse_alab_xrd(xml, scan_metadata={"xrd_settings": {"range_2theta": [10.0, 90.0]}})
+    assert parsed.two_theta_start == 10.0
+    assert parsed.two_theta_end == 90.0
+    assert parsed.axis_source == "canonical_xrd_settings"
+    assert len(parsed.normalized_intensity) == 450
+
+
+def test_audit_marks_valid_xrd_replayable():
+    """Verifies that valid XRD scan is correctly parsed, interpolated, and normalized to 450 points."""
+    from src.domains.alab.xrd_io import parse_alab_xrd
+    xml = b"""<xrdMeasurements>
+        <scan>
+            <dataPoints>
+                <positions axis="2Theta">
+                    <startPosition>15.0</startPosition>
+                    <endPosition>85.0</endPosition>
+                </positions>
+                <intensities>5 15 25 100 20 5</intensities>
+            </dataPoints>
+        </scan>
+    </xrdMeasurements>"""
+    parsed = parse_alab_xrd(xml)
+    assert parsed.two_theta_start == 15.0
+    assert parsed.two_theta_end == 85.0
+    assert parsed.axis_source == "xml_positions_2theta"
+    assert len(parsed.normalized_intensity) == 450
+    assert np.max(parsed.normalized_intensity) == pytest.approx(1.0)
+
 

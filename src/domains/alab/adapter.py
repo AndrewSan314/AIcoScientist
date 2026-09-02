@@ -14,6 +14,7 @@ import pandas as pd
 from src.domains.alab.artifact_index import ALabArtifactIndex, ArtifactRef
 from src.domains.alab.chemistry import parse_chemical_formula, parse_refinement_phases
 from src.domains.alab.canonical import get_canonical_refinement_case, get_canonical_scan
+from src.domains.alab.xrd_io import parse_alab_xrd
 from src.domains.alab.config import (
     ALAB_CANONICAL_PRECURSORS,
     ALAB_CANDIDATE_FEATURE_NAMES,
@@ -323,7 +324,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             if ref is None:
                 raise RuntimeError(f"No XRD artifact found for candidate '{cid}'.")
 
-            can_scan, can_scan_idx, scan_method = get_canonical_scan(sample)
+            scan_res = get_canonical_scan(sample)
+            can_scan, can_scan_idx, scan_method = scan_res
             if ref.selected_scan_index is not None and can_scan_idx is not None and ref.selected_scan_index != can_scan_idx:
                 raise RuntimeError(
                     f"XRD artifact scan index mismatch for candidate '{cid}': "
@@ -332,70 +334,14 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
 
             raw_bytes = self._artifact_index.read_artifact_bytes(ref)
             try:
-                root = ET.fromstring(raw_bytes)
+                parsed_xrd = parse_alab_xrd(raw_bytes, scan_metadata=can_scan)
             except Exception as e:
                 raise ValueError(f"Malformed XRD XML file for candidate '{cid}': {e}") from e
 
-            # Extract physical 2theta axis start and end positions
-            start_pos: float | None = None
-            end_pos: float | None = None
-            axis_source = "xml_positions_2theta"
-            for elem in root.iter():
-                if elem.tag.endswith("positions") and elem.attrib.get("axis") == "2Theta":
-                    for child in elem:
-                        if child.tag.endswith("startPosition") and child.text:
-                            start_pos = float(child.text.strip())
-                        elif child.tag.endswith("endPosition") and child.text:
-                            end_pos = float(child.text.strip())
-                elif elem.tag.endswith("startPosition") and elem.text and start_pos is None:
-                    try:
-                        start_pos = float(elem.text.strip())
-                        axis_source = "xml_datapoints"
-                    except (ValueError, TypeError):
-                        pass
-                elif elem.tag.endswith("endPosition") and elem.text and end_pos is None:
-                    try:
-                        end_pos = float(elem.text.strip())
-                        axis_source = "xml_datapoints"
-                    except (ValueError, TypeError):
-                        pass
-
-            # If 2theta axis missing in XML, check explicit scan metadata from canonical scan
-            if start_pos is None or end_pos is None:
-                xrd_settings = (can_scan or {}).get("xrd_settings", {})
-                r2t = xrd_settings.get("range_2theta")
-                if isinstance(r2t, (list, tuple)) and len(r2t) == 2:
-                    start_pos = float(r2t[0])
-                    end_pos = float(r2t[1])
-                    axis_source = "canonical_xrd_settings"
-
-            if start_pos is None or end_pos is None:
-                raise ValueError(
-                    f"Missing physical 2Theta axis metadata for XRD scan of candidate '{cid}'. "
-                    f"Neither XML positions nor xrd_settings.range_2theta provide axis limits."
-                )
-
-            # Extract raw intensities / counts
-            intensities: list[float] = []
-            for elem in root.iter():
-                tag = elem.tag.split("}")[-1]
-                if tag in ("intensities", "counts") and elem.text:
-                    intensities = [float(x) for x in elem.text.split()]
-                    break
-
-            if not intensities:
-                raise ValueError(f"Empty or missing XRD intensity counts in scan for candidate '{cid}'.")
-
-            raw_arr = np.asarray(intensities, dtype=np.float64)
-            # Physical 2theta axis interpolation onto canonical 450-point 10-100 deg grid
-            phys_2theta = np.linspace(start_pos, end_pos, len(raw_arr))
-            canonical_grid = np.linspace(10.0, 100.0, 450)
-            norm_spec = np.interp(canonical_grid, phys_2theta, raw_arr)
-
-            # Normalize intensity
-            max_val = float(np.max(norm_spec))
-            if max_val > 0:
-                norm_spec = norm_spec / max_val
+            norm_spec = parsed_xrd.normalized_intensity
+            start_pos = parsed_xrd.two_theta_start
+            end_pos = parsed_xrd.two_theta_end
+            axis_source = parsed_xrd.axis_source
 
             emb = self._xrd_extractor.transform(norm_spec)
             self._revealed_xrd_spectra[cid] = norm_spec
@@ -425,7 +371,9 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     "preprocessing_version": "physical_2theta_v1",
                     "selected_scan_index": can_scan_idx,
                     "scan_selection_method": scan_method,
-                    "canonical_scan": True,
+                    "canonical_scan": ref.is_canonical,
+                    "is_ledger_canonical": ref.is_ledger_canonical,
+                    "is_replay_fallback": ref.is_replay_fallback,
                     "physical_axis_source": axis_source,
                     "selection_method": scan_method,
                     "representation_id": "alab_xrd_pca",
