@@ -1,0 +1,54 @@
+{
+  "benchmark_name": "Large-Pool Two-Stage Screening Scalability",
+  "working_set_size_target": 200,
+  "results": [
+    {
+      "candidate_count": 10000,
+      "pool_scope": "10,000 Virtual Formulations",
+      "load_time_sec": 0.2332,
+      "screen_time_sec": 0.0061,
+      "total_time_sec": 0.2394,
+      "throughput_cands_per_sec": 41777.6,
+      "peak_memory_mb": 411.43,
+      "memory_delta_mb": 30.54,
+      "working_set_size": 200,
+      "status": "PASS"
+    },
+    {
+      "candidate_count": 100000,
+      "pool_scope": "100,000 Virtual Formulations",
+      "load_time_sec": 0.2265,
+      "screen_time_sec": 0.0286,
+      "total_time_sec": 0.2551,
+      "throughput_cands_per_sec": 392058.5,
+      "peak_memory_mb": 417.43,
+      "memory_delta_mb": 6.0,
+      "working_set_size": 200,
+      "status": "PASS"
+    },
+    {
+      "candidate_count": 333333,
+      "pool_scope": "333k LiFSI Discovery Slice",
+      "load_time_sec": 0.9777,
+      "screen_time_sec": 0.0954,
+      "total_time_sec": 1.073,
+      "throughput_cands_per_sec": 310641.3,
+      "peak_memory_mb": 496.98,
+      "memory_delta_mb": 79.55,
+      "working_set_size": 200,
+      "status": "PASS"
+    },
+    {
+      "candidate_count": 999999,
+      "pool_scope": "999,999 Virtual Formulations",
+      "load_time_sec": 2.3952,
+      "screen_time_sec": 0.2858,
+      "total_time_sec": 2.681,
+      "throughput_cands_per_sec": 372999.5,
+      "peak_memory_mb": 694.35,
+      "memory_delta_mb": 197.37,
+      "working_set_size": 200,
+      "status": "PASS"
+    }
+  ]
+}

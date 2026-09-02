@@ -479,7 +479,8 @@ def render_audit_report(inventory_data, physical_campaign, identity_audit, candi
     
     # Render temporal table dynamically
     temp_rows_md = []
-    for r in campaign_gen:
+    rounds_list = campaign_gen.get("rounds", campaign_gen) if isinstance(campaign_gen, dict) else campaign_gen
+    for r in rounds_list:
         temp_rows_md.append(
             f"* Round {r['train_batches']} (N_tr={r['train_outcomes']} outcomes, {r['train_unique_solvents']} solvs) "
             f"-> Test Batch {r['test_batch']} (N_te={r['test_outcomes']} outcomes, {r['test_unique_solvents']} solvs): "

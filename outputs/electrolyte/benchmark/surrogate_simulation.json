@@ -1,0 +1,11 @@
+{
+  "simulation_label": "SIMULATED SURROGATE ORACLE - In-Silico Computational Approximation Only",
+  "search_space_slice": "50,000 LiFSI Virtual Candidates",
+  "screened_working_set_size": 200,
+  "screening_time_sec": 0.013,
+  "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
+  "oracle_best_score": 0.4376,
+  "top_1_pct_threshold": 0.2918,
+  "simulated_top_recovery_count": 0,
+  "notice": "This simulation does not represent wet-lab physical experimental synthesis. It evaluates algorithmic screening throughput and working-set information capture."
+}

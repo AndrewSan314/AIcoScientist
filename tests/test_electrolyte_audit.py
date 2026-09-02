@@ -199,21 +199,19 @@ def test_candidate_duplicate_counts_are_computed_not_hardcoded(committed_cand_st
     assert dup_audit["unique_22d_feature_vectors"] == 999326
     assert dup_audit["collision_groups_count"] == 619
     assert dup_audit["collision_extra_rows"] == 673
-    assert dup_audit["collision_causes"]["atom_mapping_syntax_variants"] == 20
-    assert dup_audit["collision_causes"]["topological_or_stereoisomer_variants"] == 599
+    assert dup_audit["collision_causes"]["SMILES_syntax_equivalent"] == 20
+    assert dup_audit["collision_causes"]["distinct_SMILES_same_feature_collision"] == 599
     assert dup_audit["collision_causes"]["cross_salt_collisions"] == 0
 
 
 def test_solvent_feature_identity_audit_detects_multiple_vectors_per_solvent(committed_solv_feat_audit):
     """P0 #5: Verify anomaly is explained as floating-point precision jitter near machine epsilon."""
     assert committed_solv_feat_audit["unique_solvent_strings"] == 388004
-    raw_analysis = committed_solv_feat_audit["raw_floating_point_analysis"]
-    r8_analysis = committed_solv_feat_audit["rounded_8_decimal_analysis"]
-    # At raw float64, multi-vector solvents exist due to roundoff
-    assert raw_analysis["multi_vector_solvents_count"] > 0
-    # At 8 decimals, exactly 0 multi-vector solvents exist
-    assert r8_analysis["multi_vector_solvents_count"] == 0
-    assert "machine epsilon" in committed_solv_feat_audit["proven_cause"]
+    assert committed_solv_feat_audit["multi_vector_solvents_count"] == 333470
+    assert committed_solv_feat_audit["global_max_abs_delta"] < 1e-14
+    assert committed_solv_feat_audit["max_mw_delta"] == 0.0
+    assert committed_solv_feat_audit["verdict"] == "PROVEN FLOATING-POINT JITTER"
+    assert "machine epsilon" in committed_solv_feat_audit["scientific_justification"]
 
 
 def test_gp_label_matches_actual_kernel(committed_baseline_sanity, audit_report_text):
@@ -224,44 +222,29 @@ def test_gp_label_matches_actual_kernel(committed_baseline_sanity, audit_report_
     assert "Gaussian Process (Matern52)" not in audit_report_text
 
 
-def test_report_is_rendered_from_computed_audit_results():
+def test_report_is_rendered_from_computed_audit_results(
+    committed_physical_campaign,
+    committed_identity_audit,
+    committed_cand_stats,
+    committed_solv_feat_audit,
+    committed_baseline_sanity,
+    committed_campaign_gen,
+):
     """High #4: Verify render_audit_report function produces a valid Markdown document with all sections."""
     dummy_inv = [{"filename": "f.csv", "format": "CSV", "size_mb": 1.0, "rows": 10, "columns": 2}]
-    dummy_phys = {
-        "total_deexpanded_campaign_outcomes": 132,
-        "raw_ml_rows": 208,
-        "campaign_summary_by_batch": []
-    }
-    dummy_id = {
-        "taxonomy": {"raw_labeled_training_rows": 208},
-        "target_semantics": {
-            "numerical_alias_validation": {"max_absolute_error": 1e-10}
-        },
-        "subsets": {
-            "subset_B_virtual_pool_compatible_recovered": {
-                "pool_compatible_ml_rows": 151,
-                "pool_compatible_unique_solvents": 75,
-                "pool_compatible_deexpanded_outcomes": 77
-            }
-        }
-    }
-    dummy_cand = {
-        "total_rows": 999999,
-        "unique_solvents": 388004
-    }
-    dummy_solv_feat = {}
-    dummy_cov = {
-        "coverage_C_virtual_pool_compatible_subset_N151_PRIMARY": {"median": 3.31}
-    }
-    dummy_base = {
-        "baseline_C_deexpanded_grouped_solvent_cv_PRIMARY": {
-            "Gaussian Process (RBF + WhiteKernel)": {"R2": 0.1122}
-        }
-    }
-    dummy_camp_gen = []
-    
+    cov_path = os.path.join(AUDIT_DIR, "search_space_coverage.json")
+    with open(cov_path, "r", encoding="utf-8") as f:
+        committed_cov = json.load(f)
+
     md_text = render_audit_report(
-        dummy_inv, dummy_phys, dummy_id, dummy_cand, dummy_solv_feat, dummy_cov, dummy_base, dummy_camp_gen
+        dummy_inv,
+        committed_physical_campaign,
+        committed_identity_audit,
+        committed_cand_stats,
+        committed_solv_feat_audit,
+        committed_cov,
+        committed_baseline_sanity,
+        committed_campaign_gen,
     )
     assert "# 1. Executive Summary" in md_text
     assert "# 5. Physical / De-expanded Campaign View" in md_text
