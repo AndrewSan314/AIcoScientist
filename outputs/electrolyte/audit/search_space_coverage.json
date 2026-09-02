@@ -1,5 +1,5 @@
 {
-  "nn_distance_to_batch0_58": {
+  "coverage_A_historical_seed_N58": {
     "min": 8.240549248272745e-09,
     "p5": 2.1928170926817785,
     "p25": 4.064112314691018,
@@ -12,7 +12,7 @@
     "mean": 5.478577887839045,
     "std": 1.8482623524127406
   },
-  "nn_distance_to_all_208": {
+  "coverage_B_full_training_representation_N208": {
     "min": 0.0,
     "p5": 1.461741112334709,
     "p25": 2.537756400606657,
@@ -25,231 +25,25 @@
     "mean": 3.224050778343043,
     "std": 1.0391727177956684
   },
-  "feature_range_comparison": {
-    "solv_ecfp_pca_0": {
-      "candidate_min": -2.2713378574099554,
-      "candidate_max": 2.5986283667226515,
-      "labeled_58_min": -1.321120898,
-      "labeled_58_max": 0.626498926,
-      "labeled_208_min": -1.61837021,
-      "labeled_208_max": 1.447439595
-    },
-    "solv_ecfp_pca_1": {
-      "candidate_min": -2.183239467376328,
-      "candidate_max": 2.477069970619897,
-      "labeled_58_min": -1.758840188,
-      "labeled_58_max": 0.207300714,
-      "labeled_208_min": -1.86306934,
-      "labeled_208_max": 0.636089802
-    },
-    "solv_ecfp_pca_2": {
-      "candidate_min": -1.9520133847844696,
-      "candidate_max": 2.272168503442782,
-      "labeled_58_min": -0.316575343,
-      "labeled_58_max": 1.246790938,
-      "labeled_208_min": -0.316575343,
-      "labeled_208_max": 1.726344181
-    },
-    "solv_ecfp_pca_3": {
-      "candidate_min": -1.62179375008441,
-      "candidate_max": 2.920836057869904,
-      "labeled_58_min": -0.732298724,
-      "labeled_58_max": 0.775133942,
-      "labeled_208_min": -0.993306142922746,
-      "labeled_208_max": 1.444529414
-    },
-    "solv_ecfp_pca_4": {
-      "candidate_min": -1.7661317885438796,
-      "candidate_max": 2.287207872921201,
-      "labeled_58_min": -1.124651424,
-      "labeled_58_max": 1.109053402,
-      "labeled_208_min": -1.12770827,
-      "labeled_208_max": 1.109053402
-    },
-    "solv_ecfp_pca_5": {
-      "candidate_min": -2.18157134242543,
-      "candidate_max": 1.994989550324436,
-      "labeled_58_min": -0.583818474,
-      "labeled_58_max": 1.295648251,
-      "labeled_208_min": -0.895699857,
-      "labeled_208_max": 1.322076143204328
-    },
-    "solv_ecfp_pca_6": {
-      "candidate_min": -2.010005437401245,
-      "candidate_max": 1.9831877127531472,
-      "labeled_58_min": -0.321363851,
-      "labeled_58_max": 1.47682235,
-      "labeled_208_min": -1.378522327,
-      "labeled_208_max": 1.703167566409269
-    },
-    "solv_ecfp_pca_7": {
-      "candidate_min": -1.5417609236521292,
-      "candidate_max": 2.674823033280939,
-      "labeled_58_min": -0.6026372,
-      "labeled_58_max": 0.764952846,
-      "labeled_208_min": -0.874409656,
-      "labeled_208_max": 1.288009264
-    },
-    "solv_ecfp_pca_8": {
-      "candidate_min": -1.580265504287138,
-      "candidate_max": 2.21730498099026,
-      "labeled_58_min": -1.026413003,
-      "labeled_58_max": 0.09926732,
-      "labeled_208_min": -1.325942591,
-      "labeled_208_max": 0.769220281
-    },
-    "solv_ecfp_pca_9": {
-      "candidate_min": -1.4803356543710708,
-      "candidate_max": 1.96986616236165,
-      "labeled_58_min": -0.69220093,
-      "labeled_58_max": 0.417589841,
-      "labeled_208_min": -1.341981685,
-      "labeled_208_max": 0.5218389488232956
-    },
-    "salt_ecfp_pca_0": {
-      "candidate_min": -2.3713168518491914,
-      "candidate_max": -1.6676085320710856,
-      "labeled_58_min": -2.16657931,
-      "labeled_58_max": -1.503904056,
-      "labeled_208_min": -2.371316852,
-      "labeled_208_max": -1.503904056
-    },
-    "salt_ecfp_pca_1": {
-      "candidate_min": -0.6184484876802065,
-      "candidate_max": -0.3098561605578936,
-      "labeled_58_min": -0.733163051,
-      "labeled_58_max": -0.415815516,
-      "labeled_208_min": -0.733163051,
-      "labeled_208_max": -0.309856161
-    },
-    "salt_ecfp_pca_2": {
-      "candidate_min": -0.8897858998256065,
-      "candidate_max": -0.412779777085149,
-      "labeled_58_min": -0.483659033,
-      "labeled_58_max": -0.412779777,
-      "labeled_208_min": -0.8897859,
-      "labeled_208_max": -0.412779777
-    },
-    "salt_ecfp_pca_3": {
-      "candidate_min": -0.430759472377965,
-      "candidate_max": -0.2870069818038727,
-      "labeled_58_min": -0.39284581,
-      "labeled_58_max": -0.2519296,
-      "labeled_208_min": -0.430759472,
-      "labeled_208_max": -0.2519296
-    },
-    "salt_ecfp_pca_4": {
-      "candidate_min": 0.7379343850398059,
-      "candidate_max": 1.0995798495581153,
-      "labeled_58_min": 1.022269868,
-      "labeled_58_max": 1.105527792,
-      "labeled_208_min": 0.737934385,
-      "labeled_208_max": 1.105527792
-    },
-    "salt_ecfp_pca_5": {
-      "candidate_min": -0.3879580439506869,
-      "candidate_max": 0.2036895022780899,
-      "labeled_58_min": -0.506508095,
-      "labeled_58_max": 0.141106727,
-      "labeled_208_min": -0.506508095,
-      "labeled_208_max": 0.203689502
-    },
-    "salt_ecfp_pca_6": {
-      "candidate_min": -0.3223389822266234,
-      "candidate_max": -0.0766658536164495,
-      "labeled_58_min": -0.408484039,
-      "labeled_58_max": -0.156029719,
-      "labeled_208_min": -0.408484039,
-      "labeled_208_max": -0.076665854
-    },
-    "salt_ecfp_pca_7": {
-      "candidate_min": 0.0084960467613078,
-      "candidate_max": 0.2587669438124406,
-      "labeled_58_min": 0.14965692,
-      "labeled_58_max": 0.258766944,
-      "labeled_208_min": 0.008496047,
-      "labeled_208_max": 0.258766944
-    },
-    "salt_ecfp_pca_8": {
-      "candidate_min": 0.161338129549714,
-      "candidate_max": 0.3190990240197719,
-      "labeled_58_min": 0.180155999,
-      "labeled_58_max": 0.301778981,
-      "labeled_208_min": 0.16133813,
-      "labeled_208_max": 0.319099024
-    },
-    "salt_ecfp_pca_9": {
-      "candidate_min": -0.2726479648254733,
-      "candidate_max": 0.1090626609208684,
-      "labeled_58_min": -0.352135175,
-      "labeled_58_max": -0.0241349,
-      "labeled_208_min": -0.352135175,
-      "labeled_208_max": 0.109062661
-    },
-    "mol_wt_solv": {
-      "candidate_min": 56.054352032,
-      "candidate_max": 870.5042581800001,
-      "labeled_58_min": 90.06807956,
-      "labeled_58_max": 314.0952783,
-      "labeled_208_min": 74.07316494,
-      "labeled_208_max": 468.0426377
-    },
-    "mol_wt_salt": {
-      "candidate_min": 144.00177487,
-      "candidate_max": 186.93968547,
-      "labeled_58_min": 186.9396855,
-      "labeled_58_max": 330.9414603,
-      "labeled_208_min": 144.0017749,
-      "labeled_208_max": 330.9414603
-    }
+  "coverage_C_virtual_pool_compatible_subset_N151_PRIMARY": {
+    "min": 0.0,
+    "p5": 1.5185438499551915,
+    "p25": 2.614936358100887,
+    "median": 3.2864938100669,
+    "p75": 3.9610989853874745,
+    "p90": 4.598347640354096,
+    "p95": 4.99765365860988,
+    "p99": 5.777313407428221,
+    "max": 8.056397243188387,
+    "mean": 3.285338722549489,
+    "std": 1.0345566215135034
   },
+  "domain_mixing_note": "Coverage A measures distance to the raw initial seed. Coverage B measures distance to the full 208 ML training rows (which includes cathode and concentration variants). Coverage C is the primary domain-matched metric comparing candidates against only the 151 pool-compatible formulations.",
   "functional_group_coverage": {
     "total_functional_classes_in_library": 430,
     "classes_with_at_least_one_experiment": 16,
     "classes_with_zero_experiments": 414,
     "percentage_classes_covered": 3.72,
-    "top_untested_classes": [
-      {
-        "class": "['Sulfonyl chloride', 'Ketone', 'Amide']",
-        "solvent_count": 3
-      },
-      {
-        "class": "['Sulfonate ester', 'Sulfone', 'Amine']",
-        "solvent_count": 3
-      },
-      {
-        "class": "['Sulfonyl chloride', 'Ether', 'Amide', 'Imide']",
-        "solvent_count": 4
-      },
-      {
-        "class": "['Carbonate']",
-        "solvent_count": 70
-      },
-      {
-        "class": "['Sulfone', 'Ether', 'Amide', 'Amine']",
-        "solvent_count": 15
-      },
-      {
-        "class": "['Sulfonate ester', 'Sulfone', 'Carbonate', 'Ether', 'Amide']",
-        "solvent_count": 1
-      },
-      {
-        "class": "['Sulfonyl chloride', 'Ester', 'Ether', 'Amide']",
-        "solvent_count": 2
-      },
-      {
-        "class": "['Anhydride', 'Ester', 'Ether', 'Ketone']",
-        "solvent_count": 5
-      },
-      {
-        "class": "['Sulfonyl chloride', 'Ester', 'Ether']",
-        "solvent_count": 10
-      },
-      {
-        "class": "['Anhydride', 'Ether', 'Amide', 'Imide']",
-        "solvent_count": 1
-      }
-    ],
     "tested_class_counts": {
       "['Ether']": 65,
       "['Others']": 8,
@@ -269,156 +63,98 @@
       "['Carbonate', 'Ether']": 1
     }
   },
-  "representative_candidates": [
+  "solvent_catalog_random_subsampling_diversity_risk": {
+    "sample_1000": {
+      "classes_found": 82,
+      "classes_dropped": 348,
+      "percentage_classes_preserved": 19.07,
+      "dropped_examples": [
+        "['Amide', 'Imide', 'Silyl ether']",
+        "['Ester', 'Ether', 'Ketone', 'Amine', 'Imide']",
+        "['Ester', 'Amide', 'Amine', 'Silyl ether']",
+        "['Ketone', 'Amine', 'Silyl ether']",
+        "['Sulfoxide', 'Ester', 'Imide']"
+      ]
+    },
+    "sample_10000": {
+      "classes_found": 188,
+      "classes_dropped": 242,
+      "percentage_classes_preserved": 43.72,
+      "dropped_examples": [
+        "['Ester', 'Ether', 'Ketone', 'Amine', 'Imide']",
+        "['Ketone', 'Amine', 'Silyl ether']",
+        "['Ester', 'Amide', 'Amine', 'Silyl ether']",
+        "['Sulfoxide', 'Ester', 'Ketone', 'Amine']",
+        "['Sulfoxide', 'Ester', 'Imide']"
+      ]
+    },
+    "sample_100000": {
+      "classes_found": 323,
+      "classes_dropped": 107,
+      "percentage_classes_preserved": 75.12,
+      "dropped_examples": [
+        "['Sulfoxide', 'Ester', 'Imide']",
+        "['Sulfone', 'Ketone', 'Imide']",
+        "['Ester', 'Amine', 'Nitro']",
+        "['Anhydride', 'Carbonate', 'Amide', 'Amine']",
+        "['Sulfonyl chloride', 'Ether', 'Amide', 'Imide']"
+      ]
+    }
+  },
+  "batch_7_validation_report": [
     {
-      "index": 0,
-      "solvent_smiles": "CN(C)C=O",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 73.05,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.3254,
-      "solv_ecfp_pca_1": -0.9191,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCOS(=O)(=O)C(F)(F)F",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 1,
-      "solvent_smiles": "CN1CCN(C)C1=O",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 114.08,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": 1.014,
-      "solv_ecfp_pca_1": -0.869,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCOCC(F)F",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 2,
-      "solvent_smiles": "CN(C)C(=O)N(C)C",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 116.09,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.5714,
-      "solv_ecfp_pca_1": 0.0797,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COC1CCCCO1",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 3,
-      "solvent_smiles": "CB(C)C=O",
-      "functional_group_class": "['Others']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 70.06,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.153,
-      "solv_ecfp_pca_1": -1.3215,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "CCCCOCCCOC",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 4,
-      "solvent_smiles": "[CH2]N(C)C=O",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 72.04,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.2833,
-      "solv_ecfp_pca_1": -0.8761,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "CCOCCCCOC",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 5,
-      "solvent_smiles": "[CH2]C(=O)N(C)C",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 86.06,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.5451,
-      "solv_ecfp_pca_1": 0.0369,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCCCOCC(F)(F)F",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 6,
-      "solvent_smiles": "CN(C)C(=O)F",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 91.04,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.5599,
-      "solv_ecfp_pca_1": 0.0016,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCCOCC(C)(C)C",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 7,
-      "solvent_smiles": "CC(=O)N(C)C",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 87.07,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.529,
-      "solv_ecfp_pca_1": 0.0738,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCCOCC(F)(F)C(F)F",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     },
     {
-      "index": 8,
-      "solvent_smiles": "CN(C)[SiH]=O",
-      "functional_group_class": "['Amine']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 89.03,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.2857,
-      "solv_ecfp_pca_1": -0.9154,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
-    },
-    {
-      "index": 9,
-      "solvent_smiles": "[CH2]N(C)C(=O)N(C)C",
-      "functional_group_class": "['Amide']",
-      "salt_name": "LiFSI",
-      "salt_smiles": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-      "mol_wt_solv": 115.09,
-      "mol_wt_salt": 186.94,
-      "solv_ecfp_pca_0": -0.5409,
-      "solv_ecfp_pca_1": 0.0815,
-      "salt_ecfp_pca_0": -2.1666,
-      "conc_salt_1_M": 1.0,
-      "amt_electrolyte_uL": 50.0,
-      "theor_capacity_mAh_g": 150.0
+      "solvent": "COCCCF",
+      "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+      "exact_pool_match_count": 1,
+      "feature_recovery_status": "EXACT_1_TO_1_MATCH"
     }
   ]
 }

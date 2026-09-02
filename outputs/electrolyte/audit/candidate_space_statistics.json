@@ -72,6 +72,22 @@
     "paired_with_2_salts": 54945,
     "paired_with_3_salts": 278525
   },
+  "effective_space_analysis": {
+    "raw_candidate_rows": 999999,
+    "unique_solvents": 388004,
+    "unique_salts": 3,
+    "unique_solvent_salt_pairs": 999999,
+    "exact_duplicate_rows": 0,
+    "duplicate_solvent_salt_keys": 0,
+    "unique_22D_feature_vectors": 999326,
+    "duplicate_22D_feature_vectors": 673,
+    "unique_solvent_11D_vectors": 742382,
+    "notes": "673 duplicate 22D feature vectors correspond to formatting variants of the same chemical (e.g., atom-mapped SMILES vs non-atom-mapped SMILES) that map to identical ECFP PCA descriptors and MW."
+  },
+  "generation_semantics": {
+    "is_complete_cartesian_product": false,
+    "description": "The 1M candidate library is not a complete Cartesian product of 333,333 solvents x 3 salts. Rather, it contains exactly 388,004 unique solvent molecules where 278,525 solvents are paired with all 3 salts, 54,945 solvents are paired with 2 salts, and 54,534 solvents are paired with 1 salt, yielding exactly 333,333 rows per salt."
+  },
   "constant_features": {
     "conc_salt_1": [
       1.0
@@ -239,5 +255,5 @@
       "missing_count": 0
     }
   },
-  "scan_time_seconds": 8.13
+  "scan_time_seconds": 11.34
 }

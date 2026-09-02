@@ -1,0 +1,955 @@
+{
+  "taxonomy": {
+    "raw_labeled_training_rows": 208,
+    "unique_solvents": 97,
+    "unique_salts": 6,
+    "unique_solvent_salt_pairs": 175,
+    "unique_full_condition_rows": 190,
+    "target_repeated_across_salts_groups": 39,
+    "rows_in_target_repeated_groups": 115,
+    "independent_wet_lab_records_estimate": "UNKNOWN",
+    "independent_wet_lab_records_reason": "The aggregated CSV contains ML training representations where 115 rows (across 39 groups) have identical target values copied across different salts. Without physical lab notebook IDs, timestamps, or cell serial numbers, independent wet-lab experiments cannot be unambiguously untangled."
+  },
+  "target_semantics": {
+    "raw_target_column": "norm_capacity_3",
+    "scientific_target_name": "C_norm^20",
+    "scientific_meaning": "Normalized discharge capacity at the 20th cycle (C_dis^20 / C_theoretical)",
+    "source_semantics": "Associated Nature Communications paper defines optimization target as 20th-cycle normalized capacity; upstream code maps it to column norm_capacity_3",
+    "numerical_alias_validation": {
+      "formula": "act_capacity_20 / theor_capacity == norm_capacity_3",
+      "tested_samples": 58,
+      "max_absolute_error": 3.33333360913457e-10,
+      "mean_absolute_error": 6.71265428318703e-11,
+      "exceptions_count": 0,
+      "verified_consistent": true
+    }
+  },
+  "example_target_copied_groups": [
+    {
+      "solvent_smiles": "CC1(C(=O)Cl)CCCCC1",
+      "batch": 1,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CC1(C)CCCC(=O)C1",
+      "batch": 1,
+      "target_value": 6.67e-05,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CC1(C)CCCCC1",
+      "batch": 1,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CC1(Cl)CCCCC1",
+      "batch": 1,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCCCC(OCC)OCC",
+      "batch": 4,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCCCCCOC=O",
+      "batch": 4,
+      "target_value": 0.0001,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCCCCCON=O",
+      "batch": 4,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCCCCCOS(C)(=O)=O",
+      "batch": 4,
+      "target_value": 0.003003333,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCCCOCCCl",
+      "batch": 4,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    },
+    {
+      "solvent_smiles": "CCN1CCCC1",
+      "batch": 1,
+      "target_value": 0.0,
+      "row_count": 3,
+      "salts": [
+        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+        "[Li+].F[P-](F)(F)(F)(F)F",
+        "[Li+].O=C1O[B-](F)(F)OC1=O"
+      ],
+      "distinct_salt_descriptors": true
+    }
+  ],
+  "subsets": {
+    "subset_A_full_ml_training_representation": {
+      "total_rows": 208,
+      "label": "ml_training_representation",
+      "note": "Aggregated modeling table spanning Batches 0-7, containing protocol variants, cathode variants, and target-copied rows."
+    },
+    "subset_B_virtual_pool_compatible_raw": {
+      "mode": "RAW",
+      "compatible_training_rows": 139,
+      "unique_compatible_solvents": 63,
+      "unique_compatible_pairs": 139,
+      "excluded_rows": 69,
+      "compatible_indices": [
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198
+      ],
+      "exclusion_reason_counts": {
+        "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)": 56,
+        "pair_not_in_1M_pool": 53,
+        "non_1M_concentration (2.2 M)": 1,
+        "non_1M_concentration (2.0 M)": 13,
+        "solvent_not_in_1M_pool": 5,
+        "different_electrolyte_volume (40.0 uL)": 1,
+        "different_electrolyte_volume (13.0 uL)": 7,
+        "different_cathode (203 mAh/g)": 12,
+        "unsupported_salt (O=C1O[B-](F)(F)OC1=O.O=S(...)": 1,
+        "unsupported_salt (F[B-](F)(F)F.O=S(=O)(F)[N...)": 1,
+        "different_cathode (161 mAh/g)": 3,
+        "non_1M_concentration (4.0 M)": 2,
+        "missing_amt_electrolyte (NaN in batch 7)": 9
+      },
+      "exclusion_details_sample": [
+        {
+          "index": 0,
+          "batch": 0,
+          "solvent": "COCCOC",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 1,
+          "batch": 0,
+          "solvent": "COCCOC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 2,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 3,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 4,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "non_1M_concentration (2.2 M)",
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 5,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 6,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 7,
+          "batch": 0,
+          "solvent": "CCCCOCCOC",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 8,
+          "batch": 0,
+          "solvent": "COCCOC1CCCC1",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 9,
+          "batch": 0,
+          "solvent": "CCCCOCCOC(C)C",
+          "salt": "O=S(=O)(F)[N-]S(=O)(=O)F.[Li+]",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "unsupported_salt (O=S(=O)(F)[N-]S(=O)(=O)F....)",
+            "pair_not_in_1M_pool"
+          ]
+        }
+      ]
+    },
+    "subset_B_virtual_pool_compatible_canonical": {
+      "mode": "CANONICAL",
+      "compatible_training_rows": 142,
+      "unique_compatible_solvents": 66,
+      "unique_compatible_pairs": 142,
+      "excluded_rows": 66,
+      "compatible_indices": [
+        44,
+        52,
+        54,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198
+      ],
+      "exclusion_reason_counts": {
+        "pair_not_in_1M_pool": 47,
+        "non_1M_concentration (2.2 M)": 1,
+        "non_1M_concentration (2.0 M)": 13,
+        "solvent_not_in_1M_pool": 5,
+        "different_electrolyte_volume (40.0 uL)": 1,
+        "different_electrolyte_volume (13.0 uL)": 7,
+        "different_cathode (203 mAh/g)": 12,
+        "unsupported_salt (O=C1O[B-](F)(F)OC1=O.O=S(...)": 1,
+        "unsupported_salt (F[B-](F)(F)F.O=S(=O)(F)[N...)": 1,
+        "different_cathode (161 mAh/g)": 3,
+        "non_1M_concentration (4.0 M)": 2,
+        "missing_amt_electrolyte (NaN in batch 7)": 9
+      },
+      "exclusion_details_sample": [
+        {
+          "index": 0,
+          "batch": 0,
+          "solvent": "COCCOC",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 1,
+          "batch": 0,
+          "solvent": "COCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 2,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 3,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 4,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.2 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 5,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 6,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 7,
+          "batch": 0,
+          "solvent": "CCCCOCCOC",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 8,
+          "batch": 0,
+          "solvent": "COCCOC1CCCC1",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 9,
+          "batch": 0,
+          "solvent": "CCCCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        }
+      ]
+    },
+    "subset_B_virtual_pool_compatible_recovered": {
+      "mode": "CANONICAL_WITH_B7_RECOVERED",
+      "compatible_training_rows": 151,
+      "unique_compatible_solvents": 75,
+      "unique_compatible_pairs": 151,
+      "excluded_rows": 57,
+      "compatible_indices": [
+        44,
+        52,
+        54,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207
+      ],
+      "exclusion_reason_counts": {
+        "pair_not_in_1M_pool": 47,
+        "non_1M_concentration (2.2 M)": 1,
+        "non_1M_concentration (2.0 M)": 13,
+        "solvent_not_in_1M_pool": 5,
+        "different_electrolyte_volume (40.0 uL)": 1,
+        "different_electrolyte_volume (13.0 uL)": 7,
+        "different_cathode (203 mAh/g)": 12,
+        "unsupported_salt (O=C1O[B-](F)(F)OC1=O.O=S(...)": 1,
+        "unsupported_salt (F[B-](F)(F)F.O=S(=O)(F)[N...)": 1,
+        "different_cathode (161 mAh/g)": 3,
+        "non_1M_concentration (4.0 M)": 2
+      },
+      "exclusion_details_sample": [
+        {
+          "index": 0,
+          "batch": 0,
+          "solvent": "COCCOC",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 1,
+          "batch": 0,
+          "solvent": "COCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 2,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 3,
+          "batch": 0,
+          "solvent": "COCCOCC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 4,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.2 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 5,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 6,
+          "batch": 0,
+          "solvent": "CCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 7,
+          "batch": 0,
+          "solvent": "CCCCOCCOC",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 8,
+          "batch": 0,
+          "solvent": "COCCOC1CCCC1",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "pair_not_in_1M_pool"
+          ]
+        },
+        {
+          "index": 9,
+          "batch": 0,
+          "solvent": "CCCCOCCOC(C)C",
+          "salt": "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
+          "reasons": [
+            "non_1M_concentration (2.0 M)",
+            "pair_not_in_1M_pool"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -4,475 +4,376 @@
     "dtype": "str",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
   },
   "salt_comb_sm": {
     "category": "Identity",
     "dtype": "str",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
   },
   "batch": {
     "category": "Identity",
     "dtype": "int64",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": false,
-    "in_batch1_6": false,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
   },
   "solv_ecfp_pca_0": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_1": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_2": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_3": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_4": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_5": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_6": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_7": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_8": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "solv_ecfp_pca_9": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_0": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_1": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_2": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_3": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_4": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_5": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_6": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_7": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_8": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "salt_ecfp_pca_9": {
     "category": "Pre-experiment feature (Molecular ECFP PCA)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "mol_wt_solv": {
     "category": "Pre-experiment feature (Molecular Weight)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "mol_wt_salt": {
     "category": "Pre-experiment feature (Molecular Weight)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "conc_salt_1": {
     "category": "Pre-experiment feature (Cell / Formulation Setting)",
     "dtype": "float64",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
   },
   "theor_capacity": {
     "category": "Pre-experiment feature (Cell / Formulation Setting)",
     "dtype": "int64",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
   },
   "amt_electrolyte": {
     "category": "Pre-experiment feature (Cell / Formulation Setting)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_1": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_1)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_2": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_2)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_3": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: C_norm^20 (Normalized discharge capacity at cycle 20)",
     "dtype": "float64",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Present across all batches"
+    "note": "Primary campaign target C_norm^20; numerically equal to act_capacity_20 / theor_capacity"
   },
   "norm_capacity_4": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_4)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_5": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_5)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_6": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_6)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_7": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_7)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_8": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_8)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_9": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_9)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_10": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_10)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_11": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_11)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_12": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_12)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_13": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_13)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_14": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_14)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_15": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_15)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_16": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_16)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_17": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_17)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_18": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_18)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_19": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_19)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_20": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_20)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_21": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_21)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_22": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_22)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "norm_capacity_23": {
-    "category": "Post-experiment observation (Normalized Cycling Capacity)",
+    "category": "Post-experiment observation: Cycle-decay profile (norm_capacity_23)",
     "dtype": "float64",
     "missing_count_all": 9,
     "missing_pct_all": 4.326923076923077,
-    "in_inhouse": true,
-    "in_batch1_6": true,
-    "note_on_batch_7": "Missing (NaN) in Batch 7 rows (rows 199-207)"
+    "note": ""
   },
   "expt_test": {
     "category": "Identity",
     "dtype": "int64",
     "missing_count_all": 0,
     "missing_pct_all": 0.0,
-    "in_inhouse": false,
-    "in_batch1_6": false,
-    "note_on_batch_7": "Present across all batches"
+    "note": ""
+  },
+  "salt_canonical": {
+    "category": "Identity",
+    "dtype": "str",
+    "missing_count_all": 0,
+    "missing_pct_all": 0.0,
+    "note": ""
   },
   "act_capacity_20": {
-    "category": "Post-experiment observation (Actual Measured Capacity in mAh/g)",
+    "category": "Post-experiment observation (Physical Specific Capacity at Cycle 20 in mAh/g)",
     "dtype": "float64",
     "missing_count_inhouse": 0,
-    "in_inhouse": true,
-    "in_all_batches": false,
-    "notes": "Identical to norm_capacity_3 * theor_capacity across all rows in inhouse."
+    "note": "Exact physical measurement alias: act_capacity_20 = norm_capacity_3 * theor_capacity."
   }
 }
