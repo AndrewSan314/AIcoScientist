@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
+import copy
+from typing import Any
 import pytest
 
 from scripts.run_alab_validation import (
@@ -10,8 +10,47 @@ from scripts.run_alab_validation import (
 )
 
 
+def _get_valid_mock_audit() -> dict[str, Any]:
+    """Returns a valid mock audit dictionary satisfying all 6 gates."""
+    return {
+        "candidate_identity": {
+            "total_candidates": 1035,
+            "unique_precursors_in_dataset": 46,
+            "canonical_precursors_defined": 46,
+            "unique_target_compounds": 90,
+        },
+        "outcome_semantics": {
+            "total_samples": 1035,
+            "classified_samples": 1009,
+            "unclassified_samples": 26,
+            "samples_with_physical_failure_field": 26,
+            "utility_mapping": {
+                "completely_reacted": 1.0,
+                "transformed": 0.75,
+                "partially_reacted": 0.5,
+                "unreacted": 0.0,
+                "unclassified": None,
+            },
+        },
+        "characterization_coverage": {
+            "total_scans": 1351,
+            "samples_with_scans": 1035,
+            "samples_with_no_scans": 0,
+            "total_refinements": 1950,
+            "samples_with_refinements": 1030,
+        },
+        "canonical_xrd_usability": {
+            "canonical_xrd_usable_for_replay": 1035,
+        },
+        "canonical_refinement_usability": {
+            "canonical_refinement_usable_for_replay": 1030,
+        },
+    }
+
+
+@pytest.mark.external_data
 def test_audit_dataset_sanity_gates_and_canonical_usability(tmp_path):
-    """Verifies that audit_alab_dataset evaluates canonical usability and sanity gates."""
+    """Verifies that audit_alab_dataset evaluates canonical usability and sanity gates on real data."""
     audit = audit_alab_dataset("data/external/precursor_genome_2026", tmp_path)
 
     # Sanity gates
@@ -33,7 +72,7 @@ def test_audit_dataset_sanity_gates_and_canonical_usability(tmp_path):
 
 def test_validation_verdict_earned_from_explicit_gates(tmp_path):
     """Verifies that generate_demonstration_report computes gate-driven verdict."""
-    audit = audit_alab_dataset("data/external/precursor_genome_2026", tmp_path)
+    audit = _get_valid_mock_audit()
 
     mock_benchmark = {
         "RANDOM": {"summary": {"mean_bootstrap_best_utility": 0.85, "mean_autonomous_improvement_amount": 0.05, "mean_autonomous_cost": 13.0, "mean_final_utility": 0.9, "std_final_utility": 0.1, "mean_final_entropy_nats": 1.0, "std_final_entropy_nats": 0.1, "total_objective_actions": 6, "total_characterization_actions": 0, "optimizer_success_rate": 1.0}},
@@ -55,9 +94,9 @@ def test_validation_verdict_earned_from_explicit_gates(tmp_path):
 
 def test_validation_verdict_fails_closed_when_gate_fails(tmp_path):
     """Verifies that if any gate fails, the verdict is NOT READY."""
-    audit = audit_alab_dataset("data/external/precursor_genome_2026", tmp_path)
-    # Simulate a corrupted schema audit
-    audit["outcome_semantics"]["classified_samples"] = 999  # Invalid!
+    audit = _get_valid_mock_audit()
+    # Corrupt schema count
+    audit["outcome_semantics"]["classified_samples"] = 999
 
     mock_benchmark = {
         "RANDOM": {"summary": {"mean_bootstrap_best_utility": 0.85, "mean_autonomous_improvement_amount": 0.0, "mean_autonomous_cost": 13.0, "mean_final_utility": 0.85, "std_final_utility": 0.0, "mean_final_entropy_nats": 1.0, "std_final_entropy_nats": 0.0, "total_objective_actions": 0, "total_characterization_actions": 0, "optimizer_success_rate": 1.0}}
