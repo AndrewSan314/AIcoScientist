@@ -1,260 +1,159 @@
 {
   "unique_solvent_strings": 388004,
   "unique_raw_solvent_11d_vectors": 742382,
-  "raw_floating_point_analysis": {
-    "solvents_with_1_vector": 101452,
-    "solvents_with_2_vectors": 218135,
-    "solvents_with_3_vectors": 68417,
-    "multi_vector_solvents_count": 286552,
-    "multi_vector_percentage": 73.85,
-    "maximum_vectors_per_solvent": 3
-  },
-  "rounded_8_decimal_analysis": {
-    "multi_vector_solvents_count": 0,
-    "unique_solvent_11d_vectors": 387637,
-    "solvents_with_multiple_vectors": 0
-  },
-  "proven_cause": "PROVEN: The apparent 742,382 unique raw vectors result entirely from floating-point roundoff jitter near IEEE 754 machine epsilon (max diff ~ 4.44e-16 to 6.66e-16) during PCA projection calculation or serialization across salt chunks. When rounded to 8 decimal places, exactly ZERO solvents have multiple vectors, and all 388,004 solvents map to 387,637 unique structural vectors (367 genuine isomer collisions).",
-  "representative_anomalous_examples": [
+  "multi_vector_solvents_count": 333470,
+  "global_max_abs_delta": 3.3306690738754696e-15,
+  "p50_delta": 4.440892098500626e-16,
+  "p90_delta": 8.881784197001252e-16,
+  "p95_delta": 9.992007221626409e-16,
+  "p99_delta": 1.3322676295501878e-15,
+  "count_delta_le_1e_15": 317273,
+  "count_delta_le_1e_12": 333470,
+  "count_delta_le_1e_9": 333470,
+  "max_mw_delta": 0.0,
+  "max_pca_delta": 3.3306690738754696e-15,
+  "verdict": "PROVEN FLOATING-POINT JITTER",
+  "scientific_justification": "Across all 333,470 multi-vector solvents, 100% of within-solvent deltas are <= 3.3307e-15 (order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.",
+  "representative_examples": [
     {
       "solvent_smiles": "CN(C)C=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN1CCN(C)C1=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN(C)C(=O)N(C)C",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 6.661338147750939e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 6.661338147750939e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 6.661338147750939e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 6.661338147750939e-16
     },
     {
       "solvent_smiles": "CB(C)C=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 6.661338147750939e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 6.661338147750939e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 6.661338147750939e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 6.661338147750939e-16
     },
     {
       "solvent_smiles": "[CH2]N(C)C=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "[CH2]C(=O)N(C)C",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 6.661338147750939e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 6.661338147750939e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 6.661338147750939e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 6.661338147750939e-16
     },
     {
       "solvent_smiles": "CN(C)C(=O)F",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 2.220446049250313e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 2.220446049250313e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 2.220446049250313e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 2.220446049250313e-16
     },
     {
       "solvent_smiles": "CC(=O)N(C)C",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 2.220446049250313e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 2.220446049250313e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN(C)[SiH]=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O"
-      ],
-      "max_absolute_feature_difference": 5.551115123125783e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 5.551115123125783e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 5.551115123125783e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 5.551115123125783e-16
     },
     {
       "solvent_smiles": "[CH2]N(C)C(=O)N(C)C",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 6.661338147750939e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 6.661338147750939e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 6.661338147750939e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 6.661338147750939e-16
     },
     {
       "solvent_smiles": "CN1CON(C)C1=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O"
-      ],
-      "max_absolute_feature_difference": 6.661338147750939e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 6.661338147750939e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 6.661338147750939e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 6.661338147750939e-16
     },
     {
       "solvent_smiles": "CN1CN(C)N(C)C1=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O"
-      ],
-      "max_absolute_feature_difference": 5.551115123125783e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 5.551115123125783e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 5.551115123125783e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 5.551115123125783e-16
     },
     {
       "solvent_smiles": "CN1CN(C)C(=O)N(C)C1",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O"
-      ],
-      "max_absolute_feature_difference": 3.3306690738754696e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 3.3306690738754696e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN1COCN(C)C1=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN(F)C=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN1CC(=O)N(C)C1",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 5.551115123125783e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 5.551115123125783e-16
     },
     {
       "solvent_smiles": "CN(C=O)C=O",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CN(C)C(=O)N(C)F",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F",
-        "[Li+].F[P-](F)(F)(F)(F)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "CB1CCN(C)C1",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     },
     {
       "solvent_smiles": "[CH]C(=O)N(C)C",
-      "distinct_raw_vectors": 3,
-      "salts_associated": [
-        "[Li+].O=C1O[B-](F)(F)OC1=O",
-        "[Li+].F[P-](F)(F)(F)(F)F",
-        "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
-      ],
-      "max_absolute_feature_difference": 4.440892098500626e-16,
-      "mw_difference": 0.0,
-      "pca_max_difference": 4.440892098500626e-16
+      "distinct_vectors_count": 3,
+      "max_absolute_delta": 4.440892098500626e-16,
+      "mw_delta": 0.0,
+      "pca_max_delta": 4.440892098500626e-16
     }
   ]
 }

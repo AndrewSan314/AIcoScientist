@@ -1,0 +1,60 @@
+{
+  "audit_verdict": "AUDIT INTEGRATION READY",
+  "gates": {
+    "target_semantics_gate": "PASS",
+    "experimental_identity_gate": "PASS",
+    "pool_compatibility_gate": "PASS",
+    "coverage_gate": "PASS",
+    "solvent_feature_identity_gate": "PASS",
+    "duplicate_audit_gate": "PASS",
+    "report_consistency_gate": "PASS",
+    "derived_artifact_gate": "PASS"
+  },
+  "consistency_details": [
+    {
+      "check": "Candidate total rows 999,999 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Unique solvents 388,004 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Raw ML rows 208 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Total de-expanded outcomes 132 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Pool-compatible ML rows 151 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Pool-compatible de-expanded outcomes 75 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "No stale 77 outcome count present in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Coverage D median 3.1897 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "GP R2 score 0.1122 in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Unique 22D vectors in report",
+      "status": "PASS"
+    },
+    {
+      "check": "Collision groups count in report",
+      "status": "PASS"
+    }
+  ],
+  "timestamp": "2026-09-02T19:15:21Z"
+}

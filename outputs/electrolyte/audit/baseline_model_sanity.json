@@ -26,6 +26,32 @@
       "Spearman": 0.3979
     }
   },
+  "baseline_E_standardized_context_solvent_generalization_N75": {
+    "Dummy (Mean)": {
+      "MAE": 0.2673,
+      "RMSE": 0.298,
+      "R2": -0.0337,
+      "Spearman": -0.1369
+    },
+    "Ridge (alpha=1.0)": {
+      "MAE": 0.2077,
+      "RMSE": 0.263,
+      "R2": 0.1948,
+      "Spearman": 0.5356
+    },
+    "Random Forest (100 trees)": {
+      "MAE": 0.1896,
+      "RMSE": 0.2532,
+      "R2": 0.254,
+      "Spearman": 0.541
+    },
+    "Gaussian Process (RBF + WhiteKernel)": {
+      "MAE": 0.1585,
+      "RMSE": 0.2239,
+      "R2": 0.4166,
+      "Spearman": 0.6597
+    }
+  },
   "baseline_D_deexpanded_temporal_campaign_generalization": [
     {
       "train_batches": "0..0",

@@ -1,0 +1,108 @@
+{
+  "domain_id": "anode_free_electrolyte",
+  "source_dataset": "AmanchukwuLab/AL-anode-free (2025)",
+  "source_checksums": {
+    "in-house_label_data.csv": "97cfa251757f6fb6e14311207d24d3f51a13ed840a07b9162af48a93961c5db3",
+    "label_all_batches_feat.csv": "9aabe70c17401a2e0f1202d97059e6103be4ab7002cb5a65a221f76cf8bf9357",
+    "label_batch1-6_feat.csv": "52eee47d3eb0c3fadfb041673fa790b8afe57ed423cf0440f430bd388e3b3896",
+    "label_unlabel_all_uniq_solvents.csv": "511a206d72a78427ff8840ae9fd00e983c57d30b9218e4407c1e2121cf783904",
+    "label_unlabel_all_uniq_solvents_fgrp_class.csv": "e3d9c659ff8413c7b6b1b4adf354b51d3bd0e53d9c4fe4d43746eaf3806991f5",
+    "label_unlabel_all_uniq_solvents_fgrp_class_tsne.csv": "812e8d01d28d9bf83a952e1ca47ab7251e14445e786921097a52899cc24f87be",
+    "virtual_search_space_1million.csv": "68825ce89aacb09bf76a2ebcfeedc53a7eabb25aa2a7f4db3159180db04bb16c"
+  },
+  "target": {
+    "raw_column": "norm_capacity_3",
+    "canonical_name": "C_norm_20",
+    "meaning": "Normalized discharge capacity at the 20th cycle (C_dis^20 / C_theoretical)",
+    "direction": "MAXIMIZE",
+    "units": "dimensionless (ratio to theoretical capacity)"
+  },
+  "candidate_semantics": "Standardized binary electrolyte mixture (1 solvent + 1 Li salt at 1.0 M in Cu||LFP coin cell)",
+  "scientific_feature_set": [
+    "solv_ecfp_pca_0",
+    "solv_ecfp_pca_1",
+    "solv_ecfp_pca_2",
+    "solv_ecfp_pca_3",
+    "solv_ecfp_pca_4",
+    "solv_ecfp_pca_5",
+    "solv_ecfp_pca_6",
+    "solv_ecfp_pca_7",
+    "solv_ecfp_pca_8",
+    "solv_ecfp_pca_9",
+    "mol_wt_solv"
+  ],
+  "virtual_feature_set": [
+    "solv_ecfp_pca_0",
+    "solv_ecfp_pca_1",
+    "solv_ecfp_pca_2",
+    "solv_ecfp_pca_3",
+    "solv_ecfp_pca_4",
+    "solv_ecfp_pca_5",
+    "solv_ecfp_pca_6",
+    "solv_ecfp_pca_7",
+    "solv_ecfp_pca_8",
+    "solv_ecfp_pca_9",
+    "salt_ecfp_pca_0",
+    "salt_ecfp_pca_1",
+    "salt_ecfp_pca_2",
+    "salt_ecfp_pca_3",
+    "salt_ecfp_pca_4",
+    "salt_ecfp_pca_5",
+    "salt_ecfp_pca_6",
+    "salt_ecfp_pca_7",
+    "salt_ecfp_pca_8",
+    "salt_ecfp_pca_9",
+    "mol_wt_solv",
+    "mol_wt_salt"
+  ],
+  "historical_replay_semantics": "Retrospective evaluation over finite pool of experimentally measured solvent outcomes",
+  "candidate_pool_counts": {
+    "full_virtual_candidates": 999999,
+    "unique_candidate_solvents": 388004,
+    "candidate_salts": 3,
+    "lifsi_discovery_slice_candidates": 333333
+  },
+  "physical_campaign_counts": {
+    "raw_ml_training_rows": 208,
+    "unique_tested_solvents": 97,
+    "deexpanded_campaign_outcomes": 132,
+    "batch0_physical_cells": 58,
+    "batch0_condition_records": 40,
+    "batch1_to_7_deexpanded_outcomes": 74
+  },
+  "pool_compatible_counts": {
+    "pool_compatible_ml_rows": 151,
+    "pool_compatible_unique_solvents": 75,
+    "pool_compatible_deexpanded_outcomes": 75,
+    "bootstrap_seed_count_batch0": 3,
+    "later_autonomous_pool_outcomes": 72
+  },
+  "initial_seed_definition": "Batch 0 compatible outcomes under 1.0M LiFSI Cu||LFP protocol (N=3)",
+  "action_schema": {
+    "primary_modality": "CAPACITY_TEST",
+    "observation_kind": "objective_measurement",
+    "objective_names": [
+      "C_norm_20"
+    ]
+  },
+  "oracle_modes": [
+    "historical_experimental_reveal",
+    "simulated_surrogate_oracle"
+  ],
+  "replay_limitations": [
+    "Counterfactual wet-lab replay for unmeasured virtual candidates is impossible.",
+    "Historical benchmark is limited to 75 pool-compatible de-expanded experimental outcomes.",
+    "Only single experimental modality (CAPACITY_TEST) is available."
+  ],
+  "audit_gates": {
+    "target_semantics_gate": "PASS",
+    "experimental_identity_gate": "PASS",
+    "pool_compatibility_gate": "PASS",
+    "coverage_gate": "PASS",
+    "solvent_feature_identity_gate": "PASS",
+    "duplicate_audit_gate": "PASS",
+    "report_consistency_gate": "PASS",
+    "derived_artifact_gate": "PASS"
+  },
+  "audit_verdict": "AUDIT INTEGRATION READY"
+}

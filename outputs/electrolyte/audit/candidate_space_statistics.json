@@ -17,10 +17,11 @@
     "rows_in_collision_groups": 1292,
     "collision_extra_rows": 673,
     "collision_causes": {
-      "atom_mapping_syntax_variants": 20,
-      "topological_or_stereoisomer_variants": 599,
-      "cross_salt_collisions": 0
+      "SMILES_syntax_equivalent": 20,
+      "distinct_SMILES_same_feature_collision": 599,
+      "cross_salt_collisions": 0,
+      "unresolved_collisions": 0
     },
-    "conclusion": "All 673 collision rows were resolved: exactly 20 groups result from atom-mapping syntax variations, and 599 groups result from constitutional/topological isomers having identical molecular weight and mapping to identical ECFP PCA projections. Zero cross-salt collisions occurred."
+    "conclusion": "Computed independently: exactly 0 duplicate keys, 0 exact duplicate rows, and 999,326 unique 22D continuous vectors. The 673 collision rows partition into 20 syntax-equivalent SMILES groups and 599 distinct-SMILES same-feature collisions. Zero cross-salt collisions."
   }
 }
