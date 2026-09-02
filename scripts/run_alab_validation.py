@@ -375,6 +375,8 @@ class RandomScientificPolicy:
     def recommend_next_experiment(self, valid_actions: list[ScientificAction], **kwargs: Any) -> ActionRecommendation:
         chosen_idx = self.rng.choice(len(valid_actions))
         act = valid_actions[chosen_idx]
+        act.metadata["discovery_status"] = "not_applicable"
+        act.metadata["degraded_mode"] = None
         return ActionRecommendation(
             action=act,
             total_value=0.0,
@@ -385,7 +387,12 @@ class RandomScientificPolicy:
             rationale=f"Uniform random action selection for candidate {act.candidate_id}",
             falsification_criterion="None (Random Baseline)",
             supporting_evidence=["Random action selection baseline."],
-            uncertainty_summary={"raw_hig_nats": 0.0, "absolute_hig_normalized": 0.0},
+            uncertainty_summary={
+                "raw_hig_nats": 0.0,
+                "absolute_hig_normalized": 0.0,
+                "discovery_status": "not_applicable",
+                "degraded_mode": None,
+            },
         )
 
 

@@ -403,18 +403,28 @@ class ScientificDecisionEngine:
             degraded_mode=self.last_optimizer_status.get("degraded_mode"),
         )
 
-        if self.last_optimizer_status.get("degraded_mode") == "epistemic_only":
-            rec.action.metadata["discovery_status"] = "disabled"
-            rec.action.metadata["degraded_mode"] = "epistemic_only"
-            if rec.uncertainty_summary is not None:
-                rec.uncertainty_summary["discovery_status"] = "disabled"
-                rec.uncertainty_summary["degraded_mode"] = "epistemic_only"
+        pol_mode_str = getattr(self.policy, "mode", None)
+        if hasattr(pol_mode_str, "value"):
+            pol_mode_str = str(pol_mode_str.value).lower()
         else:
-            rec.action.metadata["discovery_status"] = "enabled"
-            rec.action.metadata["degraded_mode"] = None
-            if rec.uncertainty_summary is not None:
-                rec.uncertainty_summary["discovery_status"] = "enabled"
-                rec.uncertainty_summary["degraded_mode"] = None
+            pol_mode_str = str(pol_mode_str).lower()
+
+        degraded = self.last_optimizer_status.get("degraded_mode")
+        if pol_mode_str in ("random", "pure_falsification"):
+            discovery_status = "not_applicable"
+            degraded_mode_val = None
+        elif pol_mode_str == "hybrid" and degraded == "epistemic_only":
+            discovery_status = "disabled_degraded"
+            degraded_mode_val = "epistemic_only"
+        else:
+            discovery_status = "enabled"
+            degraded_mode_val = None
+
+        rec.action.metadata["discovery_status"] = discovery_status
+        rec.action.metadata["degraded_mode"] = degraded_mode_val
+        if rec.uncertainty_summary is not None:
+            rec.uncertainty_summary["discovery_status"] = discovery_status
+            rec.uncertainty_summary["degraded_mode"] = degraded_mode_val
         self._last_recommendation = rec
 
         # Create proposal record in ledger with PROPOSED stage

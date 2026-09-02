@@ -30,7 +30,7 @@ from src.domains.alab.hypotheses import (
 from src.optimization.botorch_backend import BoTorchBackend
 from src.science.actions import ExperimentActionType, ScientificAction
 from src.science.decision_engine import ScientificDecisionEngine
-from src.science.domain import HypothesisTrainingContext
+from src.science.falsification.information_gain import DiscriminationEvaluation
 from src.science.falsification.policy import FalsificationFirstPolicy, FalsificationPolicyMode
 from src.science.hypothesis_models import HypothesisEnsemble
 
@@ -586,9 +586,9 @@ def test_hybrid_enters_explicit_epistemic_degraded_mode(alab_fixture_adapter):
     rec = engine.propose_next_experiment()
     assert engine.last_optimizer_status["success"] is False
     assert engine.last_optimizer_status["degraded_mode"] == "epistemic_only"
-    assert rec.action.metadata["discovery_status"] == "disabled"
+    assert rec.action.metadata["discovery_status"] == "disabled_degraded"
     assert rec.action.metadata["degraded_mode"] == "epistemic_only"
-    assert rec.uncertainty_summary["discovery_status"] == "disabled"
+    assert rec.uncertainty_summary["discovery_status"] == "disabled_degraded"
     assert rec.uncertainty_summary["degraded_mode"] == "epistemic_only"
 
 
@@ -610,4 +610,85 @@ def test_successful_hybrid_has_discovery_enabled(alab_fixture_adapter):
     assert rec.action.metadata["degraded_mode"] is None
     assert rec.uncertainty_summary["discovery_status"] == "enabled"
     assert rec.uncertainty_summary["degraded_mode"] is None
+
+
+def test_hybrid_degraded_mode_changes_actual_action_ranking():
+    """Verifies that degraded_mode='epistemic_only' changes actual action ranking.
+
+    Candidate A: HIG low (0.05), discovery very high (10.0)
+    Candidate B: HIG high (1.00), discovery low (0.01)
+
+    Under normal HYBRID: A wins due to high discovery score.
+    Under epistemic degraded HYBRID: B wins because discovery contribution is zeroed out.
+    """
+    candidate_pool_df = pd.DataFrame(
+        [
+            {"candidate_id": "cand_A", "comp_0": 0.5, "comp_1": 0.5},
+            {"candidate_id": "cand_B", "comp_0": 0.2, "comp_1": 0.8},
+        ]
+    )
+
+    policy = FalsificationFirstPolicy(
+        mode=FalsificationPolicyMode.HYBRID,
+        w_hig=1.0,
+        w_disc=1.0,
+        w_cost=0.0,
+    )
+
+    def mock_eval(candidate_id, action_type=ExperimentActionType.PROPERTY, **kwargs):
+        hig_val = 0.05 if candidate_id == "cand_A" else 1.00
+        return DiscriminationEvaluation(
+            candidate_id=candidate_id,
+            action_type=action_type,
+            hypothesis_information_gain=hig_val,
+            property_disagreement=0.1,
+            structure_disagreement=0.1,
+            observation_disagreement=0.1,
+            current_entropy=1.0,
+            expected_posterior_entropy=max(0.0, 1.0 - hig_val),
+            predictions={},
+            metadata={},
+        )
+
+    policy.hig_estimator.evaluate_action_discrimination = mock_eval
+
+    disc_scores = {"cand_A": 10.0, "cand_B": 0.01}
+
+    # 1. Normal HYBRID recommendation
+    rec_normal = policy.recommend_next_experiment(
+        candidate_pool_df=candidate_pool_df,
+        property_discovery_scores=disc_scores,
+        observed_xrd_ids={"cand_A", "cand_B"},
+        feature_cols=["comp_0", "comp_1"],
+        degraded_mode=None,
+    )
+    assert rec_normal.action.candidate_id == "cand_A", "In normal HYBRID, candidate with high discovery should win"
+    assert rec_normal.action.metadata["discovery_status"] == "enabled"
+    assert rec_normal.action.metadata["degraded_mode"] is None
+
+    # 2. Epistemic degraded HYBRID recommendation
+    rec_degraded = policy.recommend_next_experiment(
+        candidate_pool_df=candidate_pool_df,
+        property_discovery_scores=disc_scores,
+        observed_xrd_ids={"cand_A", "cand_B"},
+        feature_cols=["comp_0", "comp_1"],
+        degraded_mode="epistemic_only",
+    )
+    assert rec_degraded.action.candidate_id == "cand_B", "In epistemic degraded HYBRID, candidate with high HIG must win"
+    assert rec_degraded.action.metadata["discovery_status"] == "disabled_degraded"
+    assert rec_degraded.action.metadata["degraded_mode"] == "epistemic_only"
+
+
+def test_discovery_status_semantics_across_policies(alab_fixture_adapter):
+    """Verifies that discovery_status distinguishes enabled, disabled_degraded, and not_applicable."""
+    # 1. PURE_FALSIFICATION -> not_applicable
+    engine_pure = ScientificDecisionEngine(
+        domain=alab_fixture_adapter,
+        policy_mode=FalsificationPolicyMode.PURE_FALSIFICATION,
+        seed=42,
+    )
+    engine_pure.initialize(alab_fixture_adapter.get_default_initial_actions(n_candidates=3, pairing_strategy="joint", seed=42))
+    rec_pure = engine_pure.propose_next_experiment()
+    assert rec_pure.action.metadata["discovery_status"] == "not_applicable"
+    assert rec_pure.uncertainty_summary["discovery_status"] == "not_applicable"
 

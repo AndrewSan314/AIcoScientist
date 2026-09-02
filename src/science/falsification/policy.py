@@ -384,6 +384,7 @@ class FalsificationFirstPolicy:
             feature_cols=feature_cols,
             modality_definitions=modality_definitions,
             objective_definitions=objective_definitions,
+            degraded_mode=degraded_mode,
         )
 
         if not scored:
@@ -393,6 +394,16 @@ class FalsificationFirstPolicy:
         # Identify which hypothesis is most targeted/uncertain
         beliefs = ensemble.get_beliefs()
         dominant_h = max(beliefs.keys(), key=lambda h: beliefs[h])
+
+        if self.mode == FalsificationPolicyMode.PURE_FALSIFICATION:
+            disc_status = "not_applicable"
+            deg_val = None
+        elif self.mode == FalsificationPolicyMode.HYBRID and degraded_mode == "epistemic_only":
+            disc_status = "disabled_degraded"
+            deg_val = "epistemic_only"
+        else:
+            disc_status = "enabled"
+            deg_val = None
 
         top_act_str = normalize_action_type(top["action_type"])
         act = ScientificAction(
@@ -407,8 +418,8 @@ class FalsificationFirstPolicy:
                 "policy_mode": self.mode.value,
                 "hypothesis_id": dominant_h,
                 "domain_id": domain_id or "generic",
-                "discovery_status": "disabled" if degraded_mode == "epistemic_only" else "enabled",
-                "degraded_mode": degraded_mode,
+                "discovery_status": disc_status,
+                "degraded_mode": deg_val,
             },
         )
 
@@ -508,8 +519,8 @@ class FalsificationFirstPolicy:
                 "structure_disagreement": top["structure_disagreement"],
                 "observation_disagreement": top.get("observation_disagreement", top["property_disagreement"]),
                 "disagreement_by_modality": top.get("disagreement_by_modality", {}),
-                "discovery_status": "disabled" if degraded_mode == "epistemic_only" else "enabled",
-                "degraded_mode": degraded_mode,
+                "discovery_status": disc_status,
+                "degraded_mode": deg_val,
             },
             alternatives=alternatives,
             domain_id=domain_id,
