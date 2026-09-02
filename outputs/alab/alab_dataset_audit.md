@@ -1,6 +1,6 @@
 # A-Lab Precursor Genome Real Dataset Audit
 
-**Audit Timestamp**: 2026-09-02T04:10:46.024879+00:00  
+**Audit Timestamp**: 2026-09-02T06:43:53.068360+00:00  
 **Source Dataset**: A-Lab Precursor Genome (`precursor_genome_2026`)  
 **Local Path**: `data/external/precursor_genome_2026`  
 
@@ -14,7 +14,8 @@
 ## 2. Reaction Outcome Semantics & Labeled Coverage
 
 - **Classified Synthesis Outcomes**: 1009 (97.5%)
-- **Unclassified Outcomes (Physical Failures / Missing)**: 26 (2.5%)
+- **Unclassified Outcomes (Missing Reaction Categories)**: 26 (2.5%)
+- **Physical Failure Flag Presence**: 26 samples confirmed with `phases_unavailable_reason: 'physical_failure'` in raw ledger
 
 | Reaction Category | Count | Percentage | Utility Value |
 |---|---|---|---|
@@ -24,12 +25,16 @@
 | `unreacted` | 369 | 35.7% | 0.00 |
 | `unclassified` | 26 | 2.5% | None (Filtered / Fail-Closed) |
 
-## 3. Physical Characterization Data Coverage
+## 3. Physical Characterization Data Coverage & Canonical Usability
 
 - **Total Raw XRD Scans**: 1351 across 1035 samples (0 samples with 0 scans)
-- **Active Scan Index Distribution**: {0: 900, 1: 108, 2: 22}
-- **Total Rietveld Refinement Cases**: 1950 across 1030 samples
-- **Phase Weight Unit Normalization**: 0 percentage-scale cases normalized to fractional scale
+- **Canonical XRD Resolvable & Usable for Replay**: 1035 / 1035 (100.0%)
+- **Canonical XRD Selection Methods**: {'ledger_active_scan_index': 1030, 'status_active_or_valid': 5}
+- **Canonical Rietveld Refinements Usable for Replay**: 1030 / 1035 (99.5%)
+- **Refinement Source Breakdown**: 1030 structured ledger phase weights, 0 pickle artifacts, 5 missing
+- **Canonical Refinement Selection Methods**: {'ledger_active_case_index': 1030, 'no_refinement_cases': 5}
+- **Refinement Origin**: 364 manual, 666 automated
+- **Phase Weight Unit Scale**: Phase weights were validated for unit scale; all observed A-Lab ledger refinement weights in this dataset version were fraction-scale. The parser also supports percentage-scale normalization defensively.
 
 ## 4. Information Firewall Compliance
 

@@ -1,10 +1,11 @@
 {
   "status": "no_characterization_sequence",
-  "note": "No naturally occurring A-Lab wow scenario with prior characterization actions found; no scenario was fabricated.",
+  "note": "Under the current hypothesis models, empirical information estimates, and cost configuration, HYBRID did not naturally select post-bootstrap XRD/REFINEMENT actions in the representative run. No naturally occurring A-Lab candidate-vs-measurement 'wow' scenario was found; none was fabricated.",
   "policy": "HYBRID",
   "seed": 42,
   "final_max_utility": 1.0,
   "total_budget_spent": 24.0,
+  "autonomous_cost": 12.0,
   "final_entropy_nats": 0.5434,
   "steps": [
     {
@@ -12,7 +13,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_0841",
       "cost": 2.0,
-      "total_cost_cumulative": 14.0,
+      "cumulative_cost": 14.0,
+      "autonomous_cost": 2.0,
       "max_utility": 1.0,
       "normalized_hig": 0.1326,
       "raw_hig_nats": 0.1457,
@@ -24,6 +26,8 @@
         "process_kinetics": 0.003170519331673717,
         "structure_phase_informed": 0.4982170963658635
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_0841' (Net Scientific Value: 0.581). Expected Hypothesis Information Gain is 0.146 nats (expected posterior entropy: 0.953 nats) under policy mode 'hybrid'."
     },
     {
@@ -31,7 +35,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_1521",
       "cost": 2.0,
-      "total_cost_cumulative": 16.0,
+      "cumulative_cost": 16.0,
+      "autonomous_cost": 4.0,
       "max_utility": 1.0,
       "normalized_hig": 0.0099,
       "raw_hig_nats": 0.0109,
@@ -43,6 +48,8 @@
         "process_kinetics": 3.563604008326839e-218,
         "structure_phase_informed": 0.49981531464031315
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_1521' (Net Scientific Value: 0.483). Expected Hypothesis Information Gain is 0.011 nats (expected posterior entropy: 0.701 nats) under policy mode 'hybrid'."
     },
     {
@@ -50,7 +57,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_0834",
       "cost": 2.0,
-      "total_cost_cumulative": 18.0,
+      "cumulative_cost": 18.0,
+      "autonomous_cost": 6.0,
       "max_utility": 1.0,
       "normalized_hig": 0.0548,
       "raw_hig_nats": 0.0603,
@@ -62,6 +70,8 @@
         "process_kinetics": 5.461244672990673e-218,
         "structure_phase_informed": 0.23346394772002022
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_0834' (Net Scientific Value: 0.533). Expected Hypothesis Information Gain is 0.060 nats (expected posterior entropy: 0.633 nats) under policy mode 'hybrid'."
     },
     {
@@ -69,7 +79,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_0810",
       "cost": 2.0,
-      "total_cost_cumulative": 20.0,
+      "cumulative_cost": 20.0,
+      "autonomous_cost": 8.0,
       "max_utility": 1.0,
       "normalized_hig": 0.0,
       "raw_hig_nats": 0.0,
@@ -81,6 +92,8 @@
         "process_kinetics": 5.461243877305545e-218,
         "structure_phase_informed": 0.23346405940176357
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_0810' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
     },
     {
@@ -88,7 +101,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_1545",
       "cost": 2.0,
-      "total_cost_cumulative": 22.0,
+      "cumulative_cost": 22.0,
+      "autonomous_cost": 10.0,
       "max_utility": 1.0,
       "normalized_hig": 0.0,
       "raw_hig_nats": 0.0,
@@ -100,6 +114,8 @@
         "process_kinetics": 5.461242717036444e-218,
         "structure_phase_informed": 0.2334642222562139
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_1545' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
     },
     {
@@ -107,7 +123,8 @@
       "action_type": "OUTCOME_TEST",
       "candidate_id": "PG_0208",
       "cost": 2.0,
-      "total_cost_cumulative": 24.0,
+      "cumulative_cost": 24.0,
+      "autonomous_cost": 12.0,
       "max_utility": 1.0,
       "normalized_hig": 0.0,
       "raw_hig_nats": 0.0,
@@ -119,6 +136,8 @@
         "process_kinetics": 5.46124271852995e-218,
         "structure_phase_informed": 0.2334642220466048
       },
+      "discovery_status": "enabled",
+      "degraded_mode": null,
       "rationale": "Selects OUTCOME_TEST for candidate 'PG_0208' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
     }
   ],

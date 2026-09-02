@@ -1,5 +1,5 @@
 {
-  "audit_timestamp": "2026-09-02T04:10:46.024879+00:00",
+  "audit_timestamp": "2026-09-02T06:43:53.068360+00:00",
   "dataset_identity": {
     "dataset_name": "A-Lab Precursor Genome",
     "dataset_key": "precursor_genome_2026",
@@ -22,6 +22,7 @@
     "total_samples": 1035,
     "classified_samples": 1009,
     "unclassified_samples": 26,
+    "samples_with_physical_failure_field": 26,
     "category_distribution": {
       "completely_reacted": 143,
       "transformed": 384,
@@ -52,6 +53,38 @@
       "percentage": 0,
       "fraction": 1950,
       "unknown": 0
+    }
+  },
+  "canonical_xrd_usability": {
+    "samples_with_scans": 1035,
+    "samples_with_valid_active_scan_index": 1030,
+    "samples_without_active_scan_index": 5,
+    "canonical_xrd_artifact_resolvable": 1035,
+    "canonical_xrd_artifact_missing": 0,
+    "canonical_xrd_xml_parsable": 1035,
+    "canonical_xrd_axis_from_xml": 0,
+    "canonical_xrd_axis_from_ledger_metadata": 1035,
+    "canonical_xrd_axis_missing": 0,
+    "canonical_xrd_intensity_missing": 0,
+    "canonical_xrd_usable_for_replay": 1035,
+    "scan_selection_methods": {
+      "ledger_active_scan_index": 1030,
+      "status_active_or_valid": 5
+    }
+  },
+  "canonical_refinement_usability": {
+    "samples_with_refinement_cases": 1030,
+    "canonical_refinement_case_resolvable": 1030,
+    "canonical_refinement_from_structured_ledger": 1030,
+    "canonical_refinement_from_pickle": 0,
+    "canonical_refinement_missing": 5,
+    "canonical_refinement_parse_failures": 0,
+    "canonical_refinement_usable_for_replay": 1030,
+    "manual_selected_count": 364,
+    "automatic_selected_count": 666,
+    "case_selection_methods": {
+      "ledger_active_case_index": 1030,
+      "no_refinement_cases": 5
     }
   },
   "information_firewall_classification": {

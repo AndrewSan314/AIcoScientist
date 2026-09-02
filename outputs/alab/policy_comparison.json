@@ -3,16 +3,49 @@
     "policy": "RANDOM",
     "seeds": {
       "42": {
+        "policy": "RANDOM",
+        "seed": 42,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 8,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.0,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 6.112800317893604e-16,
           "process_kinetics": 7.14175667914212e-15,
           "structure_phase_informed": 0.9999999999999922
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 8,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 5,
+          "XRD": 3
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.0,
+        "mean_raw_hig_per_action": 0.0,
+        "max_raw_hig": 0.0,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -20,7 +53,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0908",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -32,6 +66,8 @@
               "process_kinetics": 0.547244608073428,
               "structure_phase_informed": 0.2264471449392058
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0908"
           },
           {
@@ -39,7 +75,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2243",
             "cost": 1.0,
-            "total_cost_cumulative": 15.0,
+            "cumulative_cost": 15.0,
+            "autonomous_cost": 3.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -51,6 +88,8 @@
               "process_kinetics": 7.691336446703739e-13,
               "structure_phase_informed": 0.9999999999989128
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2243"
           },
           {
@@ -58,7 +97,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1552",
             "cost": 2.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -70,6 +110,8 @@
               "process_kinetics": 2.1822461163693462e-12,
               "structure_phase_informed": 0.9999999999971174
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1552"
           },
           {
@@ -77,7 +119,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1216",
             "cost": 2.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -89,6 +132,8 @@
               "process_kinetics": 2.580120392499282e-12,
               "structure_phase_informed": 0.9999999999967195
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1216"
           },
           {
@@ -96,7 +141,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1120",
             "cost": 1.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -108,6 +154,8 @@
               "process_kinetics": 1.5698292738178612e-14,
               "structure_phase_informed": 0.9999999999999799
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1120"
           },
           {
@@ -115,7 +163,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2646",
             "cost": 1.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -127,6 +176,8 @@
               "process_kinetics": 6.285806219295224e-15,
               "structure_phase_informed": 0.9999999999999931
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2646"
           },
           {
@@ -134,7 +185,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0813",
             "cost": 2.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -146,6 +198,8 @@
               "process_kinetics": 5.917916047383614e-15,
               "structure_phase_informed": 0.9999999999999934
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0813"
           },
           {
@@ -153,7 +207,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2229",
             "cost": 2.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -165,21 +220,56 @@
               "process_kinetics": 7.14175667914212e-15,
               "structure_phase_informed": 0.9999999999999922
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2229"
           }
         ]
       },
       "101": {
+        "policy": "RANDOM",
+        "seed": 101,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 8,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.0003,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 2.7138880297661866e-05,
           "process_kinetics": 1.8450177328354622e-13,
           "structure_phase_informed": 0.9999728611195179
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 8,
+        "autonomous_action_counts": {
+          "XRD": 3,
+          "OUTCOME_TEST": 5
+        },
+        "autonomous_best_utility": 0.75,
+        "autonomous_best_new_utility": 0.75,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.0,
+        "mean_raw_hig_per_action": 0.0,
+        "max_raw_hig": 0.0,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -187,7 +277,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0444",
             "cost": 1.0,
-            "total_cost_cumulative": 13.0,
+            "cumulative_cost": 13.0,
+            "autonomous_cost": 1.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -199,6 +290,8 @@
               "process_kinetics": 0.0007959003588763892,
               "structure_phase_informed": 0.9957060702445744
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0444"
           },
           {
@@ -206,7 +299,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3944",
             "cost": 1.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -218,6 +312,8 @@
               "process_kinetics": 0.00015426205376285038,
               "structure_phase_informed": 0.9993071770496592
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_3944"
           },
           {
@@ -225,7 +321,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2228",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -237,6 +334,8 @@
               "process_kinetics": 9.677927220091257e-05,
               "structure_phase_informed": 0.9993599544065652
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2228"
           },
           {
@@ -244,7 +343,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_4647",
             "cost": 1.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -256,6 +356,8 @@
               "process_kinetics": 9.565102958536101e-12,
               "structure_phase_informed": 0.99997317374111
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_4647"
           },
           {
@@ -263,7 +365,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0720",
             "cost": 2.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -275,6 +378,8 @@
               "process_kinetics": 4.70765159247068e-12,
               "structure_phase_informed": 0.9999731795113086
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0720"
           },
           {
@@ -282,7 +387,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2446",
             "cost": 2.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -294,6 +400,8 @@
               "process_kinetics": 8.537089716207614e-13,
               "structure_phase_informed": 0.9999728611140927
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2446"
           },
           {
@@ -301,7 +409,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_5152",
             "cost": 2.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -313,6 +422,8 @@
               "process_kinetics": 2.0432795033090862e-13,
               "structure_phase_informed": 0.9999728611141012
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_5152"
           },
           {
@@ -320,7 +431,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1145",
             "cost": 2.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -332,21 +444,56 @@
               "process_kinetics": 1.8450177328354622e-13,
               "structure_phase_informed": 0.9999728611195179
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1145"
           }
         ]
       },
       "2024": {
+        "policy": "RANDOM",
+        "seed": 2024,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 10,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.398,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.1358038806072373,
           "process_kinetics": 6.986066884501961e-05,
           "structure_phase_informed": 0.8641262587239177
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 10,
+        "autonomous_action_counts": {
+          "XRD": 7,
+          "OUTCOME_TEST": 3
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.0,
+        "mean_raw_hig_per_action": 0.0,
+        "max_raw_hig": 0.0,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -354,7 +501,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0139",
             "cost": 1.0,
-            "total_cost_cumulative": 13.0,
+            "cumulative_cost": 13.0,
+            "autonomous_cost": 1.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -366,6 +514,8 @@
               "process_kinetics": 0.47185490089146465,
               "structure_phase_informed": 0.024941418870790016
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0139"
           },
           {
@@ -373,7 +523,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1928",
             "cost": 2.0,
-            "total_cost_cumulative": 15.0,
+            "cumulative_cost": 15.0,
+            "autonomous_cost": 3.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -385,6 +536,8 @@
               "process_kinetics": 0.468001858506081,
               "structure_phase_informed": 0.02512337709450473
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_1928"
           },
           {
@@ -392,7 +545,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0119",
             "cost": 2.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -404,6 +558,8 @@
               "process_kinetics": 0.5754404498717497,
               "structure_phase_informed": 0.02018710904344183
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0119"
           },
           {
@@ -411,7 +567,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0828",
             "cost": 1.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -423,6 +580,8 @@
               "process_kinetics": 0.5931279830799682,
               "structure_phase_informed": 0.0006906320934407617
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0828"
           },
           {
@@ -430,7 +589,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0546",
             "cost": 1.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -442,6 +602,8 @@
               "process_kinetics": 0.18897387357465698,
               "structure_phase_informed": 0.5352530937649739
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0546"
           },
           {
@@ -449,7 +611,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0444",
             "cost": 2.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -461,6 +624,8 @@
               "process_kinetics": 0.18490434654208926,
               "structure_phase_informed": 0.545466316719037
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_0444"
           },
           {
@@ -468,7 +633,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2851",
             "cost": 1.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -480,6 +646,8 @@
               "process_kinetics": 6.1106802520279205e-06,
               "structure_phase_informed": 0.9996852359602345
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2851"
           },
           {
@@ -487,7 +655,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2050",
             "cost": 1.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -499,6 +668,8 @@
               "process_kinetics": 5.1623272849004244e-08,
               "structure_phase_informed": 0.9999939090641673
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_2050"
           },
           {
@@ -506,7 +677,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3050",
             "cost": 1.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -518,6 +690,8 @@
               "process_kinetics": 9.810653002254343e-06,
               "structure_phase_informed": 0.9987237983173409
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_3050"
           },
           {
@@ -525,7 +699,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_4752",
             "cost": 1.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -537,35 +712,89 @@
               "process_kinetics": 6.986066884501961e-05,
               "structure_phase_informed": 0.8641262587239177
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Uniform random action selection for candidate PG_4752"
           }
         ]
       }
     },
     "summary": {
+      "mean_bootstrap_best_utility": 1.0,
+      "bootstrap_threshold_reached_rate": 1.0,
+      "threshold_already_reached_in_bootstrap_count": 3,
+      "mean_autonomous_cost": 13.0,
+      "mean_autonomous_steps": 8.67,
+      "mean_autonomous_improvement_amount": 0.0,
+      "autonomous_improvement_rate": 0.0,
+      "mean_first_autonomous_threshold_cost": null,
+      "first_autonomous_threshold_costs": [],
+      "autonomous_threshold_success_rate": 0.0,
       "mean_final_utility": 1.0,
       "std_final_utility": 0.0,
-      "mean_first_discovery_budget": 12.0,
-      "std_first_discovery_budget": 0.0,
-      "mean_budget_spent": 25.0,
       "mean_final_entropy_nats": 0.1328,
-      "discovery_success_rate": 1.0
+      "std_final_entropy_nats": 0.1875,
+      "mean_total_cost": 25.0,
+      "mean_autonomous_cumulative_raw_hig_nats": 0.0,
+      "total_objective_actions": 13,
+      "total_characterization_actions": 13,
+      "action_distribution": {
+        "OUTCOME_TEST": 13,
+        "XRD": 13,
+        "REFINEMENT": 0
+      },
+      "optimizer_calls": 0,
+      "optimizer_success_rate": 1.0,
+      "degraded_run_count": 0
     }
   },
   "DISCOVERY_ONLY": {
     "policy": "DISCOVERY_ONLY",
     "seeds": {
       "42": {
+        "policy": "DISCOVERY_ONLY",
+        "seed": 42,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.5359,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.7727958899053896,
           "process_kinetics": 1.9179963034454478e-06,
           "structure_phase_informed": 0.22720219209830694
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 0.75,
+        "autonomous_best_new_utility": 0.75,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.1214,
+        "mean_raw_hig_per_action": 0.0202,
+        "max_raw_hig": 0.1114,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -573,7 +802,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0852",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0088,
             "raw_hig_nats": 0.0097,
@@ -585,6 +815,8 @@
               "process_kinetics": 0.31851268264646554,
               "structure_phase_informed": 0.3408649991576891
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0852' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.010 nats (expected posterior entropy: 1.089 nats) under policy mode 'discovery_only'."
           },
           {
@@ -592,7 +824,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0215",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.1014,
             "raw_hig_nats": 0.1114,
@@ -604,6 +837,8 @@
               "process_kinetics": 0.0006780502013441101,
               "structure_phase_informed": 0.2822859708793418
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0215' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.111 nats (expected posterior entropy: 0.987 nats) under policy mode 'discovery_only'."
           },
           {
@@ -611,7 +846,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0308",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0003,
             "raw_hig_nats": 0.0004,
@@ -623,6 +859,8 @@
               "process_kinetics": 2.0726172396813975e-07,
               "structure_phase_informed": 0.28247177884721464
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0308' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.600 nats) under policy mode 'discovery_only'."
           },
           {
@@ -630,7 +868,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1520",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -642,6 +881,8 @@
               "process_kinetics": 3.4621093253620036e-07,
               "structure_phase_informed": 0.2824741761389052
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_1520' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.595 nats) under policy mode 'discovery_only'."
           },
           {
@@ -649,7 +890,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0810",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -661,6 +903,8 @@
               "process_kinetics": 8.636866082258992e-07,
               "structure_phase_informed": 0.22720243238359047
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0810' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.597 nats) under policy mode 'discovery_only'."
           },
           {
@@ -668,7 +912,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0834",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -680,21 +925,56 @@
               "process_kinetics": 1.9179963034454478e-06,
               "structure_phase_informed": 0.22720219209830694
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0834' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.536 nats) under policy mode 'discovery_only'."
           }
         ]
       },
       "101": {
+        "policy": "DISCOVERY_ONLY",
+        "seed": 101,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.6483,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.6486168352274467,
           "process_kinetics": 4.621120201276705e-218,
           "structure_phase_informed": 0.35138316477255327
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.5521,
+        "mean_raw_hig_per_action": 0.092,
+        "max_raw_hig": 0.5521,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -702,7 +982,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4548",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.5026,
             "raw_hig_nats": 0.5521,
@@ -714,6 +995,8 @@
               "process_kinetics": 4.620868039144142e-218,
               "structure_phase_informed": 0.3514185580532526
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4548' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.552 nats (expected posterior entropy: 0.546 nats) under policy mode 'discovery_only'."
           },
           {
@@ -721,7 +1004,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2238",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -733,6 +1017,8 @@
               "process_kinetics": 4.620886245772278e-218,
               "structure_phase_informed": 0.3514160025850802
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2238' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'discovery_only'."
           },
           {
@@ -740,7 +1026,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4048",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -752,6 +1039,8 @@
               "process_kinetics": 4.621122806387227e-218,
               "structure_phase_informed": 0.3513827991212657
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4048' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'discovery_only'."
           },
           {
@@ -759,7 +1048,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4850",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -771,6 +1061,8 @@
               "process_kinetics": 4.621120743200847e-218,
               "structure_phase_informed": 0.35138308870850865
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4850' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'discovery_only'."
           },
           {
@@ -778,7 +1070,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_3140",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -790,6 +1083,8 @@
               "process_kinetics": 4.621121523283656e-218,
               "structure_phase_informed": 0.3513829792166933
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_3140' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'discovery_only'."
           },
           {
@@ -797,7 +1092,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2148",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -809,21 +1105,56 @@
               "process_kinetics": 4.621120201276705e-218,
               "structure_phase_informed": 0.35138316477255327
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2148' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'discovery_only'."
           }
         ]
       },
       "2024": {
+        "policy": "DISCOVERY_ONLY",
+        "seed": 2024,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.93,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.19110522812212433,
           "process_kinetics": 0.6178191440645655,
           "structure_phase_informed": 0.19107562781331022
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.4851,
+        "mean_raw_hig_per_action": 0.0809,
+        "max_raw_hig": 0.1277,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -831,7 +1162,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0817",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.081,
             "raw_hig_nats": 0.089,
@@ -843,6 +1175,8 @@
               "process_kinetics": 0.3788101292591887,
               "structure_phase_informed": 0.31059488366381355
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0817' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.089 nats (expected posterior entropy: 1.010 nats) under policy mode 'discovery_only'."
           },
           {
@@ -850,7 +1184,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1526",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0557,
             "raw_hig_nats": 0.0612,
@@ -862,6 +1197,8 @@
               "process_kinetics": 0.24220160253251707,
               "structure_phase_informed": 0.3788991129416444
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_1526' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.061 nats (expected posterior entropy: 1.033 nats) under policy mode 'discovery_only'."
           },
           {
@@ -869,7 +1206,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2647",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0027,
             "raw_hig_nats": 0.003,
@@ -881,6 +1219,8 @@
               "process_kinetics": 0.19840062404880315,
               "structure_phase_informed": 0.4007691595622962
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2647' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.003 nats (expected posterior entropy: 1.076 nats) under policy mode 'discovery_only'."
           },
           {
@@ -888,7 +1228,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2646",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0857,
             "raw_hig_nats": 0.0942,
@@ -900,6 +1241,8 @@
               "process_kinetics": 0.403875299774453,
               "structure_phase_informed": 0.29803966174049323
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2646' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.094 nats (expected posterior entropy: 0.960 nats) under policy mode 'discovery_only'."
           },
           {
@@ -907,7 +1250,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2652",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.1162,
             "raw_hig_nats": 0.1277,
@@ -919,6 +1263,8 @@
               "process_kinetics": 0.4015706983734431,
               "structure_phase_informed": 0.29919201870128026
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2652' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.128 nats (expected posterior entropy: 0.960 nats) under policy mode 'discovery_only'."
           },
           {
@@ -926,7 +1272,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2526",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.1001,
             "raw_hig_nats": 0.11,
@@ -938,35 +1285,88 @@
               "process_kinetics": 0.6178191440645655,
               "structure_phase_informed": 0.19107562781331022
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2526' (Net Scientific Value: 0.960). Expected Hypothesis Information Gain is 0.110 nats (expected posterior entropy: 0.978 nats) under policy mode 'discovery_only'."
           }
         ]
       }
     },
     "summary": {
+      "mean_bootstrap_best_utility": 1.0,
+      "bootstrap_threshold_reached_rate": 1.0,
+      "threshold_already_reached_in_bootstrap_count": 3,
+      "mean_autonomous_cost": 12.0,
+      "mean_autonomous_steps": 6.0,
+      "mean_autonomous_improvement_amount": 0.0,
+      "autonomous_improvement_rate": 0.0,
+      "mean_first_autonomous_threshold_cost": null,
+      "first_autonomous_threshold_costs": [],
+      "autonomous_threshold_success_rate": 0.0,
       "mean_final_utility": 1.0,
       "std_final_utility": 0.0,
-      "mean_first_discovery_budget": 12.0,
-      "std_first_discovery_budget": 0.0,
-      "mean_budget_spent": 24.0,
       "mean_final_entropy_nats": 0.7047,
-      "discovery_success_rate": 1.0
+      "std_final_entropy_nats": 0.1658,
+      "mean_total_cost": 24.0,
+      "mean_autonomous_cumulative_raw_hig_nats": 0.3862,
+      "total_objective_actions": 18,
+      "total_characterization_actions": 0,
+      "action_distribution": {
+        "OUTCOME_TEST": 18,
+        "XRD": 0,
+        "REFINEMENT": 0
+      },
+      "optimizer_calls": 18,
+      "optimizer_success_rate": 1.0,
+      "degraded_run_count": 0
     }
   },
   "PURE_FALSIFICATION": {
     "policy": "PURE_FALSIFICATION",
     "seeds": {
       "42": {
+        "policy": "PURE_FALSIFICATION",
+        "seed": 42,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 13,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.1619,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.9618814750895295,
           "process_kinetics": 8.862423992223769e-07,
           "structure_phase_informed": 0.03811763866807132
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 13,
+        "autonomous_action_counts": {
+          "XRD": 13
+        },
+        "autonomous_best_utility": null,
+        "autonomous_best_new_utility": null,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 2.6944,
+        "mean_raw_hig_per_action": 0.2073,
+        "max_raw_hig": 0.5189,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -974,7 +1374,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1245",
             "cost": 1.0,
-            "total_cost_cumulative": 13.0,
+            "cumulative_cost": 13.0,
+            "autonomous_cost": 1.0,
             "max_utility": 1.0,
             "normalized_hig": 0.39,
             "raw_hig_nats": 0.4285,
@@ -986,6 +1387,8 @@
               "process_kinetics": 8.040891944261692e-06,
               "structure_phase_informed": 0.9999839182161114
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1245' (Net Scientific Value: 0.428). Expected Hypothesis Information Gain is 0.428 nats (expected posterior entropy: 0.670 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -993,7 +1396,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1845",
             "cost": 1.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0001,
             "raw_hig_nats": 0.0001,
@@ -1005,6 +1409,8 @@
               "process_kinetics": 3.743166745274847e-05,
               "structure_phase_informed": 0.999927374833271
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1012,7 +1418,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0552",
             "cost": 1.0,
-            "total_cost_cumulative": 15.0,
+            "cumulative_cost": 15.0,
+            "autonomous_cost": 3.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0003,
             "raw_hig_nats": 0.0004,
@@ -1024,6 +1431,8 @@
               "process_kinetics": 0.00013938604686277323,
               "structure_phase_informed": 0.9996864686948509
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0552' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1031,7 +1440,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1852",
             "cost": 1.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0018,
             "raw_hig_nats": 0.0019,
@@ -1043,6 +1453,8 @@
               "process_kinetics": 6.603385662225937e-05,
               "structure_phase_informed": 0.9998996316688968
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1852' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1050,7 +1462,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0818",
             "cost": 1.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0008,
             "raw_hig_nats": 0.0008,
@@ -1062,6 +1475,8 @@
               "process_kinetics": 0.0002731331028469914,
               "structure_phase_informed": 0.9994170155493264
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0818' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1069,7 +1484,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0512",
             "cost": 1.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0045,
             "raw_hig_nats": 0.0049,
@@ -1081,6 +1497,8 @@
               "process_kinetics": 0.0912659736479278,
               "structure_phase_informed": 0.7944620031697424
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0512' (Net Scientific Value: 0.005). Expected Hypothesis Information Gain is 0.005 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1088,7 +1506,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1821",
             "cost": 1.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4109,
             "raw_hig_nats": 0.4514,
@@ -1100,6 +1519,8 @@
               "process_kinetics": 0.0010617147602073164,
               "structure_phase_informed": 0.9884951847207951
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1821' (Net Scientific Value: 0.451). Expected Hypothesis Information Gain is 0.451 nats (expected posterior entropy: 0.198 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1107,7 +1528,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1421",
             "cost": 1.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0536,
             "raw_hig_nats": 0.0589,
@@ -1119,6 +1541,8 @@
               "process_kinetics": 7.556370684933886e-05,
               "structure_phase_informed": 0.9997623878318664
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1421' (Net Scientific Value: 0.059). Expected Hypothesis Information Gain is 0.059 nats (expected posterior entropy: 0.007 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1126,7 +1550,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0521",
             "cost": 1.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0019,
             "raw_hig_nats": 0.0021,
@@ -1138,6 +1563,8 @@
               "process_kinetics": 0.05069971673399014,
               "structure_phase_informed": 0.8025684917451392
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0521' (Net Scientific Value: 0.002). Expected Hypothesis Information Gain is 0.002 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1145,7 +1572,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1252",
             "cost": 1.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.372,
             "raw_hig_nats": 0.4087,
@@ -1157,6 +1585,8 @@
               "process_kinetics": 0.08783662330675877,
               "structure_phase_informed": 0.25628297556409385
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1252' (Net Scientific Value: 0.409). Expected Hypothesis Information Gain is 0.409 nats (expected posterior entropy: 0.201 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1164,7 +1594,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1552",
             "cost": 1.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4723,
             "raw_hig_nats": 0.5189,
@@ -1176,6 +1607,8 @@
               "process_kinetics": 0.3914489681455468,
               "structure_phase_informed": 0.13026738431168966
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1552' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.320 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1183,7 +1616,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0847",
             "cost": 1.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4724,
             "raw_hig_nats": 0.5189,
@@ -1195,6 +1629,8 @@
               "process_kinetics": 0.040892790705689706,
               "structure_phase_informed": 0.07921027353715417
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0847' (Net Scientific Value: 0.519). Expected Hypothesis Information Gain is 0.519 nats (expected posterior entropy: 0.466 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1202,7 +1638,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0118",
             "cost": 1.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.2721,
             "raw_hig_nats": 0.299,
@@ -1214,21 +1651,55 @@
               "process_kinetics": 8.862423992223769e-07,
               "structure_phase_informed": 0.03811763866807132
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0118' (Net Scientific Value: 0.299). Expected Hypothesis Information Gain is 0.299 nats (expected posterior entropy: 0.145 nats) under policy mode 'pure_falsification'."
           }
         ]
       },
       "101": {
+        "policy": "PURE_FALSIFICATION",
+        "seed": 101,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 13,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.6115,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.25674766759254225,
           "process_kinetics": 0.007484684095616256,
           "structure_phase_informed": 0.7357676483118415
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 13,
+        "autonomous_action_counts": {
+          "XRD": 13
+        },
+        "autonomous_best_utility": null,
+        "autonomous_best_new_utility": null,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.7973,
+        "mean_raw_hig_per_action": 0.0613,
+        "max_raw_hig": 0.5842,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -1236,7 +1707,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3850",
             "cost": 1.0,
-            "total_cost_cumulative": 13.0,
+            "cumulative_cost": 13.0,
+            "autonomous_cost": 1.0,
             "max_utility": 1.0,
             "normalized_hig": 0.5317,
             "raw_hig_nats": 0.5842,
@@ -1248,6 +1720,8 @@
               "process_kinetics": 0.04563576921142406,
               "structure_phase_informed": 0.9482847718197511
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_3850' (Net Scientific Value: 0.584). Expected Hypothesis Information Gain is 0.584 nats (expected posterior entropy: 0.514 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1255,7 +1729,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3147",
             "cost": 1.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.1422,
             "raw_hig_nats": 0.1562,
@@ -1267,6 +1742,8 @@
               "process_kinetics": 0.00542272644972194,
               "structure_phase_informed": 0.9943383190610738
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_3147' (Net Scientific Value: 0.156). Expected Hypothesis Information Gain is 0.156 nats (expected posterior entropy: 0.066 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1274,7 +1751,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_4750",
             "cost": 1.0,
-            "total_cost_cumulative": 15.0,
+            "cumulative_cost": 15.0,
+            "autonomous_cost": 3.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0236,
             "raw_hig_nats": 0.0259,
@@ -1286,6 +1764,8 @@
               "process_kinetics": 3.2468936404950666e-06,
               "structure_phase_informed": 0.9999954232480504
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_4750' (Net Scientific Value: 0.026). Expected Hypothesis Information Gain is 0.026 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1293,7 +1773,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_4550",
             "cost": 1.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1305,6 +1786,8 @@
               "process_kinetics": 3.566958314219016e-05,
               "structure_phase_informed": 0.9999532949378677
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_4550' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1312,7 +1795,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3150",
             "cost": 1.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0003,
             "raw_hig_nats": 0.0003,
@@ -1324,6 +1808,8 @@
               "process_kinetics": 1.3248824621959025e-07,
               "structure_phase_informed": 0.9999962013302233
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_3150' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1331,7 +1817,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_3845",
             "cost": 1.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1343,6 +1830,8 @@
               "process_kinetics": 2.5140841386629653e-08,
               "structure_phase_informed": 0.9999944324252336
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_3845' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1350,7 +1839,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2148",
             "cost": 1.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0001,
             "raw_hig_nats": 0.0001,
@@ -1362,6 +1852,8 @@
               "process_kinetics": 6.068081510139948e-09,
               "structure_phase_informed": 0.9999990304749381
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2148' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1369,7 +1861,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_4850",
             "cost": 1.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1381,6 +1874,8 @@
               "process_kinetics": 1.8502482259048741e-09,
               "structure_phase_informed": 0.9999994646610411
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_4850' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1388,7 +1883,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2145",
             "cost": 1.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1400,6 +1896,8 @@
               "process_kinetics": 9.65658042305721e-09,
               "structure_phase_informed": 0.9999974158641162
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2145' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1407,7 +1905,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2129",
             "cost": 1.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1419,6 +1918,8 @@
               "process_kinetics": 5.226678380531818e-07,
               "structure_phase_informed": 0.9998239019658028
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2129' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1426,7 +1927,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2147",
             "cost": 1.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0011,
             "raw_hig_nats": 0.0012,
@@ -1438,6 +1940,8 @@
               "process_kinetics": 1.9815735317948473e-06,
               "structure_phase_informed": 0.9998231276062457
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2147' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1445,7 +1949,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0450",
             "cost": 1.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0012,
             "raw_hig_nats": 0.0013,
@@ -1457,6 +1962,8 @@
               "process_kinetics": 0.00015024867460215164,
               "structure_phase_informed": 0.9930551258372875
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0450' (Net Scientific Value: 0.001). Expected Hypothesis Information Gain is 0.001 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1464,7 +1971,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0421",
             "cost": 1.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0255,
             "raw_hig_nats": 0.028,
@@ -1476,21 +1984,55 @@
               "process_kinetics": 0.007484684095616256,
               "structure_phase_informed": 0.7357676483118415
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0421' (Net Scientific Value: 0.028). Expected Hypothesis Information Gain is 0.028 nats (expected posterior entropy: 0.014 nats) under policy mode 'pure_falsification'."
           }
         ]
       },
       "2024": {
+        "policy": "PURE_FALSIFICATION",
+        "seed": 2024,
+        "budget_limit": 25.0,
+        "total_cost": 25.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 25.0,
-        "total_steps": 13,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.0159,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.0022468995227990923,
           "process_kinetics": 9.285895619426623e-12,
           "structure_phase_informed": 0.997753100467915
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 13.0,
+        "autonomous_steps": 13,
+        "autonomous_action_counts": {
+          "XRD": 13
+        },
+        "autonomous_best_utility": null,
+        "autonomous_best_new_utility": null,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 2.2933,
+        "mean_raw_hig_per_action": 0.1764,
+        "max_raw_hig": 0.5083,
+        "optimizer_calls": 0,
+        "optimizer_success_count": 0,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": false,
+          "success": true,
+          "reason": "Not yet evaluated",
+          "num_scored": 0
         },
         "steps": [
           {
@@ -1498,7 +2040,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2631",
             "cost": 1.0,
-            "total_cost_cumulative": 13.0,
+            "cumulative_cost": 13.0,
+            "autonomous_cost": 1.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4627,
             "raw_hig_nats": 0.5083,
@@ -1510,6 +2053,8 @@
               "process_kinetics": 0.5803986458119716,
               "structure_phase_informed": 0.021684824643933526
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2631' (Net Scientific Value: 0.508). Expected Hypothesis Information Gain is 0.508 nats (expected posterior entropy: 0.590 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1517,7 +2062,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0821",
             "cost": 1.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.3593,
             "raw_hig_nats": 0.3948,
@@ -1529,6 +2075,8 @@
               "process_kinetics": 0.6928398212732272,
               "structure_phase_informed": 0.012719784734617863
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0821' (Net Scientific Value: 0.395). Expected Hypothesis Information Gain is 0.395 nats (expected posterior entropy: 0.371 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1536,7 +2084,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1718",
             "cost": 1.0,
-            "total_cost_cumulative": 15.0,
+            "cumulative_cost": 15.0,
+            "autonomous_cost": 3.0,
             "max_utility": 1.0,
             "normalized_hig": 0.3514,
             "raw_hig_nats": 0.3861,
@@ -1548,6 +2097,8 @@
               "process_kinetics": 0.024176319396847088,
               "structure_phase_informed": 0.0012037649251768524
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1718' (Net Scientific Value: 0.386). Expected Hypothesis Information Gain is 0.386 nats (expected posterior entropy: 0.284 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1555,7 +2106,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0121",
             "cost": 1.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0579,
             "raw_hig_nats": 0.0636,
@@ -1567,6 +2119,8 @@
               "process_kinetics": 0.007465633273210027,
               "structure_phase_informed": 0.0022888093284754414
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0121' (Net Scientific Value: 0.064). Expected Hypothesis Information Gain is 0.064 nats (expected posterior entropy: 0.060 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1574,7 +2128,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1734",
             "cost": 1.0,
-            "total_cost_cumulative": 17.0,
+            "cumulative_cost": 17.0,
+            "autonomous_cost": 5.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0326,
             "raw_hig_nats": 0.0358,
@@ -1586,6 +2141,8 @@
               "process_kinetics": 3.046469238381423e-08,
               "structure_phase_informed": 0.999946398850404
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1734' (Net Scientific Value: 0.036). Expected Hypothesis Information Gain is 0.036 nats (expected posterior entropy: 0.024 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1593,7 +2150,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2130",
             "cost": 1.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0004,
             "raw_hig_nats": 0.0005,
@@ -1605,6 +2163,8 @@
               "process_kinetics": 8.89308388170717e-06,
               "structure_phase_informed": 0.9876327922672228
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2130' (Net Scientific Value: 0.000). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.000 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1612,7 +2172,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0131",
             "cost": 1.0,
-            "total_cost_cumulative": 19.0,
+            "cumulative_cost": 19.0,
+            "autonomous_cost": 7.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0517,
             "raw_hig_nats": 0.0567,
@@ -1624,6 +2185,8 @@
               "process_kinetics": 1.2412194944709934e-05,
               "structure_phase_informed": 0.7630084817637717
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0131' (Net Scientific Value: 0.057). Expected Hypothesis Information Gain is 0.057 nats (expected posterior entropy: 0.010 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1631,7 +2194,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1721",
             "cost": 1.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4179,
             "raw_hig_nats": 0.4592,
@@ -1643,6 +2207,8 @@
               "process_kinetics": 3.7919109266350067e-06,
               "structure_phase_informed": 0.012132959678535503
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1721' (Net Scientific Value: 0.459). Expected Hypothesis Information Gain is 0.459 nats (expected posterior entropy: 0.089 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1650,7 +2216,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_2634",
             "cost": 1.0,
-            "total_cost_cumulative": 21.0,
+            "cumulative_cost": 21.0,
+            "autonomous_cost": 9.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0542,
             "raw_hig_nats": 0.0595,
@@ -1662,6 +2229,8 @@
               "process_kinetics": 5.984024703231154e-06,
               "structure_phase_informed": 0.0009679268722584006
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_2634' (Net Scientific Value: 0.060). Expected Hypothesis Information Gain is 0.060 nats (expected posterior entropy: 0.006 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1669,7 +2238,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0830",
             "cost": 1.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0065,
             "raw_hig_nats": 0.0071,
@@ -1681,6 +2251,8 @@
               "process_kinetics": 6.643169458655253e-06,
               "structure_phase_informed": 0.0010032102599289517
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0830' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1688,7 +2260,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1826",
             "cost": 1.0,
-            "total_cost_cumulative": 23.0,
+            "cumulative_cost": 23.0,
+            "autonomous_cost": 11.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0068,
             "raw_hig_nats": 0.0075,
@@ -1700,6 +2273,8 @@
               "process_kinetics": 3.5096685364032704e-07,
               "structure_phase_informed": 0.09099275942385304
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1826' (Net Scientific Value: 0.007). Expected Hypothesis Information Gain is 0.007 nats (expected posterior entropy: 0.001 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1707,7 +2282,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_1731",
             "cost": 1.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.2537,
             "raw_hig_nats": 0.2788,
@@ -1719,6 +2295,8 @@
               "process_kinetics": 2.3129046123094835e-10,
               "structure_phase_informed": 0.9921099657579188
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_1731' (Net Scientific Value: 0.279). Expected Hypothesis Information Gain is 0.279 nats (expected posterior entropy: 0.026 nats) under policy mode 'pure_falsification'."
           },
           {
@@ -1726,7 +2304,8 @@
             "action_type": "XRD",
             "candidate_id": "PG_0130",
             "cost": 1.0,
-            "total_cost_cumulative": 25.0,
+            "cumulative_cost": 25.0,
+            "autonomous_cost": 13.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0322,
             "raw_hig_nats": 0.0354,
@@ -1738,35 +2317,89 @@
               "process_kinetics": 9.285895619426623e-12,
               "structure_phase_informed": 0.997753100467915
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects XRD for candidate 'PG_0130' (Net Scientific Value: 0.035). Expected Hypothesis Information Gain is 0.035 nats (expected posterior entropy: 0.011 nats) under policy mode 'pure_falsification'."
           }
         ]
       }
     },
     "summary": {
+      "mean_bootstrap_best_utility": 1.0,
+      "bootstrap_threshold_reached_rate": 1.0,
+      "threshold_already_reached_in_bootstrap_count": 3,
+      "mean_autonomous_cost": 13.0,
+      "mean_autonomous_steps": 13.0,
+      "mean_autonomous_improvement_amount": 0.0,
+      "autonomous_improvement_rate": 0.0,
+      "mean_first_autonomous_threshold_cost": null,
+      "first_autonomous_threshold_costs": [],
+      "autonomous_threshold_success_rate": 0.0,
       "mean_final_utility": 1.0,
       "std_final_utility": 0.0,
-      "mean_first_discovery_budget": 12.0,
-      "std_first_discovery_budget": 0.0,
-      "mean_budget_spent": 25.0,
       "mean_final_entropy_nats": 0.2631,
-      "discovery_success_rate": 1.0
+      "std_final_entropy_nats": 0.2535,
+      "mean_total_cost": 25.0,
+      "mean_autonomous_cumulative_raw_hig_nats": 1.9283,
+      "total_objective_actions": 0,
+      "total_characterization_actions": 39,
+      "action_distribution": {
+        "OUTCOME_TEST": 0,
+        "XRD": 39,
+        "REFINEMENT": 0
+      },
+      "optimizer_calls": 0,
+      "optimizer_success_rate": 1.0,
+      "degraded_run_count": 0
     }
   },
   "HYBRID": {
     "policy": "HYBRID",
     "seeds": {
       "42": {
+        "policy": "HYBRID",
+        "seed": 42,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.5434,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.7665357779533952,
           "process_kinetics": 5.46124271852995e-218,
           "structure_phase_informed": 0.2334642220466048
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 0.75,
+        "autonomous_best_new_utility": 0.75,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.2169,
+        "mean_raw_hig_per_action": 0.0361,
+        "max_raw_hig": 0.1457,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -1774,7 +2407,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0841",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.1326,
             "raw_hig_nats": 0.1457,
@@ -1786,6 +2420,8 @@
               "process_kinetics": 0.003170519331673717,
               "structure_phase_informed": 0.4982170963658635
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0841' (Net Scientific Value: 0.581). Expected Hypothesis Information Gain is 0.146 nats (expected posterior entropy: 0.953 nats) under policy mode 'hybrid'."
           },
           {
@@ -1793,7 +2429,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1521",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0099,
             "raw_hig_nats": 0.0109,
@@ -1805,6 +2442,8 @@
               "process_kinetics": 3.563604008326839e-218,
               "structure_phase_informed": 0.49981531464031315
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_1521' (Net Scientific Value: 0.483). Expected Hypothesis Information Gain is 0.011 nats (expected posterior entropy: 0.701 nats) under policy mode 'hybrid'."
           },
           {
@@ -1812,7 +2451,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0834",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0548,
             "raw_hig_nats": 0.0603,
@@ -1824,6 +2464,8 @@
               "process_kinetics": 5.461244672990673e-218,
               "structure_phase_informed": 0.23346394772002022
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0834' (Net Scientific Value: 0.533). Expected Hypothesis Information Gain is 0.060 nats (expected posterior entropy: 0.633 nats) under policy mode 'hybrid'."
           },
           {
@@ -1831,7 +2473,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0810",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1843,6 +2486,8 @@
               "process_kinetics": 5.461243877305545e-218,
               "structure_phase_informed": 0.23346405940176357
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0810' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
           },
           {
@@ -1850,7 +2495,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1545",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1862,6 +2508,8 @@
               "process_kinetics": 5.461242717036444e-218,
               "structure_phase_informed": 0.2334642222562139
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_1545' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
           },
           {
@@ -1869,7 +2517,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0208",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1881,21 +2530,56 @@
               "process_kinetics": 5.46124271852995e-218,
               "structure_phase_informed": 0.2334642220466048
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0208' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.543 nats) under policy mode 'hybrid'."
           }
         ]
       },
       "101": {
+        "policy": "HYBRID",
+        "seed": 101,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.6483,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.6486168352274467,
           "process_kinetics": 4.621120201276705e-218,
           "structure_phase_informed": 0.35138316477255327
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.5521,
+        "mean_raw_hig_per_action": 0.092,
+        "max_raw_hig": 0.5521,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -1903,7 +2587,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4548",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.5026,
             "raw_hig_nats": 0.5521,
@@ -1915,6 +2600,8 @@
               "process_kinetics": 4.620868039144142e-218,
               "structure_phase_informed": 0.3514185580532526
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4548' (Net Scientific Value: 0.983). Expected Hypothesis Information Gain is 0.552 nats (expected posterior entropy: 0.546 nats) under policy mode 'hybrid'."
           },
           {
@@ -1922,7 +2609,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2238",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1934,6 +2622,8 @@
               "process_kinetics": 4.620886245772278e-218,
               "structure_phase_informed": 0.3514160025850802
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2238' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'hybrid'."
           },
           {
@@ -1941,7 +2631,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4048",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1953,6 +2644,8 @@
               "process_kinetics": 4.621122806387227e-218,
               "structure_phase_informed": 0.3513827991212657
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4048' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'hybrid'."
           },
           {
@@ -1960,7 +2653,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_4850",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1972,6 +2666,8 @@
               "process_kinetics": 4.621120743200847e-218,
               "structure_phase_informed": 0.35138308870850865
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_4850' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'hybrid'."
           },
           {
@@ -1979,7 +2675,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_3140",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -1991,6 +2688,8 @@
               "process_kinetics": 4.621121523283656e-218,
               "structure_phase_informed": 0.3513829792166933
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_3140' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'hybrid'."
           },
           {
@@ -1998,7 +2697,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2148",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2010,21 +2710,56 @@
               "process_kinetics": 4.621120201276705e-218,
               "structure_phase_informed": 0.35138316477255327
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2148' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.648 nats) under policy mode 'hybrid'."
           }
         ]
       },
       "2024": {
+        "policy": "HYBRID",
+        "seed": 2024,
+        "budget_limit": 25.0,
+        "total_cost": 24.0,
         "final_max_utility": 1.0,
-        "first_discovery_cost": 12.0,
-        "total_budget_spent": 24.0,
-        "total_steps": 7,
-        "initial_actions_cost": 12.0,
         "final_entropy_nats": 0.6931,
         "final_hypothesis_beliefs": {
           "precursor_thermodynamics": 0.5000463371199626,
           "process_kinetics": 5.4590158641937294e-135,
           "structure_phase_informed": 0.49995366288003745
+        },
+        "bootstrap_cost": 12.0,
+        "bootstrap_objective_observations": 4,
+        "bootstrap_best_utility": 1.0,
+        "bootstrap_threshold_reached": true,
+        "threshold_already_reached_in_bootstrap": true,
+        "bootstrap_action_counts": {
+          "XRD": 4,
+          "OUTCOME_TEST": 4
+        },
+        "autonomous_cost": 12.0,
+        "autonomous_steps": 6,
+        "autonomous_action_counts": {
+          "OUTCOME_TEST": 6
+        },
+        "autonomous_best_utility": 1.0,
+        "autonomous_best_new_utility": 1.0,
+        "autonomous_improved_over_bootstrap": false,
+        "autonomous_improvement_amount": 0.0,
+        "first_autonomous_threshold_cost": null,
+        "first_autonomous_improvement_cost": null,
+        "autonomous_cumulative_raw_hig_nats": 0.5277,
+        "mean_raw_hig_per_action": 0.088,
+        "max_raw_hig": 0.5277,
+        "optimizer_calls": 6,
+        "optimizer_success_count": 6,
+        "optimizer_degraded_count": 0,
+        "last_optimizer_status": {
+          "used": true,
+          "success": true,
+          "reason": "OK",
+          "num_scored": 1025,
+          "degraded_mode": null
         },
         "steps": [
           {
@@ -2032,7 +2767,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0131",
             "cost": 2.0,
-            "total_cost_cumulative": 14.0,
+            "cumulative_cost": 14.0,
+            "autonomous_cost": 2.0,
             "max_utility": 1.0,
             "normalized_hig": 0.4804,
             "raw_hig_nats": 0.5277,
@@ -2044,6 +2780,8 @@
               "process_kinetics": 3.8493792941686675e-135,
               "structure_phase_informed": 0.49999991675473915
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0131' (Net Scientific Value: 0.883). Expected Hypothesis Information Gain is 0.528 nats (expected posterior entropy: 0.571 nats) under policy mode 'hybrid'."
           },
           {
@@ -2051,7 +2789,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_0817",
             "cost": 2.0,
-            "total_cost_cumulative": 16.0,
+            "cumulative_cost": 16.0,
+            "autonomous_cost": 4.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2063,6 +2802,8 @@
               "process_kinetics": 5.118703813083898e-135,
               "structure_phase_informed": 0.5000000819878886
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_0817' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
           },
           {
@@ -2070,7 +2811,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_1526",
             "cost": 2.0,
-            "total_cost_cumulative": 18.0,
+            "cumulative_cost": 18.0,
+            "autonomous_cost": 6.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2082,6 +2824,8 @@
               "process_kinetics": 2.2962388567514003e-135,
               "structure_phase_informed": 0.5000013010672065
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_1526' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
           },
           {
@@ -2089,7 +2833,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2526",
             "cost": 2.0,
-            "total_cost_cumulative": 20.0,
+            "cumulative_cost": 20.0,
+            "autonomous_cost": 8.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2101,6 +2846,8 @@
               "process_kinetics": 1.8356249781909576e-135,
               "structure_phase_informed": 0.49995262282273895
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2526' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
           },
           {
@@ -2108,7 +2855,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2647",
             "cost": 2.0,
-            "total_cost_cumulative": 22.0,
+            "cumulative_cost": 22.0,
+            "autonomous_cost": 10.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2120,6 +2868,8 @@
               "process_kinetics": 5.825921404284749e-135,
               "structure_phase_informed": 0.4999537442581712
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2647' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
           },
           {
@@ -2127,7 +2877,8 @@
             "action_type": "OUTCOME_TEST",
             "candidate_id": "PG_2652",
             "cost": 2.0,
-            "total_cost_cumulative": 24.0,
+            "cumulative_cost": 24.0,
+            "autonomous_cost": 12.0,
             "max_utility": 1.0,
             "normalized_hig": 0.0,
             "raw_hig_nats": 0.0,
@@ -2139,19 +2890,40 @@
               "process_kinetics": 5.4590158641937294e-135,
               "structure_phase_informed": 0.49995366288003745
             },
+            "discovery_status": "enabled",
+            "degraded_mode": null,
             "rationale": "Selects OUTCOME_TEST for candidate 'PG_2652' (Net Scientific Value: 0.480). Expected Hypothesis Information Gain is 0.000 nats (expected posterior entropy: 0.693 nats) under policy mode 'hybrid'."
           }
         ]
       }
     },
     "summary": {
+      "mean_bootstrap_best_utility": 1.0,
+      "bootstrap_threshold_reached_rate": 1.0,
+      "threshold_already_reached_in_bootstrap_count": 3,
+      "mean_autonomous_cost": 12.0,
+      "mean_autonomous_steps": 6.0,
+      "mean_autonomous_improvement_amount": 0.0,
+      "autonomous_improvement_rate": 0.0,
+      "mean_first_autonomous_threshold_cost": null,
+      "first_autonomous_threshold_costs": [],
+      "autonomous_threshold_success_rate": 0.0,
       "mean_final_utility": 1.0,
       "std_final_utility": 0.0,
-      "mean_first_discovery_budget": 12.0,
-      "std_first_discovery_budget": 0.0,
-      "mean_budget_spent": 24.0,
       "mean_final_entropy_nats": 0.6283,
-      "discovery_success_rate": 1.0
+      "std_final_entropy_nats": 0.0627,
+      "mean_total_cost": 24.0,
+      "mean_autonomous_cumulative_raw_hig_nats": 0.4322,
+      "total_objective_actions": 18,
+      "total_characterization_actions": 0,
+      "action_distribution": {
+        "OUTCOME_TEST": 18,
+        "XRD": 0,
+        "REFINEMENT": 0
+      },
+      "optimizer_calls": 18,
+      "optimizer_success_rate": 1.0,
+      "degraded_run_count": 0
     }
   }
 }

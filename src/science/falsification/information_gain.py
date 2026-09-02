@@ -59,6 +59,7 @@ class HypothesisInformationGainEstimator:
         observed_modalities: Mapping[str, Any] | None = None,
         fast_mode: bool = False,
         seed: int | None = None,
+        **kwargs: Any,
     ) -> DiscriminationEvaluation:
         """Evaluates Expected Hypothesis Information Gain for a candidate action."""
         rng = np.random.default_rng(seed)
