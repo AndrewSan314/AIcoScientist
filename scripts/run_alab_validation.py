@@ -284,7 +284,7 @@ def run_single_simulation(
     seed: int,
     budget: float,
 ) -> dict[str, Any]:
-    """Runs a single policy simulation on A-Lab offline replay."""
+    """Runs a single policy simulation on A-Lab offline replay, tracking bootstrap and autonomous phases separately."""
     # Policy mode mapping
     if policy_name == "RANDOM":
         policy = RandomScientificPolicy(seed=seed)
@@ -320,18 +320,37 @@ def run_single_simulation(
     init_actions = adapter.get_default_initial_actions(n_candidates=4, pairing_strategy="joint", seed=seed)
     engine.initialize(init_actions)
 
-    initial_cost = sum(a.estimated_cost for a in init_actions)
-    cumulative_cost = initial_cost
+    bootstrap_cost = float(sum(a.estimated_cost for a in init_actions))
+    cumulative_cost = bootstrap_cost
 
-    # Extract initial max utility from bootstrap outcomes
-    revealed_utils = [
+    bootstrap_action_counts: dict[str, int] = {}
+    for a in init_actions:
+        bootstrap_action_counts[a.action_type] = bootstrap_action_counts.get(a.action_type, 0) + 1
+
+    # Extract bootstrap outcomes
+    bootstrap_utils = [
         float(o.canonical_observation) for o in engine.revealed_outcomes.values()
         if o.canonical_observation is not None and engine._is_objective_action(o.action_type)
     ]
-    current_max_util = max(revealed_utils) if revealed_utils else 0.0
+    bootstrap_objective_observations = len(bootstrap_utils)
+    bootstrap_best_utility = float(max(bootstrap_utils)) if bootstrap_utils else 0.0
+    bootstrap_threshold_reached = bool(bootstrap_best_utility >= 0.8)
 
-    first_discovery_budget = cumulative_cost if current_max_util >= 0.8 else None
+    # Autonomous phase tracking
+    autonomous_cost = 0.0
+    autonomous_steps = 0
+    autonomous_action_counts: dict[str, int] = {}
+    autonomous_utils: list[float] = []
+    autonomous_raw_higs: list[float] = []
+    first_autonomous_threshold_cost: float | None = None
+    first_autonomous_improvement_cost: float | None = None
 
+    # Optimizer tracking
+    optimizer_calls = 0
+    optimizer_success_count = 0
+    optimizer_degraded_count = 0
+
+    current_max_util = bootstrap_best_utility
     step_records = []
     step = 0
 
@@ -354,36 +373,57 @@ def run_single_simulation(
             break
 
         act = rec.action
-        if cumulative_cost + act.estimated_cost > budget:
+        act_cost = float(act.estimated_cost)
+        if cumulative_cost + act_cost > budget:
             # Action exceeds budget, terminate run
             break
 
+        if engine.last_optimizer_status.get("used"):
+            optimizer_calls += 1
+            if engine.last_optimizer_status.get("success"):
+                optimizer_success_count += 1
+            if engine.last_optimizer_status.get("degraded_mode") == "epistemic_only":
+                optimizer_degraded_count += 1
+
         # Execute recommendation
         outcome = engine.execute_recommendation(rec)
-        cumulative_cost += act.estimated_cost
-
-        # Update max utility
-        if engine._is_objective_action(act.action_type) and outcome.canonical_observation is not None:
-            val = float(outcome.canonical_observation)
-            if val > current_max_util:
-                current_max_util = val
-                if first_discovery_budget is None and current_max_util >= 0.8:
-                    first_discovery_budget = cumulative_cost
+        cumulative_cost += act_cost
+        autonomous_cost += act_cost
+        autonomous_steps += 1
+        autonomous_action_counts[act.action_type] = autonomous_action_counts.get(act.action_type, 0) + 1
 
         unc = rec.uncertainty_summary or {}
+        raw_h = float(unc.get("raw_hig_nats", 0.0))
+        autonomous_raw_higs.append(raw_h)
+
+        # Update utilities
+        if engine._is_objective_action(act.action_type) and outcome.canonical_observation is not None:
+            val = float(outcome.canonical_observation)
+            autonomous_utils.append(val)
+            if val > current_max_util:
+                current_max_util = val
+                if first_autonomous_improvement_cost is None and val > bootstrap_best_utility:
+                    first_autonomous_improvement_cost = round(autonomous_cost, 2)
+
+            if not bootstrap_threshold_reached and first_autonomous_threshold_cost is None and val >= 0.8:
+                first_autonomous_threshold_cost = round(autonomous_cost, 2)
+
         step_info = {
             "step": step,
             "action_type": act.action_type,
             "candidate_id": act.candidate_id,
-            "cost": float(act.estimated_cost),
-            "total_cost_cumulative": round(cumulative_cost, 2),
+            "cost": act_cost,
+            "cumulative_cost": round(cumulative_cost, 2),
+            "autonomous_cost": round(autonomous_cost, 2),
             "max_utility": round(current_max_util, 4),
             "normalized_hig": round(float(rec.scientific_information_value), 4),
-            "raw_hig_nats": round(float(unc.get("raw_hig_nats", 0.0)), 4),
+            "raw_hig_nats": round(raw_h, 4),
             "absolute_hig_normalized": round(float(unc.get("absolute_hig_normalized", 0.0)), 4),
             "discovery_value": round(float(rec.discovery_value), 4),
             "hypothesis_entropy_nats": round(float(engine.ensemble.get_entropy()), 4),
             "beliefs": {k: float(v) for k, v in engine.ensemble.get_beliefs().items()},
+            "discovery_status": rec.action.metadata.get("discovery_status"),
+            "degraded_mode": rec.action.metadata.get("degraded_mode"),
             "rationale": rec.rationale,
         }
         step_records.append(step_info)
@@ -391,14 +431,51 @@ def run_single_simulation(
     final_beliefs = {k: float(v) for k, v in engine.ensemble.get_beliefs().items()}
     final_entropy = float(engine.ensemble.get_entropy())
 
+    autonomous_best_utility = float(max(autonomous_utils)) if autonomous_utils else None
+    autonomous_improved_over_bootstrap = bool(
+        autonomous_best_utility is not None and autonomous_best_utility > bootstrap_best_utility
+    )
+    autonomous_improvement_amount = float(
+        max(0.0, autonomous_best_utility - bootstrap_best_utility) if autonomous_best_utility is not None else 0.0
+    )
+    autonomous_cumulative_raw_hig = float(sum(autonomous_raw_higs))
+    mean_raw_hig = float(np.mean(autonomous_raw_higs)) if autonomous_raw_higs else 0.0
+    max_raw_hig = float(max(autonomous_raw_higs)) if autonomous_raw_higs else 0.0
+
     return {
+        "policy": policy_name,
+        "seed": seed,
+        "budget_limit": budget,
+        "total_cost": round(cumulative_cost, 2),
         "final_max_utility": round(current_max_util, 4),
-        "first_discovery_cost": round(first_discovery_budget, 2) if first_discovery_budget is not None else None,
-        "total_budget_spent": round(cumulative_cost, 2),
-        "total_steps": step,
-        "initial_actions_cost": round(initial_cost, 2),
         "final_entropy_nats": round(final_entropy, 4),
         "final_hypothesis_beliefs": final_beliefs,
+        # Bootstrap metrics
+        "bootstrap_cost": round(bootstrap_cost, 2),
+        "bootstrap_objective_observations": bootstrap_objective_observations,
+        "bootstrap_best_utility": round(bootstrap_best_utility, 4),
+        "bootstrap_threshold_reached": bootstrap_threshold_reached,
+        "threshold_already_reached_in_bootstrap": bootstrap_threshold_reached,
+        "bootstrap_action_counts": bootstrap_action_counts,
+        # Autonomous metrics
+        "autonomous_cost": round(autonomous_cost, 2),
+        "autonomous_steps": autonomous_steps,
+        "autonomous_action_counts": autonomous_action_counts,
+        "autonomous_best_utility": round(autonomous_best_utility, 4) if autonomous_best_utility is not None else None,
+        "autonomous_best_new_utility": round(autonomous_best_utility, 4) if autonomous_best_utility is not None else None,
+        "autonomous_improved_over_bootstrap": autonomous_improved_over_bootstrap,
+        "autonomous_improvement_amount": round(autonomous_improvement_amount, 4),
+        "first_autonomous_threshold_cost": first_autonomous_threshold_cost,
+        "first_autonomous_improvement_cost": first_autonomous_improvement_cost,
+        # Information gain metrics
+        "autonomous_cumulative_raw_hig_nats": round(autonomous_cumulative_raw_hig, 4),
+        "mean_raw_hig_per_action": round(mean_raw_hig, 4),
+        "max_raw_hig": round(max_raw_hig, 4),
+        # Optimizer diagnostics
+        "optimizer_calls": optimizer_calls,
+        "optimizer_success_count": optimizer_success_count,
+        "optimizer_degraded_count": optimizer_degraded_count,
+        "last_optimizer_status": engine.last_optimizer_status,
         "steps": step_records,
     }
 
@@ -424,22 +501,61 @@ def run_multi_policy_benchmark(
             policy_runs[str(seed)] = run_res
 
         # Aggregate summary statistics
+        boot_bests = [r["bootstrap_best_utility"] for r in policy_runs.values()]
+        boot_reached = [r["bootstrap_threshold_reached"] for r in policy_runs.values()]
+        auto_costs = [r["autonomous_cost"] for r in policy_runs.values()]
+        auto_steps = [r["autonomous_steps"] for r in policy_runs.values()]
+        auto_improvements = [r["autonomous_improvement_amount"] for r in policy_runs.values()]
+        auto_improved_flags = [r["autonomous_improved_over_bootstrap"] for r in policy_runs.values()]
         final_utils = [r["final_max_utility"] for r in policy_runs.values()]
-        disc_costs = [r["first_discovery_cost"] for r in policy_runs.values() if r["first_discovery_cost"] is not None]
-        budgets_spent = [r["total_budget_spent"] for r in policy_runs.values()]
         final_entropies = [r["final_entropy_nats"] for r in policy_runs.values()]
+        total_costs = [r["total_cost"] for r in policy_runs.values()]
+
+        # Threshold crossings in autonomous phase
+        thresh_costs = [r["first_autonomous_threshold_cost"] for r in policy_runs.values() if r["first_autonomous_threshold_cost"] is not None]
+
+        # Action distributions
+        total_obj_actions = sum(r["autonomous_action_counts"].get("OUTCOME_TEST", 0) for r in policy_runs.values())
+        total_xrd_actions = sum(r["autonomous_action_counts"].get("XRD", 0) for r in policy_runs.values())
+        total_ref_actions = sum(r["autonomous_action_counts"].get("REFINEMENT", 0) for r in policy_runs.values())
+        total_char_actions = total_xrd_actions + total_ref_actions
+
+        auto_higs = [r["autonomous_cumulative_raw_hig_nats"] for r in policy_runs.values()]
+
+        opt_calls = sum(r["optimizer_calls"] for r in policy_runs.values())
+        opt_successes = sum(r["optimizer_success_count"] for r in policy_runs.values())
+        degraded_runs = sum(1 for r in policy_runs.values() if r["optimizer_degraded_count"] > 0)
 
         results[policy] = {
             "policy": policy,
             "seeds": policy_runs,
             "summary": {
+                "mean_bootstrap_best_utility": round(float(np.mean(boot_bests)), 4),
+                "bootstrap_threshold_reached_rate": round(float(np.mean(boot_reached)), 4),
+                "threshold_already_reached_in_bootstrap_count": sum(1 for b in boot_reached if b),
+                "mean_autonomous_cost": round(float(np.mean(auto_costs)), 2),
+                "mean_autonomous_steps": round(float(np.mean(auto_steps)), 2),
+                "mean_autonomous_improvement_amount": round(float(np.mean(auto_improvements)), 4),
+                "autonomous_improvement_rate": round(float(np.mean(auto_improved_flags)), 4),
+                "mean_first_autonomous_threshold_cost": round(float(np.mean(thresh_costs)), 2) if thresh_costs else None,
+                "first_autonomous_threshold_costs": thresh_costs,
+                "autonomous_threshold_success_rate": round(len(thresh_costs) / len(seeds), 4),
                 "mean_final_utility": round(float(np.mean(final_utils)), 4),
                 "std_final_utility": round(float(np.std(final_utils)), 4),
-                "mean_first_discovery_budget": round(float(np.mean(disc_costs)), 2) if disc_costs else None,
-                "std_first_discovery_budget": round(float(np.std(disc_costs)), 2) if disc_costs else None,
-                "mean_budget_spent": round(float(np.mean(budgets_spent)), 2),
                 "mean_final_entropy_nats": round(float(np.mean(final_entropies)), 4),
-                "discovery_success_rate": round(len(disc_costs) / len(seeds), 4),
+                "std_final_entropy_nats": round(float(np.std(final_entropies)), 4),
+                "mean_total_cost": round(float(np.mean(total_costs)), 2),
+                "mean_autonomous_cumulative_raw_hig_nats": round(float(np.mean(auto_higs)), 4),
+                "total_objective_actions": total_obj_actions,
+                "total_characterization_actions": total_char_actions,
+                "action_distribution": {
+                    "OUTCOME_TEST": total_obj_actions,
+                    "XRD": total_xrd_actions,
+                    "REFINEMENT": total_ref_actions,
+                },
+                "optimizer_calls": opt_calls,
+                "optimizer_success_rate": round(opt_successes / opt_calls, 4) if opt_calls > 0 else 1.0,
+                "degraded_run_count": degraded_runs,
             },
         }
 
@@ -482,10 +598,12 @@ def find_or_document_wow_scenario(
             "domain": "alab_precursor_genome",
             "policy": "HYBRID",
             "seed": int(best_seed) if best_seed else 42,
-            "bootstrap_cost": best_candidate_run["initial_actions_cost"],
+            "bootstrap_cost": best_candidate_run["bootstrap_cost"],
             "final_max_utility": best_candidate_run["final_max_utility"],
-            "first_discovery_budget": best_candidate_run["first_discovery_cost"],
-            "total_budget_spent": best_candidate_run["total_budget_spent"],
+            "first_autonomous_threshold_cost": best_candidate_run["first_autonomous_threshold_cost"],
+            "threshold_already_reached_in_bootstrap": best_candidate_run["threshold_already_reached_in_bootstrap"],
+            "total_budget_spent": best_candidate_run["total_cost"],
+            "autonomous_cost": best_candidate_run["autonomous_cost"],
             "final_entropy_nats": best_candidate_run["final_entropy_nats"],
             "final_dominant_hypothesis": dominant_h,
             "steps": best_candidate_run["steps"],
@@ -497,11 +615,12 @@ def find_or_document_wow_scenario(
         default_run = hybrid_seeds.get(default_seed, {})
         wow_doc = {
             "status": "no_characterization_sequence",
-            "note": "No naturally occurring A-Lab wow scenario with prior characterization actions found; no scenario was fabricated.",
+            "note": "Under the current hypothesis models, empirical information estimates, and cost configuration, HYBRID did not naturally select post-bootstrap XRD/REFINEMENT actions in the representative run. No naturally occurring A-Lab candidate-vs-measurement 'wow' scenario was found; none was fabricated.",
             "policy": "HYBRID",
             "seed": int(default_seed),
             "final_max_utility": default_run.get("final_max_utility", 0.0),
-            "total_budget_spent": default_run.get("total_budget_spent", 0.0),
+            "total_budget_spent": default_run.get("total_cost", 0.0),
+            "autonomous_cost": default_run.get("autonomous_cost", 0.0),
             "final_entropy_nats": default_run.get("final_entropy_nats", 0.0),
             "steps": default_run.get("steps", []),
             "verification_status": "HONEST_UNFABRICATED_REPLAY",
