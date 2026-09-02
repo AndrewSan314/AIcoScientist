@@ -5,16 +5,18 @@ import pytest
 
 from src.domains.alab.adapter import ALabDomainAdapter
 from src.domains.auirh.adapter import AuIrRhDomainAdapter
+from src.domains.electrolyte.adapter import ElectrolyteDomainAdapter
 from src.domains.toy_material.adapter import ToyMaterialDomainAdapter
 from src.science.decision_engine import ScientificDecisionEngine
 
 
-def test_same_engine_runs_auirh_toy_and_alab(tmp_path):
+def test_same_engine_runs_auirh_toy_alab_and_electrolyte(tmp_path):
     """CROSS-DOMAIN ACCEPTANCE TEST:
-    Verifies that the EXACT same ScientificDecisionEngine class runs three distinct material domains:
+    Verifies that the EXACT same ScientificDecisionEngine class runs four distinct material domains:
     1. Au-Ir-Rh thin-film catalyst discovery (AuIrRhDomainAdapter)
     2. Synthetic battery cathode testbed (ToyMaterialDomainAdapter)
     3. Real A-Lab Precursor Genome solid-state synthesis (ALabDomainAdapter)
+    4. Real Anode-Free Lithium Electrolyte discovery (ElectrolyteDomainAdapter)
     with different schemas, hypotheses, objectives, and actions.
     """
     # 1. AuIrRh Engine
@@ -56,10 +58,24 @@ def test_same_engine_runs_auirh_toy_and_alab(tmp_path):
     assert out_alab is not None
     assert engine_alab.domain_id == "alab_precursor_genome"
 
-    # Verify diversity of domain schemas and hypotheses across engines
+    # 4. Anode-Free Electrolyte Engine (using lightweight fixture)
+    fixture_electrolyte = "tests/fixtures/electrolyte/pool_compatible_deexpanded_outcomes.csv"
+    adapter_electrolyte = ElectrolyteDomainAdapter(
+        derived_outcomes_path=fixture_electrolyte,
+    )
+    engine_electrolyte = ScientificDecisionEngine(domain=adapter_electrolyte, seed=42)
+    init_electrolyte = adapter_electrolyte.get_default_initial_actions(n_seed=3, seed=42)
+    engine_electrolyte.initialize(init_electrolyte)
+    rec_electrolyte = engine_electrolyte.propose_next_experiment()
+    out_electrolyte = engine_electrolyte.execute_recommendation(rec_electrolyte)
+    assert out_electrolyte is not None
+    assert engine_electrolyte.domain_id == "anode_free_electrolyte"
+
+    # Verify diversity of domain schemas and hypotheses across all four engines
     assert engine_auirh.objectives[0].name == "k0"
     assert engine_toy.objectives[0].name == "capacity"
     assert engine_alab.objectives[0].name == "reaction_outcome_utility"
+    assert engine_electrolyte.objectives[0].name == "C_norm_20"
 
     assert list(engine_auirh.ensemble.hypotheses.keys()) == ["H1", "H2", "H3"]
     assert list(engine_toy.ensemble.hypotheses.keys()) == [
@@ -71,4 +87,9 @@ def test_same_engine_runs_auirh_toy_and_alab(tmp_path):
         "precursor_thermodynamics",
         "process_kinetics",
         "structure_phase_informed",
+    ]
+    assert list(engine_electrolyte.ensemble.hypotheses.keys()) == [
+        "global_smooth_descriptor",
+        "sparse_additive_descriptor",
+        "local_chemical_regime",
     ]

@@ -1,0 +1,7 @@
+historical_outcome_id,candidate_id,batch,solv_comb_sm,salt_comb_sm,canonical_salt,C_norm_20,conc_salt_1,theor_capacity,amt_electrolyte,de_expansion_status,pool_compatible,solv_ecfp_pca_0,solv_ecfp_pca_1,solv_ecfp_pca_2,solv_ecfp_pca_3,solv_ecfp_pca_4,solv_ecfp_pca_5,solv_ecfp_pca_6,solv_ecfp_pca_7,solv_ecfp_pca_8,solv_ecfp_pca_9,mol_wt_solv
+HIST_0_0_ELEC_c1,ELEC_c1_seed1,0,COCCO,LiFSI,LiFSI,0.720,1.0,150.0,50.0,BATCH0_PHYSICAL_CELL,True,-0.05,-0.34,0.34,0.09,0.47,-0.35,-0.14,0.21,-0.30,-0.11,90.12
+HIST_0_1_ELEC_c2,ELEC_c2_seed2,0,COCCOCCOC,LiFSI,LiFSI,0.680,1.0,150.0,50.0,BATCH0_PHYSICAL_CELL,True,0.12,-0.20,0.45,-0.10,0.30,-0.25,-0.05,0.15,-0.20,-0.08,134.17
+HIST_0_2_ELEC_c3,ELEC_c3_seed3,0,C1CCOC1,LiFSI,LiFSI,0.550,1.0,150.0,50.0,BATCH0_PHYSICAL_CELL,True,-0.30,-0.40,0.10,0.25,0.55,-0.40,-0.20,0.30,-0.35,-0.15,72.11
+HIST_1_3_ELEC_c4,ELEC_c4_cand1,1,C1CCOCC1,LiFSI,LiFSI,0.810,1.0,150.0,50.0,DE_EXPANDED_ACQUISITION_OUTCOME,True,-0.20,-0.35,0.20,0.15,0.50,-0.38,-0.18,0.25,-0.32,-0.12,86.13
+HIST_1_4_ELEC_c5,ELEC_c5_cand2,1,CCOC(=O)C,LiFSI,LiFSI,0.050,1.0,150.0,50.0,DE_EXPANDED_ACQUISITION_OUTCOME,True,0.45,-0.10,-0.30,0.40,-0.10,0.20,0.10,-0.15,0.05,0.10,88.11
+HIST_1_5_ELEC_c6,ELEC_c6_cand3,1,CC(C)OC(C)C,LiFSI,LiFSI,0.640,1.0,150.0,50.0,DE_EXPANDED_ACQUISITION_OUTCOME,True,-0.10,-0.25,0.15,0.05,0.40,-0.30,-0.12,0.18,-0.25,-0.09,102.17
