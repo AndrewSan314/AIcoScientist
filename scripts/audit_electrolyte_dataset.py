@@ -5,7 +5,7 @@ This script implements all audit closure requirements:
 2. P0 #2: Fix all batch statistics to use correct units (Raw ML Rows, Unique Solvents, De-expanded Outcomes).
 3. P0 #3 & A4: Redefine pool-compatible labeled subsets into ML view (151 rows) vs De-expanded view (75 outcomes across 75 solvents); resolve 75 vs 77 unambiguously.
 4. P0 #4 & A8: Re-run generalization models on de-expanded representation (Baselines C & D) with solvent-only 11D features and evaluate standardized-context subset (N=75).
-5. P0 #5 & A5: Global solvent float-jitter validation across all multi-vector solvents; prove machine-epsilon floating-point jitter mechanism.
+5. P0 #5 & A5: Global solvent float-jitter validation across all multi-vector solvents; empirically verify machine-epsilon floating-point jitter mechanism.
 6. High #1 & #2 & A6-A7: Truly compute duplicate counts and classify 22D feature collisions with conservative terminology.
 7. High #3: Correct Gaussian Process label to 'Gaussian Process (RBF + WhiteKernel)'.
 8. High #4 & A2-A3: Dynamic report rendering and automated report consistency gating.
@@ -282,25 +282,43 @@ def recover_batch7_features(df_labeled, candidate_pool_path, feature_cols):
 
 
 def compute_streaming_moments(candidate_pool_path, feature_cols):
-    """Compute exact full-pool streaming moments using Welford / sum-of-squares accumulator."""
-    count = 0
-    sum_vals = np.zeros(len(feature_cols))
-    sum_sq_vals = np.zeros(len(feature_cols))
-    min_vals = np.full(len(feature_cols), np.inf)
-    max_vals = np.full(len(feature_cols), -np.inf)
-    
+    """Compute exact full-pool streaming moments using parallel chunk-combined Welford variance.
+
+    Numerically stable against catastrophic cancellation across large datasets (Chan et al., 1983).
+    """
+    total_count = 0
+    means = np.zeros(len(feature_cols), dtype=np.float64)
+    M2 = np.zeros(len(feature_cols), dtype=np.float64)
+    min_vals = np.full(len(feature_cols), np.inf, dtype=np.float64)
+    max_vals = np.full(len(feature_cols), -np.inf, dtype=np.float64)
+
     for chunk in pd.read_csv(candidate_pool_path, chunksize=200000, usecols=feature_cols):
-        X = chunk[feature_cols].values
-        count += len(X)
-        sum_vals += X.sum(axis=0)
-        sum_sq_vals += (X ** 2).sum(axis=0)
+        X = chunk[feature_cols].to_numpy(dtype=np.float64, copy=False)
+        n_chunk = len(X)
+        if n_chunk == 0:
+            continue
+
         min_vals = np.minimum(min_vals, X.min(axis=0))
         max_vals = np.maximum(max_vals, X.max(axis=0))
-        
-    means = sum_vals / count
-    variances = np.maximum(0.0, (sum_sq_vals / count) - (means ** 2))
+
+        chunk_mean = X.mean(axis=0)
+        chunk_M2 = np.sum((X - chunk_mean) ** 2, axis=0)
+
+        if total_count == 0:
+            total_count = n_chunk
+            means = chunk_mean
+            M2 = chunk_M2
+        else:
+            # Parallel Welford combination
+            delta = chunk_mean - means
+            new_count = total_count + n_chunk
+            means = means + delta * (n_chunk / new_count)
+            M2 = M2 + chunk_M2 + (delta ** 2) * (total_count * n_chunk / new_count)
+            total_count = new_count
+
+    variances = np.maximum(0.0, M2 / max(total_count, 1))
     stds = np.sqrt(variances)
-    
+
     feature_report = {}
     for i, col in enumerate(feature_cols):
         is_const = bool(min_vals[i] == max_vals[i] or stds[i] == 0.0)
@@ -313,10 +331,10 @@ def compute_streaming_moments(candidate_pool_path, feature_cols):
             "is_constant": is_const,
             "is_near_constant": is_near_const
         }
-        
+
     safe_stds = stds.copy()
     safe_stds[safe_stds < 1e-6] = 1.0
-    
+
     return means, safe_stds, feature_report
 
 
@@ -370,7 +388,7 @@ def audit_solvent_feature_identity(candidate_pool_path, solv_cols):
         "count_delta_le_1e_9": int((max_deltas <= 1e-9).sum()),
         "max_mw_delta": float(mw_deltas.max()),
         "max_pca_delta": float(pca_deltas.max()),
-        "verdict": "PROVEN FLOATING-POINT JITTER",
+        "verdict": "EMPIRICALLY CONSISTENT WITH FLOATING-POINT JITTER",
         "scientific_justification": (
             f"Across all {len(max_deltas):,} multi-vector solvents, 100% of within-solvent deltas are <= {max_deltas.max():.4e} "
             f"(order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. "
@@ -400,9 +418,9 @@ def compute_candidate_duplicates(candidate_pool_path, feature_cols):
             else:
                 seen_keys.add(k)
                 
-            # Full row hash
-            row_tuple = tuple(row.values)
-            row_hash = hash(row_tuple)
+            # Full row hash via deterministic SHA-256
+            row_bytes = str(tuple(row.values)).encode("utf-8")
+            row_hash = hashlib.sha256(row_bytes).hexdigest()
             if row_hash in seen_full_hashes:
                 duplicate_full_rows += 1
             else:
@@ -1239,6 +1257,37 @@ def main():
     
     # 14. Phase B: Generate Frozen Data Contract
     print("\n[STEP 11] Generating Frozen Electrolyte Data Contract...")
+    # Phase 13: Dynamically compute all audit readiness gates from empirical data facts
+    target_semantics_ok = bool(
+        "norm_capacity_3" in df_all_filled.columns
+        and (df_all_filled["norm_capacity_3"].dropna() >= 0.0).all()
+        and (df_all_filled["norm_capacity_3"].dropna() <= 2.0).all()
+    )
+    n_b0 = physical_campaign.get("batch0_physical_cells_view", {}).get("count", 58)
+    n_b1_7 = physical_campaign.get("batch1_to_7_deexpanded_view", {}).get("count", 74)
+    exp_identity_ok = bool(len(df_deexp) == 132 and n_b0 == 58 and n_b1_7 == 74)
+    pool_compat_ok = bool(n_comp_deexp == 75 and len(df_comp_deexp_75) == 75)
+    coverage_ok = bool(subsets_audit.get("subset_B_virtual_pool_compatible_recovered", {}).get("pool_compatible_unique_solvents", 0) == 75)
+    solv_jitter_ok = bool(solv_feat_audit.get("global_max_abs_delta", 1.0) <= 1e-12)
+    dup_ok = bool(cand_dup_audit.get("duplicate_solvent_salt_keys", 1) == 0 and cand_dup_audit.get("exact_duplicate_rows", 1) == 0)
+    report_cons_ok = (consistency_result["report_consistency_gate"] == "PASS")
+    derived_art_ok = bool(
+        os.path.exists(os.path.join(OUT_DIR, "pool_compatible_deexpanded_outcomes.csv"))
+        and os.path.getsize(os.path.join(OUT_DIR, "pool_compatible_deexpanded_outcomes.csv")) > 1000
+    )
+
+    computed_gates = {
+        "target_semantics_gate": "PASS" if target_semantics_ok else "FAIL",
+        "experimental_identity_gate": "PASS" if exp_identity_ok else "FAIL",
+        "pool_compatibility_gate": "PASS" if pool_compat_ok else "FAIL",
+        "coverage_gate": "PASS" if coverage_ok else "FAIL",
+        "solvent_feature_identity_gate": "PASS" if solv_jitter_ok else "FAIL",
+        "duplicate_audit_gate": "PASS" if dup_ok else "FAIL",
+        "report_consistency_gate": "PASS" if report_cons_ok else "FAIL",
+        "derived_artifact_gate": "PASS" if derived_art_ok else "FAIL",
+    }
+    all_passed = all(v == "PASS" for v in computed_gates.values())
+
     data_contract = {
         "domain_id": "anode_free_electrolyte",
         "source_dataset": "AmanchukwuLab/AL-anode-free (2025)",
@@ -1287,17 +1336,8 @@ def main():
             "Historical benchmark is limited to 75 pool-compatible de-expanded experimental outcomes.",
             "Only single experimental modality (CAPACITY_TEST) is available."
         ],
-        "audit_gates": {
-            "target_semantics_gate": "PASS",
-            "experimental_identity_gate": "PASS",
-            "pool_compatibility_gate": "PASS",
-            "coverage_gate": "PASS",
-            "solvent_feature_identity_gate": "PASS",
-            "duplicate_audit_gate": "PASS",
-            "report_consistency_gate": consistency_result["report_consistency_gate"],
-            "derived_artifact_gate": "PASS"
-        },
-        "audit_verdict": "AUDIT INTEGRATION READY" if consistency_result["report_consistency_gate"] == "PASS" else "AUDIT NOT READY"
+        "audit_gates": computed_gates,
+        "audit_verdict": "AUDIT INTEGRATION READY" if all_passed else "AUDIT NOT READY"
     }
     with open(os.path.join(OUT_DIR, "electrolyte_data_contract.json"), "w") as f:
         json.dump(data_contract, f, indent=2)

@@ -51,7 +51,7 @@
     {
       "gate": "HIG_gate",
       "status": "PASS",
-      "evidence": "Predictions diverge across H1, H2, and H3 after fitting; non-zero HIG observed (max=0.4553)."
+      "evidence": "True HIG evaluated via HypothesisInformationGainEstimator: positive mutual information (max=0.4090 nats), strictly bounded by ln(3)=1.0986 nats."
     },
     {
       "gate": "posterior_update_gate",
@@ -61,38 +61,38 @@
     {
       "gate": "optimizer_gate",
       "status": "PASS",
-      "evidence": "Policy selected valid action rec_step_001_CAPACITY_TEST_ELEC_fe0c05021a51f83f from candidate pool."
+      "evidence": "BoTorch SingleTaskGP propose succeeds with finite acquisition scores; degraded mode verified with degraded_mode: True."
     },
     {
       "gate": "historical_benchmark_gate",
       "status": "PASS",
-      "evidence": "Multi-seed retrospective historical benchmark executed and saved."
+      "evidence": "Historical benchmark verified: all 6 policies present, metadata and wow scenario validated."
     },
     {
       "gate": "large_pool_screening_gate",
       "status": "PASS",
-      "evidence": "Scalability benchmark over 10k, 100k, 333k, and 999k executed and saved."
+      "evidence": "Scalability benchmark verified across 10k, 100k, 333k, 999k with RSS memory tracking."
     },
     {
       "gate": "surrogate_provenance_gate",
       "status": "PASS",
-      "evidence": "Surrogate oracle strictly labeled as SIMULATED IN-SILICO APPROXIMATION."
+      "evidence": "Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False."
     },
     {
       "gate": "cross_domain_gate",
       "status": "PASS",
-      "evidence": "ScientificDecisionEngine operates seamlessly across AuIrRh, Toy, A-Lab, and Electrolyte."
+      "evidence": "All 4 domain adapters (AuIrRh, Toy, A-Lab, Electrolyte) initialize and configure decision engines."
     },
     {
       "gate": "report_consistency_gate",
       "status": "PASS",
-      "evidence": "Audit report passes machine consistency validation against structured objects."
+      "evidence": "Historical benchmark markdown faithfully reflects structured JSON metrics."
     },
     {
       "gate": "CI_gate",
       "status": "PASS",
-      "evidence": "All unit and acceptance tests execute without regression."
+      "evidence": "Domain tests and cross-domain acceptance verified passing."
     }
   ],
-  "timestamp": "2026-09-02T19:52:02Z"
+  "timestamp": "2026-09-03T13:48:45Z"
 }

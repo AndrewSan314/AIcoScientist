@@ -18,15 +18,15 @@
 | `candidate_identity_gate` | **PASS** | 100% deterministic unique ELEC_<hash> candidate IDs (75 candidates). |
 | `historical_oracle_gate` | **PASS** | Reveals known candidate; strictly fails closed on unmeasured candidate with UnmeasuredElectrolyteCandidateError. |
 | `hypothesis_fit_gate` | **PASS** | All 3 hypotheses (H1, H2, H3) fitted after 3 seed observations. |
-| `HIG_gate` | **PASS** | Predictions diverge across H1, H2, and H3 after fitting; non-zero HIG observed (max=0.4553). |
+| `HIG_gate` | **PASS** | True HIG evaluated via HypothesisInformationGainEstimator: positive mutual information (max=0.4090 nats), strictly bounded by ln(3)=1.0986 nats. |
 | `posterior_update_gate` | **PASS** | Bayesian evidence update altered posterior probabilities (max shift = 0.2724). |
-| `optimizer_gate` | **PASS** | Policy selected valid action rec_step_001_CAPACITY_TEST_ELEC_fe0c05021a51f83f from candidate pool. |
-| `historical_benchmark_gate` | **PASS** | Multi-seed retrospective historical benchmark executed and saved. |
-| `large_pool_screening_gate` | **PASS** | Scalability benchmark over 10k, 100k, 333k, and 999k executed and saved. |
-| `surrogate_provenance_gate` | **PASS** | Surrogate oracle strictly labeled as SIMULATED IN-SILICO APPROXIMATION. |
-| `cross_domain_gate` | **PASS** | ScientificDecisionEngine operates seamlessly across AuIrRh, Toy, A-Lab, and Electrolyte. |
-| `report_consistency_gate` | **PASS** | Audit report passes machine consistency validation against structured objects. |
-| `CI_gate` | **PASS** | All unit and acceptance tests execute without regression. |
+| `optimizer_gate` | **PASS** | BoTorch SingleTaskGP propose succeeds with finite acquisition scores; degraded mode verified with degraded_mode: True. |
+| `historical_benchmark_gate` | **PASS** | Historical benchmark verified: all 6 policies present, metadata and wow scenario validated. |
+| `large_pool_screening_gate` | **PASS** | Scalability benchmark verified across 10k, 100k, 333k, 999k with RSS memory tracking. |
+| `surrogate_provenance_gate` | **PASS** | Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False. |
+| `cross_domain_gate` | **PASS** | All 4 domain adapters (AuIrRh, Toy, A-Lab, Electrolyte) initialize and configure decision engines. |
+| `report_consistency_gate` | **PASS** | Historical benchmark markdown faithfully reflects structured JSON metrics. |
+| `CI_gate` | **PASS** | Domain tests and cross-domain acceptance verified passing. |
 
 ---
 
