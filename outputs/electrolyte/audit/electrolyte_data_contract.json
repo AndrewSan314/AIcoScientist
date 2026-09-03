@@ -98,6 +98,8 @@
     "target_semantics_gate": "PASS",
     "experimental_identity_gate": "PASS",
     "pool_compatibility_gate": "PASS",
+    "candidate_membership_coverage_gate": "PASS",
+    "feature_space_coverage_gate": "PASS",
     "coverage_gate": "PASS",
     "solvent_feature_identity_gate": "PASS",
     "duplicate_audit_gate": "PASS",

@@ -105,39 +105,69 @@ class SurrogateElectrolyteOracle:
 
         self._feature_cols = list(feature_cols)
         self._noise_std = noise_std
-        self._rng = np.random.default_rng(random_state)
+        self._random_state = random_state
+        self._simulation_seed = random_state
 
         X = df_train[self._feature_cols].values
         y = df_train["C_norm_20"].values
 
-        # Use an ExtraTrees ensemble (distinct from Gaussian Process / BayesianRidge policy models)
+        # Use a frozen ExtraTrees ensemble (distinct from Gaussian Process / BayesianRidge policy models)
         self._model = ExtraTreesRegressor(n_estimators=100, max_depth=8, random_state=random_state)
         self._model.fit(X, y)
         logger.info("Fitted SurrogateElectrolyteOracle on %d training rows.", len(X))
 
-    def predict(self, candidate_features: np.ndarray) -> float:
-        """Predict expected capacity retention for candidate features."""
-        X = np.atleast_2d(candidate_features)
+    def set_simulation_seed(self, seed: int) -> None:
+        """Sets the benchmark simulation seed for reproducible deterministic noise."""
+        self._simulation_seed = int(seed)
+
+    def predict_latent(self, candidate_features: Union[np.ndarray, dict[str, Any]]) -> float:
+        """Predict noiseless latent ground truth capacity f(x) for candidate features (offline omniscient evaluation only)."""
+        if isinstance(candidate_features, dict):
+            X = np.array([[float(candidate_features[f]) for f in self._feature_cols]], dtype=np.float64)
+        else:
+            X = np.atleast_2d(candidate_features)
         return float(self._model.predict(X)[0])
+
+    def predict_latent_batch(self, candidate_features_matrix: np.ndarray) -> np.ndarray:
+        """Vectorized evaluation of noiseless latent ground truth capacity across an entire search space."""
+        return self._model.predict(candidate_features_matrix)
+
+    def predict(self, candidate_features: np.ndarray) -> float:
+        """Predict noiseless latent ground truth capacity f(x) (canonical evaluation method)."""
+        return self.predict_latent(candidate_features)
 
     def predict_capacity_loss(self, candidate_features: np.ndarray) -> float:
         """Alias for compatibility with offline surrogate evaluation."""
-        return self.predict(candidate_features)
+        return self.predict_latent(candidate_features)
+
+    def get_simulated_noise(self, candidate_id: str, simulation_seed: int | None = None) -> float:
+        """Generates deterministic simulated measurement noise for a (seed, candidate_id) pair.
+
+        Ensures that querying the same candidate under the same benchmark seed yields the identical
+        noisy observation regardless of policy query order or execution timeline.
+        """
+        import hashlib
+
+        s_seed = self._simulation_seed if simulation_seed is None else int(simulation_seed)
+        noise_key = f"{s_seed}_{candidate_id}".encode("utf-8")
+        seed_hash = int(hashlib.sha256(noise_key).hexdigest()[:8], 16)
+        rng = np.random.default_rng(seed_hash)
+        return float(rng.normal(0.0, self._noise_std))
 
     def reveal(
         self,
         action: ScientificAction,
         candidate_features: np.ndarray,
+        simulation_seed: int | None = None,
     ) -> ExperimentOutcome:
-        """Simulates an experimental measurement using the frozen surrogate model."""
+        """Simulates an experimental measurement y(x) = clip(f(x) + epsilon, 0, 1)."""
         act_norm = normalize_action_type(action.action_type)
         if act_norm != "CAPACITY_TEST":
             raise ValueError(f"SurrogateElectrolyteOracle only supports 'CAPACITY_TEST', got '{act_norm}'.")
 
-        X = np.atleast_2d(candidate_features)
-        pred_mean = float(self._model.predict(X)[0])
-        noise = float(self._rng.normal(0.0, self._noise_std))
-        sim_val = float(np.clip(pred_mean + noise, 0.0, 1.0))
+        latent_truth = self.predict_latent(candidate_features)
+        noise = self.get_simulated_noise(action.candidate_id, simulation_seed=simulation_seed)
+        sim_val = float(np.clip(latent_truth + noise, 0.0, 1.0))
 
         return ExperimentOutcome(
             action_id=action.action_id,
@@ -149,7 +179,12 @@ class SurrogateElectrolyteOracle:
                 "oracle_kind": "surrogate_simulation",
                 "experimental": False,
                 "model_family": "ExtraTreesRegressor",
+                "latent_oracle_capacity": round(latent_truth, 6),
+                "noisy_simulated_observation": round(sim_val, 6),
+                "simulated_noise": round(noise, 6),
                 "simulated_noise_std": self._noise_std,
+                "simulation_seed": self._simulation_seed if simulation_seed is None else simulation_seed,
                 "label": "SIMULATED SURROGATE ORACLE - In-Silico Computational Approximation",
             },
         )
+

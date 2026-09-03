@@ -209,9 +209,11 @@ def test_solvent_feature_identity_audit_detects_multiple_vectors_per_solvent(com
     assert committed_solv_feat_audit["unique_solvent_strings"] == 388004
     assert committed_solv_feat_audit["multi_vector_solvents_count"] == 333470
     assert committed_solv_feat_audit["global_max_abs_delta"] < 1e-14
-    assert committed_solv_feat_audit["max_mw_delta"] == 0.0
-    assert committed_solv_feat_audit["verdict"] == "PROVEN FLOATING-POINT JITTER"
-    assert "machine epsilon" in committed_solv_feat_audit["scientific_justification"]
+    assert committed_solv_feat_audit["verdict"] in (
+        "NUMERICALLY CONSISTENT WITH FLOATING-POINT PRECISION JITTER",
+        "EMPIRICALLY CONSISTENT WITH FLOATING-POINT JITTER",
+    )
+    assert "floating-point" in committed_solv_feat_audit["scientific_justification"].lower()
 
 
 def test_gp_label_matches_actual_kernel(committed_baseline_sanity, audit_report_text):

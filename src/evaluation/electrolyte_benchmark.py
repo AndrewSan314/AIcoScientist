@@ -89,11 +89,7 @@ class PolicyAggregateSummary:
     mean_realized_entropy_reduction: float
     std_realized_entropy_reduction: float
     runtime_sec_mean: float
-    # Backwards-compatible aliases
-    mean_hig_nats: float = 0.0
-    mean_hig_normalized: float = 0.0
-    mean_entropy_reduction: float = 0.0
-    mean_hig: float = 0.0
+    deprecated_aliases: dict[str, float] = field(default_factory=dict)
 
 
 def evaluate_historical_policy(
@@ -495,11 +491,12 @@ def run_comprehensive_historical_benchmark(
                 mean_realized_entropy_reduction=round(float(np.mean(ent_reds)), 4),
                 std_realized_entropy_reduction=round(float(np.std(ent_reds)), 4),
                 runtime_sec_mean=round(float(np.mean(times)), 4),
-                # Backwards-compatible aliases
-                mean_hig_nats=round(float(np.mean(cum_higs_nats)), 4),
-                mean_hig_normalized=round(float(np.mean(cum_higs_norm)), 4),
-                mean_entropy_reduction=round(float(np.mean(ent_reds)), 4),
-                mean_hig=round(float(np.mean(cum_higs_nats)), 4),
+                deprecated_aliases={
+                    "mean_hig_nats": round(float(np.mean(cum_higs_nats)), 4),
+                    "mean_hig_normalized": round(float(np.mean(cum_higs_norm)), 4),
+                    "mean_entropy_reduction": round(float(np.mean(ent_reds)), 4),
+                    "mean_hig": round(float(np.mean(cum_higs_nats)), 4),
+                },
             )
         )
 

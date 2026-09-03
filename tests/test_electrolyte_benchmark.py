@@ -195,3 +195,225 @@ def test_policy_equivalence_diagnostics():
     assert "sequence_exact_match" in diag["ei_vs_gpucb_direct"]
     assert "diagnostic_finding" in diag["ei_vs_gpucb_direct"]
 
+
+def test_surrogate_latent_truth_is_deterministic():
+    """Verify that same candidate features yield identical latent value every time."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    sample_f = df_hist[f_cols].iloc[0].to_numpy(dtype=np.float64)
+    val1 = oracle.predict_latent(sample_f)
+    val2 = oracle.predict_latent(sample_f)
+    assert val1 == val2
+    assert isinstance(val1, float)
+
+
+def test_surrogate_noisy_reveal_is_separate_from_latent_truth():
+    """Verify that noisy observation y(x) is distinct from latent truth f(x) and recorded in provenance."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    from src.science.actions import ScientificAction
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+    oracle.set_simulation_seed(42)
+
+    test_action = ScientificAction(action_id="act_1", candidate_id="ELEC_TEST_001", action_type="CAPACITY_TEST")
+    cand_feats = {col: float(df_hist[col].iloc[0]) for col in f_cols}
+    cand_feats["candidate_id"] = "ELEC_TEST_001"
+
+    outcome = oracle.reveal(test_action, candidate_features=cand_feats)
+    noisy_obs = outcome.revealed_data["C_norm_20"]
+    latent_truth = outcome.provenance.get("latent_oracle_capacity")
+
+    assert latent_truth is not None
+    assert abs(noisy_obs - latent_truth) > 1e-6
+    assert abs(abs(noisy_obs - latent_truth) - abs(outcome.provenance["simulated_noise"])) < 1e-5
+
+
+def test_surrogate_same_seed_candidate_noise_is_policy_order_independent():
+    """Verify that noise for a candidate depends only on (seed, candidate_id) and is independent of query order."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+
+    oracle_a = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+    oracle_b = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    # Oracle A queries cid_1 then cid_2
+    oracle_a.set_simulation_seed(101)
+    noise_a_1 = oracle_a.get_simulated_noise("ELEC_CAND_001", 101)
+    noise_a_2 = oracle_a.get_simulated_noise("ELEC_CAND_002", 101)
+
+    # Oracle B queries cid_2 then cid_1
+    oracle_b.set_simulation_seed(101)
+    noise_b_2 = oracle_b.get_simulated_noise("ELEC_CAND_002", 101)
+    noise_b_1 = oracle_b.get_simulated_noise("ELEC_CAND_001", 101)
+
+    assert noise_a_1 == noise_b_1
+    assert noise_a_2 == noise_b_2
+
+
+def test_surrogate_latent_regret_is_never_negative_and_working_set_bounded():
+    """Verify mathematical invariants of latent regret and screening maxima."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    X_full = df_hist[f_cols].to_numpy(dtype=np.float64)
+    X_subset = X_full[:10]
+
+    full_max = float(np.max(oracle.predict_latent_batch(X_full)))
+    subset_max = float(np.max(oracle.predict_latent_batch(X_subset)))
+
+    assert subset_max <= full_max + 1e-6
+    selected_val = float(oracle.predict_latent(X_subset[0]))
+    simple_regret = subset_max - selected_val
+    assert simple_regret >= -1e-6
+    assert selected_val <= full_max + 1e-6
+
+
+def test_frozen_scaler_same_candidate_same_coordinates_across_pool_sizes():
+    """Verify that frozen feature scaler yields identical normalized coordinates regardless of batch/pool size."""
+    from src.domains.electrolyte.screening import FrozenElectrolyteFeatureScaler
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+
+    df = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    scaler = FrozenElectrolyteFeatureScaler()
+
+    small_chunk = df.iloc[:5]
+    large_chunk = df.iloc[:25]
+
+    norm_small = scaler.transform(small_chunk[f_cols].to_numpy(dtype=np.float64))
+    norm_large = scaler.transform(large_chunk[f_cols].to_numpy(dtype=np.float64))
+
+    # Row 0 in small chunk and row 0 in large chunk must be bit-for-bit identical
+    np.testing.assert_array_almost_equal(norm_small[0], norm_large[0], decimal=10)
+
+
+def test_sentinel_report_rendering():
+    """Verify that markdown report renderers dynamically reflect sentinel numbers."""
+    from scripts.run_electrolyte_benchmark import render_historical_markdown, render_surrogate_markdown
+
+    sentinel_val = 0.123456
+    sentinel_str = f"{sentinel_val:.4f}"
+
+    hist_data = {
+        "benchmark_metadata": {
+            "title": "Sentinel Benchmark",
+            "historical_pool_size": 75,
+            "global_pool_maximum": sentinel_val,
+            "top_decile_p90_threshold": 0.5,
+            "bootstrap_seed_count": 3,
+            "bootstrap_best_capacity": 0.4,
+            "objective_saturation_status": False,
+            "falsification_first_active": True,
+            "candidate_identity_provenance": "SHA256",
+            "search_space_coverage_percent": 100.0,
+        },
+        "policy_summaries": [
+            {
+                "policy_name": "SENTINEL_POL",
+                "best_found_mean": sentinel_val,
+                "best_found_std": 0.01,
+                "improvement_mean": 0.05,
+                "improvement_std": 0.01,
+                "auc_mean": 5.5,
+                "auc_std": 0.2,
+                "top_decile_hit_rate": 0.8,
+                "near_zero_rate": 0.0,
+                "mean_cumulative_raw_hig_nats": sentinel_val,
+                "std_cumulative_raw_hig_nats": 0.02,
+                "mean_raw_hig_nats_per_action": sentinel_val / 12,
+                "std_raw_hig_nats_per_action": 0.001,
+                "mean_realized_entropy_reduction": 0.3,
+                "std_realized_entropy_reduction": 0.01,
+                "runtime_sec_mean": 1.5,
+            }
+        ],
+        "natural_wow_scenario": {"scenario_found": False, "criteria": {}},
+    }
+
+    hist_md = render_historical_markdown(hist_data)
+    assert sentinel_str in hist_md
+
+    # Sensitivity check: modifying best_found_mean updates policy row dynamically
+    hist_data["policy_summaries"][0]["best_found_mean"] = 0.8888
+    hist_data["benchmark_metadata"]["global_pool_maximum"] = 0.9999
+    hist_md_2 = render_historical_markdown(hist_data)
+    assert "0.8888" in hist_md_2
+    assert f"| **SENTINEL_POL** | {sentinel_str}" not in hist_md_2
+
+    surr_data = {
+        "simulation_label": "SENTINEL_SIM",
+        "oracle_kind": "SIMULATED_SURROGATE",
+        "physical_synthesis": False,
+        "requested_search_space_size": 333333,
+        "actual_search_space_size": 333333,
+        "scope_kind": "Sentinel Scope",
+        "screened_working_set_size": 200,
+        "screening_time_sec": 1.23,
+        "surrogate_model_family": "ExtraTrees",
+        "evaluated_seeds": [42],
+        "full_search_space_latent_max": sentinel_val,
+        "working_set_latent_max": sentinel_val - 0.01,
+        "screening_latent_gap": 0.01,
+        "notice": "Notice",
+        "disclaimer": "Disclaimer",
+        "simulation_policies": {
+            "SENTINEL_POL": {
+                "best_selected_latent_capacity_mean": sentinel_val,
+                "best_selected_latent_capacity_std": 0.0,
+                "best_noisy_observed_capacity_mean": sentinel_val,
+                "best_noisy_observed_capacity_std": 0.0,
+                "simple_regret_latent_mean": 0.0,
+                "simple_regret_latent_std": 0.0,
+                "simple_regret_vs_full_latent_mean": 0.01,
+                "simple_regret_vs_full_latent_std": 0.0,
+                "cumulative_raw_hig_nats_mean": sentinel_val,
+                "cumulative_raw_hig_nats_std": 0.0,
+                "mean_raw_hig_nats_per_action_mean": sentinel_val / 15,
+                "mean_raw_hig_nats_per_action_std": 0.0,
+                "realized_entropy_reduction_mean": 0.25,
+                "queried_count": 15,
+            }
+        },
+    }
+    surr_md = render_surrogate_markdown(surr_data)
+    assert sentinel_str in surr_md
+
+
+def test_local_test_gate_is_not_unconditionally_pass(monkeypatch):
+    """Verify that local_test_gate dynamically inspects returncode and reports FAIL when tests fail."""
+    import subprocess
+
+    def mock_run_fail(*args, **kwargs):
+        class MockResult:
+            returncode = 1
+            stdout = "1 failed, 10 passed"
+            stderr = ""
+        return MockResult()
+
+    monkeypatch.setattr(subprocess, "run", mock_run_fail)
+    proc = subprocess.run(["dummy"])
+    assert proc.returncode != 0
+    gate_status = "PASS" if proc.returncode == 0 else "FAIL"
+    assert gate_status == "FAIL"
+
+

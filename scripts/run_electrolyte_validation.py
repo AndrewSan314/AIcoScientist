@@ -228,35 +228,89 @@ def main():
             required_policies = {"RANDOM", "DISCOVERY_ONLY", "PURE_FALSIFICATION", "HYBRID", "BOTORCH_EI_DIRECT", "BOTORCH_GPUCB_DIRECT"}
             summaries = {s["policy_name"]: s for s in bdata.get("policy_summaries", [])}
             detailed = bdata.get("detailed_runs", {})
+            hist_cands_map = {r["candidate_id"]: r["C_norm_20"] for _, r in adapter._derived_df.iterrows()}
+
             if not required_policies.issubset(set(summaries.keys())):
                 bench_msg = f"Missing required policies: {required_policies - set(summaries.keys())}"
             else:
                 mismatch_found = False
-                for pol in required_policies:
-                    runs = detailed.get(pol, [])
-                    if len(runs) < 5:
-                        bench_msg = f"Policy {pol} has fewer than 5 seeds"
+                # 1. Bootstrap seed consistency check: across all seeds, seed initial actions match across policies
+                for s_idx, s in enumerate(bdata["benchmark_metadata"]["evaluated_seeds"]):
+                    seed_inits = {}
+                    for pol in required_policies:
+                        runs = detailed.get(pol, [])
+                        if s_idx < len(runs):
+                            seed_inits[pol] = tuple(runs[s_idx].get("initial_actions_cids", []))
+                    init_sets = set(seed_inits.values())
+                    if len(init_sets) > 1 and () not in init_sets:
+                        bench_msg = f"Bootstrap initial actions mismatch across policies for seed {s}"
                         mismatch_found = True
                         break
-                    summ = summaries[pol]
-                    calc_best = float(np.mean([r["best_autonomous_found"] for r in runs]))
-                    calc_cum_hig = float(np.mean([r["cumulative_raw_hig_nats"] for r in runs]))
-                    calc_ent_red = float(np.mean([r["realized_entropy_reduction"] for r in runs]))
-                    if abs(calc_best - summ["best_found_mean"]) > 1e-4:
-                        bench_msg = f"best_found_mean mismatch for {pol}: {calc_best} vs {summ['best_found_mean']}"
-                        mismatch_found = True
-                        break
-                    if abs(calc_cum_hig - summ["mean_cumulative_raw_hig_nats"]) > 1e-4:
-                        bench_msg = f"mean_cumulative_raw_hig_nats mismatch for {pol}: {calc_cum_hig} vs {summ['mean_cumulative_raw_hig_nats']}"
-                        mismatch_found = True
-                        break
-                    if abs(calc_ent_red - summ["mean_realized_entropy_reduction"]) > 1e-4:
-                        bench_msg = f"mean_realized_entropy_reduction mismatch for {pol}: {calc_ent_red} vs {summ['mean_realized_entropy_reduction']}"
-                        mismatch_found = True
-                        break
+
+                # 2. Detailed computation-level checks
+                if not mismatch_found:
+                    for pol in required_policies:
+                        runs = detailed.get(pol, [])
+                        if len(runs) < 5:
+                            bench_msg = f"Policy {pol} has fewer than 5 seeds"
+                            mismatch_found = True
+                            break
+                        summ = summaries[pol]
+                        calc_bests = []
+                        calc_cum_higs = []
+                        calc_ent_reds = []
+
+                        for r in runs:
+                            q_cids = r.get("queried_candidate_ids", [])
+                            # Check no duplicate actions selected within a run
+                            if len(q_cids) != len(set(q_cids)):
+                                bench_msg = f"Duplicate action selected in run: {pol} seed {r['seed']}"
+                                mismatch_found = True
+                                break
+
+                            # Check revealed values match historical oracle
+                            rev_vals = r.get("revealed_capacities", [])
+                            for cid, obs_val in zip(q_cids, rev_vals):
+                                if cid in hist_cands_map:
+                                    if abs(obs_val - hist_cands_map[cid]) > 1e-4:
+                                        bench_msg = f"Observed capacity {obs_val} != historical truth {hist_cands_map[cid]} for {cid}"
+                                        mismatch_found = True
+                                        break
+                            if mismatch_found:
+                                break
+
+                            # Entropy reduction check
+                            init_e = r.get("initial_entropy", 0.0)
+                            final_e = r.get("final_entropy", 0.0)
+                            calc_ent_red = init_e - final_e
+                            if abs(calc_ent_red - r["realized_entropy_reduction"]) > 1e-3:
+                                bench_msg = f"Entropy reduction mismatch for {pol} seed {r['seed']}"
+                                mismatch_found = True
+                                break
+
+                            calc_bests.append(r["best_autonomous_found"])
+                            calc_cum_higs.append(r["cumulative_raw_hig_nats"])
+                            calc_ent_reds.append(r["realized_entropy_reduction"])
+
+                        if mismatch_found:
+                            break
+
+                        if abs(float(np.mean(calc_bests)) - summ["best_found_mean"]) > 1e-4:
+                            bench_msg = f"best_found_mean mismatch for {pol}: {np.mean(calc_bests)} vs {summ['best_found_mean']}"
+                            mismatch_found = True
+                            break
+                        if abs(float(np.mean(calc_cum_higs)) - summ["mean_cumulative_raw_hig_nats"]) > 1e-4:
+                            bench_msg = f"mean_cumulative_raw_hig_nats mismatch for {pol}: {np.mean(calc_cum_higs)} vs {summ['mean_cumulative_raw_hig_nats']}"
+                            mismatch_found = True
+                            break
+                        if abs(float(np.mean(calc_ent_reds)) - summ["mean_realized_entropy_reduction"]) > 1e-4:
+                            bench_msg = f"mean_realized_entropy_reduction mismatch for {pol}: {np.mean(calc_ent_reds)} vs {summ['mean_realized_entropy_reduction']}"
+                            mismatch_found = True
+                            break
+
                 if not mismatch_found:
                     bench_ok = True
-                    bench_msg = "Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs."
+                    bench_msg = "Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs, oracle, and invariants."
         except Exception as e:
             bench_msg = f"Exception validating benchmark: {e}"
 
@@ -352,37 +406,141 @@ def main():
         "evidence": f"Full lifecycle (initialize -> propose -> execute -> update) verified across all 4 domains: {'; '.join(cd_results)}.",
     })
 
-    # 14. Report Consistency Gate
-    print("[GATE 14] Checking Report Consistency Gate...")
+    # 14. Report Consistency Gate (Dynamic Sentinel Verification)
+    print("[GATE 14] Checking Report Consistency Gate (Dynamic Sentinel Verification)...")
+    import subprocess
+    from scripts.run_electrolyte_benchmark import render_historical_markdown, render_surrogate_markdown
+
+    sentinel_val_1 = 0.123456
+    sentinel_val_2 = 0.654321
+    fake_hist_bench = {
+        "benchmark_metadata": {
+            "title": "Sentinel Replay",
+            "historical_pool_size": 75,
+            "global_pool_maximum": sentinel_val_1,
+            "top_decile_p90_threshold": 0.5,
+            "bootstrap_seed_count": 3,
+            "bootstrap_best_capacity": 0.4,
+            "objective_saturation_status": False,
+            "falsification_first_active": True,
+            "candidate_identity_provenance": "SHA256",
+            "search_space_coverage_percent": 100.0,
+        },
+        "policy_summaries": [
+            {
+                "policy_name": "SENTINEL_POLICY",
+                "best_found_mean": sentinel_val_1,
+                "best_found_std": 0.01,
+                "improvement_mean": 0.05,
+                "improvement_std": 0.01,
+                "auc_mean": 5.5,
+                "auc_std": 0.2,
+                "top_decile_hit_rate": 0.8,
+                "near_zero_rate": 0.0,
+                "mean_cumulative_raw_hig_nats": sentinel_val_2,
+                "std_cumulative_raw_hig_nats": 0.02,
+                "mean_raw_hig_nats_per_action": sentinel_val_2 / 12,
+                "std_raw_hig_nats_per_action": 0.001,
+                "mean_realized_entropy_reduction": 0.3,
+                "std_realized_entropy_reduction": 0.01,
+                "runtime_sec_mean": 1.5,
+            }
+        ],
+        "natural_wow_scenario": {"scenario_found": False, "criteria": {}},
+    }
+    rendered_h_1 = render_historical_markdown(fake_hist_bench)
+    sentinel_h_ok = (f"{sentinel_val_1:.4f}" in rendered_h_1 and f"{sentinel_val_2:.4f}" in rendered_h_1)
+
+    fake_hist_bench["policy_summaries"][0]["best_found_mean"] = 0.987654
+    fake_hist_bench["benchmark_metadata"]["global_pool_maximum"] = 0.9999
+    rendered_h_2 = render_historical_markdown(fake_hist_bench)
+    sensitivity_h_ok = ("0.9877" in rendered_h_2 and "0.1235" not in rendered_h_2)
+
+    fake_surr_bench = {
+        "simulation_label": "SENTINEL_SIM",
+        "oracle_kind": "SIMULATED_SURROGATE",
+        "physical_synthesis": False,
+        "requested_search_space_size": 333333,
+        "actual_search_space_size": 333333,
+        "scope_kind": "Sentinel Scope",
+        "screened_working_set_size": 200,
+        "screening_time_sec": 1.23,
+        "surrogate_model_family": "ExtraTrees",
+        "evaluated_seeds": [42],
+        "full_search_space_latent_max": sentinel_val_1,
+        "working_set_latent_max": sentinel_val_1 - 0.01,
+        "screening_latent_gap": 0.01,
+        "notice": "Sentinel Notice",
+        "disclaimer": "Sentinel Disclaimer",
+        "simulation_policies": {
+            "SENTINEL_POL": {
+                "best_selected_latent_capacity_mean": sentinel_val_1,
+                "best_selected_latent_capacity_std": 0.0,
+                "best_noisy_observed_capacity_mean": sentinel_val_1,
+                "best_noisy_observed_capacity_std": 0.0,
+                "simple_regret_latent_mean": 0.0,
+                "simple_regret_latent_std": 0.0,
+                "simple_regret_vs_full_latent_mean": 0.01,
+                "simple_regret_vs_full_latent_std": 0.0,
+                "cumulative_raw_hig_nats_mean": sentinel_val_2,
+                "cumulative_raw_hig_nats_std": 0.0,
+                "mean_raw_hig_nats_per_action_mean": sentinel_val_2 / 15,
+                "mean_raw_hig_nats_per_action_std": 0.0,
+                "realized_entropy_reduction_mean": 0.25,
+                "queried_count": 15,
+            }
+        },
+    }
+    rendered_s_1 = render_surrogate_markdown(fake_surr_bench)
+    sentinel_s_ok = (f"{sentinel_val_1:.4f}" in rendered_s_1 and f"{sentinel_val_2:.4f}" in rendered_s_1)
+
     hist_json_path = "outputs/electrolyte/benchmark/historical_policy_comparison.json"
     hist_md_path = "outputs/electrolyte/benchmark/historical_policy_comparison.md"
-    rep_cons_ok = False
+    disk_match = False
     if os.path.exists(hist_json_path) and os.path.exists(hist_md_path):
         with open(hist_json_path) as f:
             hjson = json.load(f)
         with open(hist_md_path, encoding="utf-8") as f:
             hmd = f.read()
-        all_in_md = True
-        for s in hjson.get("policy_summaries", []):
-            mean_str = f"{s['best_found_mean']:.4f}"
-            if mean_str not in hmd:
-                all_in_md = False
-                break
-        rep_cons_ok = all_in_md
+        disk_match = all(f"{s['best_found_mean']:.4f}" in hmd for s in hjson.get("policy_summaries", []))
+
+    rep_cons_ok = (sentinel_h_ok and sensitivity_h_ok and sentinel_s_ok and disk_match)
     gates["report_consistency_gate"] = "PASS" if rep_cons_ok else "FAIL"
     gate_details.append({
         "gate": "report_consistency_gate",
         "status": gates["report_consistency_gate"],
-        "evidence": "Historical benchmark markdown faithfully reflects structured JSON metrics.",
+        "evidence": f"Dynamic sentinel rendering and sensitivity verified; disk report matches JSON (sentinels: h={sentinel_h_ok}, sens={sensitivity_h_ok}, s={sentinel_s_ok}, disk={disk_match}).",
     })
 
     # 15. CI Gate Decoupling: local_test_gate vs external_CI_gate
-    print("[GATE 15] Checking Local Test Gate & Decoupled External CI Gate...")
-    gates["local_test_gate"] = "PASS"
+    print("[GATE 15] Checking Local Test Gate (Executing Real Pytest Suite)...")
+    t_pytest_start = time.perf_counter()
+    pytest_proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/test_electrolyte_audit.py",
+            "tests/test_electrolyte_domain.py",
+            "tests/test_electrolyte_hypotheses.py",
+            "tests/test_electrolyte_screening.py",
+            "tests/test_electrolyte_benchmark.py",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    pytest_sec = time.perf_counter() - t_pytest_start
+    test_ok = (pytest_proc.returncode == 0)
+    stdout_last = pytest_proc.stdout.strip().split("\n")[-1] if pytest_proc.stdout else pytest_proc.stderr.strip()
+
+    gates["local_test_gate"] = "PASS" if test_ok else "FAIL"
     gate_details.append({
         "gate": "local_test_gate",
-        "status": "PASS",
-        "evidence": "All unit, integration, and cross-domain lifecycle test suites verified locally.",
+        "status": gates["local_test_gate"],
+        "evidence": f"Executed pytest on electrolyte suite (exit code {pytest_proc.returncode} in {pytest_sec:.2f}s): {stdout_last}",
     })
 
     gates["external_CI_gate"] = "NOT_EVALUATED_LOCALLY"

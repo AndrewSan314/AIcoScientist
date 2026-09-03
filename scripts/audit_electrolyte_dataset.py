@@ -388,11 +388,12 @@ def audit_solvent_feature_identity(candidate_pool_path, solv_cols):
         "count_delta_le_1e_9": int((max_deltas <= 1e-9).sum()),
         "max_mw_delta": float(mw_deltas.max()),
         "max_pca_delta": float(pca_deltas.max()),
-        "verdict": "PROVEN FLOATING-POINT JITTER",
+        "verdict": "NUMERICALLY CONSISTENT WITH FLOATING-POINT PRECISION JITTER",
         "scientific_justification": (
-            f"Across all {len(max_deltas):,} multi-vector solvents, 100% of within-solvent deltas are <= {max_deltas.max():.4e} "
-            f"(order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. "
-            f"When rounded to 8 decimal places, exactly 0 multi-vector solvents remain."
+            f"Across all {len(max_deltas):,} multi-vector solvents, within-solvent feature differences are bounded at "
+            f"approximately {max_deltas.max():.4e}, molecular weights are identical, and rounding the solvent feature vector "
+            f"to 8 decimal places removes all within-solvent multiplicity. The anomaly is therefore numerically negligible "
+            f"and strongly consistent with floating-point precision effects."
         ),
         "representative_examples": examples
     }
@@ -1284,23 +1285,53 @@ def main():
     n_b1_7 = physical_campaign.get("batch1_to_7_deexpanded_view", {}).get("de_expanded_campaign_outcomes", 0)
     exp_identity_ok = bool(len(df_deexp) == (n_b0 + n_b1_7) and len(df_deexp) == 132 and n_b0 == 58 and n_b1_7 == 74)
 
-    # 3. Pool compatibility: contract conditions must hold for every row of the derived table
+    # 3. Pool compatibility: complete contract conditions must hold for every row of the derived table
     if tested_rows > 0:
         lifsi_smiles = "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
         contract_salt_ok = (df_derived_saved["canonical_salt"] == lifsi_smiles).all()
         contract_conc_ok = (np.abs(df_derived_saved["conc_salt_1"] - 1.0) <= 1e-6).all()
-        contract_features_ok = bool(df_derived_saved[SOLV_COLS_11].notna().all().all())
-        pool_compat_ok = bool(len(df_derived_saved) == n_comp_deexp and len(df_derived_saved) == 75 and contract_salt_ok and contract_conc_ok and contract_features_ok)
+        contract_theor_ok = (np.abs(df_derived_saved["theor_capacity"] - 150.0) <= 1e-6).all()
+        contract_amt_ok = (np.abs(df_derived_saved["amt_electrolyte"] - 50.0) <= 1e-6).all()
+        contract_features_ok = bool(df_derived_saved[SOLV_COLS_11].notna().all().all()) and bool(np.isfinite(df_derived_saved[SOLV_COLS_11].values).all())
+        contract_cids_ok = bool(df_derived_saved["candidate_id"].str.startswith("ELEC_").all())
+        contract_solvs_in_pool = bool(set(df_derived_saved["solv_comb_sm"]).issubset(pool_solvs))
+        contract_pairs_in_pool = all((s, sa) in pool_pairs for s, sa in zip(df_derived_saved["solv_comb_sm"], df_derived_saved["canonical_salt"]))
+        pool_compat_ok = bool(
+            len(df_derived_saved) == n_comp_deexp
+            and len(df_derived_saved) == 75
+            and contract_salt_ok
+            and contract_conc_ok
+            and contract_theor_ok
+            and contract_amt_ok
+            and contract_features_ok
+            and contract_cids_ok
+            and contract_solvs_in_pool
+            and contract_pairs_in_pool
+        )
     else:
         pool_compat_ok = False
 
-    # 4. Coverage: verify 100% of unique pool-compatible solvents are recovered in virtual candidate pool
+    # 4A. Candidate Membership Coverage: verify 100% of unique pool-compatible solvents are recovered in virtual candidate pool
     if tested_rows > 0:
         unique_pool_solvents = len(df_derived_saved["solv_comb_sm"].unique())
         recovered_solvents = subsets_audit.get("subset_B_virtual_pool_compatible_recovered", {}).get("pool_compatible_unique_solvents", 0)
-        coverage_ok = bool(recovered_solvents == unique_pool_solvents and unique_pool_solvents > 0)
+        cand_cov_ok = bool(recovered_solvents == unique_pool_solvents and unique_pool_solvents > 0)
     else:
-        coverage_ok = False
+        cand_cov_ok = False
+
+    # 4B. Feature-Space Coverage: validate distances, moments, and absence of catastrophic scale explosion
+    feat_cov_ok = True
+    for cov_k in ("coverage_A_historical_seed_N58", "coverage_B_full_training_representation_N208", "coverage_C_virtual_pool_compatible_subset_N151", "coverage_D_primary_lifsi_to_deexpanded_75"):
+        c_dict = coverage_data.get(cov_k, {})
+        for q_k, val in c_dict.items():
+            if not np.isfinite(val) or val < 0.0 or val > 1e7:
+                feat_cov_ok = False
+                break
+    for f_col, f_stat in feat_report_22.items():
+        if not np.isfinite(f_stat.get("mean", 0.0)) or not np.isfinite(f_stat.get("std", 0.0)):
+            feat_cov_ok = False
+        if f_stat.get("std", 0.0) <= 0.0 and not f_stat.get("is_constant", False):
+            feat_cov_ok = False
 
     # 5. Solvent feature identity: global maximum absolute delta <= 1e-12
     max_jitter = solv_feat_audit.get("global_max_abs_delta", 1.0)
@@ -1326,7 +1357,9 @@ def main():
         "target_semantics_gate": "PASS" if target_semantics_ok else "FAIL",
         "experimental_identity_gate": "PASS" if exp_identity_ok else "FAIL",
         "pool_compatibility_gate": "PASS" if pool_compat_ok else "FAIL",
-        "coverage_gate": "PASS" if coverage_ok else "FAIL",
+        "candidate_membership_coverage_gate": "PASS" if cand_cov_ok else "FAIL",
+        "feature_space_coverage_gate": "PASS" if feat_cov_ok else "FAIL",
+        "coverage_gate": "PASS" if (cand_cov_ok and feat_cov_ok) else "FAIL",
         "solvent_feature_identity_gate": "PASS" if solv_jitter_ok else "FAIL",
         "duplicate_audit_gate": "PASS" if dup_ok else "FAIL",
         "report_consistency_gate": "PASS" if report_cons_ok else "FAIL",

@@ -21,7 +21,7 @@
 * **Pool-Compatible ML Rows:** **151** ML rows (1.0 M conc, 150 mAh/g LFP, 50 µL volume).
 * **Pool-Compatible De-expanded Outcomes:** **75** outcomes across **75** unique solvents.
 * **75 vs 77 Resolution:** **RESOLVED AT 75** (exactly 3 Batch 0 compatible measurements + 72 Batch 1–7 de-expanded outcomes = 75 total outcomes).
-* **388k vs 742k Solvent Vector Anomaly:** **RESOLVED** (PROVEN FLOATING-POINT JITTER: max delta $= 3.3307e-15$).
+* **388k vs 742k Solvent Vector Anomaly:** **RESOLVED** (NUMERICALLY CONSISTENT WITH FLOATING-POINT PRECISION JITTER: max delta $= 3.3307e-15$).
 * **Primary Generalization Baseline:** **De-expanded Grouped Solvent CV** ($R^2 = 0.1122$, Spearman $= 0.3979$ for GP).
 
 ---
@@ -114,7 +114,7 @@ Three distinct conceptual views are separated:
 # 8. Candidate Feature Identity Audit (388k vs 742k Anomaly)
 
 * **Investigation:** The candidate table contains 388,004 solvent strings, but raw float hashing produced 742,382 unique 11D solvent vectors across 333,470 multi-vector solvents.
-* **Mechanism Proven:** Across all 333,470 multi-vector solvents, 100% of within-solvent deltas are <= 3.3307e-15 (order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.
+* **Mechanism Proven:** Across all 333,470 multi-vector solvents, within-solvent feature differences are bounded at approximately 3.3307e-15, molecular weights are identical, and rounding the solvent feature vector to 8 decimal places removes all within-solvent multiplicity. The anomaly is therefore numerically negligible and strongly consistent with floating-point precision effects.
 * **Quantiles of Within-Solvent Feature Deltas:**
   * Median (P50): $4.4409e-16$
   * P90: $8.8818e-16$
@@ -122,7 +122,7 @@ Three distinct conceptual views are separated:
   * P99: $1.3323e-15$
   * Global Maximum: $3.3307e-15$
   * Max MW Delta: $0.0000e+00$ (bit-for-bit identical)
-* **Conclusion:** **PROVEN FLOATING-POINT JITTER**. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.
+* **Conclusion:** **NUMERICALLY CONSISTENT WITH FLOATING-POINT PRECISION JITTER**. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.
 
 ---
 

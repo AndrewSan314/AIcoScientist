@@ -12,8 +12,8 @@
   "count_delta_le_1e_9": 333470,
   "max_mw_delta": 0.0,
   "max_pca_delta": 3.3306690738754696e-15,
-  "verdict": "PROVEN FLOATING-POINT JITTER",
-  "scientific_justification": "Across all 333,470 multi-vector solvents, 100% of within-solvent deltas are <= 3.3307e-15 (order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.",
+  "verdict": "NUMERICALLY CONSISTENT WITH FLOATING-POINT PRECISION JITTER",
+  "scientific_justification": "Across all 333,470 multi-vector solvents, within-solvent feature differences are bounded at approximately 3.3307e-15, molecular weights are identical, and rounding the solvent feature vector to 8 decimal places removes all within-solvent multiplicity. The anomaly is therefore numerically negligible and strongly consistent with floating-point precision effects.",
   "representative_examples": [
     {
       "solvent_smiles": "CN(C)C=O",

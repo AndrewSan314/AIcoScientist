@@ -67,7 +67,7 @@
     {
       "gate": "historical_benchmark_gate",
       "status": "PASS",
-      "evidence": "Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs."
+      "evidence": "Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs, oracle, and invariants."
     },
     {
       "gate": "large_pool_screening_gate",
@@ -87,12 +87,12 @@
     {
       "gate": "report_consistency_gate",
       "status": "PASS",
-      "evidence": "Historical benchmark markdown faithfully reflects structured JSON metrics."
+      "evidence": "Dynamic sentinel rendering and sensitivity verified; disk report matches JSON (sentinels: h=True, sens=True, s=True, disk=True)."
     },
     {
       "gate": "local_test_gate",
       "status": "PASS",
-      "evidence": "All unit, integration, and cross-domain lifecycle test suites verified locally."
+      "evidence": "Executed pytest on electrolyte suite (exit code 0 in 16.23s): 59 passed, 42 warnings in 14.93s"
     },
     {
       "gate": "external_CI_gate",
@@ -100,5 +100,5 @@
       "evidence": "External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally."
     }
   ],
-  "timestamp": "2026-09-03T16:03:41Z"
+  "timestamp": "2026-09-03T17:46:20Z"
 }

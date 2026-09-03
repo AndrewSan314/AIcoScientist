@@ -122,6 +122,7 @@ def load_lifsi_virtual_candidate_chunk(
     nrows: int | None = None,
     chunksize: int = 50000,
     feature_cols: Sequence[str] = ELECTROLYTE_SOLVENT_FEATURES,
+    generate_ids: bool = True,
 ) -> pd.DataFrame:
     """Streams and loads candidates from the physically aligned LiFSI virtual slice (~333,333 rows)."""
     if not os.path.exists(virtual_csv_path):
@@ -136,9 +137,10 @@ def load_lifsi_virtual_candidate_chunk(
     for chunk in pd.read_csv(virtual_csv_path, chunksize=chunksize, usecols=cols_to_read):
         lifsi_chunk = chunk[chunk["salt_comb_sm"] == lifsi_smiles].copy()
         if len(lifsi_chunk) > 0:
-            lifsi_chunk["candidate_id"] = [
-                generate_candidate_id(s, lifsi_smiles) for s in lifsi_chunk["solv_comb_sm"]
-            ]
+            if generate_ids:
+                lifsi_chunk["candidate_id"] = [
+                    generate_candidate_id(s, lifsi_smiles) for s in lifsi_chunk["solv_comb_sm"]
+                ]
             lifsi_chunk["conc_salt_1"] = 1.0
             lifsi_chunk["theor_capacity"] = 150.0
             lifsi_chunk["amt_electrolyte"] = 50.0

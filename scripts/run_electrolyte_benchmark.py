@@ -23,6 +23,7 @@ from src.domains.electrolyte.config import (
 from src.domains.electrolyte.data import (
     DEFAULT_COMPATIBLE_DERIVED_PATH,
     DEFAULT_VIRTUAL_1M_PATH,
+    generate_candidate_id,
     load_derived_historical_outcomes,
     load_lifsi_virtual_candidate_chunk,
 )
@@ -88,17 +89,18 @@ def render_historical_markdown(bench_data: dict) -> str:
   3. $HIG_{{\\text{{nats}}}}(c_{{\\text{{hyb}}}}) > HIG_{{\\text{{nats}}}}(c_{{\\text{{disc}}}})$
   4. $V_{{\\text{{hyb}}}}(c_{{\\text{{hyb}}}}) > V_{{\\text{{hyb}}}}(c_{{\\text{{disc}}}})$
   5. Material epistemic shift: $\\max |P_{{\\text{{post}}}} - P_{{\\text{{prior}}}}| \\ge 0.01$
-* **Outcome:** No candidate pair across {meta['evaluated_seeds']} seeds met all 5 criteria simultaneously.
+* **Outcome:** No candidate pair across {meta.get('evaluated_seeds', [])} seeds met all 5 criteria simultaneously.
 """
 
+    eval_seeds_str = ", ".join(map(str, meta.get('evaluated_seeds', [])))
     md = f"""# Retrospective Finite Historical Label-Pool Replay Benchmark Report
 
-**Dataset:** `AmanchukwuLab/AL-anode-free` (Pool-Compatible Historical Outcomes, N={meta['historical_pool_size']})  
-**Evaluation Scope:** Retrospective replay across 5 deterministic seeds ({', '.join(map(str, meta['evaluated_seeds']))}).  
-**Initial Evidence:** Batch 0 compatible seed cells (N={meta['bootstrap_seed_count']}, Best $C_{{\\text{{norm}}}}^{{20}} = {meta['bootstrap_best_capacity']:.4f}$).  
-**Global Historical Pool Maximum:** $C_{{\\text{{norm}}}}^{{20}} = {meta['global_pool_maximum']:.4f}$  
-**Objective Saturation Status:** `{meta['objective_saturation_status']}` (Saturation ratio: {meta['saturation_ratio']:.4f})  
-**Top-Decile Threshold ($P_{{90}}$):** $C_{{\\text{{norm}}}}^{{20}} \\ge {meta['top_decile_p90_threshold']:.4f}$  
+**Dataset:** `AmanchukwuLab/AL-anode-free` (Pool-Compatible Historical Outcomes, N={meta.get('historical_pool_size', 0)})  
+**Evaluation Scope:** Retrospective replay across deterministic seeds ({eval_seeds_str}).  
+**Initial Evidence:** Batch 0 compatible seed cells (N={meta.get('bootstrap_seed_count', 0)}, Best $C_{{\\text{{norm}}}}^{{20}} = {meta.get('bootstrap_best_capacity', 0.0):.4f}$).  
+**Global Historical Pool Maximum:** $C_{{\text{{norm}}}}^{{20}} = {meta.get('global_pool_maximum', 0.0):.4f}$  
+**Objective Saturation Status:** `{meta.get('objective_saturation_status', False)}` (Saturation ratio: {meta.get('saturation_ratio', 0.0):.4f})  
+**Top-Decile Threshold ($P_{{90}}$):** $C_{{\text{{norm}}}}^{{20}} \ge {meta.get('top_decile_p90_threshold', 0.0):.4f}$  
 
 ---
 
@@ -113,7 +115,7 @@ def render_historical_markdown(bench_data: dict) -> str:
 ## 2. Saturation & Bootstrap Accounting
 
 * **Bootstrap Independence:** The 3 Batch-0 seed observations are established as prior baseline evidence. All reported improvements and top-decile hits measure strictly autonomous policy actions beyond the bootstrap.
-* **Objective Saturation Analysis:** The historical dataset has high saturation ({meta['saturation_ratio']*100:.1f}% of global optimum already present in Batch 0 seed). Therefore, autonomous improvement and area under best-so-far curve are the appropriate discriminating metrics.
+* **Objective Saturation Analysis:** The historical dataset has high saturation ({meta.get('saturation_ratio', 0.0)*100:.1f}% of global optimum already present in Batch 0 seed). Therefore, autonomous improvement and area under best-so-far curve are the appropriate discriminating metrics.
 
 ---
 
@@ -141,24 +143,29 @@ def run_large_pool_end_to_end_decision_benchmark(
     df_hist = load_derived_historical_outcomes(DEFAULT_COMPATIBLE_DERIVED_PATH)
     surrogate_oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=feature_cols)
     f_cols = list(feature_cols)
+    lifsi_smiles = "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
 
     runs = []
     for N in pool_sizes:
         t_start = time.perf_counter()
 
-        # 1. Pool load timing
+        # 1. Pool read and filter timing (reading CSV and filtering LiFSI)
         t0 = time.perf_counter()
         cands_chunk = load_lifsi_virtual_candidate_chunk(
             virtual_csv_path=virtual_csv_path,
             nrows=N,
             feature_cols=f_cols,
+            generate_ids=False,
         )
-        pool_load_sec = time.perf_counter() - t0
+        pool_read_and_filter_sec = time.perf_counter() - t0
 
-        # 2. Candidate identity timing
+        # 2. Candidate identity generation timing (computing SHA-256 candidate IDs)
         t0 = time.perf_counter()
-        cand_ids = cands_chunk["candidate_id"].tolist()
-        candidate_identity_sec = time.perf_counter() - t0
+        cands_chunk["candidate_id"] = [
+            generate_candidate_id(s, lifsi_smiles) for s in cands_chunk["solv_comb_sm"]
+        ]
+        candidate_identity_generation_sec = time.perf_counter() - t0
+        pool_load_filter_identity_sec = pool_read_and_filter_sec + candidate_identity_generation_sec
 
         # 3. Two-stage screening timing (using FrozenElectrolyteFeatureScaler)
         t0 = time.perf_counter()
@@ -207,8 +214,11 @@ def run_large_pool_end_to_end_decision_benchmark(
         runs.append({
             "candidate_pool_size": int(N),
             "screened_working_set_size": len(working_set),
-            "pool_load_sec": round(pool_load_sec, 4),
-            "candidate_identity_sec": round(candidate_identity_sec, 4),
+            "pool_read_and_filter_sec": round(pool_read_and_filter_sec, 4),
+            "candidate_identity_generation_sec": round(candidate_identity_generation_sec, 4),
+            "pool_load_filter_identity_sec": round(pool_load_filter_identity_sec, 4),
+            "pool_load_sec": round(pool_read_and_filter_sec, 4),
+            "candidate_identity_sec": round(candidate_identity_generation_sec, 4),
             "screening_sec": round(screening_sec, 4),
             "adapter_construction_sec": round(adapter_construction_sec, 4),
             "engine_initialization_sec": round(engine_initialization_sec, 4),
@@ -236,10 +246,55 @@ def run_large_pool_end_to_end_decision_benchmark(
     return result
 
 
+def render_surrogate_markdown(surr_results: dict[str, Any]) -> str:
+    """Renders structured in-silico surrogate simulation results into markdown faithfully."""
+    surr_rows = []
+    for pol_k, s_dict in surr_results.get("simulation_policies", {}).items():
+        best_lat_str = f"{s_dict.get('best_selected_latent_capacity_mean', 0.0):.4f} ± {s_dict.get('best_selected_latent_capacity_std', 0.0):.4f}"
+        best_obs_str = f"{s_dict.get('best_noisy_observed_capacity_mean', 0.0):.4f} ± {s_dict.get('best_noisy_observed_capacity_std', 0.0):.4f}"
+        reg_ws_str = f"{s_dict.get('simple_regret_latent_mean', 0.0):.4f} ± {s_dict.get('simple_regret_latent_std', 0.0):.4f}"
+        reg_full_str = f"{s_dict.get('simple_regret_vs_full_latent_mean', 0.0):.4f} ± {s_dict.get('simple_regret_vs_full_latent_std', 0.0):.4f}"
+        cum_hig_str = f"{s_dict.get('cumulative_raw_hig_nats_mean', 0.0):.4f} ± {s_dict.get('cumulative_raw_hig_nats_std', 0.0):.4f}"
+        per_act_hig_str = f"{s_dict.get('mean_raw_hig_nats_per_action_mean', 0.0):.4f} ± {s_dict.get('mean_raw_hig_nats_per_action_std', 0.0):.4f}"
+        ent_red_str = f"{s_dict.get('realized_entropy_reduction_mean', 0.0):.4f}"
+
+        surr_rows.append(
+            f"| **{pol_k}** | {best_lat_str} | {best_obs_str} | {reg_ws_str} | {reg_full_str} | "
+            f"{cum_hig_str} | {per_act_hig_str} | {ent_red_str} | {s_dict.get('queried_count', 0)} |"
+        )
+    surr_table = "\n".join(surr_rows)
+
+    return f"""# In-Silico Surrogate Simulation Benchmark Report
+
+**Status:** `{surr_results.get('simulation_label')}`  
+**Oracle Kind:** `{surr_results.get('oracle_kind')}`  
+**Physical Synthesis:** `{surr_results.get('physical_synthesis')}`  
+**Search Space Scope:** {surr_results.get('actual_search_space_size', 0):,} candidates ({surr_results.get('scope_kind')})  
+**Requested Search Space:** {surr_results.get('requested_search_space_size', 0):,}  
+**Working Set Size:** {surr_results.get('screened_working_set_size', 0)} candidates  
+**Screening Runtime:** {surr_results.get('screening_time_sec', 0.0):.4f} seconds  
+**Surrogate Model Family:** {surr_results.get('surrogate_model_family')}  
+
+### Omniscient Latent Oracle Maxima:
+* **Full-Space Latent Maximum $f(x)$:** `{surr_results.get('full_search_space_latent_max', 0.0):.4f}`  
+* **Working-Set Latent Maximum $f(x)$:** `{surr_results.get('working_set_latent_max', 0.0):.4f}`  
+* **Screening Latent Gap:** `{surr_results.get('screening_latent_gap', 0.0):.4f}` (loss attributable to Stage-1 screening)  
+
+## Policy Closed-Loop Performance (Mean ± Std over Seeds {', '.join(map(str, surr_results.get('evaluated_seeds', [])))})
+| Policy | Best Latent Cap $f(x)$ | Best Noisy Obs $y(x)$ | Latent Regret (Working Set) | Latent Regret (Full Space) | Cum. HIG (nats) | HIG / act (nats) | Entropy Red. | Steps |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+{surr_table}
+
+> [!IMPORTANT]
+> {surr_results.get('notice')}  
+> **Disclaimer:** {surr_results.get('disclaimer')}
+"""
+
+
 def run_surrogate_simulation(
     derived_path: str = DEFAULT_COMPATIBLE_DERIVED_PATH,
     virtual_csv_path: str = DEFAULT_VIRTUAL_1M_PATH,
-    simulation_candidates_count: int = 50000,
+    simulation_candidates_count: int = 333333,
     seeds: Sequence[int] = (42, 101, 2024),
     steps: int = 15,
 ) -> dict[str, Any]:
@@ -247,13 +302,15 @@ def run_surrogate_simulation(
     df_hist = load_derived_historical_outcomes(derived_path)
     f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
 
-    # Load candidate slice from LiFSI discovery space
+    # 1. Load candidate slice from LiFSI discovery space
     cands_df = load_lifsi_virtual_candidate_chunk(
         virtual_csv_path=virtual_csv_path,
         nrows=simulation_candidates_count,
         feature_cols=f_cols,
+        generate_ids=True,
     )
 
+    # 2. Stage-1 Screening
     t0 = time.perf_counter()
     working_set = screen_large_pool_candidates(
         candidates_df=cands_df,
@@ -272,20 +329,25 @@ def run_surrogate_simulation(
         "DISCOVERY_ONLY",
     )
 
-    # Compute omniscient oracle truth on working set for offline regret
-    oracle_truth_pool = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols)
-    oracle_values = [
-        oracle_truth_pool.predict_capacity_loss(row[f_cols].to_numpy(dtype=np.float64))
-        for _, row in working_set.iterrows()
-    ]
-    oracle_max = float(np.max(oracle_values))
+    # 3. Omniscient Latent Truth Model (fitted once on historical data, deterministic)
+    oracle_truth_pool = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    full_space_X = cands_df[f_cols].to_numpy(dtype=np.float64, copy=False)
+    full_search_space_latent_max = float(np.max(oracle_truth_pool.predict_latent_batch(full_space_X)))
+
+    working_set_X = working_set[f_cols].to_numpy(dtype=np.float64, copy=False)
+    working_set_latent_max = float(np.max(oracle_truth_pool.predict_latent_batch(working_set_X)))
+
+    screening_latent_gap = float(max(0.0, full_search_space_latent_max - working_set_latent_max))
 
     policy_seed_runs: dict[str, list[dict[str, Any]]] = {p: [] for p in sim_policies}
 
     for pol_name in sim_policies:
         for s in seeds:
-            # Independent frozen surrogate oracle per policy and seed
-            surrogate_oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols)
+            # Independent frozen surrogate oracle configured with deterministic noise seed s
+            surrogate_oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+            surrogate_oracle.set_simulation_seed(s)
+
             adapter = ElectrolyteDomainAdapter(
                 candidate_pool_df=working_set,
                 oracle=surrogate_oracle,
@@ -313,7 +375,8 @@ def run_surrogate_simulation(
             init_entropy = float(engine.ensemble.get_entropy())
 
             queried_cids = []
-            revealed_vals = []
+            revealed_noisy_vals = []
+            selected_latent_vals = []
             cum_hig_nats = 0.0
             rng = np.random.default_rng(s)
 
@@ -372,55 +435,92 @@ def run_surrogate_simulation(
                 else:
                     rec = engine.propose_next_experiment()
                     chosen_action = rec.action
+                    cand_f = adapter.get_candidate_features(chosen_action.candidate_id)
+                    comp = np.array([cand_f[f] for f in f_cols], dtype=np.float64)
                     raw_hig = float(rec.uncertainty_summary.get("raw_hig_nats", rec.scientific_information_value))
                     outcome = engine.execute_recommendation(rec)
 
                 cum_hig_nats += raw_hig
-                c_val = float(outcome.revealed_data["C_norm_20"])
+                c_noisy = float(outcome.revealed_data["C_norm_20"])
+                c_latent = oracle_truth_pool.predict_latent(comp)
+
                 queried_cids.append(chosen_action.candidate_id)
-                revealed_vals.append(c_val)
+                revealed_noisy_vals.append(c_noisy)
+                selected_latent_vals.append(c_latent)
 
             final_entropy = float(engine.ensemble.get_entropy())
-            best_val = float(max(revealed_vals)) if revealed_vals else 0.0
-            mean_val = float(np.mean(revealed_vals)) if revealed_vals else 0.0
-            n_acts = max(1, len(revealed_vals))
+
+            best_latent = float(max(selected_latent_vals)) if selected_latent_vals else 0.0
+            mean_latent = float(np.mean(selected_latent_vals)) if selected_latent_vals else 0.0
+            best_noisy = float(max(revealed_noisy_vals)) if revealed_noisy_vals else 0.0
+            mean_noisy = float(np.mean(revealed_noisy_vals)) if revealed_noisy_vals else 0.0
+
+            # Valid simple regrets based entirely on latent truth
+            simple_regret_ws = float(max(0.0, working_set_latent_max - best_latent))
+            simple_regret_full = float(max(0.0, full_search_space_latent_max - best_latent))
+            n_acts = max(1, len(revealed_noisy_vals))
+
+            # Machine-checkable invariants
+            assert best_latent <= full_search_space_latent_max + 1e-6, "Selected latent exceeded full space max"
+            assert simple_regret_ws >= -1e-6, "Negative latent regret vs working set"
+            assert working_set_latent_max <= full_search_space_latent_max + 1e-6, "Working set max exceeded full space max"
 
             policy_seed_runs[pol_name].append({
                 "seed": s,
-                "best_simulated_capacity": round(best_val, 4),
-                "mean_simulated_capacity": round(mean_val, 4),
+                "best_selected_latent_capacity": round(best_latent, 4),
+                "best_noisy_observed_capacity": round(best_noisy, 4),
+                "mean_selected_latent_capacity": round(mean_latent, 4),
+                "mean_noisy_observed_capacity": round(mean_noisy, 4),
+                "simple_regret_latent": round(simple_regret_ws, 4),
+                "simple_regret_vs_full_latent": round(simple_regret_full, 4),
                 "cumulative_raw_hig_nats": round(cum_hig_nats, 4),
                 "mean_raw_hig_nats_per_action": round(cum_hig_nats / n_acts, 4),
                 "realized_entropy_reduction": round(init_entropy - final_entropy, 4),
-                "regret_vs_oracle_max": round(max(0.0, oracle_max - best_val), 4),
                 "queried_count": len(queried_cids),
+                # Deprecated aliases
+                "best_simulated_capacity": round(best_noisy, 4),
+                "regret_vs_oracle_max": round(simple_regret_ws, 4),
             })
 
     # Summarize across seeds
     policy_summaries = {}
     for pol_name, r_list in policy_seed_runs.items():
-        b_list = [r["best_simulated_capacity"] for r in r_list]
-        m_list = [r["mean_simulated_capacity"] for r in r_list]
+        b_lat_list = [r["best_selected_latent_capacity"] for r in r_list]
+        m_lat_list = [r["mean_selected_latent_capacity"] for r in r_list]
+        b_noisy_list = [r["best_noisy_observed_capacity"] for r in r_list]
+        m_noisy_list = [r["mean_noisy_observed_capacity"] for r in r_list]
+        reg_ws_list = [r["simple_regret_latent"] for r in r_list]
+        reg_full_list = [r["simple_regret_vs_full_latent"] for r in r_list]
         hig_list = [r["cumulative_raw_hig_nats"] for r in r_list]
         per_act_hig = [r["mean_raw_hig_nats_per_action"] for r in r_list]
         ent_red = [r["realized_entropy_reduction"] for r in r_list]
-        reg_list = [r["regret_vs_oracle_max"] for r in r_list]
 
         policy_summaries[pol_name] = {
-            "best_simulated_capacity_mean": round(float(np.mean(b_list)), 4),
-            "best_simulated_capacity_std": round(float(np.std(b_list)), 4),
-            "mean_simulated_capacity_mean": round(float(np.mean(m_list)), 4),
-            "mean_simulated_capacity_std": round(float(np.std(m_list)), 4),
+            "best_selected_latent_capacity_mean": round(float(np.mean(b_lat_list)), 4),
+            "best_selected_latent_capacity_std": round(float(np.std(b_lat_list)), 4),
+            "best_noisy_observed_capacity_mean": round(float(np.mean(b_noisy_list)), 4),
+            "best_noisy_observed_capacity_std": round(float(np.std(b_noisy_list)), 4),
+            "simple_regret_latent_mean": round(float(np.mean(reg_ws_list)), 4),
+            "simple_regret_latent_std": round(float(np.std(reg_ws_list)), 4),
+            "simple_regret_vs_full_latent_mean": round(float(np.mean(reg_full_list)), 4),
+            "simple_regret_vs_full_latent_std": round(float(np.std(reg_full_list)), 4),
+            "mean_selected_latent_capacity_mean": round(float(np.mean(m_lat_list)), 4),
+            "mean_noisy_observed_capacity_mean": round(float(np.mean(m_noisy_list)), 4),
             "cumulative_raw_hig_nats_mean": round(float(np.mean(hig_list)), 4),
             "cumulative_raw_hig_nats_std": round(float(np.std(hig_list)), 4),
             "mean_raw_hig_nats_per_action_mean": round(float(np.mean(per_act_hig)), 4),
             "mean_raw_hig_nats_per_action_std": round(float(np.std(per_act_hig)), 4),
             "realized_entropy_reduction_mean": round(float(np.mean(ent_red)), 4),
-            "regret_vs_oracle_max_mean": round(float(np.mean(reg_list)), 4),
+            "realized_entropy_reduction_std": round(float(np.std(ent_red)), 4),
             "queried_count": r_list[0]["queried_count"] if r_list else 0,
-            # Backwards-compatible aliases
-            "best_simulated_capacity": round(float(np.mean(b_list)), 4),
-            "mean_simulated_capacity": round(float(np.mean(m_list)), 4),
+            # Deprecated backward-compatible aliases
+            "best_simulated_capacity_mean": round(float(np.mean(b_noisy_list)), 4),
+            "best_simulated_capacity_std": round(float(np.std(b_noisy_list)), 4),
+            "mean_simulated_capacity_mean": round(float(np.mean(m_noisy_list)), 4),
+            "mean_simulated_capacity_std": round(float(np.std(m_noisy_list)), 4),
+            "regret_vs_oracle_max_mean": round(float(np.mean(reg_ws_list)), 4),
+            "best_simulated_capacity": round(float(np.mean(b_noisy_list)), 4),
+            "mean_simulated_capacity": round(float(np.mean(m_noisy_list)), 4),
             "cumulative_hig_nats": round(float(np.mean(hig_list)), 4),
         }
 
@@ -428,18 +528,26 @@ def run_surrogate_simulation(
         "simulation_label": "SIMULATED SURROGATE ORACLE - In-Silico Computational Approximation Only",
         "oracle_kind": "SIMULATED_SURROGATE",
         "physical_synthesis": False,
+        "requested_search_space_size": int(simulation_candidates_count),
+        "actual_search_space_size": int(len(cands_df)),
+        "scope_kind": f"{len(cands_df):,} LiFSI Virtual Candidates (scientifically aligned discovery slice)",
+        "scope_reduction_reason": None,
         "search_space_slice": f"{len(cands_df):,} LiFSI Virtual Candidates",
-        "screened_working_set_size": len(working_set),
+        "screened_working_set_size": int(len(working_set)),
         "screening_time_sec": round(screen_time, 4),
         "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
         "evaluated_seeds": list(seeds),
-        "oracle_pool_maximum": round(oracle_max, 4),
+        "full_search_space_latent_max": round(full_search_space_latent_max, 4),
+        "working_set_latent_max": round(working_set_latent_max, 4),
+        "screening_latent_gap": round(screening_latent_gap, 4),
+        "oracle_latent_max": round(working_set_latent_max, 4),
+        "oracle_pool_maximum": round(working_set_latent_max, 4),
         "simulation_policies": policy_summaries,
         "detailed_policy_seed_runs": policy_seed_runs,
         "disclaimer": "Computational simulation under frozen surrogate. Not physical experimental validation.",
         "notice": (
-            "This simulation evaluates algorithmic screening throughput and working-set information capture. "
-            "It does not represent wet-lab physical experimental synthesis."
+            "All measurements in this benchmark were generated by an in-silico ExtraTrees surrogate "
+            "oracle with simulated observation noise (sigma=0.02). No physical wet-lab synthesis or cycling was performed."
         ),
     }
 
@@ -543,46 +651,14 @@ def main():
     surr_results = run_surrogate_simulation(
         derived_path=DEFAULT_COMPATIBLE_DERIVED_PATH,
         virtual_csv_path=DEFAULT_VIRTUAL_1M_PATH,
-        simulation_candidates_count=50000,
+        simulation_candidates_count=333333,
         seeds=(42, 101, 2024),
         steps=15,
     )
     with open(os.path.join(OUT_BENCHMARK_DIR, "surrogate_simulation.json"), "w") as f:
         json.dump(surr_results, f, indent=2)
 
-    surr_rows = []
-    for pol_k, s_dict in surr_results["simulation_policies"].items():
-        surr_rows.append(
-            f"| **{pol_k}** | {s_dict['best_simulated_capacity_mean']:.4f} ± {s_dict['best_simulated_capacity_std']:.4f} | "
-            f"{s_dict['mean_simulated_capacity_mean']:.4f} ± {s_dict['mean_simulated_capacity_std']:.4f} | "
-            f"{s_dict['cumulative_raw_hig_nats_mean']:.4f} ± {s_dict['cumulative_raw_hig_nats_std']:.4f} | "
-            f"{s_dict['mean_raw_hig_nats_per_action_mean']:.4f} ± {s_dict['mean_raw_hig_nats_per_action_std']:.4f} | "
-            f"{s_dict['realized_entropy_reduction_mean']:.4f} | "
-            f"{s_dict['regret_vs_oracle_max_mean']:.4f} | "
-            f"{s_dict['queried_count']} |"
-        )
-    surr_table = "\n".join(surr_rows)
-
-    surr_md = f"""# In-Silico Surrogate Simulation Benchmark Report
-
-**Status:** `{surr_results['simulation_label']}`  
-**Oracle Kind:** `{surr_results['oracle_kind']}`  
-**Physical Synthesis:** `{surr_results['physical_synthesis']}`  
-**Search Space Slice:** {surr_results['search_space_slice']}  
-**Working Set Size:** {surr_results['screened_working_set_size']}  
-**Screening Runtime:** {surr_results['screening_time_sec']} seconds  
-**Surrogate Model Family:** {surr_results['surrogate_model_family']}  
-**Oracle Working-Set Max Capacity:** {surr_results['oracle_pool_maximum']:.4f}  
-
-## Policy Closed-Loop Performance (Mean ± Std over Seeds {', '.join(map(str, surr_results['evaluated_seeds']))})
-| Policy | Best Simulated Cap | Mean Simulated Cap | Cum. HIG (nats) | HIG / action (nats) | Entropy reduction | Mean Regret | Steps |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-{surr_table}
-
-> [!IMPORTANT]
-> {surr_results['notice']}  
-> **Disclaimer:** {surr_results['disclaimer']}
-"""
+    surr_md = render_surrogate_markdown(surr_results)
     with open(os.path.join(OUT_BENCHMARK_DIR, "surrogate_simulation.md"), "w", encoding="utf-8") as f:
         f.write(surr_md)
     print("Saved surrogate_simulation.json and .md")
