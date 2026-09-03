@@ -1,5 +1,5 @@
 {
-  "validation_verdict": "SCIENTIFIC VALIDATION READY",
+  "validation_verdict": "SCIENTIFICALLY READY PENDING EXTERNAL CI",
   "gates": {
     "audit_readiness_gate": "PASS",
     "data_contract_gate": "PASS",
@@ -15,7 +15,8 @@
     "surrogate_provenance_gate": "PASS",
     "cross_domain_gate": "PASS",
     "report_consistency_gate": "PASS",
-    "CI_gate": "PASS"
+    "local_test_gate": "PASS",
+    "external_CI_gate": "NOT_EVALUATED_LOCALLY"
   },
   "details": [
     {
@@ -66,12 +67,12 @@
     {
       "gate": "historical_benchmark_gate",
       "status": "PASS",
-      "evidence": "Historical benchmark verified: all 6 policies present, metadata and wow scenario validated."
+      "evidence": "Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs."
     },
     {
       "gate": "large_pool_screening_gate",
       "status": "PASS",
-      "evidence": "Scalability benchmark verified across 10k, 100k, 333k, 999k with RSS memory tracking."
+      "evidence": "Scalability verified: [10000, 100000, 333333, 999999] scale trials and [10000, 100000, 333333] end-to-end decision pipeline runs."
     },
     {
       "gate": "surrogate_provenance_gate",
@@ -81,7 +82,7 @@
     {
       "gate": "cross_domain_gate",
       "status": "PASS",
-      "evidence": "All 4 domain adapters (AuIrRh, Toy, A-Lab, Electrolyte) initialize and configure decision engines."
+      "evidence": "Full lifecycle (initialize -> propose -> execute -> update) verified across all 4 domains: AuIrRh: OK (init=3, proposed=AUIRH_Au-rich_003); Toy: OK (init=3, proposed=BAT_003); A-Lab: OK (init=3, proposed=PG_TEST_01); Electrolyte: OK (init=3, proposed=ELEC_fe0c05021a51f83f)."
     },
     {
       "gate": "report_consistency_gate",
@@ -89,10 +90,15 @@
       "evidence": "Historical benchmark markdown faithfully reflects structured JSON metrics."
     },
     {
-      "gate": "CI_gate",
+      "gate": "local_test_gate",
       "status": "PASS",
-      "evidence": "Domain tests and cross-domain acceptance verified passing."
+      "evidence": "All unit, integration, and cross-domain lifecycle test suites verified locally."
+    },
+    {
+      "gate": "external_CI_gate",
+      "status": "NOT_EVALUATED_LOCALLY",
+      "evidence": "External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally."
     }
   ],
-  "timestamp": "2026-09-03T13:48:45Z"
+  "timestamp": "2026-09-03T16:03:41Z"
 }

@@ -4,27 +4,305 @@
   "physical_synthesis": false,
   "search_space_slice": "50,000 LiFSI Virtual Candidates",
   "screened_working_set_size": 200,
-  "screening_time_sec": 0.0244,
+  "screening_time_sec": 0.0618,
   "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
+  "evaluated_seeds": [
+    42,
+    101,
+    2024
+  ],
+  "oracle_pool_maximum": 0.4376,
   "simulation_policies": {
-    "HYBRID": {
-      "best_simulated_capacity": 0.2748,
-      "mean_simulated_capacity": 0.1435,
-      "cumulative_hig_nats": 0.6361,
-      "queried_count": 15
+    "RANDOM": {
+      "best_simulated_capacity_mean": 0.3142,
+      "best_simulated_capacity_std": 0.0993,
+      "mean_simulated_capacity_mean": 0.1118,
+      "mean_simulated_capacity_std": 0.007,
+      "cumulative_raw_hig_nats_mean": 0.6595,
+      "cumulative_raw_hig_nats_std": 0.2599,
+      "mean_raw_hig_nats_per_action_mean": 0.0439,
+      "mean_raw_hig_nats_per_action_std": 0.0173,
+      "realized_entropy_reduction_mean": 0.5053,
+      "regret_vs_oracle_max_mean": 0.1285,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.3142,
+      "mean_simulated_capacity": 0.1118,
+      "cumulative_hig_nats": 0.6595
+    },
+    "BOTORCH_EI_DIRECT": {
+      "best_simulated_capacity_mean": 0.2239,
+      "best_simulated_capacity_std": 0.0306,
+      "mean_simulated_capacity_mean": 0.1281,
+      "mean_simulated_capacity_std": 0.0068,
+      "cumulative_raw_hig_nats_mean": 0.575,
+      "cumulative_raw_hig_nats_std": 0.1329,
+      "mean_raw_hig_nats_per_action_mean": 0.0384,
+      "mean_raw_hig_nats_per_action_std": 0.0089,
+      "realized_entropy_reduction_mean": 0.3459,
+      "regret_vs_oracle_max_mean": 0.2136,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.2239,
+      "mean_simulated_capacity": 0.1281,
+      "cumulative_hig_nats": 0.575
+    },
+    "BOTORCH_GPUCB_DIRECT": {
+      "best_simulated_capacity_mean": 0.2247,
+      "best_simulated_capacity_std": 0.0364,
+      "mean_simulated_capacity_mean": 0.1302,
+      "mean_simulated_capacity_std": 0.0022,
+      "cumulative_raw_hig_nats_mean": 0.5542,
+      "cumulative_raw_hig_nats_std": 0.2128,
+      "mean_raw_hig_nats_per_action_mean": 0.037,
+      "mean_raw_hig_nats_per_action_std": 0.0142,
+      "realized_entropy_reduction_mean": 0.3343,
+      "regret_vs_oracle_max_mean": 0.2129,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.2247,
+      "mean_simulated_capacity": 0.1302,
+      "cumulative_hig_nats": 0.5542
+    },
+    "PURE_FALSIFICATION": {
+      "best_simulated_capacity_mean": 0.3512,
+      "best_simulated_capacity_std": 0.129,
+      "mean_simulated_capacity_mean": 0.1423,
+      "mean_simulated_capacity_std": 0.0317,
+      "cumulative_raw_hig_nats_mean": 0.6959,
+      "cumulative_raw_hig_nats_std": 0.1297,
+      "mean_raw_hig_nats_per_action_mean": 0.0464,
+      "mean_raw_hig_nats_per_action_std": 0.0087,
+      "realized_entropy_reduction_mean": 0.847,
+      "regret_vs_oracle_max_mean": 0.0916,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.3512,
+      "mean_simulated_capacity": 0.1423,
+      "cumulative_hig_nats": 0.6959
+    },
+    "HYBRID_DEFAULT": {
+      "best_simulated_capacity_mean": 0.3082,
+      "best_simulated_capacity_std": 0.0781,
+      "mean_simulated_capacity_mean": 0.1318,
+      "mean_simulated_capacity_std": 0.018,
+      "cumulative_raw_hig_nats_mean": 0.9807,
+      "cumulative_raw_hig_nats_std": 0.1603,
+      "mean_raw_hig_nats_per_action_mean": 0.0654,
+      "mean_raw_hig_nats_per_action_std": 0.0107,
+      "realized_entropy_reduction_mean": 0.6643,
+      "regret_vs_oracle_max_mean": 0.1294,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.3082,
+      "mean_simulated_capacity": 0.1318,
+      "cumulative_hig_nats": 0.9807
     },
     "DISCOVERY_ONLY": {
-      "best_simulated_capacity": 0.162,
-      "mean_simulated_capacity": 0.1267,
-      "cumulative_hig_nats": 0.6853,
-      "queried_count": 15
-    },
-    "RANDOM": {
-      "best_simulated_capacity": 0.2368,
-      "mean_simulated_capacity": 0.098,
-      "cumulative_hig_nats": 0.0,
-      "queried_count": 15
+      "best_simulated_capacity_mean": 0.2239,
+      "best_simulated_capacity_std": 0.0306,
+      "mean_simulated_capacity_mean": 0.1281,
+      "mean_simulated_capacity_std": 0.0068,
+      "cumulative_raw_hig_nats_mean": 0.5578,
+      "cumulative_raw_hig_nats_std": 0.1171,
+      "mean_raw_hig_nats_per_action_mean": 0.0372,
+      "mean_raw_hig_nats_per_action_std": 0.0078,
+      "realized_entropy_reduction_mean": 0.3459,
+      "regret_vs_oracle_max_mean": 0.2136,
+      "queried_count": 15,
+      "best_simulated_capacity": 0.2239,
+      "mean_simulated_capacity": 0.1281,
+      "cumulative_hig_nats": 0.5578
     }
+  },
+  "detailed_policy_seed_runs": {
+    "RANDOM": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.2269,
+        "mean_simulated_capacity": 0.1025,
+        "cumulative_raw_hig_nats": 0.9288,
+        "mean_raw_hig_nats_per_action": 0.0619,
+        "realized_entropy_reduction": 0.2701,
+        "regret_vs_oracle_max": 0.2107,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.4531,
+        "mean_simulated_capacity": 0.1136,
+        "cumulative_raw_hig_nats": 0.3082,
+        "mean_raw_hig_nats_per_action": 0.0205,
+        "realized_entropy_reduction": 0.8489,
+        "regret_vs_oracle_max": 0.0,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.2626,
+        "mean_simulated_capacity": 0.1193,
+        "cumulative_raw_hig_nats": 0.7415,
+        "mean_raw_hig_nats_per_action": 0.0494,
+        "realized_entropy_reduction": 0.397,
+        "regret_vs_oracle_max": 0.1749,
+        "queried_count": 15
+      }
+    ],
+    "BOTORCH_EI_DIRECT": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.2017,
+        "mean_simulated_capacity": 0.126,
+        "cumulative_raw_hig_nats": 0.6279,
+        "mean_raw_hig_nats_per_action": 0.0419,
+        "realized_entropy_reduction": 0.1825,
+        "regret_vs_oracle_max": 0.2359,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.2672,
+        "mean_simulated_capacity": 0.1211,
+        "cumulative_raw_hig_nats": 0.7048,
+        "mean_raw_hig_nats_per_action": 0.047,
+        "realized_entropy_reduction": 0.6746,
+        "regret_vs_oracle_max": 0.1703,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.2029,
+        "mean_simulated_capacity": 0.1373,
+        "cumulative_raw_hig_nats": 0.3924,
+        "mean_raw_hig_nats_per_action": 0.0262,
+        "realized_entropy_reduction": 0.1805,
+        "regret_vs_oracle_max": 0.2347,
+        "queried_count": 15
+      }
+    ],
+    "BOTORCH_GPUCB_DIRECT": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.1909,
+        "mean_simulated_capacity": 0.1309,
+        "cumulative_raw_hig_nats": 0.6908,
+        "mean_raw_hig_nats_per_action": 0.0461,
+        "realized_entropy_reduction": 0.4308,
+        "regret_vs_oracle_max": 0.2466,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.2753,
+        "mean_simulated_capacity": 0.1272,
+        "cumulative_raw_hig_nats": 0.7181,
+        "mean_raw_hig_nats_per_action": 0.0479,
+        "realized_entropy_reduction": 0.3418,
+        "regret_vs_oracle_max": 0.1623,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.2079,
+        "mean_simulated_capacity": 0.1324,
+        "cumulative_raw_hig_nats": 0.2536,
+        "mean_raw_hig_nats_per_action": 0.0169,
+        "realized_entropy_reduction": 0.2304,
+        "regret_vs_oracle_max": 0.2297,
+        "queried_count": 15
+      }
+    ],
+    "PURE_FALSIFICATION": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.1692,
+        "mean_simulated_capacity": 0.0975,
+        "cumulative_raw_hig_nats": 0.7268,
+        "mean_raw_hig_nats_per_action": 0.0485,
+        "realized_entropy_reduction": 0.4137,
+        "regret_vs_oracle_max": 0.2684,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.4531,
+        "mean_simulated_capacity": 0.164,
+        "cumulative_raw_hig_nats": 0.8371,
+        "mean_raw_hig_nats_per_action": 0.0558,
+        "realized_entropy_reduction": 1.0522,
+        "regret_vs_oracle_max": 0.0,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.4312,
+        "mean_simulated_capacity": 0.1654,
+        "cumulative_raw_hig_nats": 0.5239,
+        "mean_raw_hig_nats_per_action": 0.0349,
+        "realized_entropy_reduction": 1.075,
+        "regret_vs_oracle_max": 0.0063,
+        "queried_count": 15
+      }
+    ],
+    "HYBRID_DEFAULT": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.2597,
+        "mean_simulated_capacity": 0.1175,
+        "cumulative_raw_hig_nats": 0.759,
+        "mean_raw_hig_nats_per_action": 0.0506,
+        "realized_entropy_reduction": 0.4213,
+        "regret_vs_oracle_max": 0.1779,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.4184,
+        "mean_simulated_capacity": 0.1572,
+        "cumulative_raw_hig_nats": 1.0504,
+        "mean_raw_hig_nats_per_action": 0.07,
+        "realized_entropy_reduction": 1.0902,
+        "regret_vs_oracle_max": 0.0192,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.2464,
+        "mean_simulated_capacity": 0.1206,
+        "cumulative_raw_hig_nats": 1.1327,
+        "mean_raw_hig_nats_per_action": 0.0755,
+        "realized_entropy_reduction": 0.4815,
+        "regret_vs_oracle_max": 0.1912,
+        "queried_count": 15
+      }
+    ],
+    "DISCOVERY_ONLY": [
+      {
+        "seed": 42,
+        "best_simulated_capacity": 0.2017,
+        "mean_simulated_capacity": 0.126,
+        "cumulative_raw_hig_nats": 0.6343,
+        "mean_raw_hig_nats_per_action": 0.0423,
+        "realized_entropy_reduction": 0.1825,
+        "regret_vs_oracle_max": 0.2359,
+        "queried_count": 15
+      },
+      {
+        "seed": 101,
+        "best_simulated_capacity": 0.2672,
+        "mean_simulated_capacity": 0.1211,
+        "cumulative_raw_hig_nats": 0.6468,
+        "mean_raw_hig_nats_per_action": 0.0431,
+        "realized_entropy_reduction": 0.6746,
+        "regret_vs_oracle_max": 0.1703,
+        "queried_count": 15
+      },
+      {
+        "seed": 2024,
+        "best_simulated_capacity": 0.2029,
+        "mean_simulated_capacity": 0.1373,
+        "cumulative_raw_hig_nats": 0.3923,
+        "mean_raw_hig_nats_per_action": 0.0262,
+        "realized_entropy_reduction": 0.1805,
+        "regret_vs_oracle_max": 0.2347,
+        "queried_count": 15
+      }
+    ]
   },
   "disclaimer": "Computational simulation under frozen surrogate. Not physical experimental validation.",
   "notice": "This simulation evaluates algorithmic screening throughput and working-set information capture. It does not represent wet-lab physical experimental synthesis."

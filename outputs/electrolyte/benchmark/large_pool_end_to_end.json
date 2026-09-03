@@ -1,0 +1,56 @@
+{
+  "benchmark_title": "Large-Pool End-to-End Decision Pipeline Benchmark",
+  "description": "Measures wall-clock time from raw candidate pool loading to first scientific recommendation.",
+  "evaluated_pool_sizes": [
+    10000,
+    100000,
+    333333
+  ],
+  "target_electrolyte_subspace": "LiFSI Salt Subspace (333,333 candidate scope)",
+  "feature_count": 11,
+  "working_set_size": 200,
+  "runs": [
+    {
+      "candidate_pool_size": 10000,
+      "screened_working_set_size": 200,
+      "pool_load_sec": 0.8315,
+      "candidate_identity_sec": 0.0007,
+      "screening_sec": 0.0212,
+      "adapter_construction_sec": 0.0287,
+      "engine_initialization_sec": 0.1789,
+      "first_proposal_sec": 31.1568,
+      "total_pipeline_sec": 32.2177,
+      "first_proposed_candidate_id": "ELEC_faec52c03bae205b",
+      "first_proposal_total_value": 1.3453,
+      "memory_mb_estimate": 1.97
+    },
+    {
+      "candidate_pool_size": 100000,
+      "screened_working_set_size": 200,
+      "pool_load_sec": 1.6868,
+      "candidate_identity_sec": 0.0084,
+      "screening_sec": 0.1143,
+      "adapter_construction_sec": 0.0309,
+      "engine_initialization_sec": 0.2688,
+      "first_proposal_sec": 20.9129,
+      "total_pipeline_sec": 23.0222,
+      "first_proposed_candidate_id": "ELEC_bd884a3c306a4cee",
+      "first_proposal_total_value": 1.088,
+      "memory_mb_estimate": 20.02
+    },
+    {
+      "candidate_pool_size": 333333,
+      "screened_working_set_size": 200,
+      "pool_load_sec": 1.624,
+      "candidate_identity_sec": 0.0158,
+      "screening_sec": 0.1485,
+      "adapter_construction_sec": 0.008,
+      "engine_initialization_sec": 0.0987,
+      "first_proposal_sec": 7.4883,
+      "total_pipeline_sec": 9.3833,
+      "first_proposed_candidate_id": "ELEC_5692b72310ef29a1",
+      "first_proposal_total_value": 0.8231,
+      "memory_mb_estimate": 67.8
+    }
+  ]
+}

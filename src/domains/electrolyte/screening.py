@@ -1,6 +1,6 @@
-from __future__ import annotations
-
+import json
 import logging
+import os
 import time
 from typing import Any, Mapping, Sequence
 
@@ -8,12 +8,84 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
 from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
 
 from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
 from src.domains.electrolyte.data import generate_candidate_id
 
 logger = logging.getLogger(__name__)
+
+# Canonical full 1-million candidate space moments (Chan et al. parallel Welford variance)
+CANONICAL_ELECTROLYTE_MOMENTS = {
+    "solv_ecfp_pca_0": {"mean": -0.053111795450444026, "std": 0.9559042777473356},
+    "solv_ecfp_pca_1": {"mean": -0.34406586154999175, "std": 0.7943017993777564},
+    "solv_ecfp_pca_2": {"mean": 0.3443886458267786, "std": 0.6814434473423162},
+    "solv_ecfp_pca_3": {"mean": 0.09467872613728325, "std": 0.5897711119962823},
+    "solv_ecfp_pca_4": {"mean": 0.4750406009272532, "std": 0.5784970876739574},
+    "solv_ecfp_pca_5": {"mean": -0.35849962255001366, "std": 0.573961445747407},
+    "solv_ecfp_pca_6": {"mean": -0.14070438541119168, "std": 0.5435771887783123},
+    "solv_ecfp_pca_7": {"mean": 0.21251172711118865, "std": 0.5119176147293979},
+    "solv_ecfp_pca_8": {"mean": -0.3011383810375455, "std": 0.4611508896510321},
+    "solv_ecfp_pca_9": {"mean": -0.11086164807704327, "std": 0.44485399494671557},
+    "mol_wt_solv": {"mean": 206.98566245172063, "std": 57.442445674928486},
+}
+
+
+class FrozenElectrolyteFeatureScaler:
+    """Canonical frozen feature scaler using full 1-million candidate space moments.
+
+    Ensures standardized 11D coordinates are pool-size scale invariant.
+    """
+
+    def __init__(
+        self,
+        feature_cols: Sequence[str] = ELECTROLYTE_SOLVENT_FEATURES,
+        moments_path: str = "outputs/electrolyte/audit/search_space_coverage.json",
+    ) -> None:
+        self.feature_cols = list(feature_cols)
+        means = []
+        stds = []
+        loaded_moments = {}
+        if os.path.exists(moments_path):
+            try:
+                with open(moments_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    loaded_moments = data.get("feature_moment_report", {})
+            except Exception:
+                loaded_moments = {}
+
+        for col in self.feature_cols:
+            if col in loaded_moments and "mean" in loaded_moments[col] and "std" in loaded_moments[col]:
+                m = float(loaded_moments[col]["mean"])
+                s = float(loaded_moments[col]["std"])
+            elif col in CANONICAL_ELECTROLYTE_MOMENTS:
+                m = CANONICAL_ELECTROLYTE_MOMENTS[col]["mean"]
+                s = CANONICAL_ELECTROLYTE_MOMENTS[col]["std"]
+            else:
+                m = 0.0
+                s = 1.0
+            if s <= 0.0:
+                s = 1.0
+            means.append(m)
+            stds.append(s)
+
+        self.mean_ = np.array(means, dtype=np.float64)
+        self.scale_ = np.array(stds, dtype=np.float64)
+
+    @property
+    def means(self) -> np.ndarray:
+        return self.mean_
+
+    @property
+    def stds(self) -> np.ndarray:
+        return self.scale_
+
+    def transform(self, X: np.ndarray | pd.DataFrame) -> np.ndarray:
+        """Transforms features using canonical frozen moments."""
+        if isinstance(X, pd.DataFrame):
+            X_arr = X[self.feature_cols].to_numpy(dtype=np.float64, copy=False)
+        else:
+            X_arr = np.asarray(X, dtype=np.float64)
+        return (X_arr - self.mean_) / self.scale_
 
 
 def screen_large_pool_candidates(
@@ -66,14 +138,23 @@ def screen_large_pool_candidates(
     X_pool = df_work[f_cols].to_numpy(dtype=np.float64, copy=False)
     rng = np.random.default_rng(random_state)
 
-    # Standardize 11D features to eliminate molecular weight scale bias over PCA components
-    scaler = StandardScaler()
-    X_pool_scaled = scaler.fit_transform(X_pool)
+    # Standardize 11D features using canonical frozen moments to eliminate pool-size scale variance
+    scaler = FrozenElectrolyteFeatureScaler(feature_cols=f_cols)
+    X_pool_scaled = scaler.transform(X_pool)
 
-    k_disc = max(1, int(working_set_size * discovery_fraction))
-    k_expl = max(1, int(working_set_size * exploration_fraction))
-    k_div = max(1, int(working_set_size * diversity_fraction))
-    k_rand = max(1, working_set_size - (k_disc + k_expl + k_div))
+    total_frac = discovery_fraction + exploration_fraction + diversity_fraction + random_fraction
+    if total_frac <= 0.0:
+        total_frac = 1.0
+    f_disc = discovery_fraction / total_frac
+    f_expl = exploration_fraction / total_frac
+    f_div = diversity_fraction / total_frac
+    f_rand = random_fraction / total_frac
+
+    k_disc = max(1 if f_disc > 0 else 0, int(round(working_set_size * f_disc)))
+    k_expl = max(1 if f_expl > 0 else 0, int(round(working_set_size * f_expl)))
+    k_div = max(1 if f_div > 0 else 0, int(round(working_set_size * f_div)))
+    allocated = k_disc + k_expl + k_div
+    k_rand = max(1 if f_rand > 0 else 0, working_set_size - allocated)
 
     # Store mapping: pool_idx -> (tranche_name, score)
     selected_info: dict[int, tuple[str, float]] = {}
@@ -119,7 +200,7 @@ def screen_large_pool_candidates(
 
     # 3. Diversity Tranche (Greedy farthest-point selection in standardized feature space)
     remaining_indices = [i for i in range(total_cands) if i not in selected_info]
-    if remaining_indices:
+    if remaining_indices and k_div > 0:
         subset_size = min(len(remaining_indices), 2000)
         sub_rem = rng.choice(remaining_indices, size=subset_size, replace=False)
         curr_selected = list(selected_info.keys())
@@ -132,14 +213,21 @@ def screen_large_pool_candidates(
                 if len(selected_info) >= (k_disc + k_expl + k_div):
                     break
 
-    # 4. Random Tranche
+    # 4. Random Tranche (Enforces exploratory diversity)
     rem_final = [i for i in range(total_cands) if i not in selected_info]
-    if rem_final and len(selected_info) < working_set_size:
-        needed = working_set_size - len(selected_info)
-        rand_picks = rng.choice(rem_final, size=min(needed, len(rem_final)), replace=False)
+    if rem_final and k_rand > 0:
+        rand_picks = rng.choice(rem_final, size=min(k_rand, len(rem_final)), replace=False)
         for r_idx in rand_picks:
             idx_int = int(r_idx)
-            selected_info[idx_int] = ("random", 0.0)
+            selected_info[idx_int] = ("random", float(rng.uniform(0.0, 1.0)))
+
+    # Fallback to satisfy working_set_size if pool has remaining candidates
+    rem_any = [i for i in range(total_cands) if i not in selected_info]
+    if rem_any and len(selected_info) < working_set_size:
+        needed = working_set_size - len(selected_info)
+        fb_picks = rng.choice(rem_any, size=min(needed, len(rem_any)), replace=False)
+        for fb_idx in fb_picks:
+            selected_info[int(fb_idx)] = ("random", float(rng.uniform(0.0, 1.0)))
 
     sorted_indices = sorted(selected_info.keys())
     res_df = df_work.iloc[sorted_indices].copy().reset_index(drop=True)

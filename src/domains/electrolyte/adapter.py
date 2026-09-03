@@ -229,3 +229,11 @@ class ElectrolyteDomainAdapter(MaterialDomainAdapter):
         ]
 
         return actions
+
+    def get_candidate_features(self, candidate_id: str) -> dict[str, float]:
+        """Public read-only accessor for candidate features."""
+        return dict(self._feature_cache.get(candidate_id, {}))
+
+    def get_historical_outcomes_for_evaluation(self) -> pd.DataFrame:
+        """Public read-only accessor for historical outcomes (EVALUATION-ONLY)."""
+        return self._derived_df.copy()

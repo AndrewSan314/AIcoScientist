@@ -1,65 +1,530 @@
 {
-  "model_architecture": "AIcoScientist Multi-Hypothesis Bayesian Decision Ensemble (H1, H2, H3)",
-  "evaluation_protocol": "Temporal Next-Batch Forward Ranking (train batches < k -> rank batch k)",
+  "model_architecture": "AIcoScientist Multi-Hypothesis Bayesian Posterior Mean (H1, H2, H3)",
+  "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+  "mean_top_5_precision_fraction": 0.5429,
   "mean_top_5_precision": 0.5429,
   "mean_spearman_rank_correlation": 0.0743,
   "top_1_recovery_rate": 0.5714,
+  "mean_rank_of_best_candidate": 4.8571,
   "per_batch_results": [
     {
       "target_batch": 1,
       "train_sample_count": 3,
       "test_sample_count": 14,
+      "top_5_precision_fraction": 0.2,
       "top_5_precision": 0.2,
       "top_1_in_top_5": false,
+      "rank_of_best_true_target_candidate": 12,
+      "mean_rank_of_actual_top_candidates": 9.2,
       "spearman_rank_correlation": -0.3606
     },
     {
       "target_batch": 2,
       "train_sample_count": 17,
       "test_sample_count": 11,
+      "top_5_precision_fraction": 0.4,
       "top_5_precision": 0.4,
       "top_1_in_top_5": true,
+      "rank_of_best_true_target_candidate": 1,
+      "mean_rank_of_actual_top_candidates": 7.2,
       "spearman_rank_correlation": -0.1399
     },
     {
       "target_batch": 3,
       "train_sample_count": 28,
       "test_sample_count": 7,
+      "top_5_precision_fraction": 0.8,
       "top_5_precision": 0.8,
       "top_1_in_top_5": false,
+      "rank_of_best_true_target_candidate": 7,
+      "mean_rank_of_actual_top_candidates": 4.2,
       "spearman_rank_correlation": -0.1982
     },
     {
       "target_batch": 4,
       "train_sample_count": 35,
       "test_sample_count": 9,
+      "top_5_precision_fraction": 0.6,
       "top_5_precision": 0.6,
       "top_1_in_top_5": false,
+      "rank_of_best_true_target_candidate": 7,
+      "mean_rank_of_actual_top_candidates": 4.6,
       "spearman_rank_correlation": -0.0696
     },
     {
       "target_batch": 5,
       "train_sample_count": 44,
       "test_sample_count": 11,
+      "top_5_precision_fraction": 0.6,
       "top_5_precision": 0.6,
       "top_1_in_top_5": true,
+      "rank_of_best_true_target_candidate": 1,
+      "mean_rank_of_actual_top_candidates": 5.0,
       "spearman_rank_correlation": 0.2845
     },
     {
       "target_batch": 6,
       "train_sample_count": 55,
       "test_sample_count": 11,
+      "top_5_precision_fraction": 0.4,
       "top_5_precision": 0.4,
       "top_1_in_top_5": true,
+      "rank_of_best_true_target_candidate": 2,
+      "mean_rank_of_actual_top_candidates": 5.6,
       "spearman_rank_correlation": 0.4037
     },
     {
       "target_batch": 7,
       "train_sample_count": 66,
       "test_sample_count": 9,
+      "top_5_precision_fraction": 0.8,
       "top_5_precision": 0.8,
       "top_1_in_top_5": true,
+      "rank_of_best_true_target_candidate": 4,
+      "mean_rank_of_actual_top_candidates": 3.8,
       "spearman_rank_correlation": 0.6
     }
-  ]
+  ],
+  "policies": {
+    "BOTORCH_EI": {
+      "model_architecture": "BoTorch Single-Task GP (Expected Improvement)",
+      "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+      "mean_top_5_precision_fraction": 0.6286,
+      "mean_top_5_precision": 0.6286,
+      "mean_spearman_rank_correlation": 0.0054,
+      "top_1_recovery_rate": 0.5714,
+      "mean_rank_of_best_candidate": 5.8571,
+      "per_batch_results": [
+        {
+          "target_batch": 1,
+          "train_sample_count": 3,
+          "test_sample_count": 14,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 8,
+          "mean_rank_of_actual_top_candidates": 5.8,
+          "spearman_rank_correlation": 0.1129
+        },
+        {
+          "target_batch": 2,
+          "train_sample_count": 17,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 5.0,
+          "spearman_rank_correlation": 0.0513
+        },
+        {
+          "target_batch": 3,
+          "train_sample_count": 28,
+          "test_sample_count": 7,
+          "top_5_precision_fraction": 1.0,
+          "top_5_precision": 1.0,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 5,
+          "mean_rank_of_actual_top_candidates": 3.0,
+          "spearman_rank_correlation": 0.5149
+        },
+        {
+          "target_batch": 4,
+          "train_sample_count": 35,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 6,
+          "mean_rank_of_actual_top_candidates": 5.8,
+          "spearman_rank_correlation": 0.0
+        },
+        {
+          "target_batch": 5,
+          "train_sample_count": 44,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 5,
+          "mean_rank_of_actual_top_candidates": 5.8,
+          "spearman_rank_correlation": -0.4104
+        },
+        {
+          "target_batch": 6,
+          "train_sample_count": 55,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 11,
+          "mean_rank_of_actual_top_candidates": 6.6,
+          "spearman_rank_correlation": -0.5046
+        },
+        {
+          "target_batch": 7,
+          "train_sample_count": 66,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 5,
+          "mean_rank_of_actual_top_candidates": 3.6,
+          "spearman_rank_correlation": 0.2739
+        }
+      ]
+    },
+    "BOTORCH_GPUCB": {
+      "model_architecture": "BoTorch Single-Task GP (Upper Confidence Bound beta=2.0)",
+      "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+      "mean_top_5_precision_fraction": 0.6286,
+      "mean_top_5_precision": 0.6286,
+      "mean_spearman_rank_correlation": 0.0728,
+      "top_1_recovery_rate": 0.2857,
+      "mean_rank_of_best_candidate": 5.5714,
+      "per_batch_results": [
+        {
+          "target_batch": 1,
+          "train_sample_count": 3,
+          "test_sample_count": 14,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 9,
+          "mean_rank_of_actual_top_candidates": 4.0,
+          "spearman_rank_correlation": -0.1129
+        },
+        {
+          "target_batch": 2,
+          "train_sample_count": 17,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 2,
+          "mean_rank_of_actual_top_candidates": 6.0,
+          "spearman_rank_correlation": -0.0513
+        },
+        {
+          "target_batch": 3,
+          "train_sample_count": 28,
+          "test_sample_count": 7,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.2,
+          "spearman_rank_correlation": -0.5149
+        },
+        {
+          "target_batch": 4,
+          "train_sample_count": 35,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 6,
+          "mean_rank_of_actual_top_candidates": 4.8,
+          "spearman_rank_correlation": 0.0
+        },
+        {
+          "target_batch": 5,
+          "train_sample_count": 44,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.8,
+          "spearman_rank_correlation": 0.4104
+        },
+        {
+          "target_batch": 6,
+          "train_sample_count": 55,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 5.6,
+          "spearman_rank_correlation": 0.5046
+        },
+        {
+          "target_batch": 7,
+          "train_sample_count": 66,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.4,
+          "spearman_rank_correlation": 0.2739
+        }
+      ]
+    },
+    "PURE_HIG": {
+      "model_architecture": "AIcoScientist Pure Hypothesis Information Gain (HIG)",
+      "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+      "mean_top_5_precision_fraction": 0.5143,
+      "mean_top_5_precision": 0.5143,
+      "mean_spearman_rank_correlation": 0.0613,
+      "top_1_recovery_rate": 0.4286,
+      "mean_rank_of_best_candidate": 5.0,
+      "per_batch_results": [
+        {
+          "target_batch": 1,
+          "train_sample_count": 3,
+          "test_sample_count": 14,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 6.4,
+          "spearman_rank_correlation": 0.1875
+        },
+        {
+          "target_batch": 2,
+          "train_sample_count": 17,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 4,
+          "mean_rank_of_actual_top_candidates": 4.2,
+          "spearman_rank_correlation": 0.6109
+        },
+        {
+          "target_batch": 3,
+          "train_sample_count": 28,
+          "test_sample_count": 7,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.4,
+          "spearman_rank_correlation": -0.2883
+        },
+        {
+          "target_batch": 4,
+          "train_sample_count": 35,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 9,
+          "mean_rank_of_actual_top_candidates": 5.6,
+          "spearman_rank_correlation": -0.5483
+        },
+        {
+          "target_batch": 5,
+          "train_sample_count": 44,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 6.2,
+          "spearman_rank_correlation": -0.0793
+        },
+        {
+          "target_batch": 6,
+          "train_sample_count": 55,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 4.4,
+          "spearman_rank_correlation": 0.5964
+        },
+        {
+          "target_batch": 7,
+          "train_sample_count": 66,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 6,
+          "mean_rank_of_actual_top_candidates": 5.4,
+          "spearman_rank_correlation": -0.05
+        }
+      ]
+    },
+    "HYBRID_DEFAULT": {
+      "model_architecture": "AIcoScientist Hybrid Policy (1.0*HIG + 0.8*EI)",
+      "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+      "mean_top_5_precision_fraction": 0.5714,
+      "mean_top_5_precision": 0.5714,
+      "mean_spearman_rank_correlation": 0.0964,
+      "top_1_recovery_rate": 0.4286,
+      "mean_rank_of_best_candidate": 5.7143,
+      "per_batch_results": [
+        {
+          "target_batch": 1,
+          "train_sample_count": 3,
+          "test_sample_count": 14,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 7.6,
+          "spearman_rank_correlation": 0.2344
+        },
+        {
+          "target_batch": 2,
+          "train_sample_count": 17,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 3,
+          "mean_rank_of_actual_top_candidates": 3.2,
+          "spearman_rank_correlation": 0.6622
+        },
+        {
+          "target_batch": 3,
+          "train_sample_count": 28,
+          "test_sample_count": 7,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 6,
+          "mean_rank_of_actual_top_candidates": 3.4,
+          "spearman_rank_correlation": 0.3424
+        },
+        {
+          "target_batch": 4,
+          "train_sample_count": 35,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 8,
+          "mean_rank_of_actual_top_candidates": 6.4,
+          "spearman_rank_correlation": -0.5483
+        },
+        {
+          "target_batch": 5,
+          "train_sample_count": 44,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 6,
+          "mean_rank_of_actual_top_candidates": 6.8,
+          "spearman_rank_correlation": -0.3078
+        },
+        {
+          "target_batch": 6,
+          "train_sample_count": 55,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 11,
+          "mean_rank_of_actual_top_candidates": 5.6,
+          "spearman_rank_correlation": 0.0917
+        },
+        {
+          "target_batch": 7,
+          "train_sample_count": 66,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 5,
+          "mean_rank_of_actual_top_candidates": 4.6,
+          "spearman_rank_correlation": 0.2
+        }
+      ]
+    },
+    "POSTERIOR_MEAN": {
+      "model_architecture": "AIcoScientist Multi-Hypothesis Bayesian Posterior Mean (H1, H2, H3)",
+      "evaluation_protocol": "Retrospective Next-Batch Ranking (train batches < k -> rank batch k)",
+      "mean_top_5_precision_fraction": 0.5429,
+      "mean_top_5_precision": 0.5429,
+      "mean_spearman_rank_correlation": 0.0743,
+      "top_1_recovery_rate": 0.5714,
+      "mean_rank_of_best_candidate": 4.8571,
+      "per_batch_results": [
+        {
+          "target_batch": 1,
+          "train_sample_count": 3,
+          "test_sample_count": 14,
+          "top_5_precision_fraction": 0.2,
+          "top_5_precision": 0.2,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 12,
+          "mean_rank_of_actual_top_candidates": 9.2,
+          "spearman_rank_correlation": -0.3606
+        },
+        {
+          "target_batch": 2,
+          "train_sample_count": 17,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 7.2,
+          "spearman_rank_correlation": -0.1399
+        },
+        {
+          "target_batch": 3,
+          "train_sample_count": 28,
+          "test_sample_count": 7,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.2,
+          "spearman_rank_correlation": -0.1982
+        },
+        {
+          "target_batch": 4,
+          "train_sample_count": 35,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": false,
+          "rank_of_best_true_target_candidate": 7,
+          "mean_rank_of_actual_top_candidates": 4.6,
+          "spearman_rank_correlation": -0.0696
+        },
+        {
+          "target_batch": 5,
+          "train_sample_count": 44,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.6,
+          "top_5_precision": 0.6,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 1,
+          "mean_rank_of_actual_top_candidates": 5.0,
+          "spearman_rank_correlation": 0.2845
+        },
+        {
+          "target_batch": 6,
+          "train_sample_count": 55,
+          "test_sample_count": 11,
+          "top_5_precision_fraction": 0.4,
+          "top_5_precision": 0.4,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 2,
+          "mean_rank_of_actual_top_candidates": 5.6,
+          "spearman_rank_correlation": 0.4037
+        },
+        {
+          "target_batch": 7,
+          "train_sample_count": 66,
+          "test_sample_count": 9,
+          "top_5_precision_fraction": 0.8,
+          "top_5_precision": 0.8,
+          "top_1_in_top_5": true,
+          "rank_of_best_true_target_candidate": 4,
+          "mean_rank_of_actual_top_candidates": 3.8,
+          "spearman_rank_correlation": 0.6
+        }
+      ]
+    }
+  }
 }

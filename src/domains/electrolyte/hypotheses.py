@@ -619,6 +619,76 @@ def evaluate_hypothesis_calibration(
     winners = [s["posterior_winner"] for s in sensitivity_runs]
     is_winner_stable = bool(len(set(winners)) == 1)
 
+    # 3. HIG ranking sensitivity across variance floors
+    b0_df = df_historical[df_historical["batch"] == 0]
+    eval_df = df_historical[df_historical["batch"] > 0]
+    hig_ranking_stability = {}
+    if len(b0_df) >= 3 and len(eval_df) > 5:
+        from src.science.falsification.information_gain import HypothesisInformationGainEstimator
+        from src.science.hypothesis_models import HypothesisEnsemble
+        from scipy.stats import spearmanr
+
+        b0_feats = {str(row["candidate_id"]): row[f_cols].to_numpy(dtype=np.float64) for _, row in b0_df.iterrows()}
+        b0_obs = {str(row["candidate_id"]): float(row["C_norm_20"]) for _, row in b0_df.iterrows()}
+        b0_ctx = HypothesisTrainingContext(
+            candidate_features_by_id=b0_feats,
+            observations_by_modality={"CAPACITY_TEST": b0_obs},
+        )
+        provider = ElectrolyteHypothesisProvider()
+        hyps_b0 = provider.build_hypotheses()
+        for h in hyps_b0.values():
+            h.fit_context(b0_ctx)
+
+        ens_b0 = HypothesisEnsemble(hypotheses=hyps_b0)
+        hig_est = HypothesisInformationGainEstimator(n_samples_benchmark=64, n_samples_demo=32)
+
+        hig_by_floor = {}
+        candidate_ids = [str(r["candidate_id"]) for _, r in eval_df.iterrows()]
+        comps = [r[f_cols].to_numpy(dtype=np.float64) for _, r in eval_df.iterrows()]
+
+        for floor_val in variance_floors:
+            scores = []
+            for cid, comp in zip(candidate_ids, comps):
+                eval_res = hig_est.evaluate_action_discrimination(
+                    candidate_id=cid,
+                    action_type="CAPACITY_TEST",
+                    composition=comp,
+                    ensemble=ens_b0,
+                    seed=42,
+                    variance_floor=floor_val,
+                )
+                scores.append(float(eval_res.hypothesis_information_gain))
+            hig_by_floor[floor_val] = scores
+
+        f_list = list(variance_floors)
+        if len(f_list) >= 3:
+            s_05 = hig_by_floor[f_list[0]]
+            s_10 = hig_by_floor[f_list[1]]
+            s_20 = hig_by_floor[f_list[2]]
+
+            rho_05_10 = float(spearmanr(s_05, s_10).statistic) if len(s_05) > 2 else 1.0
+            rho_10_20 = float(spearmanr(s_10, s_20).statistic) if len(s_10) > 2 else 1.0
+            rho_05_20 = float(spearmanr(s_05, s_20).statistic) if len(s_05) > 2 else 1.0
+
+            top5_05 = set(np.argsort(-np.array(s_05))[:5])
+            top5_10 = set(np.argsort(-np.array(s_10))[:5])
+            top5_20 = set(np.argsort(-np.array(s_20))[:5])
+
+            top10_05 = set(np.argsort(-np.array(s_05))[:10])
+            top10_10 = set(np.argsort(-np.array(s_10))[:10])
+            top10_20 = set(np.argsort(-np.array(s_20))[:10])
+
+            hig_ranking_stability = {
+                "spearman_hig_0_5x_vs_1_0x": round(0.0 if np.isnan(rho_05_10) else rho_05_10, 4),
+                "spearman_hig_1_0x_vs_2_0x": round(0.0 if np.isnan(rho_10_20) else rho_10_20, 4),
+                "spearman_hig_0_5x_vs_2_0x": round(0.0 if np.isnan(rho_05_20) else rho_05_20, 4),
+                "top_5_overlap_0_5x_vs_1_0x": len(top5_05.intersection(top5_10)) / 5.0,
+                "top_5_overlap_1_0x_vs_2_0x": len(top5_10.intersection(top5_20)) / 5.0,
+                "top_10_overlap_0_5x_vs_1_0x": len(top10_05.intersection(top10_10)) / 10.0,
+                "top_10_overlap_1_0x_vs_2_0x": len(top10_10.intersection(top10_20)) / 10.0,
+                "evaluated_candidate_count": len(candidate_ids),
+            }
+
     return {
         "calibration_scope": "Leave-One-Batch-Out Retrospective Validation over Pool-Compatible Historical Outcomes",
         "epistemic_statement": "Hypothesis posteriors quantify predictive preference among candidate structural models, NOT physical mechanism truth.",
@@ -626,7 +696,9 @@ def evaluate_hypothesis_calibration(
         "variance_floor_sensitivity": {
             "baseline_floor": base_floor,
             "evaluated_scales": [s["floor_scale"] for s in sensitivity_runs],
+            "predictive_model_preference_stable": is_winner_stable,
             "posterior_winner_stable": is_winner_stable,
             "sensitivity_runs": sensitivity_runs,
+            "hig_ranking_stability": hig_ranking_stability,
         },
     }

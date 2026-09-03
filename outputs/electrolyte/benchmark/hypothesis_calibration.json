@@ -49,6 +49,7 @@
       "1.0x",
       "2.0x"
     ],
+    "predictive_model_preference_stable": true,
     "posterior_winner_stable": true,
     "sensitivity_runs": [
       {
@@ -108,6 +109,16 @@
         },
         "posterior_winner": "global_smooth_descriptor"
       }
-    ]
+    ],
+    "hig_ranking_stability": {
+      "spearman_hig_0_5x_vs_1_0x": 1.0,
+      "spearman_hig_1_0x_vs_2_0x": 1.0,
+      "spearman_hig_0_5x_vs_2_0x": 1.0,
+      "top_5_overlap_0_5x_vs_1_0x": 1.0,
+      "top_5_overlap_1_0x_vs_2_0x": 1.0,
+      "top_10_overlap_0_5x_vs_1_0x": 1.0,
+      "top_10_overlap_1_0x_vs_2_0x": 1.0,
+      "evaluated_candidate_count": 72
+    }
   }
 }

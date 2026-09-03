@@ -1,0 +1,30 @@
+{
+  "ei_vs_gpucb_direct": {
+    "evaluated_seeds": [
+      7,
+      42,
+      101,
+      314,
+      2024
+    ],
+    "total_evaluated_steps": 75,
+    "differing_steps_count": 0,
+    "sequence_exact_match": true,
+    "matching_seeds_count": 5,
+    "diagnostic_finding": "EI and GP-UCB happened to produce the same candidate sequence under this small finite historical benchmark."
+  },
+  "ei_direct_vs_discovery_only_engine": {
+    "evaluated_seeds": [
+      7,
+      42,
+      101,
+      314,
+      2024
+    ],
+    "total_evaluated_steps": 75,
+    "differing_steps_count": 0,
+    "sequence_exact_match": true,
+    "matching_seeds_count": 5,
+    "diagnostic_finding": "Under the current single-objective single-modality electrolyte configuration, Discovery-Only-through-engine reproduces the direct BoTorch EI selection sequence."
+  }
+}

@@ -3,7 +3,7 @@
 **Domain Identifier:** `anode_free_electrolyte`  
 **Primary Objective:** `C_norm_20`  
 **Modality:** `CAPACITY_TEST`  
-**Validation Status:** `SCIENTIFIC VALIDATION READY`  
+**Validation Status:** `SCIENTIFICALLY READY PENDING EXTERNAL CI`  
 **Audit Revision:** Final Closure Batch (September 2026)  
 
 ---
@@ -21,12 +21,13 @@
 | `HIG_gate` | **PASS** | True HIG evaluated via HypothesisInformationGainEstimator: positive mutual information (max=0.4090 nats), strictly bounded by ln(3)=1.0986 nats. |
 | `posterior_update_gate` | **PASS** | Bayesian evidence update altered posterior probabilities (max shift = 0.2724). |
 | `optimizer_gate` | **PASS** | BoTorch SingleTaskGP propose succeeds with finite acquisition scores; degraded mode verified with degraded_mode: True. |
-| `historical_benchmark_gate` | **PASS** | Historical benchmark verified: all 6 policies present, metadata and wow scenario validated. |
-| `large_pool_screening_gate` | **PASS** | Scalability benchmark verified across 10k, 100k, 333k, 999k with RSS memory tracking. |
+| `historical_benchmark_gate` | **PASS** | Historical benchmark mathematically verified across 6 policies, 5 seeds against detailed runs. |
+| `large_pool_screening_gate` | **PASS** | Scalability verified: [10000, 100000, 333333, 999999] scale trials and [10000, 100000, 333333] end-to-end decision pipeline runs. |
 | `surrogate_provenance_gate` | **PASS** | Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False. |
-| `cross_domain_gate` | **PASS** | All 4 domain adapters (AuIrRh, Toy, A-Lab, Electrolyte) initialize and configure decision engines. |
+| `cross_domain_gate` | **PASS** | Full lifecycle (initialize -> propose -> execute -> update) verified across all 4 domains: AuIrRh: OK (init=3, proposed=AUIRH_Au-rich_003); Toy: OK (init=3, proposed=BAT_003); A-Lab: OK (init=3, proposed=PG_TEST_01); Electrolyte: OK (init=3, proposed=ELEC_fe0c05021a51f83f). |
 | `report_consistency_gate` | **PASS** | Historical benchmark markdown faithfully reflects structured JSON metrics. |
-| `CI_gate` | **PASS** | Domain tests and cross-domain acceptance verified passing. |
+| `local_test_gate` | **PASS** | All unit, integration, and cross-domain lifecycle test suites verified locally. |
+| `external_CI_gate` | **NOT_EVALUATED_LOCALLY** | External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally. |
 
 ---
 

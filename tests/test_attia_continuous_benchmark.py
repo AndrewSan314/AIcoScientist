@@ -172,6 +172,7 @@ def test_attia_continuous_benchmark_mini_end_to_end(tmp_path: Path) -> None:
         n_seeds=2,
         n_candidates_per_step=100,
         output_dir=tmp_path,
+        n_jobs=1,
     )
 
     assert "benchmark" in summary

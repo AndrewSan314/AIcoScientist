@@ -164,3 +164,21 @@ def test_screened_working_set_initializes_adapter_and_engine():
     assert outcome is not None
     assert outcome.canonical_observation is not None
 
+
+def test_frozen_electrolyte_feature_scaler():
+    """Verifies that FrozenElectrolyteFeatureScaler uses canonical population moments and preserves scale invariance."""
+    from src.domains.electrolyte.screening import FrozenElectrolyteFeatureScaler, CANONICAL_ELECTROLYTE_MOMENTS
+
+    scaler = FrozenElectrolyteFeatureScaler()
+    assert len(scaler.means) == 11
+    assert len(scaler.stds) == 11
+
+    # Synthetic sample of 2 candidates with exact population mean
+    X = np.zeros((2, 11), dtype=np.float64)
+    for i, f in enumerate(ELECTROLYTE_SOLVENT_FEATURES):
+        X[:, i] = CANONICAL_ELECTROLYTE_MOMENTS[f]["mean"]
+
+    X_scaled = scaler.transform(X)
+    assert X_scaled.shape == (2, 11)
+    np.testing.assert_allclose(X_scaled, 0.0, atol=1e-5)
+

@@ -159,3 +159,39 @@ def test_retrospective_next_batch_ranking_separates_rf_from_aicoscientist(tmp_pa
     assert os.path.exists(tmp_path / "aicoscientist_temporal_next_batch.json")
     assert os.path.exists(tmp_path / "rf_temporal_baseline.json")
 
+
+def test_random_policy_evaluates_pre_reveal_hig():
+    """Verifies that RANDOM policy evaluates pre-reveal HIG and records entropy fields."""
+    res = evaluate_historical_policy(
+        policy_name="RANDOM",
+        derived_outcomes_path=FIXTURE_PATH,
+        seed=42,
+        max_steps=2,
+    )
+    assert res.mean_raw_hig_nats_per_action >= 0.0
+    assert res.cumulative_raw_hig_nats >= 0.0
+    assert hasattr(res, "realized_entropy_reduction")
+    for diag in res.step_diagnostics:
+        assert "current_entropy_pre_reveal" in diag
+        assert "expected_posterior_entropy" in diag
+        assert "entropy_after" in diag
+        assert diag["raw_hig_nats"] >= 0.0
+
+
+def test_policy_equivalence_diagnostics():
+    """Verifies policy equivalence diagnostics structure and step comparisons."""
+    from src.evaluation.electrolyte_benchmark import compute_policy_equivalence_diagnostics
+
+    res_dict = run_comprehensive_historical_benchmark(
+        derived_outcomes_path=FIXTURE_PATH,
+        seeds=(42,),
+        policies=("BOTORCH_EI_DIRECT", "BOTORCH_GPUCB_DIRECT", "DISCOVERY_ONLY"),
+        max_steps=2,
+    )
+    assert "policy_equivalence_diagnostics" in res_dict
+    diag = res_dict["policy_equivalence_diagnostics"]
+    assert "ei_vs_gpucb_direct" in diag
+    assert "ei_direct_vs_discovery_only_engine" in diag
+    assert "sequence_exact_match" in diag["ei_vs_gpucb_direct"]
+    assert "diagnostic_finding" in diag["ei_vs_gpucb_direct"]
+

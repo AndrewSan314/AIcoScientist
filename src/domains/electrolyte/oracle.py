@@ -115,6 +115,15 @@ class SurrogateElectrolyteOracle:
         self._model.fit(X, y)
         logger.info("Fitted SurrogateElectrolyteOracle on %d training rows.", len(X))
 
+    def predict(self, candidate_features: np.ndarray) -> float:
+        """Predict expected capacity retention for candidate features."""
+        X = np.atleast_2d(candidate_features)
+        return float(self._model.predict(X)[0])
+
+    def predict_capacity_loss(self, candidate_features: np.ndarray) -> float:
+        """Alias for compatibility with offline surrogate evaluation."""
+        return self.predict(candidate_features)
+
     def reveal(
         self,
         action: ScientificAction,

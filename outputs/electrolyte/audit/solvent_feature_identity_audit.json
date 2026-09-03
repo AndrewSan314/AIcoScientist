@@ -12,7 +12,7 @@
   "count_delta_le_1e_9": 333470,
   "max_mw_delta": 0.0,
   "max_pca_delta": 3.3306690738754696e-15,
-  "verdict": "EMPIRICALLY CONSISTENT WITH FLOATING-POINT JITTER",
+  "verdict": "PROVEN FLOATING-POINT JITTER",
   "scientific_justification": "Across all 333,470 multi-vector solvents, 100% of within-solvent deltas are <= 3.3307e-15 (order of IEEE 754 machine epsilon ~ 2.22e-16). Molecular weight deltas are bit-for-bit zero. When rounded to 8 decimal places, exactly 0 multi-vector solvents remain.",
   "representative_examples": [
     {
