@@ -62,18 +62,24 @@ class ElectrolyteDomainAdapter(MaterialDomainAdapter):
         config: MaterialDomainConfig | None = None,
         use_surrogate_oracle: bool = False,
         surrogate_train_path: str | None = None,
+        candidate_pool_df: pd.DataFrame | None = None,
+        oracle: Any | None = None,
     ) -> None:
         self._config = config or ELECTROLYTE_DOMAIN_CONFIG
         self._hypothesis_provider = ElectrolyteHypothesisProvider()
 
         # Load historical derived data
-        if os.path.exists(derived_outcomes_path):
+        if derived_outcomes_path and os.path.exists(derived_outcomes_path):
             self._derived_df = load_derived_historical_outcomes(derived_outcomes_path)
         else:
             self._derived_df = pd.DataFrame()
 
-        # Extract strictly firewalled candidate pool
-        if len(self._derived_df) > 0:
+        # Candidate pool: working set takes precedence if explicitly passed
+        if candidate_pool_df is not None:
+            # Enforce candidate firewall: drop forbidden columns if any
+            clean_cols = ["candidate_id"] + [f for f in self._config.candidate_features if f in candidate_pool_df.columns]
+            self._candidate_pool_df = candidate_pool_df[clean_cols].copy().reset_index(drop=True)
+        elif len(self._derived_df) > 0:
             self._candidate_pool_df = extract_candidate_pool_from_derived(
                 self._derived_df,
                 feature_cols=self._config.candidate_features,
@@ -88,7 +94,10 @@ class ElectrolyteDomainAdapter(MaterialDomainAdapter):
             self._feature_cache[cid] = {f: float(row[f]) for f in self._config.candidate_features}
 
         # Initialize Oracle
-        if use_surrogate_oracle:
+        if oracle is not None:
+            self._oracle = oracle
+            self._is_surrogate = isinstance(oracle, SurrogateElectrolyteOracle) or getattr(oracle, "_is_surrogate", False)
+        elif use_surrogate_oracle:
             train_df = self._derived_df if surrogate_train_path is None else pd.read_csv(surrogate_train_path)
             self._oracle = SurrogateElectrolyteOracle(df_train=train_df, feature_cols=self._config.candidate_features)
             self._is_surrogate = True
@@ -193,13 +202,17 @@ class ElectrolyteDomainAdapter(MaterialDomainAdapter):
         In historical mode, selects the Batch-0 compatible seed cells (N=3) which were
         tested in the initial exploratory seed library under 1.0 M LiFSI Cu||LFP protocol.
         """
-        if len(self._derived_df) == 0:
+        if len(self._candidate_pool_df) == 0:
             return []
 
-        b0_rows = self._derived_df[self._derived_df["batch"] == 0]
-        if len(b0_rows) > 0:
-            seed_cids = list(b0_rows["candidate_id"].unique())[:n_seed]
-        else:
+        seed_cids = []
+        if not self._is_surrogate and len(self._derived_df) > 0 and "batch" in self._derived_df.columns:
+            b0_cids = set(self._derived_df[self._derived_df["batch"] == 0]["candidate_id"].unique())
+            pool_b0 = [cid for cid in self._candidate_pool_df["candidate_id"].unique() if cid in b0_cids]
+            if len(pool_b0) >= n_seed:
+                seed_cids = pool_b0[:n_seed]
+
+        if not seed_cids:
             rng = np.random.default_rng(seed)
             all_cids = list(self._candidate_pool_df["candidate_id"].unique())
             seed_cids = list(rng.choice(all_cids, size=min(n_seed, len(all_cids)), replace=False))
@@ -214,12 +227,5 @@ class ElectrolyteDomainAdapter(MaterialDomainAdapter):
             )
             for cid in seed_cids
         ]
-
-        for act in actions:
-            self._revealed_cids.add(act.candidate_id)
-            if len(self._derived_df) > 0 and "C_norm_20" in self._derived_df.columns:
-                match = self._derived_df[self._derived_df["candidate_id"] == act.candidate_id]
-                if len(match) > 0:
-                    self._revealed_capacity_obs[act.candidate_id] = float(match["C_norm_20"].iloc[0])
 
         return actions

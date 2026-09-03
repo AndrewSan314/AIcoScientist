@@ -8,7 +8,9 @@ from src.domains.electrolyte.hypotheses import (
     ElectrolyteHypothesisProvider,
     GlobalSmoothDescriptorHypothesis,
     LocalChemicalRegimeHypothesis,
+    RegularizedAdditiveDescriptorHypothesis,
     SparseAdditiveDescriptorHypothesis,
+    evaluate_hypothesis_calibration,
 )
 from src.science.actions import ScientificAction
 from src.science.domain import HypothesisTrainingContext
@@ -23,7 +25,7 @@ def test_three_hypotheses_support_capacity():
 
     assert len(hyps) == 3
     assert "global_smooth_descriptor" in hyps
-    assert "sparse_additive_descriptor" in hyps
+    assert "regularized_additive_descriptor" in hyps
     assert "local_chemical_regime" in hyps
 
     for h in hyps.values():
@@ -190,3 +192,49 @@ def test_posterior_updates_after_capacity_reveal():
     post_beliefs = ensemble.get_beliefs()
     diffs = [abs(post_beliefs[k] - prior_beliefs[k]) for k in prior_beliefs]
     assert max(diffs) > 1e-4, f"Posterior beliefs failed to update after observation: {post_beliefs}"
+
+
+def test_hypothesis_calibration_and_sensitivity():
+    """Phase 11: Verifies calibration evaluation and variance floor sensitivity on synthetic historical batches."""
+    import pandas as pd
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    rng = np.random.default_rng(123)
+    rows = []
+    # Create 3 batches of 6 items each
+    for b in range(3):
+        for i in range(6):
+            feats = rng.normal(size=len(ELECTROLYTE_SOLVENT_FEATURES))
+            # True relationship is smooth with additive linear component + noise
+            c_norm = float(np.clip(0.3 + 0.1 * feats[0] - 0.05 * feats[1] + rng.normal(scale=0.08), 0.0, 1.0))
+            row = {
+                "candidate_id": f"ELEC_SYNTH_{b}_{i}",
+                "batch": b,
+                "C_norm_20": c_norm,
+            }
+            for idx, col in enumerate(ELECTROLYTE_SOLVENT_FEATURES):
+                row[col] = float(feats[idx])
+            rows.append(row)
+
+    df_synth = pd.DataFrame(rows)
+    calib = evaluate_hypothesis_calibration(df_synth, feature_cols=ELECTROLYTE_SOLVENT_FEATURES)
+
+    assert "hypotheses_calibration" in calib
+    assert "variance_floor_sensitivity" in calib
+    assert "global_smooth_descriptor" in calib["hypotheses_calibration"]
+    assert "regularized_additive_descriptor" in calib["hypotheses_calibration"]
+    assert "local_chemical_regime" in calib["hypotheses_calibration"]
+
+    for hid, metrics in calib["hypotheses_calibration"].items():
+        assert "mae" in metrics
+        assert "rmse" in metrics
+        assert "mean_log_predictive_density" in metrics
+        assert "coverage_50pct_interval" in metrics
+        assert "coverage_90pct_interval" in metrics
+        assert 0.0 <= metrics["coverage_50pct_interval"] <= 1.0
+        assert 0.0 <= metrics["coverage_90pct_interval"] <= 1.0
+
+    sens = calib["variance_floor_sensitivity"]
+    assert len(sens["sensitivity_runs"]) == 3
+    assert "posterior_winner_stable" in sens
+

@@ -104,3 +104,69 @@ def test_future_batch_not_used_as_feature():
     assert "batch_number" not in features
     for f in features:
         assert f in ELECTROLYTE_SOLVENT_FEATURES
+
+
+def test_get_default_initial_actions_is_pure():
+    """Phase 2.1: Verifies get_default_initial_actions does not mutate revealed state."""
+    adapter = ElectrolyteDomainAdapter(derived_outcomes_path=FIXTURE_PATH)
+    assert len(adapter._revealed_cids) == 0
+    assert len(adapter._revealed_capacity_obs) == 0
+
+    init_actions = adapter.get_default_initial_actions(n_seed=3, seed=42)
+    assert len(init_actions) == 3
+
+    # Adapter state must remain completely pure
+    assert len(adapter._revealed_cids) == 0
+    assert len(adapter._revealed_capacity_obs) == 0
+    assert adapter.get_observations_by_modality()["CAPACITY_TEST"] == {}
+
+
+def test_bootstrap_reveals_each_seed_once():
+    """Phase 2.2: Verifies that engine.initialize executes/reveals seeds exactly once."""
+    from src.science.decision_engine import ScientificDecisionEngine
+
+    adapter = ElectrolyteDomainAdapter(derived_outcomes_path=FIXTURE_PATH)
+    engine = ScientificDecisionEngine(domain=adapter, seed=42)
+
+    init_actions = adapter.get_default_initial_actions(n_seed=3, seed=42)
+    outcomes = engine.initialize(init_actions)
+
+    assert len(outcomes) == 3
+    assert len(adapter._revealed_cids) == 3
+    assert len(adapter._revealed_capacity_obs) == 3
+    assert len(engine.observations_by_modality["CAPACITY_TEST"]) == 3
+    for act in init_actions:
+        assert act.candidate_id in adapter._revealed_cids
+        assert act.candidate_id in engine.observations_by_modality["CAPACITY_TEST"]
+
+
+def test_random_action_uses_full_scientific_update_lifecycle():
+    """Phase 2.3: Verifies execute_external_action undergoes complete Bayesian update and model refitting."""
+    from src.science.decision_engine import ScientificDecisionEngine
+
+    adapter = ElectrolyteDomainAdapter(derived_outcomes_path=FIXTURE_PATH)
+    engine = ScientificDecisionEngine(domain=adapter, seed=42)
+    init_actions = adapter.get_default_initial_actions(n_seed=3, seed=42)
+    engine.initialize(init_actions)
+
+    initial_beliefs = engine.ensemble.get_beliefs()
+    valid_actions = adapter.list_valid_actions(engine.get_state())
+    assert len(valid_actions) > 0
+
+    # Pick an action externally (like a RANDOM policy would)
+    external_action = valid_actions[0]
+    outcome = engine.execute_external_action(external_action)
+
+    assert outcome is not None
+    assert external_action.candidate_id in engine.observations_by_modality["CAPACITY_TEST"]
+    assert engine.step == 1
+
+    # Hypothesis models must be refitted and have sample count = 4
+    for h in engine.ensemble.hypotheses.values():
+        assert h.is_fitted
+        assert h.sample_count == 4
+
+    # Bayesian beliefs must have been updated
+    updated_beliefs = engine.ensemble.get_beliefs()
+    assert any(abs(updated_beliefs[k] - initial_beliefs[k]) > 1e-6 for k in initial_beliefs)
+

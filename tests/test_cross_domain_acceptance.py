@@ -90,6 +90,6 @@ def test_same_engine_runs_auirh_toy_alab_and_electrolyte(tmp_path):
     ]
     assert list(engine_electrolyte.ensemble.hypotheses.keys()) == [
         "global_smooth_descriptor",
-        "sparse_additive_descriptor",
+        "regularized_additive_descriptor",
         "local_chemical_regime",
     ]

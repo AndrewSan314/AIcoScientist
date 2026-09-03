@@ -10,6 +10,7 @@ from sklearn.gaussian_process.kernels import ConstantKernel, RBF, WhiteKernel
 from sklearn.linear_model import BayesianRidge
 from sklearn.preprocessing import StandardScaler
 
+from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
 from src.science.actions import ActionType, normalize_action_type
 from src.science.domain import HypothesisProvider, HypothesisTrainingContext
 from src.science.hypothesis_models import (
@@ -168,19 +169,19 @@ class GlobalSmoothDescriptorHypothesis:
         return "Measured 20th-cycle capacity deviates from global smooth descriptor interpolation across solvent feature space."
 
 
-class SparseAdditiveDescriptorHypothesis:
+class RegularizedAdditiveDescriptorHypothesis:
     """Hypothesis H2: Capacity is primarily explained by a low-complexity regularized additive combination of descriptors.
 
     Predictive model: Bayesian Ridge regression with analytical posterior predictive mean and variance.
     """
 
-    def __init__(self, hypothesis_id: str = "sparse_additive_descriptor") -> None:
+    def __init__(self, hypothesis_id: str = "regularized_additive_descriptor") -> None:
         self._id = hypothesis_id
-        self._title = "Sparse Additive Descriptor Hypothesis"
-        self._statement = "Capacity is governed by low-complexity additive descriptor linear combinations rather than localized non-linear regimes."
+        self._title = "Regularized Additive Descriptor Hypothesis"
+        self._statement = "Capacity is governed by low-complexity regularized additive descriptor linear combinations rather than localized non-linear regimes."
         self._assumptions = [
             "First-order linear contributions of solvent molecular weight and PCA components dominate capacity.",
-            "Higher-order interactions are suppressed by shrinkage regularization.",
+            "Higher-order interactions are suppressed by L2 shrinkage regularization.",
             "Observation error is homoscedastic Gaussian noise.",
         ]
         self._model: BayesianRidge | None = None
@@ -215,7 +216,7 @@ class SparseAdditiveDescriptorHypothesis:
     def supports_action(self, action_type: ActionType) -> bool:
         return normalize_action_type(action_type) == "CAPACITY_TEST"
 
-    def fit_context(self, context: HypothesisTrainingContext) -> SparseAdditiveDescriptorHypothesis:
+    def fit_context(self, context: HypothesisTrainingContext) -> RegularizedAdditiveDescriptorHypothesis:
         cap_obs = context.observations_by_modality.get("CAPACITY_TEST", {})
         valid_pairs = [
             (context.candidate_features_by_id[cid], float(val))
@@ -282,7 +283,8 @@ class SparseAdditiveDescriptorHypothesis:
         X = np.atleast_2d(np.asarray(composition, dtype=np.float64))
         X_scaled = self._scaler.transform(X)
         pred_mean, pred_std = self._model.predict(X_scaled, return_std=True)
-        var = float(np.maximum(pred_std[0] ** 2, VARIANCE_FLOOR))
+        var_floor = float(kwargs.get("variance_floor", VARIANCE_FLOOR))
+        var = float(np.maximum(pred_std[0] ** 2, var_floor))
 
         return PredictiveDistribution(
             hypothesis_id=self._id,
@@ -307,7 +309,11 @@ class SparseAdditiveDescriptorHypothesis:
         composition: np.ndarray | None = None,
         **kwargs: Any,
     ) -> str:
-        return "Measured 20th-cycle capacity departs from sparse additive linear descriptor model due to nonlinear chemical interactions."
+        return "Measured 20th-cycle capacity departs from regularized additive linear descriptor model due to nonlinear chemical interactions."
+
+
+# Backward compatibility alias
+SparseAdditiveDescriptorHypothesis = RegularizedAdditiveDescriptorHypothesis
 
 
 class LocalChemicalRegimeHypothesis:
@@ -425,7 +431,8 @@ class LocalChemicalRegimeHypothesis:
         tree_preds = np.array([t.predict(X)[0] for t in self._rf.estimators_], dtype=np.float64)
         pred_mean = float(np.mean(tree_preds))
         tree_var = float(np.var(tree_preds))
-        total_var = float(np.maximum(tree_var + self._residual_var, VARIANCE_FLOOR))
+        var_floor = float(kwargs.get("variance_floor", VARIANCE_FLOOR))
+        total_var = float(np.maximum(tree_var + self._residual_var, var_floor))
 
         return PredictiveDistribution(
             hypothesis_id=self._id,
@@ -458,10 +465,168 @@ class ElectrolyteHypothesisProvider(HypothesisProvider):
 
     def build_hypotheses(self) -> Mapping[str, ScientificHypothesisModel]:
         h1 = GlobalSmoothDescriptorHypothesis()
-        h2 = SparseAdditiveDescriptorHypothesis()
+        h2 = RegularizedAdditiveDescriptorHypothesis()
         h3 = LocalChemicalRegimeHypothesis()
         return {
             h1.hypothesis_id: h1,
             h2.hypothesis_id: h2,
             h3.hypothesis_id: h3,
         }
+
+
+def evaluate_hypothesis_calibration(
+    df_historical: pd.DataFrame,
+    feature_cols: Sequence[str] = ELECTROLYTE_SOLVENT_FEATURES,
+    variance_floors: Sequence[float] = (0.0025, 0.005, 0.010),
+) -> dict[str, Any]:
+    """Evaluates predictive calibration and variance-floor sensitivity of H1, H2, and H3 on held-out historical data.
+
+    Follows Phase 11 requirements:
+    - MAE, RMSE
+    - Mean and median log predictive density
+    - 50% and 90% empirical interval coverage
+    - Mean predicted uncertainty (std)
+    - Standardized residual distribution
+    - Variance floor sensitivity (0.5x, 1x, 2x)
+    - Strict epistemic semantics: posterior preference among predictive models, NOT physical mechanism truth.
+    """
+    f_cols = list(feature_cols)
+    batches = sorted(df_historical["batch"].unique())
+
+    # 1. Leave-One-Batch-Out cross-validation for batches with adequate training data
+    results_by_hyp = {
+        "global_smooth_descriptor": {"y_true": [], "y_pred": [], "pred_std": [], "log_pdf": []},
+        "regularized_additive_descriptor": {"y_true": [], "y_pred": [], "pred_std": [], "log_pdf": []},
+        "local_chemical_regime": {"y_true": [], "y_pred": [], "pred_std": [], "log_pdf": []},
+    }
+
+    for test_b in batches:
+        train_mask = (df_historical["batch"] != test_b)
+        test_mask = (df_historical["batch"] == test_b)
+        train_df = df_historical[train_mask]
+        test_df = df_historical[test_mask]
+
+        if len(train_df) < 5 or len(test_df) == 0:
+            continue
+
+        train_feats = {
+            str(row["candidate_id"]): row[f_cols].to_numpy(dtype=np.float64)
+            for _, row in train_df.iterrows()
+        }
+        train_obs = {
+            str(row["candidate_id"]): float(row["C_norm_20"])
+            for _, row in train_df.iterrows()
+        }
+
+        ctx = HypothesisTrainingContext(
+            candidate_features_by_id=train_feats,
+            observations_by_modality={"CAPACITY_TEST": train_obs},
+        )
+
+        provider = ElectrolyteHypothesisProvider()
+        hyps = provider.build_hypotheses()
+        for h in hyps.values():
+            h.fit_context(ctx)
+
+        for _, row in test_df.iterrows():
+            cid = str(row["candidate_id"])
+            y_true = float(row["C_norm_20"])
+            comp = row[f_cols].to_numpy(dtype=np.float64)
+
+            for hid, h in hyps.items():
+                pred = h.predict_observation(
+                    candidate_id=cid,
+                    action_type="CAPACITY_TEST",
+                    composition=comp,
+                )
+                p_mean = float(pred.mean[0])
+                p_std = float(np.sqrt(pred.variance[0]))
+                l_pdf = float(pred.log_pdf(y_true))
+
+                results_by_hyp[hid]["y_true"].append(y_true)
+                results_by_hyp[hid]["y_pred"].append(p_mean)
+                results_by_hyp[hid]["pred_std"].append(p_std)
+                results_by_hyp[hid]["log_pdf"].append(l_pdf)
+
+    # Compute aggregate calibration metrics
+    calibration_metrics = {}
+    for hid, data in results_by_hyp.items():
+        y_true_arr = np.array(data["y_true"], dtype=np.float64)
+        y_pred_arr = np.array(data["y_pred"], dtype=np.float64)
+        std_arr = np.array(data["pred_std"], dtype=np.float64)
+        lpdf_arr = np.array(data["log_pdf"], dtype=np.float64)
+
+        if len(y_true_arr) == 0:
+            continue
+
+        residuals = y_true_arr - y_pred_arr
+        std_residuals = residuals / np.maximum(std_arr, 1e-6)
+
+        mae = float(np.mean(np.abs(residuals)))
+        rmse = float(np.sqrt(np.mean(residuals ** 2)))
+        mean_lpd = float(np.mean(lpdf_arr))
+        median_lpd = float(np.median(lpdf_arr))
+
+        # Empirical predictive interval coverages: 50% (z=0.6745), 90% (z=1.6449)
+        cov_50 = float(np.mean(np.abs(std_residuals) <= 0.67449))
+        cov_90 = float(np.mean(np.abs(std_residuals) <= 1.64485))
+
+        calibration_metrics[hid] = {
+            "hypothesis_title": provider.build_hypotheses()[hid].title,
+            "test_sample_count": len(y_true_arr),
+            "mae": round(mae, 4),
+            "rmse": round(rmse, 4),
+            "mean_log_predictive_density": round(mean_lpd, 4),
+            "median_log_predictive_density": round(median_lpd, 4),
+            "coverage_50pct_interval": round(cov_50, 4),
+            "coverage_90pct_interval": round(cov_90, 4),
+            "mean_predicted_std": round(float(np.mean(std_arr)), 4),
+            "standardized_residual_mean": round(float(np.mean(std_residuals)), 4),
+            "standardized_residual_std": round(float(np.std(std_residuals)), 4),
+        }
+
+    # 2. Variance-floor sensitivity evaluation
+    sensitivity_runs = []
+    base_floor = VARIANCE_FLOOR
+    for floor_val in variance_floors:
+        ratio = floor_val / base_floor
+        # Compute mean log predictive density for each hypothesis under this variance floor
+        floor_metrics = {}
+        for hid, data in results_by_hyp.items():
+            y_true_arr = np.array(data["y_true"], dtype=np.float64)
+            y_pred_arr = np.array(data["y_pred"], dtype=np.float64)
+            std_raw = np.array(data["pred_std"], dtype=np.float64)
+            # Recompute variance under new floor
+            var_adj = np.maximum(std_raw ** 2, floor_val)
+            std_adj = np.sqrt(var_adj)
+            res = y_true_arr - y_pred_arr
+            lpdf = -0.5 * np.log(2 * np.pi * var_adj) - 0.5 * (res ** 2) / var_adj
+            floor_metrics[hid] = {
+                "mean_lpd": round(float(np.mean(lpdf)), 4),
+                "coverage_90": round(float(np.mean(np.abs(res / std_adj) <= 1.64485)), 4),
+            }
+
+        # Determine winner under this floor
+        winner_hid = max(floor_metrics.keys(), key=lambda k: floor_metrics[k]["mean_lpd"])
+        sensitivity_runs.append({
+            "floor_scale": f"{ratio:.1f}x",
+            "floor_variance": floor_val,
+            "hypothesis_metrics": floor_metrics,
+            "posterior_winner": winner_hid,
+        })
+
+    # Winner stability: check if winner is invariant across sensitivity floors
+    winners = [s["posterior_winner"] for s in sensitivity_runs]
+    is_winner_stable = bool(len(set(winners)) == 1)
+
+    return {
+        "calibration_scope": "Leave-One-Batch-Out Retrospective Validation over Pool-Compatible Historical Outcomes",
+        "epistemic_statement": "Hypothesis posteriors quantify predictive preference among candidate structural models, NOT physical mechanism truth.",
+        "hypotheses_calibration": calibration_metrics,
+        "variance_floor_sensitivity": {
+            "baseline_floor": base_floor,
+            "evaluated_scales": [s["floor_scale"] for s in sensitivity_runs],
+            "posterior_winner_stable": is_winner_stable,
+            "sensitivity_runs": sensitivity_runs,
+        },
+    }

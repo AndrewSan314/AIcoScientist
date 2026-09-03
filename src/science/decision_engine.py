@@ -587,6 +587,59 @@ class ScientificDecisionEngine:
         self._last_recommendation = None
         return outcome
 
+    def execute_external_action(
+        self,
+        action: ScientificAction,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> ExperimentOutcome:
+        """Executes an externally selected action through the identical scientific update lifecycle.
+
+        Guarantees that actions selected by external policies (e.g. RANDOM, BoTorch EI/UCB baselines)
+        undergo the exact same:
+        1. Pre-predictions under frozen representation basis.
+        2. Measurement revelation via domain adapter.
+        3. Bayesian log-predictive evidence recording.
+        4. Posterior probability belief update.
+        5. Hypothesis predictive model refitting.
+        6. State transitions in the ledger.
+        """
+        dominant_h = next(iter(self.ensemble.hypotheses.keys())) if self.ensemble.hypotheses else "unknown"
+        rec = ActionRecommendation(
+            action=action,
+            total_value=0.0,
+            scientific_information_value=0.0,
+            discovery_value=0.0,
+            cost_penalty=float(action.estimated_cost),
+            hypothesis_id=dominant_h,
+            rationale=f"Executing externally specified action '{action.action_id}' ({action.action_type}) on candidate '{action.candidate_id}'.",
+            falsification_criterion="External action execution through unified Bayesian evidence lifecycle.",
+            supporting_evidence=[],
+            uncertainty_summary={
+                "policy_mode": "external",
+                "raw_hig_nats": 0.0,
+                **(dict(metadata) if metadata else {}),
+            },
+        )
+
+        # Record proposal in ledger if not already recorded
+        cand_comp = self._get_candidate_composition(action.candidate_id)
+        proposal_rec = ScientificExperimentRecord(
+            experiment_id=action.action_id,
+            candidate_id=action.candidate_id,
+            dataset_name=self.domain_id,
+            stage=ExperimentStage.PROPOSED,
+            pre_experiment_features={col: float(cand_comp[i]) for i, col in enumerate(self.feature_cols)},
+            proposal_metadata=action.to_dict(),
+            provenance={"domain_id": self.domain_id, "engine": "ScientificDecisionEngine", "source": "external_action"},
+        )
+        if self.ledger is not None:
+            try:
+                self.ledger.record_proposal(proposal_rec)
+            except Exception as e:
+                logger.warning("Ledger record_proposal notice for external action: %s", e)
+
+        return self.execute_recommendation(rec)
+
     def get_state(self) -> dict[str, Any]:
         """Returns a structured, demo-ready snapshot of the current decision engine state."""
         beliefs = self.ensemble.get_beliefs()

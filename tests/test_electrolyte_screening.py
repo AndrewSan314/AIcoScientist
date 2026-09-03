@@ -110,3 +110,57 @@ def test_stable_candidate_identity_through_screening():
         orig = pool_lookup[cid]
         assert ws_row["solv_comb_sm"] == orig["solv_comb_sm"]
         assert ws_row["mol_wt_solv"] == orig["mol_wt_solv"]
+
+
+def test_screened_candidates_have_tranche_provenance():
+    """Phase 6: Verifies screening_tranche, screening_score, and screening_round are present."""
+    pool_df = _create_synthetic_candidate_pool(n=250, seed=42)
+    working_set = screen_large_pool_candidates(
+        candidates_df=pool_df,
+        working_set_size=50,
+        screening_round=2,
+        random_state=42,
+    )
+    assert len(working_set) == 50
+    assert "screening_tranche" in working_set.columns
+    assert "screening_score" in working_set.columns
+    assert "screening_round" in working_set.columns
+    assert set(working_set["screening_tranche"].unique()).issubset({"discovery", "exploration", "diversity", "random"})
+    assert (working_set["screening_round"] == 2).all()
+
+
+def test_screened_working_set_initializes_adapter_and_engine():
+    """Phase 7: Verifies screened working set wraps into ElectrolyteDomainAdapter and runs DecisionEngine."""
+    from src.domains.electrolyte.adapter import ElectrolyteDomainAdapter
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.science.decision_engine import ScientificDecisionEngine
+
+    pool_df = _create_synthetic_candidate_pool(n=100, seed=42)
+    working_set = screen_large_pool_candidates(
+        candidates_df=pool_df,
+        working_set_size=25,
+        random_state=42,
+    )
+
+    # Mock or surrogate oracle
+    oracle_train = pool_df.copy()
+    oracle_train["C_norm_20"] = 0.5
+    oracle = SurrogateElectrolyteOracle(df_train=oracle_train, feature_cols=ELECTROLYTE_SOLVENT_FEATURES)
+
+    adapter = ElectrolyteDomainAdapter(
+        candidate_pool_df=working_set,
+        oracle=oracle,
+    )
+    assert len(adapter.get_candidate_pool()) == 25
+
+    engine = ScientificDecisionEngine(domain=adapter, seed=42)
+    init_actions = adapter.get_default_initial_actions(n_seed=3, seed=42)
+    engine.initialize(init_actions)
+
+    rec = engine.propose_next_experiment()
+    assert rec is not None
+    assert rec.action.candidate_id in adapter.get_candidate_pool()["candidate_id"].values
+    outcome = engine.execute_recommendation(rec)
+    assert outcome is not None
+    assert outcome.canonical_observation is not None
+

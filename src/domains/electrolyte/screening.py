@@ -11,6 +11,7 @@ from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
 from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+from src.domains.electrolyte.data import generate_candidate_id
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ def screen_large_pool_candidates(
     diversity_fraction: float = 0.20,
     random_fraction: float = 0.10,
     feature_cols: Sequence[str] = ELECTROLYTE_SOLVENT_FEATURES,
+    screening_round: int = 0,
     random_state: int = 42,
 ) -> pd.DataFrame:
     """Scalable Stage-1 candidate screening: reduces virtual candidate libraries into a bounded working set.
@@ -36,85 +38,114 @@ def screen_large_pool_candidates(
     4. Random tranche: Seeded uniform exploration safeguarding against model blind spots.
 
     Guarantees:
-    - Never uses hidden future ground-truth targets.
-    - Preserves stable candidate_id identity.
+    - Standardizes 11D feature geometry using full candidate space moments so that mol_wt_solv does not dominate PCA 0-9.
+    - Candidate IDs are deterministically assigned BEFORE screening.
+    - Preserves stable candidate_id identity and stores tranche provenance metadata.
     - Full pool is NEVER materialized as ScientificAction objects in ScientificDecisionEngine.
     """
     total_cands = len(candidates_df)
+    df_work = candidates_df.copy()
+
+    # Deterministically ensure candidate_id is assigned BEFORE screening
+    if "candidate_id" not in df_work.columns:
+        if "solv_comb_sm" in df_work.columns and "salt_comb_sm" in df_work.columns:
+            df_work["candidate_id"] = [
+                generate_candidate_id(s, sa)
+                for s, sa in zip(df_work["solv_comb_sm"], df_work["salt_comb_sm"])
+            ]
+        else:
+            df_work["candidate_id"] = [f"CAND_{i}" for i in range(len(df_work))]
+
     if total_cands <= working_set_size:
-        return candidates_df.copy()
+        df_work["screening_tranche"] = "all"
+        df_work["screening_score"] = 0.0
+        df_work["screening_round"] = screening_round
+        return df_work.reset_index(drop=True)
 
     f_cols = list(feature_cols)
-    X_pool = candidates_df[f_cols].to_numpy(dtype=np.float64, copy=False)
+    X_pool = df_work[f_cols].to_numpy(dtype=np.float64, copy=False)
     rng = np.random.default_rng(random_state)
+
+    # Standardize 11D features to eliminate molecular weight scale bias over PCA components
+    scaler = StandardScaler()
+    X_pool_scaled = scaler.fit_transform(X_pool)
 
     k_disc = max(1, int(working_set_size * discovery_fraction))
     k_expl = max(1, int(working_set_size * exploration_fraction))
     k_div = max(1, int(working_set_size * diversity_fraction))
     k_rand = max(1, working_set_size - (k_disc + k_expl + k_div))
 
-    selected_indices: set[int] = set()
+    # Store mapping: pool_idx -> (tranche_name, score)
+    selected_info: dict[int, tuple[str, float]] = {}
 
     # 1. Discovery Tranche
     if observed_features is not None and observed_targets is not None and len(observed_targets) >= 3:
-        scaler = StandardScaler()
-        X_obs_scaled = scaler.fit_transform(observed_features)
-        X_pool_scaled = scaler.transform(X_pool)
-
+        X_obs_scaled = scaler.transform(observed_features)
         surrogate = Ridge(alpha=1.0)
         surrogate.fit(X_obs_scaled, observed_targets)
         pred_scores = surrogate.predict(X_pool_scaled)
 
         top_disc_idx = np.argsort(-pred_scores)
         for idx in top_disc_idx:
-            selected_indices.add(int(idx))
-            if len(selected_indices) >= k_disc:
-                break
+            idx_int = int(idx)
+            if idx_int not in selected_info:
+                selected_info[idx_int] = ("discovery", float(pred_scores[idx_int]))
+                if len(selected_info) >= k_disc:
+                    break
     else:
-        # Cold start: select candidates with highest descriptor norm
-        norms = np.linalg.norm(X_pool, axis=1)
+        # Cold start: select candidates with highest standardized descriptor norm
+        norms = np.linalg.norm(X_pool_scaled, axis=1)
         top_disc_idx = np.argsort(-norms)
         for idx in top_disc_idx[:k_disc]:
-            selected_indices.add(int(idx))
+            idx_int = int(idx)
+            selected_info[idx_int] = ("discovery", float(norms[idx_int]))
 
-    # 2. Exploration Tranche (Max distance to currently observed points)
+    # 2. Exploration Tranche (Max standardized distance to currently observed points)
     if observed_features is not None and len(observed_features) > 0:
-        dists = cdist(X_pool, observed_features, metric="euclidean").min(axis=1)
+        X_obs_scaled = scaler.transform(observed_features)
+        dists = cdist(X_pool_scaled, X_obs_scaled, metric="euclidean").min(axis=1)
     else:
-        # Distance to centroid of pool
-        centroid = np.mean(X_pool, axis=0, keepdims=True)
-        dists = cdist(X_pool, centroid, metric="euclidean").flatten()
+        # Standardized distance to centroid of pool
+        centroid = np.mean(X_pool_scaled, axis=0, keepdims=True)
+        dists = cdist(X_pool_scaled, centroid, metric="euclidean").flatten()
 
     expl_sorted = np.argsort(-dists)
     for idx in expl_sorted:
-        if idx not in selected_indices:
-            selected_indices.add(int(idx))
-            if len(selected_indices) >= (k_disc + k_expl):
+        idx_int = int(idx)
+        if idx_int not in selected_info:
+            selected_info[idx_int] = ("exploration", float(dists[idx_int]))
+            if len(selected_info) >= (k_disc + k_expl):
                 break
 
-    # 3. Diversity Tranche (Greedy farthest-point selection in feature space)
-    remaining_indices = [i for i in range(total_cands) if i not in selected_indices]
+    # 3. Diversity Tranche (Greedy farthest-point selection in standardized feature space)
+    remaining_indices = [i for i in range(total_cands) if i not in selected_info]
     if remaining_indices:
-        # Sample a subset if remaining pool is huge to keep screening fast (< 100ms)
         subset_size = min(len(remaining_indices), 2000)
         sub_rem = rng.choice(remaining_indices, size=subset_size, replace=False)
-        curr_selected = list(selected_indices)
-        d_to_sel = cdist(X_pool[sub_rem], X_pool[curr_selected], metric="euclidean").min(axis=1)
+        curr_selected = list(selected_info.keys())
+        d_to_sel = cdist(X_pool_scaled[sub_rem], X_pool_scaled[curr_selected], metric="euclidean").min(axis=1)
         div_sorted = np.argsort(-d_to_sel)
         for d_idx in div_sorted:
-            selected_indices.add(int(sub_rem[d_idx]))
-            if len(selected_indices) >= (k_disc + k_expl + k_div):
-                break
+            idx_int = int(sub_rem[d_idx])
+            if idx_int not in selected_info:
+                selected_info[idx_int] = ("diversity", float(d_to_sel[d_idx]))
+                if len(selected_info) >= (k_disc + k_expl + k_div):
+                    break
 
     # 4. Random Tranche
-    rem_final = [i for i in range(total_cands) if i not in selected_indices]
-    if rem_final and len(selected_indices) < working_set_size:
-        needed = working_set_size - len(selected_indices)
+    rem_final = [i for i in range(total_cands) if i not in selected_info]
+    if rem_final and len(selected_info) < working_set_size:
+        needed = working_set_size - len(selected_info)
         rand_picks = rng.choice(rem_final, size=min(needed, len(rem_final)), replace=False)
         for r_idx in rand_picks:
-            selected_indices.add(int(r_idx))
+            idx_int = int(r_idx)
+            selected_info[idx_int] = ("random", 0.0)
 
-    res_df = candidates_df.iloc[sorted(selected_indices)].copy().reset_index(drop=True)
+    sorted_indices = sorted(selected_info.keys())
+    res_df = df_work.iloc[sorted_indices].copy().reset_index(drop=True)
+    res_df["screening_tranche"] = [selected_info[i][0] for i in sorted_indices]
+    res_df["screening_score"] = [round(selected_info[i][1], 6) for i in sorted_indices]
+    res_df["screening_round"] = screening_round
     return res_df
 
 
@@ -164,14 +195,25 @@ def benchmark_large_pool_screening(
         total_time = time.perf_counter() - t0
         mem_after = process.memory_info().rss / (1024 * 1024)
 
+        scope_desc = (
+            "333k LiFSI Discovery Slice (scientific virtual candidate pool)"
+            if lifsi_only
+            else (
+                "999k Virtual Candidate Space (infrastructure-scale benchmark only)"
+                if n == 999999
+                else f"{n:,} Virtual Formulations"
+            )
+        )
+
         results.append({
             "candidate_count": int(n),
-            "pool_scope": "333k LiFSI Discovery Slice" if lifsi_only else (f"{n:,} Virtual Formulations"),
+            "pool_scope": scope_desc,
             "load_time_sec": round(load_time, 4),
             "screen_time_sec": round(screen_time, 4),
             "total_time_sec": round(total_time, 4),
             "throughput_cands_per_sec": round(n / max(total_time, 0.001), 1),
-            "peak_memory_mb": round(mem_after, 2),
+            "rss_before_mb": round(mem_before, 2),
+            "rss_after_mb": round(mem_after, 2),
             "memory_delta_mb": round(max(0.0, mem_after - mem_before), 2),
             "working_set_size": len(working_set),
             "status": "PASS",
