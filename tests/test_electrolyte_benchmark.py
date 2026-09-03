@@ -89,3 +89,73 @@ def test_metric_report_matches_json():
     assert "bootstrap_best_capacity" in meta
     assert "objective_saturation_status" in meta
     assert "saturation_ratio" in meta
+
+
+def test_botorch_ei_and_gpucb_direct_baselines_run_successfully():
+    """Phase 5: Verifies that BOTORCH_EI_DIRECT and BOTORCH_GPUCB_DIRECT run as real baselines."""
+    res_ei = evaluate_historical_policy(
+        policy_name="BOTORCH_EI_DIRECT",
+        derived_outcomes_path=FIXTURE_PATH,
+        seed=42,
+        max_steps=3,
+    )
+    assert res_ei.policy_name == "BOTORCH_EI_DIRECT"
+    assert res_ei.steps_count == 3
+    assert len(res_ei.autonomous_observations) == 3
+    assert res_ei.final_entropy >= 0.0
+
+    res_ucb = evaluate_historical_policy(
+        policy_name="BOTORCH_GPUCB_DIRECT",
+        derived_outcomes_path=FIXTURE_PATH,
+        seed=42,
+        max_steps=3,
+    )
+    assert res_ucb.policy_name == "BOTORCH_GPUCB_DIRECT"
+    assert res_ucb.steps_count == 3
+
+
+def test_hig_separated_into_nats_and_normalized():
+    """Phase 3: Verifies cumulative_hig_nats and cumulative_hig_normalized are both recorded."""
+    res = evaluate_historical_policy(
+        policy_name="HYBRID",
+        derived_outcomes_path=FIXTURE_PATH,
+        seed=42,
+        max_steps=3,
+    )
+    assert hasattr(res, "cumulative_hig_nats")
+    assert hasattr(res, "cumulative_hig_normalized")
+    assert res.cumulative_hig_nats >= 0.0
+    assert res.cumulative_hig_normalized >= 0.0
+    assert len(res.step_diagnostics) == 3
+    for diag in res.step_diagnostics:
+        assert "raw_hig_nats" in diag
+        assert "normalized_hig" in diag
+        assert "max_belief_shift" in diag
+
+
+def test_wow_scenario_returns_honest_fallback_when_preregistered_criteria_unmet():
+    """Phase 10: Verifies that when no candidate meets preregistered divergence criteria, fallback is returned."""
+    from src.evaluation.electrolyte_benchmark import find_natural_wow_scenario
+
+    # Evaluate identical dummy runs
+    res1 = evaluate_historical_policy("DISCOVERY_ONLY", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=2)
+    # Even if passing res1 twice, disc_cand == hyb_cand, so no divergence
+    wow = find_natural_wow_scenario([res1], [res1])
+    assert wow["scenario_found"] is False
+    assert wow["message"] == "NO NATURAL ELECTROLYTE WOW SCENARIO FOUND UNDER PREREGISTERED SETTINGS"
+
+
+def test_retrospective_next_batch_ranking_separates_rf_from_aicoscientist(tmp_path):
+    """Phase 12: Verifies next-batch ranking separates AIcoScientist from RF baseline."""
+    from src.evaluation.electrolyte_benchmark import run_retrospective_next_batch_ranking
+
+    aico_res, rf_res = run_retrospective_next_batch_ranking(
+        derived_outcomes_path=FIXTURE_PATH,
+        out_dir=str(tmp_path),
+    )
+    assert "AIcoScientist" in aico_res["model_architecture"]
+    assert "RandomForest" in rf_res["model_architecture"]
+    assert "REFERENCE ONLY" in rf_res["model_architecture"]
+    assert os.path.exists(tmp_path / "aicoscientist_temporal_next_batch.json")
+    assert os.path.exists(tmp_path / "rf_temporal_baseline.json")
+

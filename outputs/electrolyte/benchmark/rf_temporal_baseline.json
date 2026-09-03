@@ -1,0 +1,65 @@
+{
+  "model_architecture": "Standard RandomForestRegressor Baseline (50 trees, max_depth=5) - REFERENCE ONLY",
+  "evaluation_protocol": "Temporal Next-Batch Forward Ranking (train batches < k -> rank batch k)",
+  "mean_top_5_precision": 0.4571,
+  "mean_spearman_rank_correlation": 0.0043,
+  "top_1_recovery_rate": 0.5714,
+  "per_batch_results": [
+    {
+      "target_batch": 1,
+      "train_sample_count": 3,
+      "test_sample_count": 14,
+      "top_5_precision": 0.2,
+      "top_1_in_top_5": false,
+      "spearman_rank_correlation": -0.1048
+    },
+    {
+      "target_batch": 2,
+      "train_sample_count": 17,
+      "test_sample_count": 11,
+      "top_5_precision": 0.4,
+      "top_1_in_top_5": true,
+      "spearman_rank_correlation": 0.1472
+    },
+    {
+      "target_batch": 3,
+      "train_sample_count": 28,
+      "test_sample_count": 7,
+      "top_5_precision": 0.6,
+      "top_1_in_top_5": false,
+      "spearman_rank_correlation": -0.4865
+    },
+    {
+      "target_batch": 4,
+      "train_sample_count": 35,
+      "test_sample_count": 9,
+      "top_5_precision": 0.6,
+      "top_1_in_top_5": false,
+      "spearman_rank_correlation": -0.2437
+    },
+    {
+      "target_batch": 5,
+      "train_sample_count": 44,
+      "test_sample_count": 11,
+      "top_5_precision": 0.4,
+      "top_1_in_top_5": true,
+      "spearman_rank_correlation": 0.0793
+    },
+    {
+      "target_batch": 6,
+      "train_sample_count": 55,
+      "test_sample_count": 11,
+      "top_5_precision": 0.4,
+      "top_1_in_top_5": true,
+      "spearman_rank_correlation": 0.2385
+    },
+    {
+      "target_batch": 7,
+      "train_sample_count": 66,
+      "test_sample_count": 9,
+      "top_5_precision": 0.6,
+      "top_1_in_top_5": true,
+      "spearman_rank_correlation": 0.4
+    }
+  ]
+}

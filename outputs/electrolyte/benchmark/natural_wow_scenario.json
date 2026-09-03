@@ -1,14 +1,13 @@
 {
-  "scenario_found": true,
-  "seed": 42,
-  "step_index": 2,
-  "discovery_only_choice": {
-    "candidate_id": "ELEC_602b11ffb56c22d6",
-    "revealed_C_norm_20": 0.0
-  },
-  "hybrid_choice": {
-    "candidate_id": "ELEC_66726be3929d2861",
-    "revealed_C_norm_20": 0.1543
-  },
-  "scientific_divergence_analysis": "At autonomous step 3 (seed 42), Discovery-Only chose candidate ELEC_602b11ffb56c22d6 (yielded C_norm_20=0.0000) prioritizing predicted mean capacity, whereas Hybrid chose candidate ELEC_66726be3929d2861 (yielded C_norm_20=0.1543) balancing expected improvement with hypothesis falsification information gain (HIG). Revealing this measurement updated belief weights across H1, H2, and H3."
+  "scenario_found": false,
+  "message": "NO NATURAL ELECTROLYTE WOW SCENARIO FOUND UNDER PREREGISTERED SETTINGS",
+  "preregistered_criteria": [
+    "c_disc != c_hyb",
+    "EI(c_disc) > EI(c_hyb)",
+    "HIG(c_hyb) > HIG(c_disc)",
+    "V_hyb(c_hyb) > V_hyb(c_disc)",
+    "max_belief_shift >= 0.01"
+  ],
+  "total_steps_evaluated": 75,
+  "divergent_candidate_steps": 61
 }

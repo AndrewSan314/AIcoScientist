@@ -11,12 +11,14 @@
 
 ## 1. Multi-Policy Benchmark Comparison
 
-| Policy | Best Found ($C_{\text{norm}}^{20}$) | Autonomous Imprv | AUC Best Curve | Top-Decile Hit % | Near-Zero % | Mean HIG | Runtime (s) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **RANDOM** | 0.7768 ± 0.0454 | 0.0243 ± 0.0272 | 11.75 ± 0.29 | 9.3% | 65.3% | 0.0000 | 0.07s |
-| **DISCOVERY_ONLY** | 0.8276 ± 0.0000 | 0.0574 ± 0.0000 | 11.75 ± 0.00 | 13.3% | 60.0% | 0.4862 | 39.80s |
-| **PURE_FALSIFICATION** | 0.7255 ± 0.0523 | 0.0026 ± 0.0032 | 11.55 ± 0.00 | 4.0% | 65.3% | 0.9344 | 40.98s |
-| **HYBRID** | 0.7720 ± 0.0000 | 0.0019 ± 0.0000 | 11.57 ± 0.00 | 6.7% | 46.7% | 0.7475 | 41.15s |
+| Policy | Best Found ($C_{\text{norm}}^{20}$) | Autonomous Imprv | AUC Best Curve | Top-Decile Hit % | Near-Zero % | Mean HIG (nats) | Mean HIG (norm) | Runtime (s) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **RANDOM** | 0.7768 ± 0.0454 | 0.0243 ± 0.0272 | 11.75 ± 0.29 | 9.3% | 65.3% | 0.7663 | 0.6975 | 2.06s |
+| **DISCOVERY_ONLY** | 0.8276 ± 0.0000 | 0.0574 ± 0.0000 | 11.75 ± 0.00 | 13.3% | 60.0% | 0.5341 | 0.4862 | 48.40s |
+| **PURE_FALSIFICATION** | 0.7255 ± 0.0523 | 0.0026 ± 0.0032 | 11.55 ± 0.00 | 4.0% | 65.3% | 1.0265 | 0.9344 | 41.48s |
+| **HYBRID** | 0.8276 ± 0.0000 | 0.0574 ± 0.0000 | 11.81 ± 0.00 | 26.7% | 40.0% | 0.9557 | 0.8699 | 55.63s |
+| **BOTORCH_EI_DIRECT** | 0.8276 ± 0.0000 | 0.0574 ± 0.0000 | 11.75 ± 0.00 | 13.3% | 60.0% | 0.3514 | 0.3199 | 9.02s |
+| **BOTORCH_GPUCB_DIRECT** | 0.8276 ± 0.0000 | 0.0574 ± 0.0000 | 11.75 ± 0.00 | 13.3% | 60.0% | 0.3514 | 0.3199 | 12.35s |
 
 ---
 
@@ -29,11 +31,14 @@
 
 ## 3. Natural Policy Divergence ("Wow" Scenario)
 
-### Natural Wow Scenario Discovered:
-* **Seed:** 42 at Step 3
-* **Discovery-Only Choice:** `ELEC_602b11ffb56c22d6` (Revealed $C_{\text{norm}}^{20} = 0.0000$)
-* **Hybrid Choice:** `ELEC_66726be3929d2861` (Revealed $C_{\text{norm}}^{20} = 0.1543$)
-* **Analysis:** At autonomous step 3 (seed 42), Discovery-Only chose candidate ELEC_602b11ffb56c22d6 (yielded C_norm_20=0.0000) prioritizing predicted mean capacity, whereas Hybrid chose candidate ELEC_66726be3929d2861 (yielded C_norm_20=0.1543) balancing expected improvement with hypothesis falsification information gain (HIG). Revealing this measurement updated belief weights across H1, H2, and H3.
+* **Status:** `NO NATURAL ELECTROLYTE WOW SCENARIO FOUND UNDER PREREGISTERED SETTINGS`
+* **Preregistered Criteria Enforced:**
+  1. $c_{\text{disc}} \neq c_{\text{hyb}}$
+  2. $EI(c_{\text{disc}}) > EI(c_{\text{hyb}})$
+  3. $HIG_{\text{nats}}(c_{\text{hyb}}) > HIG_{\text{nats}}(c_{\text{disc}})$
+  4. $V_{\text{hyb}}(c_{\text{hyb}}) > V_{\text{hyb}}(c_{\text{disc}})$
+  5. Material epistemic shift: $\max |P_{\text{post}} - P_{\text{prior}}| \ge 0.01$
+* **Outcome:** No candidate pair across [42, 101, 2024, 314, 7] seeds met all 5 criteria simultaneously.
 
 
 ---

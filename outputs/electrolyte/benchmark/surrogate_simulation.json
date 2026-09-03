@@ -1,11 +1,31 @@
 {
   "simulation_label": "SIMULATED SURROGATE ORACLE - In-Silico Computational Approximation Only",
+  "oracle_kind": "SIMULATED_SURROGATE",
+  "physical_synthesis": false,
   "search_space_slice": "50,000 LiFSI Virtual Candidates",
   "screened_working_set_size": 200,
-  "screening_time_sec": 0.013,
+  "screening_time_sec": 0.0244,
   "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
-  "oracle_best_score": 0.4376,
-  "top_1_pct_threshold": 0.2918,
-  "simulated_top_recovery_count": 0,
-  "notice": "This simulation does not represent wet-lab physical experimental synthesis. It evaluates algorithmic screening throughput and working-set information capture."
+  "simulation_policies": {
+    "HYBRID": {
+      "best_simulated_capacity": 0.2748,
+      "mean_simulated_capacity": 0.1435,
+      "cumulative_hig_nats": 0.6361,
+      "queried_count": 15
+    },
+    "DISCOVERY_ONLY": {
+      "best_simulated_capacity": 0.162,
+      "mean_simulated_capacity": 0.1267,
+      "cumulative_hig_nats": 0.6853,
+      "queried_count": 15
+    },
+    "RANDOM": {
+      "best_simulated_capacity": 0.2368,
+      "mean_simulated_capacity": 0.098,
+      "cumulative_hig_nats": 0.0,
+      "queried_count": 15
+    }
+  },
+  "disclaimer": "Computational simulation under frozen surrogate. Not physical experimental validation.",
+  "notice": "This simulation evaluates algorithmic screening throughput and working-set information capture. It does not represent wet-lab physical experimental synthesis."
 }

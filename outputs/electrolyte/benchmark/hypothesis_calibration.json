@@ -1,0 +1,113 @@
+{
+  "calibration_scope": "Leave-One-Batch-Out Retrospective Validation over Pool-Compatible Historical Outcomes",
+  "epistemic_statement": "Hypothesis posteriors quantify predictive preference among candidate structural models, NOT physical mechanism truth.",
+  "hypotheses_calibration": {
+    "global_smooth_descriptor": {
+      "hypothesis_title": "Global Smooth Descriptor Hypothesis",
+      "test_sample_count": 75,
+      "mae": 0.1864,
+      "rmse": 0.2435,
+      "mean_log_predictive_density": -0.1545,
+      "median_log_predictive_density": 0.1846,
+      "coverage_50pct_interval": 0.5333,
+      "coverage_90pct_interval": 0.8667,
+      "mean_predicted_std": 0.2567,
+      "standardized_residual_mean": 0.0044,
+      "standardized_residual_std": 1.1055
+    },
+    "regularized_additive_descriptor": {
+      "hypothesis_title": "Regularized Additive Descriptor Hypothesis",
+      "test_sample_count": 75,
+      "mae": 0.2478,
+      "rmse": 0.2992,
+      "mean_log_predictive_density": -0.3118,
+      "median_log_predictive_density": 0.0271,
+      "coverage_50pct_interval": 0.4133,
+      "coverage_90pct_interval": 0.8133,
+      "mean_predicted_std": 0.2727,
+      "standardized_residual_mean": -0.1262,
+      "standardized_residual_std": 1.1783
+    },
+    "local_chemical_regime": {
+      "hypothesis_title": "Local Chemical Regime Hypothesis",
+      "test_sample_count": 75,
+      "mae": 0.2803,
+      "rmse": 0.3217,
+      "mean_log_predictive_density": -0.8319,
+      "median_log_predictive_density": -0.1364,
+      "coverage_50pct_interval": 0.2533,
+      "coverage_90pct_interval": 0.8667,
+      "mean_predicted_std": 0.2644,
+      "standardized_residual_mean": -0.0755,
+      "standardized_residual_std": 1.5943
+    }
+  },
+  "variance_floor_sensitivity": {
+    "baseline_floor": 0.005,
+    "evaluated_scales": [
+      "0.5x",
+      "1.0x",
+      "2.0x"
+    ],
+    "posterior_winner_stable": true,
+    "sensitivity_runs": [
+      {
+        "floor_scale": "0.5x",
+        "floor_variance": 0.0025,
+        "hypothesis_metrics": {
+          "global_smooth_descriptor": {
+            "mean_lpd": -0.1545,
+            "coverage_90": 0.8667
+          },
+          "regularized_additive_descriptor": {
+            "mean_lpd": -0.3118,
+            "coverage_90": 0.8133
+          },
+          "local_chemical_regime": {
+            "mean_lpd": -0.8319,
+            "coverage_90": 0.8667
+          }
+        },
+        "posterior_winner": "global_smooth_descriptor"
+      },
+      {
+        "floor_scale": "1.0x",
+        "floor_variance": 0.005,
+        "hypothesis_metrics": {
+          "global_smooth_descriptor": {
+            "mean_lpd": -0.1545,
+            "coverage_90": 0.8667
+          },
+          "regularized_additive_descriptor": {
+            "mean_lpd": -0.3118,
+            "coverage_90": 0.8133
+          },
+          "local_chemical_regime": {
+            "mean_lpd": -0.8319,
+            "coverage_90": 0.8667
+          }
+        },
+        "posterior_winner": "global_smooth_descriptor"
+      },
+      {
+        "floor_scale": "2.0x",
+        "floor_variance": 0.01,
+        "hypothesis_metrics": {
+          "global_smooth_descriptor": {
+            "mean_lpd": -0.1545,
+            "coverage_90": 0.8667
+          },
+          "regularized_additive_descriptor": {
+            "mean_lpd": -0.3118,
+            "coverage_90": 0.8133
+          },
+          "local_chemical_regime": {
+            "mean_lpd": -0.7367,
+            "coverage_90": 0.8667
+          }
+        },
+        "posterior_winner": "global_smooth_descriptor"
+      }
+    ]
+  }
+}
