@@ -6,7 +6,7 @@
 **Search Space Scope:** 333,333 candidates (333,333 LiFSI Virtual Candidates (scientifically aligned discovery slice))  
 **Requested Search Space:** 333,333  
 **Working Set Size:** 200 candidates  
-**Screening Runtime:** 0.1488 seconds  
+**Screening Runtime:** 0.1518 seconds  
 **Surrogate Model Family:** ExtraTreesRegressor (100 trees, max_depth=8)  
 
 ### Omniscient Latent Oracle Maxima:

@@ -35,6 +35,9 @@ from sklearn.model_selection import KFold, GroupKFold
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 
+sys.path.insert(0, os.path.abspath("."))
+from src.domains.electrolyte.data import generate_candidate_id
+
 DATA_DIR = "data/external/al_anode_free_2025"
 OUT_DIR = "outputs/electrolyte/audit"
 
@@ -1293,12 +1296,26 @@ def main():
         contract_theor_ok = (np.abs(df_derived_saved["theor_capacity"] - 150.0) <= 1e-6).all()
         contract_amt_ok = (np.abs(df_derived_saved["amt_electrolyte"] - 50.0) <= 1e-6).all()
         contract_features_ok = bool(df_derived_saved[SOLV_COLS_11].notna().all().all()) and bool(np.isfinite(df_derived_saved[SOLV_COLS_11].values).all())
-        contract_cids_ok = bool(df_derived_saved["candidate_id"].str.startswith("ELEC_").all())
+        expected_cids = [generate_candidate_id(s, sa) for s, sa in zip(df_derived_saved["solv_comb_sm"], df_derived_saved["canonical_salt"])]
+        contract_cids_ok = bool(
+            df_derived_saved["candidate_id"].str.startswith("ELEC_").all()
+            and (df_derived_saved["candidate_id"].values == expected_cids).all()
+        )
         contract_solvs_in_pool = bool(set(df_derived_saved["solv_comb_sm"]).issubset(pool_solvs))
         contract_pairs_in_pool = all((s, sa) in pool_pairs for s, sa in zip(df_derived_saved["solv_comb_sm"], df_derived_saved["canonical_salt"]))
-        pool_compat_ok = bool(
+        cand_header = pd.read_csv(cand_path, nrows=0).columns.tolist()
+        contract_target_isolated = bool("C_norm_20" not in cand_header and "norm_capacity_3" not in cand_header and "C_norm_20" in df_derived_saved.columns)
+        dyn_b0 = int((df_derived_saved["batch"] == 0).sum())
+        dyn_b1_7 = int((df_derived_saved["batch"] > 0).sum())
+        dyn_unique_solv = int(df_derived_saved["solv_comb_sm"].nunique())
+        contract_counts_ok = bool(
             len(df_derived_saved) == n_comp_deexp
-            and len(df_derived_saved) == 75
+            and len(df_derived_saved) == (dyn_b0 + dyn_b1_7)
+            and dyn_unique_solv == len(df_derived_saved)
+            and len(df_derived_saved) > 0
+        )
+        pool_compat_ok = bool(
+            contract_counts_ok
             and contract_salt_ok
             and contract_conc_ok
             and contract_theor_ok
@@ -1307,6 +1324,7 @@ def main():
             and contract_cids_ok
             and contract_solvs_in_pool
             and contract_pairs_in_pool
+            and contract_target_isolated
         )
     else:
         pool_compat_ok = False

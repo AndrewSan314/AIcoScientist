@@ -8,7 +8,7 @@
   "scope_reduction_reason": null,
   "search_space_slice": "333,333 LiFSI Virtual Candidates",
   "screened_working_set_size": 200,
-  "screening_time_sec": 0.1488,
+  "screening_time_sec": 0.1518,
   "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
   "evaluated_seeds": [
     42,

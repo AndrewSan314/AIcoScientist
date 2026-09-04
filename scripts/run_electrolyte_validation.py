@@ -536,12 +536,17 @@ def main():
     test_ok = (pytest_proc.returncode == 0)
     stdout_last = pytest_proc.stdout.strip().split("\n")[-1] if pytest_proc.stdout else pytest_proc.stderr.strip()
 
+    test_cmd_str = f"{sys.executable} -m pytest tests/test_electrolyte_audit.py tests/test_electrolyte_domain.py tests/test_electrolyte_hypotheses.py tests/test_electrolyte_screening.py tests/test_electrolyte_benchmark.py -q -p no:cacheprovider"
     gates["local_test_gate"] = "PASS" if test_ok else "FAIL"
-    gate_details.append({
+    local_test_evidence = f"Executed pytest on electrolyte suite (exit code {pytest_proc.returncode} in {pytest_sec:.2f}s): {stdout_last}"
+    local_test_record = {
         "gate": "local_test_gate",
         "status": gates["local_test_gate"],
-        "evidence": f"Executed pytest on electrolyte suite (exit code {pytest_proc.returncode} in {pytest_sec:.2f}s): {stdout_last}",
-    })
+        "command": test_cmd_str,
+        "exit_code": pytest_proc.returncode,
+        "evidence": local_test_evidence,
+    }
+    gate_details.append(local_test_record)
 
     gates["external_CI_gate"] = "NOT_EVALUATED_LOCALLY"
     gate_details.append({
@@ -556,6 +561,12 @@ def main():
     validation_result = {
         "validation_verdict": verdict,
         "gates": gates,
+        "local_test_gate": {
+            "status": gates["local_test_gate"],
+            "command": test_cmd_str,
+            "exit_code": pytest_proc.returncode,
+            "evidence": local_test_evidence,
+        },
         "details": gate_details,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }

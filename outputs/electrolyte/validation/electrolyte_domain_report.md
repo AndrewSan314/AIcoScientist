@@ -26,7 +26,7 @@
 | `surrogate_provenance_gate` | **PASS** | Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False. |
 | `cross_domain_gate` | **PASS** | Full lifecycle (initialize -> propose -> execute -> update) verified across all 4 domains: AuIrRh: OK (init=3, proposed=AUIRH_Au-rich_003); Toy: OK (init=3, proposed=BAT_003); A-Lab: OK (init=3, proposed=PG_TEST_01); Electrolyte: OK (init=3, proposed=ELEC_fe0c05021a51f83f). |
 | `report_consistency_gate` | **PASS** | Dynamic sentinel rendering and sensitivity verified; disk report matches JSON (sentinels: h=True, sens=True, s=True, disk=True). |
-| `local_test_gate` | **PASS** | Executed pytest on electrolyte suite (exit code 0 in 16.23s): 59 passed, 42 warnings in 14.93s |
+| `local_test_gate` | **PASS** | Executed pytest on electrolyte suite (exit code 0 in 29.81s): 85 passed, 69 warnings in 28.54s |
 | `external_CI_gate` | **NOT_EVALUATED_LOCALLY** | External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally. |
 
 ---

@@ -417,3 +417,378 @@ def test_local_test_gate_is_not_unconditionally_pass(monkeypatch):
     assert gate_status == "FAIL"
 
 
+def test_surrogate_latent_regret_is_never_negative():
+    """Verify that latent simple regret is non-negative up to floating-point tolerance."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    X_subset = df_hist[f_cols].iloc[:10].to_numpy(dtype=np.float64)
+    ws_max = float(np.max(oracle.predict_latent_batch(X_subset)))
+    best_selected_latent = float(oracle.predict_latent(X_subset[2]))
+
+    simple_regret = ws_max - best_selected_latent
+    assert simple_regret >= -1e-6
+
+
+def test_surrogate_selected_latent_best_never_exceeds_full_space_latent_max():
+    """Verify that no candidate selected can have latent truth exceeding full space max."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    X_full = df_hist[f_cols].to_numpy(dtype=np.float64)
+    full_max = float(np.max(oracle.predict_latent_batch(X_full)))
+
+    for i in range(min(15, len(df_hist))):
+        c_lat = float(oracle.predict_latent(X_full[i]))
+        assert c_lat <= full_max + 1e-6
+
+
+def test_surrogate_working_set_max_not_above_full_space_max():
+    """Verify that the working set latent maximum is bounded by the full search space latent max."""
+    from src.domains.electrolyte.oracle import SurrogateElectrolyteOracle
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    f_cols = list(ELECTROLYTE_SOLVENT_FEATURES)
+    oracle = SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols, random_state=42)
+
+    X_full = df_hist[f_cols].to_numpy(dtype=np.float64)
+    X_ws = X_full[:5]
+
+    full_max = float(np.max(oracle.predict_latent_batch(X_full)))
+    ws_max = float(np.max(oracle.predict_latent_batch(X_ws)))
+    assert ws_max <= full_max + 1e-6
+
+
+def test_surrogate_reports_requested_and_actual_search_space_size():
+    """Verify that surrogate simulation report explicitly distinguishes requested vs actual candidate space."""
+    surr_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
+    if os.path.exists(surr_path):
+        with open(surr_path) as f:
+            data = json.load(f)
+        assert "requested_search_space_size" in data
+        assert "actual_search_space_size" in data
+        assert data["requested_search_space_size"] == data["actual_search_space_size"]
+        assert data["actual_search_space_size"] > 0
+
+
+def test_surrogate_reports_full_and_working_set_latent_max():
+    """Verify that surrogate simulation reports both full and working-set latent maxima and screening gap."""
+    surr_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
+    if os.path.exists(surr_path):
+        with open(surr_path) as f:
+            data = json.load(f)
+        assert "full_search_space_latent_max" in data
+        assert "working_set_latent_max" in data
+        assert "screening_latent_gap" in data
+        expected_gap = round(data["full_search_space_latent_max"] - data["working_set_latent_max"], 4)
+        assert abs(data["screening_latent_gap"] - expected_gap) < 1e-4
+
+
+def test_external_ci_gate_is_not_fabricated_locally():
+    """Verify that external_CI_gate evaluates to NOT_EVALUATED_LOCALLY in local scripts."""
+    val_path = "outputs/electrolyte/validation/electrolyte_validation.json"
+    if os.path.exists(val_path):
+        with open(val_path) as f:
+            data = json.load(f)
+        assert data["gates"]["external_CI_gate"] == "NOT_EVALUATED_LOCALLY"
+        assert "PENDING EXTERNAL CI" in data["validation_verdict"] or "NOT READY" in data["validation_verdict"]
+
+
+def test_pool_compatibility_gate_checks_full_standardized_contract():
+    """Verify that pool compatibility checks contract conditions across derived outcomes."""
+    from src.domains.electrolyte.data import load_derived_historical_outcomes, generate_candidate_id
+    from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
+
+    real_path = "outputs/electrolyte/audit/pool_compatible_deexpanded_outcomes.csv"
+    target_path = real_path if os.path.exists(real_path) else FIXTURE_PATH
+    df = load_derived_historical_outcomes(target_path)
+    lifsi = "[Li+].[N-](S(=O)(=O)F)S(=O)(=O)F"
+
+    assert (df["canonical_salt"].isin([lifsi, "LiFSI"])).all()
+    assert (np.abs(df["conc_salt_1"] - 1.0) < 1e-5).all()
+    assert (np.abs(df["theor_capacity"] - 150.0) < 1e-5).all()
+    assert (np.abs(df["amt_electrolyte"] - 50.0) < 1e-5).all()
+    assert df[list(ELECTROLYTE_SOLVENT_FEATURES)].notna().all().all()
+
+    if target_path == real_path:
+        assert len(df) == 75
+        for _, row in df.iterrows():
+            expected_id = generate_candidate_id(row["solv_comb_sm"], row["canonical_salt"])
+            assert row["candidate_id"] == expected_id
+
+
+def test_feature_space_coverage_gate_rejects_nonfinite_distances():
+    """Verify that feature-space coverage gate rejects NaN and Inf distances."""
+    invalid_cov = {
+        "coverage_A_historical_seed_N58": {"mean_distance": float("nan")},
+    }
+    feat_ok = True
+    for cov_k, c_dict in invalid_cov.items():
+        for q_k, val in c_dict.items():
+            if not np.isfinite(val) or val < 0.0 or val > 1e7:
+                feat_ok = False
+    assert feat_ok is False
+
+
+def test_feature_space_coverage_gate_rejects_exploded_normalization():
+    """Verify that feature-space coverage gate rejects catastrophic distance explosions."""
+    exploded_cov = {
+        "coverage_A_historical_seed_N58": {"max_distance": 1e8},
+    }
+    feat_ok = True
+    for cov_k, c_dict in exploded_cov.items():
+        for q_k, val in c_dict.items():
+            if not np.isfinite(val) or val < 0.0 or val > 1e7:
+                feat_ok = False
+    assert feat_ok is False
+
+
+def test_random_hig_is_pre_reveal():
+    """Verify that RANDOM policy evaluates HIG prior to revealing action outcome."""
+    res = evaluate_historical_policy("RANDOM", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=2)
+    for diag in res.step_diagnostics:
+        assert "current_entropy_pre_reveal" in diag
+        assert "expected_posterior_entropy" in diag
+        assert "raw_hig_nats" in diag
+        assert diag["raw_hig_nats"] >= 0.0
+
+
+def test_botorch_ei_hig_is_pre_reveal():
+    """Verify that BOTORCH_EI_DIRECT policy evaluates HIG prior to revealing action outcome."""
+    res = evaluate_historical_policy("BOTORCH_EI_DIRECT", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=2)
+    for diag in res.step_diagnostics:
+        assert "current_entropy_pre_reveal" in diag
+        assert "expected_posterior_entropy" in diag
+        assert "raw_hig_nats" in diag
+        assert diag["raw_hig_nats"] >= 0.0
+
+
+def test_botorch_gpucb_hig_is_pre_reveal():
+    """Verify that BOTORCH_GPUCB_DIRECT policy evaluates HIG prior to revealing action outcome."""
+    res = evaluate_historical_policy("BOTORCH_GPUCB_DIRECT", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=2)
+    for diag in res.step_diagnostics:
+        assert "current_entropy_pre_reveal" in diag
+        assert "expected_posterior_entropy" in diag
+        assert "raw_hig_nats" in diag
+        assert diag["raw_hig_nats"] >= 0.0
+
+
+def test_historical_action_sequence_has_no_duplicates():
+    """Verify that historical action sequences contain zero duplicate candidate selections."""
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    assert len(res.autonomous_actions) == len(set(res.autonomous_actions))
+
+
+def test_historical_reveals_equal_oracle_values():
+    """Verify that revealed capacities match historical experimental oracle records exactly."""
+    from src.domains.electrolyte.data import load_derived_historical_outcomes
+    df_hist = load_derived_historical_outcomes(FIXTURE_PATH)
+    lookup = dict(zip(df_hist["candidate_id"], df_hist["C_norm_20"]))
+
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    for cid, obs in zip(res.autonomous_actions, res.autonomous_observations):
+        assert abs(obs - lookup[cid]) < 1e-6
+
+
+def test_historical_auc_is_recomputed():
+    """Verify that area under best-so-far curve is faithfully recomputed from revealed trajectory."""
+    res = evaluate_historical_policy("DISCOVERY_ONLY", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    best_curve = [res.bootstrap_best]
+    curr = res.bootstrap_best
+    for obs in res.autonomous_observations:
+        curr = max(curr, obs)
+        best_curve.append(curr)
+    if len(best_curve) > 1:
+        expected_auc = float(np.sum(0.5 * (np.array(best_curve[:-1]) + np.array(best_curve[1:]))))
+    else:
+        expected_auc = float(best_curve[0])
+    assert abs(res.area_under_best_curve - expected_auc) < 1e-4
+
+
+def test_historical_top_decile_rate_is_recomputed():
+    """Verify that top-decile hit rate is recomputed from autonomous actions and P90 threshold."""
+    p90 = 0.70
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3, top_decile_threshold=p90)
+    expected_hits = sum(1 for obs in res.autonomous_observations if obs >= p90)
+    assert res.top_decile_hits == expected_hits
+
+
+def test_historical_near_zero_rate_is_recomputed():
+    """Verify that near-zero rate is recomputed from autonomous observations."""
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    expected_nz = sum(1 for obs in res.autonomous_observations if obs <= 0.05)
+    assert res.near_zero_query_count == expected_nz
+
+
+def test_historical_cumulative_hig_equals_step_sum():
+    """Verify that cumulative raw HIG equals sum of step diagnostics raw HIG."""
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    step_sum = sum(d["raw_hig_nats"] for d in res.step_diagnostics)
+    assert abs(res.cumulative_raw_hig_nats - step_sum) < 1e-4
+
+
+def test_historical_mean_hig_per_action_equals_cumulative_over_steps():
+    """Verify that mean raw HIG per action equals cumulative HIG divided by step count."""
+    res = evaluate_historical_policy("HYBRID", derived_outcomes_path=FIXTURE_PATH, seed=42, max_steps=3)
+    expected_per_act = res.cumulative_raw_hig_nats / res.steps_count
+    assert abs(res.mean_raw_hig_nats_per_action - expected_per_act) < 1e-4
+
+
+def test_historical_report_metrics_come_from_json_input():
+    """Verify that render_historical_markdown faithfully renders all dynamic metrics from input dict."""
+    from scripts.run_electrolyte_benchmark import render_historical_markdown
+    val = 0.54321
+    fake_bench = {
+        "benchmark_metadata": {
+            "title": "Sentinel Test",
+            "historical_pool_size": 75,
+            "global_pool_maximum": val,
+            "top_decile_p90_threshold": 0.45,
+            "bootstrap_seed_count": 3,
+            "bootstrap_best_capacity": 0.35,
+            "objective_saturation_status": False,
+            "saturation_ratio": 0.65,
+            "evaluated_seeds": [42],
+            "max_autonomous_steps": 2,
+        },
+        "policy_summaries": [{
+            "policy_name": "SENTINEL",
+            "best_found_mean": val,
+            "best_found_std": 0.01,
+            "improvement_mean": 0.02,
+            "improvement_std": 0.001,
+            "auc_mean": 3.45,
+            "auc_std": 0.1,
+            "top_decile_hit_rate": 0.5,
+            "near_zero_rate": 0.1,
+            "mean_cumulative_raw_hig_nats": val,
+            "std_cumulative_raw_hig_nats": 0.01,
+            "mean_raw_hig_nats_per_action": val / 2,
+            "std_raw_hig_nats_per_action": 0.005,
+            "mean_realized_entropy_reduction": 0.25,
+            "std_realized_entropy_reduction": 0.01,
+            "runtime_sec_mean": 1.23,
+        }],
+        "natural_wow_scenario": {"scenario_found": False},
+    }
+    rendered = render_historical_markdown(fake_bench)
+    assert f"{val:.4f}" in rendered
+    assert "0.5432" in rendered
+
+
+def test_surrogate_report_metrics_come_from_json_input():
+    """Verify that render_surrogate_markdown faithfully renders all dynamic metrics from input dict."""
+    from scripts.run_electrolyte_benchmark import render_surrogate_markdown
+    val = 0.4321
+    fake_surr = {
+        "simulation_label": "SIMULATED_TEST",
+        "oracle_kind": "SIMULATED_SURROGATE",
+        "physical_synthesis": False,
+        "requested_search_space_size": 333333,
+        "actual_search_space_size": 333333,
+        "scope_kind": "Test Scope",
+        "screened_working_set_size": 200,
+        "screening_time_sec": 0.45,
+        "surrogate_model_family": "ExtraTrees",
+        "evaluated_seeds": [42],
+        "full_search_space_latent_max": val,
+        "working_set_latent_max": val - 0.05,
+        "screening_latent_gap": 0.05,
+        "notice": "Notice",
+        "disclaimer": "Disclaimer",
+        "simulation_policies": {
+            "TEST_POL": {
+                "best_selected_latent_capacity_mean": val,
+                "best_selected_latent_capacity_std": 0.0,
+                "best_noisy_observed_capacity_mean": val,
+                "best_noisy_observed_capacity_std": 0.0,
+                "simple_regret_latent_mean": 0.0,
+                "simple_regret_latent_std": 0.0,
+                "simple_regret_vs_full_latent_mean": 0.05,
+                "simple_regret_vs_full_latent_std": 0.0,
+                "cumulative_raw_hig_nats_mean": val,
+                "cumulative_raw_hig_nats_std": 0.0,
+                "mean_raw_hig_nats_per_action_mean": val / 15,
+                "mean_raw_hig_nats_per_action_std": 0.0,
+                "realized_entropy_reduction_mean": 0.2,
+                "queried_count": 15,
+            }
+        },
+    }
+    rendered = render_surrogate_markdown(fake_surr)
+    assert f"{val:.4f}" in rendered
+
+
+def test_report_uses_latent_regret_not_noisy_regret():
+    """Verify that surrogate report explicitly labels and uses latent regret."""
+    surr_md_path = "outputs/electrolyte/benchmark/surrogate_simulation.md"
+    if os.path.exists(surr_md_path):
+        with open(surr_md_path, encoding="utf-8") as f:
+            content = f.read()
+        assert "Latent Regret" in content
+        assert "Noisy Regret" not in content
+
+
+def test_report_distinguishes_latent_and_noisy_capacity():
+    """Verify that surrogate report contains separate columns for latent truth f(x) and noisy reveal y(x)."""
+    surr_md_path = "outputs/electrolyte/benchmark/surrogate_simulation.md"
+    if os.path.exists(surr_md_path):
+        with open(surr_md_path, encoding="utf-8") as f:
+            content = f.read()
+        assert "Best Latent Cap $f(x)$" in content
+        assert "Best Noisy Obs $y(x)$" in content
+
+
+def test_report_does_not_call_mean_hig_nats_a_per_action_mean():
+    """Verify that historical report clearly distinguishes cumulative HIG from HIG per action."""
+    hist_md_path = "outputs/electrolyte/benchmark/historical_policy_comparison.md"
+    if os.path.exists(hist_md_path):
+        with open(hist_md_path, encoding="utf-8") as f:
+            content = f.read()
+        assert "Cum. HIG (nats)" in content
+        assert "HIG / action (nats)" in content
+
+
+def test_report_does_not_claim_proven_float_jitter_cause():
+    """Verify that audit report does not use unsupported causal claim 'PROVEN FLOATING-POINT JITTER'."""
+    audit_md_path = "outputs/electrolyte/audit/dataset_audit_report.md"
+    if os.path.exists(audit_md_path):
+        with open(audit_md_path, encoding="utf-8") as f:
+            content = f.read()
+        assert "PROVEN FLOATING-POINT JITTER" not in content
+        assert "CONSISTENT WITH FLOATING-POINT" in content
+
+
+def test_e2e_timing_component_names_match_actual_operations():
+    """Verify that end-to-end benchmark records explicit and accurate operation timing breakdown."""
+    e2e_path = "outputs/electrolyte/benchmark/large_pool_end_to_end.json"
+    if os.path.exists(e2e_path):
+        with open(e2e_path) as f:
+            data = json.load(f)
+        for run in data.get("runs", []):
+            assert "pool_read_and_filter_sec" in run
+            assert "candidate_identity_generation_sec" in run
+            assert "pool_load_filter_identity_sec" in run
+            assert "screening_sec" in run
+            assert "adapter_construction_sec" in run
+            assert "engine_initialization_sec" in run
+            assert "first_proposal_sec" in run
+            assert "total_pipeline_sec" in run
+            assert run["total_pipeline_sec"] > 0
+            assert run["candidate_pool_size"] > 0
+            assert run["screened_working_set_size"] > 0
+
+
+

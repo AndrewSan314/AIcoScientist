@@ -98,9 +98,9 @@ def render_historical_markdown(bench_data: dict) -> str:
 **Dataset:** `AmanchukwuLab/AL-anode-free` (Pool-Compatible Historical Outcomes, N={meta.get('historical_pool_size', 0)})  
 **Evaluation Scope:** Retrospective replay across deterministic seeds ({eval_seeds_str}).  
 **Initial Evidence:** Batch 0 compatible seed cells (N={meta.get('bootstrap_seed_count', 0)}, Best $C_{{\\text{{norm}}}}^{{20}} = {meta.get('bootstrap_best_capacity', 0.0):.4f}$).  
-**Global Historical Pool Maximum:** $C_{{\text{{norm}}}}^{{20}} = {meta.get('global_pool_maximum', 0.0):.4f}$  
+**Global Historical Pool Maximum:** $C_{{\\text{{norm}}}}^{{20}} = {meta.get('global_pool_maximum', 0.0):.4f}$  
 **Objective Saturation Status:** `{meta.get('objective_saturation_status', False)}` (Saturation ratio: {meta.get('saturation_ratio', 0.0):.4f})  
-**Top-Decile Threshold ($P_{{90}}$):** $C_{{\text{{norm}}}}^{{20}} \ge {meta.get('top_decile_p90_threshold', 0.0):.4f}$  
+**Top-Decile Threshold ($P_{{90}}$):** $C_{{\\text{{norm}}}}^{{20}} \\ge {meta.get('top_decile_p90_threshold', 0.0):.4f}$  
 
 ---
 
@@ -556,6 +556,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--only-surrogate", action="store_true", help="Run only Benchmark 6 (surrogate simulation)")
+    parser.add_argument("--skip-historical", action="store_true", help="Skip Benchmark 1 (historical benchmark)")
     args = parser.parse_args()
 
     print("=" * 80)
@@ -563,7 +564,7 @@ def main():
     print("=" * 80)
     os.makedirs(OUT_BENCHMARK_DIR, exist_ok=True)
 
-    if not args.only_surrogate:
+    if not args.only_surrogate and not args.skip_historical:
         # 1. Historical Benchmark (Phases G, 3, 4, 5, 10)
         print("\n[BENCHMARK 1] Running Retrospective Finite Historical Benchmark (5 Seeds, 6 Policies)...")
         hist_results = run_comprehensive_historical_benchmark(

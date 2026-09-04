@@ -18,6 +18,12 @@
     "local_test_gate": "PASS",
     "external_CI_gate": "NOT_EVALUATED_LOCALLY"
   },
+  "local_test_gate": {
+    "status": "PASS",
+    "command": "F:\\AI\\GTIP\\.venv\\Scripts\\python.exe -m pytest tests/test_electrolyte_audit.py tests/test_electrolyte_domain.py tests/test_electrolyte_hypotheses.py tests/test_electrolyte_screening.py tests/test_electrolyte_benchmark.py -q -p no:cacheprovider",
+    "exit_code": 0,
+    "evidence": "Executed pytest on electrolyte suite (exit code 0 in 29.81s): 85 passed, 69 warnings in 28.54s"
+  },
   "details": [
     {
       "gate": "audit_readiness_gate",
@@ -92,7 +98,9 @@
     {
       "gate": "local_test_gate",
       "status": "PASS",
-      "evidence": "Executed pytest on electrolyte suite (exit code 0 in 16.23s): 59 passed, 42 warnings in 14.93s"
+      "command": "F:\\AI\\GTIP\\.venv\\Scripts\\python.exe -m pytest tests/test_electrolyte_audit.py tests/test_electrolyte_domain.py tests/test_electrolyte_hypotheses.py tests/test_electrolyte_screening.py tests/test_electrolyte_benchmark.py -q -p no:cacheprovider",
+      "exit_code": 0,
+      "evidence": "Executed pytest on electrolyte suite (exit code 0 in 29.81s): 85 passed, 69 warnings in 28.54s"
     },
     {
       "gate": "external_CI_gate",
@@ -100,5 +108,5 @@
       "evidence": "External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally."
     }
   ],
-  "timestamp": "2026-09-03T17:46:20Z"
+  "timestamp": "2026-09-04T08:37:42Z"
 }
