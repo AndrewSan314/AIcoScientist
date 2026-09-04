@@ -12,6 +12,7 @@
   "screening_evidence_mode": "HISTORICAL_EVIDENCE",
   "historical_observation_count": 75,
   "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
+  "MODEL_COUPLING_LIMITATION": "The surrogate oracle is a frozen univariate target model: it does not model coupling between multiple measured modalities or causal process structure.",
   "evaluated_seeds": [
     42,
     101,

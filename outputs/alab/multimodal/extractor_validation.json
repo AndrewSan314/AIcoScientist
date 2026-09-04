@@ -1,0 +1,302 @@
+{
+  "status": "PASS",
+  "cases": {
+    "XRD": {
+      "extractor": "aicoscientist_xrd_descriptor_fallback",
+      "observable_count": 3,
+      "observables": [
+        {
+          "observable_id": "XRD:fixture-1:crystallinity",
+          "candidate_id": "fixture-1",
+          "modality": "XRD",
+          "name": "crystallinity",
+          "value": 0.3646422752776584,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://xrd",
+          "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://xrd",
+            "raw_artifact_sha256": "43e7d6e1008f104e2098a24799a2aa365c6f839bcdd9b52dc8d21940d5c0df83",
+            "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "normalization": "min_shift_then_peak_scale"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "XRD:fixture-1:peak_position_index",
+          "candidate_id": "fixture-1",
+          "modality": "XRD",
+          "name": "peak_position_index",
+          "value": 0.5,
+          "uncertainty": 0.2,
+          "units": null,
+          "raw_artifact_ref": "fixture://xrd",
+          "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://xrd",
+            "raw_artifact_sha256": "43e7d6e1008f104e2098a24799a2aa365c6f839bcdd9b52dc8d21940d5c0df83",
+            "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "normalization": "min_shift_then_peak_scale"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "XRD:fixture-1:FWHM",
+          "candidate_id": "fixture-1",
+          "modality": "XRD",
+          "name": "FWHM",
+          "value": 0.0,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://xrd",
+          "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://xrd",
+            "raw_artifact_sha256": "43e7d6e1008f104e2098a24799a2aa365c6f839bcdd9b52dc8d21940d5c0df83",
+            "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "normalization": "min_shift_then_peak_scale"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        }
+      ],
+      "provenance_complete": true
+    },
+    "SEM": {
+      "extractor": "atomai_optional_sem_cpu_fallback",
+      "observable_count": 4,
+      "observables": [
+        {
+          "observable_id": "SEM:fixture-1:grain_size_mean",
+          "candidate_id": "fixture-1",
+          "modality": "SEM",
+          "name": "grain_size_mean",
+          "value": 9.000000000000002,
+          "uncertainty": 0.2,
+          "units": null,
+          "raw_artifact_ref": "fixture://sem",
+          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://sem",
+            "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
+            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "threshold": "median"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "SEM:fixture-1:grain_size_std",
+          "candidate_id": "fixture-1",
+          "modality": "SEM",
+          "name": "grain_size_std",
+          "value": 0.29157646512850627,
+          "uncertainty": 0.1,
+          "units": null,
+          "raw_artifact_ref": "fixture://sem",
+          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://sem",
+            "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
+            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "threshold": "median"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "SEM:fixture-1:porosity",
+          "candidate_id": "fixture-1",
+          "modality": "SEM",
+          "name": "porosity",
+          "value": 0.5,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://sem",
+          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://sem",
+            "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
+            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "threshold": "median"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "SEM:fixture-1:agglomeration",
+          "candidate_id": "fixture-1",
+          "modality": "SEM",
+          "name": "agglomeration",
+          "value": 0.5,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://sem",
+          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://sem",
+            "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
+            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "threshold": "median"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        }
+      ],
+      "provenance_complete": true
+    },
+    "EDS": {
+      "extractor": "atomai_optional_eds_cpu_fallback",
+      "observable_count": 4,
+      "observables": [
+        {
+          "observable_id": "EDS:fixture-1:composition_error",
+          "candidate_id": "fixture-1",
+          "modality": "EDS",
+          "name": "composition_error",
+          "value": 0.0,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://eds",
+          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://eds",
+            "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
+            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "rows": 2,
+              "columns": 2
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "EDS:fixture-1:spatial_variance",
+          "candidate_id": "fixture-1",
+          "modality": "EDS",
+          "name": "spatial_variance",
+          "value": 0.0006250000000000003,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://eds",
+          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://eds",
+            "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
+            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "rows": 2,
+              "columns": 2
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "EDS:fixture-1:segregation_index",
+          "candidate_id": "fixture-1",
+          "modality": "EDS",
+          "name": "segregation_index",
+          "value": 0.05012531328320803,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://eds",
+          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://eds",
+            "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
+            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "rows": 2,
+              "columns": 2
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        },
+        {
+          "observable_id": "EDS:fixture-1:element_colocalization",
+          "candidate_id": "fixture-1",
+          "modality": "EDS",
+          "name": "element_colocalization",
+          "value": 0.949874686716792,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://eds",
+          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://eds",
+            "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
+            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "backend": "classical_cpu",
+              "rows": 2,
+              "columns": 2
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar"
+        }
+      ],
+      "provenance_complete": true
+    }
+  }
+}

@@ -1,0 +1,418 @@
+{
+  "status": "PASS",
+  "true_hypothesis": "H1_PHASE_PURITY_LIMITED",
+  "final_beliefs": {
+    "H1_PHASE_PURITY_LIMITED": 0.7641195711086851,
+    "H2_COMPOSITION_HOMOGENEITY_LIMITED": 3.4739740649665858e-06,
+    "H3_MORPHOLOGY_KINETICS_LIMITED": 0.23587695491725003
+  },
+  "entropy_nats": 0.5463268025600467,
+  "events": [
+    {
+      "action": {
+        "action_id": "EDS_controlled-0",
+        "candidate_id": "controlled-0",
+        "action_type": "EDS",
+        "estimated_cost": 1.5,
+        "requested_at_step": 1,
+        "metadata": {
+          "cost_units": "SIMULATED_NORMALIZED_COST",
+          "prerequisites": []
+        }
+      },
+      "why": {
+        "expected_hig_nats": 0.6973009641069019,
+        "discovery_utility": 0.0,
+        "normalized_cost": 0.75,
+        "dominant_hypothesis_disagreement": [
+          "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+          "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+        ],
+        "current_entropy_nats": 1.0986122886681096,
+        "falsification_signatures": {
+          "H1_PHASE_PURITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "high target phase fraction",
+              "low impurity signal",
+              "successful outcome"
+            ],
+            "strongly_falsifying_patterns": [
+              "high impurity despite predicted purity",
+              "failure with high refined target fraction"
+            ],
+            "ambiguous_patterns": [
+              "near-nominal EDS composition without phase assignment"
+            ]
+          },
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "low EDS spatial variance",
+              "near-nominal composition",
+              "outcome tracks homogeneity"
+            ],
+            "strongly_falsifying_patterns": [
+              "uniform EDS map with failed outcome",
+              "high segregation predicted but absent"
+            ],
+            "ambiguous_patterns": [
+              "single-point EDS composition"
+            ]
+          },
+          "H3_MORPHOLOGY_KINETICS_LIMITED": {
+            "strongly_supporting_patterns": [
+              "SEM morphology tracks outcome",
+              "process window predicts completion",
+              "phase identity remains similar"
+            ],
+            "strongly_falsifying_patterns": [
+              "morphology changes without outcome effect",
+              "outcome follows phase purity while process is held fixed"
+            ],
+            "ambiguous_patterns": [
+              "low-resolution SEM with no process metadata"
+            ]
+          }
+        }
+      },
+      "measurement": {
+        "observable_id": "controlled:0:EDS_controlled-0",
+        "candidate_id": "controlled-0",
+        "modality": "EDS",
+        "name": "controlled_reveal",
+        "value": [
+          0.42467318691377537,
+          0.7543895607166919,
+          0.09594587868207294,
+          0.6778707652579316
+        ],
+        "uncertainty": [
+          0.18973665961010278,
+          0.232379000772445,
+          0.232379000772445,
+          0.232379000772445
+        ],
+        "units": null,
+        "raw_artifact_ref": "controlled://EDS_controlled-0",
+        "extractor_name": "controlled_world",
+        "extractor_version": "1.0.0",
+        "provenance": {
+          "world": "controlled",
+          "true_hypothesis": "H1_PHASE_PURITY_LIMITED"
+        },
+        "timestamp": null,
+        "observable_type": "vector"
+      },
+      "beliefs_after": {
+        "H1_PHASE_PURITY_LIMITED": 0.5121242196687961,
+        "H2_COMPOSITION_HOMOGENEITY_LIMITED": 2.6048599896356324e-06,
+        "H3_MORPHOLOGY_KINETICS_LIMITED": 0.4878731754712142
+      }
+    },
+    {
+      "action": {
+        "action_id": "XRD_controlled-11",
+        "candidate_id": "controlled-11",
+        "action_type": "XRD",
+        "estimated_cost": 1.0,
+        "requested_at_step": 2,
+        "metadata": {
+          "cost_units": "SIMULATED_NORMALIZED_COST",
+          "prerequisites": []
+        }
+      },
+      "why": {
+        "expected_hig_nats": 0.46122908450704025,
+        "discovery_utility": 0.0,
+        "normalized_cost": 0.5,
+        "dominant_hypothesis_disagreement": [
+          "H1_PHASE_PURITY_LIMITED predicts mean=[0.2647, 0.7353, 0.0735, 0.5677]",
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.035, 0.41]",
+          "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.1, 0.385]"
+        ],
+        "current_entropy_nats": 0.6928873873293998,
+        "falsification_signatures": {
+          "H1_PHASE_PURITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "high target phase fraction",
+              "low impurity signal",
+              "successful outcome"
+            ],
+            "strongly_falsifying_patterns": [
+              "high impurity despite predicted purity",
+              "failure with high refined target fraction"
+            ],
+            "ambiguous_patterns": [
+              "near-nominal EDS composition without phase assignment"
+            ]
+          },
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "low EDS spatial variance",
+              "near-nominal composition",
+              "outcome tracks homogeneity"
+            ],
+            "strongly_falsifying_patterns": [
+              "uniform EDS map with failed outcome",
+              "high segregation predicted but absent"
+            ],
+            "ambiguous_patterns": [
+              "single-point EDS composition"
+            ]
+          },
+          "H3_MORPHOLOGY_KINETICS_LIMITED": {
+            "strongly_supporting_patterns": [
+              "SEM morphology tracks outcome",
+              "process window predicts completion",
+              "phase identity remains similar"
+            ],
+            "strongly_falsifying_patterns": [
+              "morphology changes without outcome effect",
+              "outcome follows phase purity while process is held fixed"
+            ],
+            "ambiguous_patterns": [
+              "low-resolution SEM with no process metadata"
+            ]
+          }
+        }
+      },
+      "measurement": {
+        "observable_id": "controlled:1:XRD_controlled-11",
+        "candidate_id": "controlled-11",
+        "modality": "XRD",
+        "name": "controlled_reveal",
+        "value": [
+          0.6102596407053087,
+          0.35147337902904635,
+          -0.22416283026721417,
+          0.46921647976986885
+        ],
+        "uncertainty": [
+          0.18973665961010278,
+          0.232379000772445,
+          0.232379000772445,
+          0.232379000772445
+        ],
+        "units": null,
+        "raw_artifact_ref": "controlled://XRD_controlled-11",
+        "extractor_name": "controlled_world",
+        "extractor_version": "1.0.0",
+        "provenance": {
+          "world": "controlled",
+          "true_hypothesis": "H1_PHASE_PURITY_LIMITED"
+        },
+        "timestamp": null,
+        "observable_type": "vector"
+      },
+      "beliefs_after": {
+        "H1_PHASE_PURITY_LIMITED": 0.06115328646335905,
+        "H2_COMPOSITION_HOMOGENEITY_LIMITED": 5.94463742838619e-06,
+        "H3_MORPHOLOGY_KINETICS_LIMITED": 0.9388407688992125
+      }
+    },
+    {
+      "action": {
+        "action_id": "REFINEMENT_controlled-11",
+        "candidate_id": "controlled-11",
+        "action_type": "REFINEMENT",
+        "estimated_cost": 0.5,
+        "requested_at_step": 3,
+        "metadata": {
+          "cost_units": "SIMULATED_NORMALIZED_COST",
+          "prerequisites": [
+            "XRD"
+          ]
+        }
+      },
+      "why": {
+        "expected_hig_nats": 0.1021923656845253,
+        "discovery_utility": 0.0,
+        "normalized_cost": 0.25,
+        "dominant_hypothesis_disagreement": [
+          "H1_PHASE_PURITY_LIMITED predicts mean=[0.2647, 0.7353, 0.7353, 0.6147]",
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+          "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.6, 0.359]"
+        ],
+        "current_entropy_nats": 0.23020621102576902,
+        "falsification_signatures": {
+          "H1_PHASE_PURITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "high target phase fraction",
+              "low impurity signal",
+              "successful outcome"
+            ],
+            "strongly_falsifying_patterns": [
+              "high impurity despite predicted purity",
+              "failure with high refined target fraction"
+            ],
+            "ambiguous_patterns": [
+              "near-nominal EDS composition without phase assignment"
+            ]
+          },
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "low EDS spatial variance",
+              "near-nominal composition",
+              "outcome tracks homogeneity"
+            ],
+            "strongly_falsifying_patterns": [
+              "uniform EDS map with failed outcome",
+              "high segregation predicted but absent"
+            ],
+            "ambiguous_patterns": [
+              "single-point EDS composition"
+            ]
+          },
+          "H3_MORPHOLOGY_KINETICS_LIMITED": {
+            "strongly_supporting_patterns": [
+              "SEM morphology tracks outcome",
+              "process window predicts completion",
+              "phase identity remains similar"
+            ],
+            "strongly_falsifying_patterns": [
+              "morphology changes without outcome effect",
+              "outcome follows phase purity while process is held fixed"
+            ],
+            "ambiguous_patterns": [
+              "low-resolution SEM with no process metadata"
+            ]
+          }
+        }
+      },
+      "measurement": {
+        "observable_id": "controlled:2:REFINEMENT_controlled-11",
+        "candidate_id": "controlled-11",
+        "modality": "REFINEMENT",
+        "name": "controlled_reveal",
+        "value": [
+          0.1659177741133998,
+          0.9241389946742834,
+          0.7914641636186048,
+          0.2022513537511439
+        ],
+        "uncertainty": [
+          0.18973665961010278,
+          0.232379000772445,
+          0.232379000772445,
+          0.232379000772445
+        ],
+        "units": null,
+        "raw_artifact_ref": "controlled://REFINEMENT_controlled-11",
+        "extractor_name": "controlled_world",
+        "extractor_version": "1.0.0",
+        "provenance": {
+          "world": "controlled",
+          "true_hypothesis": "H1_PHASE_PURITY_LIMITED"
+        },
+        "timestamp": null,
+        "observable_type": "vector"
+      },
+      "beliefs_after": {
+        "H1_PHASE_PURITY_LIMITED": 0.763260705112553,
+        "H2_COMPOSITION_HOMOGENEITY_LIMITED": 3.980266500486079e-06,
+        "H3_MORPHOLOGY_KINETICS_LIMITED": 0.23673531462094646
+      }
+    },
+    {
+      "action": {
+        "action_id": "XRD_controlled-2",
+        "candidate_id": "controlled-2",
+        "action_type": "XRD",
+        "estimated_cost": 1.0,
+        "requested_at_step": 4,
+        "metadata": {
+          "cost_units": "SIMULATED_NORMALIZED_COST",
+          "prerequisites": []
+        }
+      },
+      "why": {
+        "expected_hig_nats": 0.28462366910306924,
+        "discovery_utility": 0.0,
+        "normalized_cost": 0.5,
+        "dominant_hypothesis_disagreement": [
+          "H1_PHASE_PURITY_LIMITED predicts mean=[0.3581, 0.6419, 0.0642, 0.521]",
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.035, 0.41]",
+          "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.1, 0.385]"
+        ],
+        "current_entropy_nats": 0.5473398805774652,
+        "falsification_signatures": {
+          "H1_PHASE_PURITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "high target phase fraction",
+              "low impurity signal",
+              "successful outcome"
+            ],
+            "strongly_falsifying_patterns": [
+              "high impurity despite predicted purity",
+              "failure with high refined target fraction"
+            ],
+            "ambiguous_patterns": [
+              "near-nominal EDS composition without phase assignment"
+            ]
+          },
+          "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+            "strongly_supporting_patterns": [
+              "low EDS spatial variance",
+              "near-nominal composition",
+              "outcome tracks homogeneity"
+            ],
+            "strongly_falsifying_patterns": [
+              "uniform EDS map with failed outcome",
+              "high segregation predicted but absent"
+            ],
+            "ambiguous_patterns": [
+              "single-point EDS composition"
+            ]
+          },
+          "H3_MORPHOLOGY_KINETICS_LIMITED": {
+            "strongly_supporting_patterns": [
+              "SEM morphology tracks outcome",
+              "process window predicts completion",
+              "phase identity remains similar"
+            ],
+            "strongly_falsifying_patterns": [
+              "morphology changes without outcome effect",
+              "outcome follows phase purity while process is held fixed"
+            ],
+            "ambiguous_patterns": [
+              "low-resolution SEM with no process metadata"
+            ]
+          }
+        }
+      },
+      "measurement": {
+        "observable_id": "controlled:3:XRD_controlled-2",
+        "candidate_id": "controlled-2",
+        "modality": "XRD",
+        "name": "controlled_reveal",
+        "value": [
+          0.45587483984246113,
+          0.5077094987813001,
+          0.36034651164325215,
+          0.3751205395516661
+        ],
+        "uncertainty": [
+          0.18973665961010278,
+          0.232379000772445,
+          0.232379000772445,
+          0.232379000772445
+        ],
+        "units": null,
+        "raw_artifact_ref": "controlled://XRD_controlled-2",
+        "extractor_name": "controlled_world",
+        "extractor_version": "1.0.0",
+        "provenance": {
+          "world": "controlled",
+          "true_hypothesis": "H1_PHASE_PURITY_LIMITED"
+        },
+        "timestamp": null,
+        "observable_type": "vector"
+      },
+      "beliefs_after": {
+        "H1_PHASE_PURITY_LIMITED": 0.7641195711086851,
+        "H2_COMPOSITION_HOMOGENEITY_LIMITED": 3.4739740649665858e-06,
+        "H3_MORPHOLOGY_KINETICS_LIMITED": 0.23587695491725003
+      }
+    }
+  ]
+}

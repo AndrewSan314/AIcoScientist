@@ -1,0 +1,74 @@
+{
+  "stage1_config": {
+    "working_set_size": 200,
+    "evidence_mode": "HISTORICAL_EVIDENCE",
+    "discovery_scorer": "ensemble",
+    "diversity_reservoir_size": 20000,
+    "random_state": 42
+  },
+  "worlds": {
+    "EXTRATREES": {
+      "candidate_count": 333333,
+      "working_set_size": 200,
+      "full_world_max": 0.7885831013174641,
+      "working_set_max": 0.7885831013174641,
+      "screening_gap": 0.0,
+      "working_set_p90_recovery": 0.47,
+      "screening_metadata": {
+        "evidence_mode": "HISTORICAL_EVIDENCE",
+        "working_set_size": 200,
+        "discovery_scorer": "ensemble",
+        "diversity_reservoir_size": 20000,
+        "diversity_algorithm": "iterative_greedy_farthest_point_reservoir",
+        "tranche_counts": {
+          "discovery": 80,
+          "exploration": 60,
+          "diversity": 40,
+          "random": 20
+        }
+      }
+    },
+    "GP": {
+      "candidate_count": 333333,
+      "working_set_size": 200,
+      "full_world_max": 0.8275604616372012,
+      "working_set_max": 0.8275604616372012,
+      "screening_gap": 0.0,
+      "working_set_p90_recovery": 0.285,
+      "screening_metadata": {
+        "evidence_mode": "HISTORICAL_EVIDENCE",
+        "working_set_size": 200,
+        "discovery_scorer": "ensemble",
+        "diversity_reservoir_size": 20000,
+        "diversity_algorithm": "iterative_greedy_farthest_point_reservoir",
+        "tranche_counts": {
+          "discovery": 80,
+          "exploration": 60,
+          "diversity": 40,
+          "random": 20
+        }
+      }
+    },
+    "NONLINEAR_SYNTHETIC": {
+      "candidate_count": 333333,
+      "working_set_size": 200,
+      "full_world_max": 1.637295726310594,
+      "working_set_max": 0.8116444836743776,
+      "screening_gap": 0.8256512426362165,
+      "working_set_p90_recovery": 0.045,
+      "screening_metadata": {
+        "evidence_mode": "HISTORICAL_EVIDENCE",
+        "working_set_size": 200,
+        "discovery_scorer": "ensemble",
+        "diversity_reservoir_size": 20000,
+        "diversity_algorithm": "iterative_greedy_farthest_point_reservoir",
+        "tranche_counts": {
+          "discovery": 80,
+          "exploration": 60,
+          "diversity": 40,
+          "random": 20
+        }
+      }
+    }
+  }
+}

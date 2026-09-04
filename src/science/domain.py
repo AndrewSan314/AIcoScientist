@@ -64,6 +64,11 @@ class ModalityDefinition:
     objective_names: tuple[str, ...] = ()
     observation_key: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    duration: float | None = None
+    required_existing_sample_state: tuple[str, ...] = ()
+    destructive: bool = False
+    expected_observable_types: tuple[str, ...] = ()
+    cost_units: str = "SIMULATED_NORMALIZED_COST"
 
     def measures_objective(self, obj_name: str | None = None) -> bool:
         """Returns True if this modality measures an optimization/discovery objective."""
@@ -79,6 +84,11 @@ class ModalityDefinition:
             "requires": list(self.requires),
             "objective_names": list(self.objective_names),
             "observation_key": self.observation_key,
+            "duration": self.duration,
+            "required_existing_sample_state": list(self.required_existing_sample_state),
+            "destructive": self.destructive,
+            "expected_observable_types": list(self.expected_observable_types),
+            "cost_units": self.cost_units,
             "metadata": dict(self.metadata),
         }
 
@@ -91,6 +101,11 @@ class ModalityDefinition:
             requires=tuple(str(r) for r in data.get("requires", ())),
             objective_names=tuple(str(o) for o in data.get("objective_names", ())),
             observation_key=data.get("observation_key"),
+            duration=float(data["duration"]) if data.get("duration") is not None else None,
+            required_existing_sample_state=tuple(str(s) for s in data.get("required_existing_sample_state", ())),
+            destructive=bool(data.get("destructive", False)),
+            expected_observable_types=tuple(str(t) for t in data.get("expected_observable_types", ())),
+            cost_units=str(data.get("cost_units", "SIMULATED_NORMALIZED_COST")),
             metadata=dict(data.get("metadata", {})),
         )
 
@@ -193,4 +208,3 @@ class MaterialDomainAdapter(Protocol):
     def get_hypothesis_provider(self) -> HypothesisProvider | None:
         """Returns the domain-specific hypothesis factory, or None if domain uses external hypotheses."""
         ...
-

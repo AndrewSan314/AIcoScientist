@@ -1,0 +1,705 @@
+{
+  "status": "PASS",
+  "scope": "controlled_world_action_selector_comparison; A-Lab replay remains historical and separate",
+  "policies": {
+    "RANDOM_ACTION": {
+      "status": "PASS",
+      "final_entropy_nats": 0.627166731052542,
+      "true_hypothesis_posterior": 0.6796051437011172,
+      "selected_actions": [
+        {
+          "action_id": "EDS_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "EDS",
+          "estimated_cost": 1.5,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "EDS_controlled-7",
+          "candidate_id": "controlled-7",
+          "action_type": "EDS",
+          "estimated_cost": 1.5,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "SEM_controlled-10",
+          "candidate_id": "controlled-10",
+          "action_type": "SEM",
+          "estimated_cost": 1.5,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "OUTCOME_TEST_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "OUTCOME_TEST",
+          "estimated_cost": 2.0,
+          "requested_at_step": 4,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        }
+      ]
+    },
+    "RANDOM_CANDIDATE_FIXED_MODALITY": {
+      "status": "PASS",
+      "final_entropy_nats": 1.025974191048968,
+      "true_hypothesis_posterior": 0.4797747555060803,
+      "selected_actions": [
+        {
+          "action_id": "XRD_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "XRD_controlled-7",
+          "candidate_id": "controlled-7",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "XRD_controlled-9",
+          "candidate_id": "controlled-9",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "XRD_controlled-10",
+          "candidate_id": "controlled-10",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 4,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        }
+      ]
+    },
+    "UNCERTAINTY_ONLY": {
+      "status": "PASS",
+      "final_entropy_nats": 0.3696191743444397,
+      "true_hypothesis_posterior": 0.8799202574722842,
+      "selected_actions": [
+        {
+          "action_id": "XRD_controlled-0",
+          "candidate_id": "controlled-0",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "REFINEMENT_controlled-0",
+          "candidate_id": "controlled-0",
+          "action_type": "REFINEMENT",
+          "estimated_cost": 0.5,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": [
+              "XRD"
+            ]
+          }
+        },
+        {
+          "action_id": "SEM_controlled-0",
+          "candidate_id": "controlled-0",
+          "action_type": "SEM",
+          "estimated_cost": 1.5,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "EDS_controlled-0",
+          "candidate_id": "controlled-0",
+          "action_type": "EDS",
+          "estimated_cost": 1.5,
+          "requested_at_step": 4,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        }
+      ]
+    },
+    "PURE_HIG": {
+      "status": "PASS",
+      "final_entropy_nats": 0.26958771707754786,
+      "true_hypothesis_posterior": 0.923720976883863,
+      "selected_actions": [
+        {
+          "action_id": "EDS_controlled-1",
+          "candidate_id": "controlled-1",
+          "action_type": "EDS",
+          "estimated_cost": 1.5,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "SEM_controlled-8",
+          "candidate_id": "controlled-8",
+          "action_type": "SEM",
+          "estimated_cost": 1.5,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "XRD_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "REFINEMENT_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "REFINEMENT",
+          "estimated_cost": 0.5,
+          "requested_at_step": 4,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": [
+              "XRD"
+            ]
+          }
+        }
+      ]
+    },
+    "HYBRID": {
+      "status": "PASS",
+      "final_entropy_nats": 0.26958771707754786,
+      "true_hypothesis_posterior": 0.923720976883863,
+      "selected_actions": [
+        {
+          "action_id": "EDS_controlled-1",
+          "candidate_id": "controlled-1",
+          "action_type": "EDS",
+          "estimated_cost": 1.5,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "SEM_controlled-8",
+          "candidate_id": "controlled-8",
+          "action_type": "SEM",
+          "estimated_cost": 1.5,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "XRD_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        {
+          "action_id": "REFINEMENT_controlled-11",
+          "candidate_id": "controlled-11",
+          "action_type": "REFINEMENT",
+          "estimated_cost": 0.5,
+          "requested_at_step": 4,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": [
+              "XRD"
+            ]
+          }
+        }
+      ]
+    },
+    "PROPERTY_ONLY_BO": {
+      "status": "NOT_APPLICABLE",
+      "reason": "This is a characterization-action comparison, not a property-only optimization loop."
+    },
+    "CAMEO_INSPIRED": {
+      "status": "REFERENCE_ONLY",
+      "reason": "CAMEO-inspired segmentation is an observable extractor baseline, not a policy selector."
+    }
+  },
+  "replay": {
+    "status": "PASS",
+    "candidate_count": 16,
+    "events": [
+      {
+        "recommendation": {
+          "expected_hig_nats": 0.03205664331065794,
+          "discovery_utility": 0.0,
+          "normalized_cost": 0.5,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.603, 0.397, 0.0397, 0.3985]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.6242, 0.3758, 0.035, 0.3879]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.1, 0.385]"
+          ],
+          "current_entropy_nats": 1.0986122886681096,
+          "falsification_signatures": {
+            "H1_PHASE_PURITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "high target phase fraction",
+                "low impurity signal",
+                "successful outcome"
+              ],
+              "strongly_falsifying_patterns": [
+                "high impurity despite predicted purity",
+                "failure with high refined target fraction"
+              ],
+              "ambiguous_patterns": [
+                "near-nominal EDS composition without phase assignment"
+              ]
+            },
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "low EDS spatial variance",
+                "near-nominal composition",
+                "outcome tracks homogeneity"
+              ],
+              "strongly_falsifying_patterns": [
+                "uniform EDS map with failed outcome",
+                "high segregation predicted but absent"
+              ],
+              "ambiguous_patterns": [
+                "single-point EDS composition"
+              ]
+            },
+            "H3_MORPHOLOGY_KINETICS_LIMITED": {
+              "strongly_supporting_patterns": [
+                "SEM morphology tracks outcome",
+                "process window predicts completion",
+                "phase identity remains similar"
+              ],
+              "strongly_falsifying_patterns": [
+                "morphology changes without outcome effect",
+                "outcome follows phase purity while process is held fixed"
+              ],
+              "ambiguous_patterns": [
+                "low-resolution SEM with no process metadata"
+              ]
+            }
+          }
+        },
+        "action": {
+          "action_id": "XRD_PG_0110",
+          "candidate_id": "PG_0110",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 1,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        "reveal": {
+          "event": "MEASUREMENT_REVEALED",
+          "step": 1,
+          "action": {
+            "action_id": "XRD_PG_0110",
+            "candidate_id": "PG_0110",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "observed_measurement": {
+            "observable_id": "replay:0:XRD_PG_0110",
+            "candidate_id": "PG_0110",
+            "modality": "XRD",
+            "name": "canonical_replay_observation",
+            "value": [
+              0.27814407031569877,
+              0.10022100177010887,
+              0.1957676274799578,
+              0.5044549604147365
+            ],
+            "uncertainty": 0.1,
+            "units": null,
+            "raw_artifact_ref": null,
+            "extractor_name": "alab_canonical_replay",
+            "extractor_version": "1.0.0",
+            "provenance": {
+              "dataset": "A-Lab Precursor Genome",
+              "dataset_key": "precursor_genome_2026",
+              "execution_mode": "offline_replay",
+              "sample_id": "PG_0110",
+              "source_archive": "data/external/precursor_genome_2026\\raw_scans.zip",
+              "archive_member_path": "data/xrd/raw_scans/PG_0110_1_Ag2O-Cr2O3_CrAgO2_200C_60min_c7ad88db-18a9-4c56-97e0-3a438f0a12d5.xrdml",
+              "member_size_bytes": 39332,
+              "archive_checksum": "e22405e733fc79ff4b14b679f87a33d5",
+              "preprocessing_version": "physical_2theta_v1",
+              "selected_scan_index": 0,
+              "scan_selection_method": "ledger_active_scan_index",
+              "canonical_scan": true,
+              "is_ledger_canonical": true,
+              "is_replay_fallback": false,
+              "physical_axis_source": "xml_positions_2theta",
+              "selection_method": "ledger_active_scan_index",
+              "representation_id": "alab_xrd_pca",
+              "representation_version": 0,
+              "representation_fingerprint": "coarse_binning_8_samples_0",
+              "domain_version": "1.0.0"
+            },
+            "timestamp": "2026-09-04T18:20:53.314391+00:00",
+            "observable_type": "vector"
+          },
+          "likelihood_under_hypothesis": {
+            "H1_PHASE_PURITY_LIMITED": -0.2462837698626461,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": -0.27187814213386774,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": -0.19557953530916722
+          },
+          "beliefs_before": {
+            "H1_PHASE_PURITY_LIMITED": 0.3333333333333333,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.3333333333333333,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.3333333333333333
+          },
+          "beliefs_after": {
+            "H1_PHASE_PURITY_LIMITED": 0.3303882431006497,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.32203946009230805,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.3475722968070423
+          },
+          "realized_entropy_reduction_nats": 0.0005064562978396303
+        }
+      },
+      {
+        "recommendation": {
+          "expected_hig_nats": 0.15017557663090098,
+          "discovery_utility": 0.0,
+          "normalized_cost": 0.25,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.603, 0.397, 0.397, 0.3779]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.6242, 0.3758, 0.3012, 0.363]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.6, 0.359]"
+          ],
+          "current_entropy_nats": 1.09810583237027,
+          "falsification_signatures": {
+            "H1_PHASE_PURITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "high target phase fraction",
+                "low impurity signal",
+                "successful outcome"
+              ],
+              "strongly_falsifying_patterns": [
+                "high impurity despite predicted purity",
+                "failure with high refined target fraction"
+              ],
+              "ambiguous_patterns": [
+                "near-nominal EDS composition without phase assignment"
+              ]
+            },
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "low EDS spatial variance",
+                "near-nominal composition",
+                "outcome tracks homogeneity"
+              ],
+              "strongly_falsifying_patterns": [
+                "uniform EDS map with failed outcome",
+                "high segregation predicted but absent"
+              ],
+              "ambiguous_patterns": [
+                "single-point EDS composition"
+              ]
+            },
+            "H3_MORPHOLOGY_KINETICS_LIMITED": {
+              "strongly_supporting_patterns": [
+                "SEM morphology tracks outcome",
+                "process window predicts completion",
+                "phase identity remains similar"
+              ],
+              "strongly_falsifying_patterns": [
+                "morphology changes without outcome effect",
+                "outcome follows phase purity while process is held fixed"
+              ],
+              "ambiguous_patterns": [
+                "low-resolution SEM with no process metadata"
+              ]
+            }
+          }
+        },
+        "action": {
+          "action_id": "REFINEMENT_PG_0110",
+          "candidate_id": "PG_0110",
+          "action_type": "REFINEMENT",
+          "estimated_cost": 0.5,
+          "requested_at_step": 2,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": [
+              "XRD"
+            ]
+          }
+        },
+        "reveal": {
+          "event": "MEASUREMENT_REVEALED",
+          "step": 2,
+          "action": {
+            "action_id": "REFINEMENT_PG_0110",
+            "candidate_id": "PG_0110",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "observed_measurement": {
+            "observable_id": "replay:1:REFINEMENT_PG_0110",
+            "candidate_id": "PG_0110",
+            "modality": "REFINEMENT",
+            "name": "canonical_replay_observation",
+            "value": [
+              0.0,
+              0.9649176986753445,
+              0.0350823013246555,
+              0.6849999999999999
+            ],
+            "uncertainty": 0.1,
+            "units": null,
+            "raw_artifact_ref": null,
+            "extractor_name": "alab_canonical_replay",
+            "extractor_version": "1.0.0",
+            "provenance": {
+              "dataset": "A-Lab Precursor Genome",
+              "dataset_key": "precursor_genome_2026",
+              "execution_mode": "offline_replay",
+              "sample_id": "PG_0110",
+              "refinement_source": "structured_ledger",
+              "selected_scan_index": 0,
+              "selected_case_index": 0,
+              "scan_selection_method": "ledger_active_scan_index",
+              "case_selection_method": "ledger_active_case_index",
+              "refinement_rank": -1,
+              "rwp": 6.85,
+              "r_wp": 6.85,
+              "selection_method": "ledger_active_case_index",
+              "canonical_case": true,
+              "domain_version": "1.0.0"
+            },
+            "timestamp": "2026-09-04T18:20:53.366987+00:00",
+            "observable_type": "vector"
+          },
+          "likelihood_under_hypothesis": {
+            "H1_PHASE_PURITY_LIMITED": -7.758464010243978,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": -6.416157492617825,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": -9.301909099192997
+          },
+          "beliefs_before": {
+            "H1_PHASE_PURITY_LIMITED": 0.3303882431006497,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.32203946009230805,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.3475722968070423
+          },
+          "beliefs_after": {
+            "H1_PHASE_PURITY_LIMITED": 0.2017801223765809,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.7528686272836201,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.04535125033979898
+          },
+          "realized_entropy_reduction_nats": 0.42114275607426954
+        }
+      },
+      {
+        "recommendation": {
+          "expected_hig_nats": 0.048730817829413686,
+          "discovery_utility": 0.0,
+          "normalized_cost": 0.5,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.5993, 0.4007, 0.0401, 0.4003]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.6242, 0.3758, 0.035, 0.3879]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.1, 0.385]"
+          ],
+          "current_entropy_nats": 0.6769630762960004,
+          "falsification_signatures": {
+            "H1_PHASE_PURITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "high target phase fraction",
+                "low impurity signal",
+                "successful outcome"
+              ],
+              "strongly_falsifying_patterns": [
+                "high impurity despite predicted purity",
+                "failure with high refined target fraction"
+              ],
+              "ambiguous_patterns": [
+                "near-nominal EDS composition without phase assignment"
+              ]
+            },
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+              "strongly_supporting_patterns": [
+                "low EDS spatial variance",
+                "near-nominal composition",
+                "outcome tracks homogeneity"
+              ],
+              "strongly_falsifying_patterns": [
+                "uniform EDS map with failed outcome",
+                "high segregation predicted but absent"
+              ],
+              "ambiguous_patterns": [
+                "single-point EDS composition"
+              ]
+            },
+            "H3_MORPHOLOGY_KINETICS_LIMITED": {
+              "strongly_supporting_patterns": [
+                "SEM morphology tracks outcome",
+                "process window predicts completion",
+                "phase identity remains similar"
+              ],
+              "strongly_falsifying_patterns": [
+                "morphology changes without outcome effect",
+                "outcome follows phase purity while process is held fixed"
+              ],
+              "ambiguous_patterns": [
+                "low-resolution SEM with no process metadata"
+              ]
+            }
+          }
+        },
+        "action": {
+          "action_id": "XRD_PG_0203",
+          "candidate_id": "PG_0203",
+          "action_type": "XRD",
+          "estimated_cost": 1.0,
+          "requested_at_step": 3,
+          "metadata": {
+            "cost_units": "SIMULATED_NORMALIZED_COST",
+            "prerequisites": []
+          }
+        },
+        "reveal": {
+          "event": "MEASUREMENT_REVEALED",
+          "step": 3,
+          "action": {
+            "action_id": "XRD_PG_0203",
+            "candidate_id": "PG_0203",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "observed_measurement": {
+            "observable_id": "replay:2:XRD_PG_0203",
+            "candidate_id": "PG_0203",
+            "modality": "XRD",
+            "name": "canonical_replay_observation",
+            "value": [
+              0.025803514223318235,
+              0.019819985812889948,
+              0.00702832991987301,
+              0.07377220724209636
+            ],
+            "uncertainty": 0.1,
+            "units": null,
+            "raw_artifact_ref": null,
+            "extractor_name": "alab_canonical_replay",
+            "extractor_version": "1.0.0",
+            "provenance": {
+              "dataset": "A-Lab Precursor Genome",
+              "dataset_key": "precursor_genome_2026",
+              "execution_mode": "offline_replay",
+              "sample_id": "PG_0203",
+              "source_archive": "data/external/precursor_genome_2026\\raw_scans.zip",
+              "archive_member_path": "data/xrd/raw_scans/PG_0203_1_Al(HO)3-B(HO)3_AlB(HO)6_200C_60min_89a92644-21ce-439d-a423-64da86f08e9d.xrdml",
+              "member_size_bytes": 41266,
+              "archive_checksum": "e22405e733fc79ff4b14b679f87a33d5",
+              "preprocessing_version": "physical_2theta_v1",
+              "selected_scan_index": 0,
+              "scan_selection_method": "ledger_active_scan_index",
+              "canonical_scan": true,
+              "is_ledger_canonical": true,
+              "is_replay_fallback": false,
+              "physical_axis_source": "xml_positions_2theta",
+              "selection_method": "ledger_active_scan_index",
+              "representation_id": "alab_xrd_pca",
+              "representation_version": 0,
+              "representation_fingerprint": "coarse_binning_8_samples_0",
+              "domain_version": "1.0.0"
+            },
+            "timestamp": "2026-09-04T18:20:53.493541+00:00",
+            "observable_type": "vector"
+          },
+          "likelihood_under_hypothesis": {
+            "H1_PHASE_PURITY_LIMITED": -4.544592321616127,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": -3.8195786594230463,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": -4.310471836043428
+          },
+          "beliefs_before": {
+            "H1_PHASE_PURITY_LIMITED": 0.2017801223765809,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.7528686272836201,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.04535125033979898
+          },
+          "beliefs_after": {
+            "H1_PHASE_PURITY_LIMITED": 0.11126021458033192,
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.8571368071730947,
+            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.03160297824657343
+          },
+          "realized_entropy_reduction_nats": 0.19134171826577262
+        }
+      }
+    ],
+    "final_beliefs": {
+      "H1_PHASE_PURITY_LIMITED": 0.11126021458033192,
+      "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.8571368071730947,
+      "H3_MORPHOLOGY_KINETICS_LIMITED": 0.03160297824657343
+    }
+  }
+}

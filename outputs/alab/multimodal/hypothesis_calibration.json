@@ -1,0 +1,9 @@
+{
+  "status": "DESCRIPTIVE_ONLY",
+  "note": "Controlled-world diagnostics validate contract and recovery bookkeeping; no prospective calibration claim is made.",
+  "hypotheses": [
+    "H1_PHASE_PURITY_LIMITED",
+    "H2_COMPOSITION_HOMOGENEITY_LIMITED",
+    "H3_MORPHOLOGY_KINETICS_LIMITED"
+  ]
+}

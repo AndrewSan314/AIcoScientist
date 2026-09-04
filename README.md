@@ -94,13 +94,13 @@ See [docs/SCIENTIFIC_CLOSED_LOOP.md](docs/SCIENTIFIC_CLOSED_LOOP.md) for full ar
 
 ## Test Suite & Continuous Integration
 
-Run the comprehensive pytest suite (187 tests):
+Run the pytest suite:
 
 ```bash
-# Run fast self-contained unit tests (171 tests)
+# Run fast self-contained unit tests
 pytest -q -m "not slow and not external_data and not integration" -p no:cacheprovider
 
-# Run full test suite including external datasets (187 tests)
+# Run full test suite including external datasets
 pytest -q -p no:cacheprovider
 ```
 
@@ -110,6 +110,9 @@ CI workflows automatically run on GitHub Actions using `requirements-core.txt` a
 
 ## Key Output Artifacts
 
+- `outputs/alab/multimodal/`: A-Lab modality inventory, extractor validation, controlled hypothesis/policy recovery, retrospective replay, and append-only evidence ledger. This is offline validation; SEM/EDS archives are not candidate-linked and are excluded from action selection.
+- `outputs/electrolyte/benchmark/screening_cross_surrogate_robustness.json`: Independent ExtraTrees, GP, and nonlinear synthetic worlds using the same historical-evidence Stage-1 configuration.
+- `outputs/electrolyte/benchmark/screening_quality_diagnostics.json`: Measured WS=200/500/1000 screening, adapter, initialization, proposal, memory, and recovery diagnostics.
 - `outputs/overnight_upgrade_report.md`: Comprehensive scientific and benchmarking report.
 - `outputs/model_metrics.json`: Supervised model holdout metrics and GP uncertainty calibration.
 - `outputs/attia_continuous/benchmark_summary.json`: Continuous benchmark metrics, paired Wilcoxon tests, and sample efficiency to thresholds.

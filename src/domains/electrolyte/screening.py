@@ -267,20 +267,30 @@ def screen_large_pool_candidates(
                 if len(selected_info) >= (k_disc + k_expl):
                     break
 
-    # 3. Diversity Tranche (Greedy farthest-point selection from scalable reservoir)
+    # 3. Diversity tranche: iterative greedy farthest-point selection on a reservoir.
     remaining_indices = [i for i in range(total_cands) if i not in selected_info]
     if remaining_indices and k_div > 0:
         subset_size = min(len(remaining_indices), diversity_reservoir_size)
         sub_rem = rng.choice(remaining_indices, size=subset_size, replace=False)
         curr_selected = list(selected_info.keys())
-        d_to_sel = cdist(X_pool_scaled[sub_rem], X_pool_scaled[curr_selected], metric="euclidean").min(axis=1)
-        div_sorted = np.argsort(-d_to_sel)
-        for d_idx in div_sorted:
+        reservoir = X_pool_scaled[sub_rem]
+        if curr_selected:
+            nearest = cdist(reservoir, X_pool_scaled[curr_selected], metric="euclidean").min(axis=1)
+        else:
+            # ponytail: reservoir approximation keeps 333k pools sub-quadratic;
+            # increase diversity_reservoir_size when broader coverage is needed.
+            nearest = cdist(reservoir, np.mean(reservoir, axis=0, keepdims=True), metric="euclidean").ravel()
+        available = np.ones(subset_size, dtype=bool)
+        for _ in range(min(k_div, subset_size)):
+            d_idx = int(np.argmax(np.where(available, nearest, -np.inf)))
+            if not available[d_idx]:
+                break
             idx_int = int(sub_rem[d_idx])
-            if idx_int not in selected_info:
-                selected_info[idx_int] = ("diversity", float(d_to_sel[d_idx]))
-                if len(selected_info) >= (k_disc + k_expl + k_div):
-                    break
+            selected_info[idx_int] = ("diversity", float(nearest[d_idx]))
+            available[d_idx] = False
+            if available.any():
+                new_dist = cdist(reservoir[available], reservoir[d_idx:d_idx + 1], metric="euclidean").ravel()
+                nearest[available] = np.minimum(nearest[available], new_dist)
 
     # 4. Random Tranche (Enforces exploratory diversity)
     rem_final = [i for i in range(total_cands) if i not in selected_info]
@@ -309,6 +319,7 @@ def screen_large_pool_candidates(
         "working_set_size": len(res_df),
         "discovery_scorer": discovery_scorer if mode != ScreeningEvidenceMode.COLD_START_DESCRIPTOR_ONLY else "descriptor_norm",
         "diversity_reservoir_size": diversity_reservoir_size,
+        "diversity_algorithm": "iterative_greedy_farthest_point_reservoir",
         "tranche_counts": {
             "discovery": sum(1 for v in selected_info.values() if v[0] == "discovery"),
             "exploration": sum(1 for v in selected_info.values() if v[0] == "exploration"),

@@ -101,7 +101,12 @@ ALAB_MODALITY_XRD = ModalityDefinition(
         "two_theta_max": 100.0,
         "grid_points": 450,
         "description": "Powder X-ray diffraction 2theta intensity scan standardized onto a physical 450-point 10-100 deg 2theta grid.",
+        "cost_semantics": "SIMULATED_NORMALIZED_COST",
     },
+    duration=1.0,
+    required_existing_sample_state=("synthesized_sample",),
+    destructive=False,
+    expected_observable_types=("scalar", "vector"),
 )
 
 ALAB_MODALITY_REFINEMENT = ModalityDefinition(
@@ -114,7 +119,48 @@ ALAB_MODALITY_REFINEMENT = ModalityDefinition(
         "archive": "refinement_pkls.zip",
         "feature_dim": 4,
         "description": "Rietveld quantitative phase refinement extracting target fraction, precursor fraction, other phases, and standardized Rwp.",
+        "cost_semantics": "SIMULATED_NORMALIZED_COST",
     },
+    duration=0.5,
+    required_existing_sample_state=("synthesized_sample", "xrd_observed"),
+    destructive=False,
+    expected_observable_types=("vector",),
+)
+
+ALAB_MODALITY_SEM = ModalityDefinition(
+    name="SEM",
+    observation_kind="image_features",
+    cost=1.5,
+    observation_key="sem_observables",
+    metadata={
+        "archive": "sem.zip",
+        "candidate_linkage": "precursor_level_only",
+        "supported": False,
+        "description": "SEM archive is present but currently lacks reliable synthesized-candidate linkage.",
+        "cost_semantics": "SIMULATED_NORMALIZED_COST",
+    },
+    duration=1.5,
+    required_existing_sample_state=("synthesized_sample", "sem_prepared_sample"),
+    destructive=False,
+    expected_observable_types=("scalar", "structured"),
+)
+
+ALAB_MODALITY_EDS = ModalityDefinition(
+    name="EDS",
+    observation_kind="spectroscopy",
+    cost=1.5,
+    observation_key="eds_observables",
+    metadata={
+        "archive": "eds.zip",
+        "candidate_linkage": "precursor_level_only",
+        "supported": False,
+        "description": "EDS archive is present but currently lacks reliable synthesized-candidate linkage.",
+        "cost_semantics": "SIMULATED_NORMALIZED_COST",
+    },
+    duration=1.5,
+    required_existing_sample_state=("synthesized_sample", "sem_compatible_sample"),
+    destructive=False,
+    expected_observable_types=("scalar", "structured"),
 )
 
 ALAB_MODALITY_OUTCOME_TEST = ModalityDefinition(
@@ -123,6 +169,10 @@ ALAB_MODALITY_OUTCOME_TEST = ModalityDefinition(
     cost=2.0,
     objective_names=("reaction_outcome_utility",),
     observation_key="reaction_outcome_utility",
+    duration=2.0,
+    required_existing_sample_state=("synthesized_sample",),
+    destructive=False,
+    expected_observable_types=("categorical", "scalar"),
     metadata={
         "source": "ledger_outcome",
         "description": "Synthesis reaction outcome test evaluating qualitative reaction category and derived decision utility.",
@@ -137,6 +187,8 @@ ALAB_DOMAIN_CONFIG = MaterialDomainConfig(
     modalities=(
         ALAB_MODALITY_XRD,
         ALAB_MODALITY_REFINEMENT,
+        ALAB_MODALITY_SEM,
+        ALAB_MODALITY_EDS,
         ALAB_MODALITY_OUTCOME_TEST,
     ),
     metadata={

@@ -10,6 +10,7 @@
 **Working Set Size:** 200 candidates  
 **Screening Runtime:** 1.1821 seconds  
 **Surrogate Model Family:** ExtraTreesRegressor (100 trees, max_depth=8)  
+**Model Coupling Limitation:** The surrogate oracle is a frozen univariate target model: it does not model coupling between multiple measured modalities or causal process structure.
 
 ### Omniscient Latent Oracle Maxima:
 * **Full-Space Latent Maximum $f(x)$:** `0.7886`  

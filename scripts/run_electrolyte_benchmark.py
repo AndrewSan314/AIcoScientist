@@ -173,9 +173,14 @@ def run_large_pool_end_to_end_decision_benchmark(
         t0 = time.perf_counter()
         working_set = screen_large_pool_candidates(
             candidates_df=cands_chunk,
+            observed_features=df_hist[f_cols].to_numpy(dtype=np.float64, copy=False),
+            observed_targets=df_hist["C_norm_20"].to_numpy(dtype=np.float64, copy=False),
             working_set_size=working_set_size,
             feature_cols=f_cols,
             random_state=random_state,
+            evidence_mode=ScreeningEvidenceMode.HISTORICAL_EVIDENCE,
+            discovery_scorer="ensemble",
+            diversity_reservoir_size=20000,
         )
         screening_sec = time.perf_counter() - t0
 
@@ -238,6 +243,10 @@ def run_large_pool_end_to_end_decision_benchmark(
         "target_electrolyte_subspace": "LiFSI Salt Subspace (333,333 candidate scope)",
         "feature_count": len(f_cols),
         "working_set_size": working_set_size,
+        "screening_evidence_mode": "HISTORICAL_EVIDENCE",
+        "discovery_scorer": "ensemble",
+        "diversity_reservoir_size": 20000,
+        "historical_observation_count": int(len(df_hist)),
         "runs": runs,
     }
 
@@ -297,6 +306,33 @@ def run_screening_quality_diagnostics(
         ws_latent = oracle_truth_pool.predict_latent_batch(ws_df[f_cols].to_numpy(dtype=np.float64, copy=False))
         ws_max = float(np.max(ws_latent))
         ws_cids = set(ws_df["candidate_id"])
+        t0 = time.perf_counter()
+        adapter = ElectrolyteDomainAdapter(
+            candidate_pool_df=ws_df,
+            oracle=SurrogateElectrolyteOracle(df_train=df_hist, feature_cols=f_cols),
+        )
+        adapter_construction = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        policy = FalsificationFirstPolicy(
+            mode=FalsificationPolicyMode.HYBRID,
+            w_hig=1.0,
+            w_disc=0.8,
+            w_cost=0.0,
+        )
+        engine = ScientificDecisionEngine(
+            domain=adapter,
+            policy=policy,
+            optimizer_backend=BoTorchBackend(),
+            seed=random_state,
+        )
+        engine.initialize(adapter.get_default_initial_actions(n_seed=3, seed=random_state))
+        engine_initialization = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        proposal = engine.propose_next_experiment()
+        first_proposal = time.perf_counter() - t0
+        memory_mb = float(
+            cands_df.memory_usage(deep=True).sum() + ws_df.memory_usage(deep=True).sum()
+        ) / (1024 * 1024)
         trials[str(ws_size)] = {
             "working_set_size": int(len(ws_df)),
             "working_set_latent_max": round(ws_max, 4),
@@ -305,6 +341,12 @@ def run_screening_quality_diagnostics(
             "top_100_latent_recovery_count": int(len(ws_cids.intersection(top100_cids))),
             "latent_max_percentile_recovered": round(float(np.mean(full_latent_arr <= ws_max) * 100.0), 4),
             "screening_runtime_sec": round(t_screen, 4),
+            "screening_time_sec": round(t_screen, 4),
+            "adapter_construction_time_sec": round(adapter_construction, 4),
+            "engine_initialization_time_sec": round(engine_initialization, 4),
+            "first_proposal_time_sec": round(first_proposal, 4),
+            "first_proposed_candidate_id": proposal.action.candidate_id,
+            "memory_mb_estimate": round(memory_mb, 2),
             "tranche_counts": {
                 "discovery": int((ws_df["screening_tranche"] == "discovery").sum()),
                 "exploration": int((ws_df["screening_tranche"] == "exploration").sum()),
@@ -343,22 +385,20 @@ def run_screening_quality_diagnostics(
         },
     }
 
+    reference_ws_key = "200" if "200" in trials else next(iter(trials), None)
     result = {
         "search_space_size": int(simulation_candidates_count),
         "full_search_space_latent_max": round(full_search_space_latent_max, 4),
         "evidence_mode": "HISTORICAL_EVIDENCE",
         "historical_observation_count": int(len(df_hist)),
         "feature_count": len(f_cols),
-        "screening_method": "Ridge + RandomForest rank ensemble (discovery 40%), uncertainty + distance (exploration 30%), farthest-point (diversity 20%), uniform random (10%)",
+        "screening_method": "Ridge + RandomForest rank ensemble (discovery 40%), uncertainty + distance (exploration 30%), iterative greedy farthest-point reservoir diversity (20%), uniform random (10%)",
         "chosen_default_working_set_size": 200,
-        "chosen_default_rationale": (
-            "WS=200 balances computational feasibility with full latent optimum recovery (gap=0.0000, "
-            "8/10 top-10 recovered, ~10s/step proposal time vs ~22s/step at WS=500)."
-        ),
+        "chosen_default_rationale": "WS=200 is retained as the default pending measured screening, adapter, initialization, proposal, memory, and recovery diagnostics below.",
         "working_set_trials": trials,
         "reference_comparison": {
             "COLD_START_DESCRIPTOR_ONLY_200": cold_ref,
-            "HISTORICAL_EVIDENCE_200": trials["200"],
+            "HISTORICAL_EVIDENCE_200": trials[reference_ws_key] if reference_ws_key else None,
         },
     }
 
@@ -399,6 +439,7 @@ def render_surrogate_markdown(surr_results: dict[str, Any]) -> str:
 **Working Set Size:** {surr_results.get('screened_working_set_size', 0)} candidates  
 **Screening Runtime:** {surr_results.get('screening_time_sec', 0.0):.4f} seconds  
 **Surrogate Model Family:** {surr_results.get('surrogate_model_family')}  
+**Model Coupling Limitation:** {surr_results.get('MODEL_COUPLING_LIMITATION', 'Not reported.')}
 
 ### Omniscient Latent Oracle Maxima:
 * **Full-Space Latent Maximum $f(x)$:** `{surr_results.get('full_search_space_latent_max', 0.0):.4f}`  
@@ -692,6 +733,10 @@ def run_surrogate_simulation(
         "screening_evidence_mode": "HISTORICAL_EVIDENCE",
         "historical_observation_count": int(len(df_hist)),
         "surrogate_model_family": "ExtraTreesRegressor (100 trees, max_depth=8)",
+        "MODEL_COUPLING_LIMITATION": (
+            "The surrogate oracle is a frozen univariate target model: it does not model coupling "
+            "between multiple measured modalities or causal process structure."
+        ),
         "evaluated_seeds": list(seeds),
         "full_search_space_latent_max": round(full_search_space_latent_max, 4),
         "working_set_latent_max": round(working_set_latent_max, 4),

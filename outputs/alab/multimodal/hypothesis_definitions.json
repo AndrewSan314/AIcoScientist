@@ -1,0 +1,89 @@
+{
+  "H1_PHASE_PURITY_LIMITED": {
+    "hypothesis_id": "H1_PHASE_PURITY_LIMITED",
+    "title": "Phase-purity limited",
+    "assumptions": [
+      "Intended crystalline phase formation is the primary limiting state."
+    ],
+    "predicted_modalities": [
+      "XRD",
+      "REFINEMENT",
+      "SEM",
+      "EDS",
+      "OUTCOME_TEST"
+    ],
+    "falsification_signature": {
+      "strongly_supporting_patterns": [
+        "high target phase fraction",
+        "low impurity signal",
+        "successful outcome"
+      ],
+      "strongly_falsifying_patterns": [
+        "high impurity despite predicted purity",
+        "failure with high refined target fraction"
+      ],
+      "ambiguous_patterns": [
+        "near-nominal EDS composition without phase assignment"
+      ]
+    },
+    "training_count": 0
+  },
+  "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+    "hypothesis_id": "H2_COMPOSITION_HOMOGENEITY_LIMITED",
+    "title": "Composition-homogeneity limited",
+    "assumptions": [
+      "Spatial composition variance can limit outcome despite acceptable bulk phase identity."
+    ],
+    "predicted_modalities": [
+      "XRD",
+      "REFINEMENT",
+      "SEM",
+      "EDS",
+      "OUTCOME_TEST"
+    ],
+    "falsification_signature": {
+      "strongly_supporting_patterns": [
+        "low EDS spatial variance",
+        "near-nominal composition",
+        "outcome tracks homogeneity"
+      ],
+      "strongly_falsifying_patterns": [
+        "uniform EDS map with failed outcome",
+        "high segregation predicted but absent"
+      ],
+      "ambiguous_patterns": [
+        "single-point EDS composition"
+      ]
+    },
+    "training_count": 0
+  },
+  "H3_MORPHOLOGY_KINETICS_LIMITED": {
+    "hypothesis_id": "H3_MORPHOLOGY_KINETICS_LIMITED",
+    "title": "Morphology-kinetics limited",
+    "assumptions": [
+      "Thermal pathway and morphology materially affect outcome beyond bulk phase identity."
+    ],
+    "predicted_modalities": [
+      "XRD",
+      "REFINEMENT",
+      "SEM",
+      "EDS",
+      "OUTCOME_TEST"
+    ],
+    "falsification_signature": {
+      "strongly_supporting_patterns": [
+        "SEM morphology tracks outcome",
+        "process window predicts completion",
+        "phase identity remains similar"
+      ],
+      "strongly_falsifying_patterns": [
+        "morphology changes without outcome effect",
+        "outcome follows phase purity while process is held fixed"
+      ],
+      "ambiguous_patterns": [
+        "low-resolution SEM with no process metadata"
+      ]
+    },
+    "training_count": 0
+  }
+}
