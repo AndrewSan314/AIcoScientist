@@ -639,7 +639,7 @@ Three distinct conceptual views are separated:
 # 8. Candidate Feature Identity Audit (388k vs 742k Anomaly)
 
 * **Investigation:** The candidate table contains {candidate_audit['unique_solvents']:,} solvent strings, but raw float hashing produced 742,382 unique 11D solvent vectors across {feature_identity_audit['multi_vector_solvents_count']:,} multi-vector solvents.
-* **Mechanism Proven:** {feature_identity_audit['scientific_justification']}
+* **Mechanism Assessment:** {feature_identity_audit['scientific_justification']}
 * **Quantiles of Within-Solvent Feature Deltas:**
   * Median (P50): ${feature_identity_audit['p50_delta']:.4e}$
   * P90: ${feature_identity_audit['p90_delta']:.4e}$
@@ -1270,7 +1270,15 @@ def main():
     df_derived_saved = pd.read_csv(derived_csv_path) if os.path.exists(derived_csv_path) else pd.DataFrame()
     tested_rows = len(df_derived_saved)
 
-    # 1. Target semantics: verify cycle-20 capacity ratio alias relation directly
+    # 1. Target semantics: independent alias validation on seed rows (act_capacity_20 / theor_capacity) + secondary derived consistency
+    alias_val = target_sem.get("numerical_alias_validation", {})
+    alias_independent_ok = bool(
+        alias_val.get("verified_consistent") is True
+        and alias_val.get("exceptions_count", 1) == 0
+        and alias_val.get("max_absolute_error", 1.0) <= 1e-6
+        and target_sem.get("raw_target_column") == "norm_capacity_3"
+        and "20th cycle" in target_sem.get("scientific_meaning", "")
+    )
     if tested_rows > 0 and "norm_capacity_3" in df_comp_deexp_75.columns:
         c_norm_alias_diff = np.abs(df_derived_saved["C_norm_20"] - df_comp_deexp_75["norm_capacity_3"].values)
         max_abs_alias_err = float(c_norm_alias_diff.max())
@@ -1279,9 +1287,10 @@ def main():
             (df_derived_saved["C_norm_20"] >= 0.0).all()
             and (df_derived_saved["C_norm_20"] <= 2.0).all()
         )
-        target_semantics_ok = bool(max_abs_alias_err <= 1e-9 and alias_exceptions == 0 and target_in_range)
+        derived_consistency_ok = bool(max_abs_alias_err <= 1e-9 and alias_exceptions == 0 and target_in_range)
     else:
-        target_semantics_ok = False
+        derived_consistency_ok = False
+    target_semantics_ok = bool(alias_independent_ok and derived_consistency_ok)
 
     # 2. Experimental identity: verify campaign decomposition and unique solvents
     n_b0 = physical_campaign.get("batch0_seed_view", {}).get("raw_seed_rows", 0)

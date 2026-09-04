@@ -12,7 +12,9 @@
     "optimizer_gate": "PASS",
     "historical_benchmark_gate": "PASS",
     "large_pool_screening_gate": "PASS",
+    "screening_quality_gate": "PASS",
     "surrogate_provenance_gate": "PASS",
+    "surrogate_metric_integrity_gate": "PASS",
     "cross_domain_gate": "PASS",
     "report_consistency_gate": "PASS",
     "local_test_gate": "PASS",
@@ -22,7 +24,7 @@
     "status": "PASS",
     "command": "F:\\AI\\GTIP\\.venv\\Scripts\\python.exe -m pytest tests/test_electrolyte_audit.py tests/test_electrolyte_domain.py tests/test_electrolyte_hypotheses.py tests/test_electrolyte_screening.py tests/test_electrolyte_benchmark.py -q -p no:cacheprovider",
     "exit_code": 0,
-    "evidence": "Executed pytest on electrolyte suite (exit code 0 in 29.81s): 85 passed, 69 warnings in 28.54s"
+    "evidence": "Executed pytest on electrolyte suite (exit code 0 in 33.08s): 99 passed, 69 warnings in 31.73s"
   },
   "details": [
     {
@@ -81,9 +83,19 @@
       "evidence": "Scalability verified: [10000, 100000, 333333, 999999] scale trials and [10000, 100000, 333333] end-to-end decision pipeline runs."
     },
     {
+      "gate": "screening_quality_gate",
+      "status": "PASS",
+      "evidence": "Historical screening quality quantified: evidence_mode=HISTORICAL_EVIDENCE, full_max=0.7886, WS trials=[200, 500, 1000], chosen default=200."
+    },
+    {
       "gate": "surrogate_provenance_gate",
       "status": "PASS",
-      "evidence": "Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False."
+      "evidence": "Scope=333333, oracle_kind=SIMULATED_SURROGATE, evidence_mode=HISTORICAL_EVIDENCE, legacy aliases deprecated."
+    },
+    {
+      "gate": "surrogate_metric_integrity_gate",
+      "status": "PASS",
+      "evidence": "Mathematical invariants verified: full_max=0.7886, ws_max=0.7886, gap=0.0000, all regrets non-negative across 6 policies and 3 seeds."
     },
     {
       "gate": "cross_domain_gate",
@@ -100,7 +112,7 @@
       "status": "PASS",
       "command": "F:\\AI\\GTIP\\.venv\\Scripts\\python.exe -m pytest tests/test_electrolyte_audit.py tests/test_electrolyte_domain.py tests/test_electrolyte_hypotheses.py tests/test_electrolyte_screening.py tests/test_electrolyte_benchmark.py -q -p no:cacheprovider",
       "exit_code": 0,
-      "evidence": "Executed pytest on electrolyte suite (exit code 0 in 29.81s): 85 passed, 69 warnings in 28.54s"
+      "evidence": "Executed pytest on electrolyte suite (exit code 0 in 33.08s): 99 passed, 69 warnings in 31.73s"
     },
     {
       "gate": "external_CI_gate",
@@ -108,5 +120,5 @@
       "evidence": "External GitHub Actions matrix CI requires remote commit trigger; cannot be evaluated locally."
     }
   ],
-  "timestamp": "2026-09-04T08:37:42Z"
+  "timestamp": "2026-09-04T09:55:00Z"
 }

@@ -27,6 +27,7 @@ from src.domains.electrolyte.oracle import (
     UnmeasuredElectrolyteCandidateError,
 )
 from src.domains.electrolyte.screening import (
+    ScreeningEvidenceMode,
     benchmark_large_pool_screening,
     screen_large_pool_candidates,
 )
@@ -50,6 +51,7 @@ __all__ = [
     "load_derived_historical_outcomes",
     "load_electrolyte_data_contract",
     "load_lifsi_virtual_candidate_chunk",
+    "ScreeningEvidenceMode",
     "screen_large_pool_candidates",
     "benchmark_large_pool_screening",
 ]

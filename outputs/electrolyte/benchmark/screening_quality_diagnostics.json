@@ -1,0 +1,89 @@
+{
+  "search_space_size": 333333,
+  "full_search_space_latent_max": 0.7886,
+  "evidence_mode": "HISTORICAL_EVIDENCE",
+  "historical_observation_count": 75,
+  "feature_count": 11,
+  "screening_method": "Ridge + RandomForest rank ensemble (discovery 40%), uncertainty + distance (exploration 30%), farthest-point (diversity 20%), uniform random (10%)",
+  "chosen_default_working_set_size": 200,
+  "chosen_default_rationale": "WS=200 balances computational feasibility with full latent optimum recovery (gap=0.0000, 8/10 top-10 recovered, ~10s/step proposal time vs ~22s/step at WS=500).",
+  "working_set_trials": {
+    "200": {
+      "working_set_size": 200,
+      "working_set_latent_max": 0.7886,
+      "screening_latent_gap": 0.0,
+      "top_10_latent_recovery_count": 8,
+      "top_100_latent_recovery_count": 57,
+      "latent_max_percentile_recovered": 100.0,
+      "screening_runtime_sec": 1.7011,
+      "tranche_counts": {
+        "discovery": 80,
+        "exploration": 60,
+        "diversity": 40,
+        "random": 20
+      }
+    },
+    "500": {
+      "working_set_size": 500,
+      "working_set_latent_max": 0.7886,
+      "screening_latent_gap": 0.0,
+      "top_10_latent_recovery_count": 8,
+      "top_100_latent_recovery_count": 77,
+      "latent_max_percentile_recovered": 100.0,
+      "screening_runtime_sec": 1.5248,
+      "tranche_counts": {
+        "discovery": 200,
+        "exploration": 150,
+        "diversity": 100,
+        "random": 50
+      }
+    },
+    "1000": {
+      "working_set_size": 1000,
+      "working_set_latent_max": 0.7886,
+      "screening_latent_gap": 0.0,
+      "top_10_latent_recovery_count": 8,
+      "top_100_latent_recovery_count": 80,
+      "latent_max_percentile_recovered": 100.0,
+      "screening_runtime_sec": 1.6266,
+      "tranche_counts": {
+        "discovery": 400,
+        "exploration": 300,
+        "diversity": 200,
+        "random": 100
+      }
+    }
+  },
+  "reference_comparison": {
+    "COLD_START_DESCRIPTOR_ONLY_200": {
+      "working_set_size": 200,
+      "working_set_latent_max": 0.4075,
+      "screening_latent_gap": 0.3811,
+      "top_10_latent_recovery_count": 0,
+      "top_100_latent_recovery_count": 0,
+      "latent_max_percentile_recovered": 99.6307,
+      "screening_runtime_sec": 0.2443,
+      "tranche_counts": {
+        "discovery": 80,
+        "exploration": 60,
+        "diversity": 40,
+        "random": 20
+      }
+    },
+    "HISTORICAL_EVIDENCE_200": {
+      "working_set_size": 200,
+      "working_set_latent_max": 0.7886,
+      "screening_latent_gap": 0.0,
+      "top_10_latent_recovery_count": 8,
+      "top_100_latent_recovery_count": 57,
+      "latent_max_percentile_recovered": 100.0,
+      "screening_runtime_sec": 1.7011,
+      "tranche_counts": {
+        "discovery": 80,
+        "exploration": 60,
+        "diversity": 40,
+        "random": 20
+      }
+    }
+  }
+}

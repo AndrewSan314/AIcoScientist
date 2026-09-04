@@ -351,24 +351,134 @@ def main():
         "evidence": scale_msg or "Large pool scale or end-to-end JSON missing.",
     })
 
+    # 11.5 Screening Quality Gate (Sensitivity, Regimes, Honesty)
+    print("[GATE 11.5] Checking Screening Quality Gate (Sensitivity, Regimes, Honesty)...")
+    sq_json_path = "outputs/electrolyte/benchmark/screening_quality_diagnostics.json"
+    sq_ok = False
+    sq_msg = ""
+    if os.path.exists(sq_json_path):
+        try:
+            with open(sq_json_path) as f:
+                sq_data = json.load(f)
+            has_mode = sq_data.get("evidence_mode") == "HISTORICAL_EVIDENCE"
+            has_trials = all(k in sq_data.get("working_set_trials", {}) for k in ("200", "500", "1000"))
+            has_ref = "COLD_START_DESCRIPTOR_ONLY_200" in sq_data.get("reference_comparison", {})
+            full_max = sq_data.get("full_search_space_latent_max")
+            finite_max = full_max is not None and np.isfinite(full_max)
+            trials_valid = True
+            for k in ("200", "500", "1000"):
+                t = sq_data.get("working_set_trials", {}).get(k, {})
+                ws_max = t.get("working_set_latent_max")
+                gap = t.get("screening_latent_gap")
+                if ws_max is None or not np.isfinite(ws_max) or gap is None or not np.isfinite(gap) or gap < 0:
+                    trials_valid = False
+            has_default = (
+                sq_data.get("chosen_default_working_set_size") is not None
+                and bool(sq_data.get("chosen_default_rationale"))
+            )
+            # PASS does NOT require recovering hidden optimum; it validates that a valid protocol was executed and honestly quantified.
+            sq_ok = bool(has_mode and has_trials and has_ref and finite_max and trials_valid and has_default)
+            sq_msg = (
+                f"Historical screening quality quantified: evidence_mode={sq_data.get('evidence_mode')}, "
+                f"full_max={full_max}, WS trials=[200, 500, 1000], chosen default={sq_data.get('chosen_default_working_set_size')}."
+            )
+        except Exception as e:
+            sq_msg = f"Error reading screening diagnostics: {e}"
+    gates["screening_quality_gate"] = "PASS" if sq_ok else "FAIL"
+    gate_details.append({
+        "gate": "screening_quality_gate",
+        "status": gates["screening_quality_gate"],
+        "evidence": sq_msg or "Screening quality diagnostics JSON missing.",
+    })
+
     # 12. Surrogate Provenance Gate
     print("[GATE 12] Checking Surrogate Provenance Gate...")
     surr_json_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
     surr_ok = False
+    surr_prov_msg = ""
     if os.path.exists(surr_json_path):
-        with open(surr_json_path) as f:
-            sd = json.load(f)
-            surr_ok = (
-                "SIMULATED" in sd.get("simulation_label", "")
-                and sd.get("oracle_kind") == "SIMULATED_SURROGATE"
-                and sd.get("physical_synthesis") is False
-                and "HYBRID_DEFAULT" in sd.get("simulation_policies", {})
+        try:
+            with open(surr_json_path) as f:
+                sd = json.load(f)
+            is_sim = "SIMULATED" in sd.get("simulation_label", "")
+            is_surr = sd.get("oracle_kind") == "SIMULATED_SURROGATE"
+            is_no_synth = sd.get("physical_synthesis") is False
+            req_size = sd.get("requested_search_space_size") == 333333
+            act_size = sd.get("actual_search_space_size") == 333333
+            has_ev_mode = sd.get("screening_evidence_mode") == "HISTORICAL_EVIDENCE"
+            # Ambiguous aliases must be removed or moved to deprecated_aliases
+            no_top_aliases = "oracle_latent_max" not in sd and "oracle_pool_maximum" not in sd
+            has_dep = "deprecated_aliases" in sd and "oracle_latent_max" in sd["deprecated_aliases"]
+            surr_ok = bool(
+                is_sim and is_surr and is_no_synth and req_size and act_size
+                and has_ev_mode and no_top_aliases and has_dep
             )
+            surr_prov_msg = (
+                f"Scope={sd.get('actual_search_space_size')}, oracle_kind={sd.get('oracle_kind')}, "
+                f"evidence_mode={sd.get('screening_evidence_mode')}, legacy aliases deprecated."
+            )
+        except Exception as e:
+            surr_prov_msg = f"Error reading surrogate JSON: {e}"
     gates["surrogate_provenance_gate"] = "PASS" if surr_ok else "FAIL"
     gate_details.append({
         "gate": "surrogate_provenance_gate",
         "status": gates["surrogate_provenance_gate"],
-        "evidence": "Surrogate oracle strictly labeled as SIMULATED_SURROGATE with physical_synthesis: False.",
+        "evidence": surr_prov_msg or "Surrogate simulation JSON missing.",
+    })
+
+    # 12.5 Surrogate Metric Integrity Gate
+    print("[GATE 12.5] Checking Surrogate Metric Integrity Gate...")
+    surr_metric_ok = False
+    surr_metric_msg = ""
+    if os.path.exists(surr_json_path):
+        try:
+            with open(surr_json_path) as f:
+                sd = json.load(f)
+            f_max = sd.get("full_search_space_latent_max")
+            w_max = sd.get("working_set_latent_max")
+            gap = sd.get("screening_latent_gap")
+            finite_bounds = (
+                f_max is not None and np.isfinite(f_max)
+                and w_max is not None and np.isfinite(w_max)
+                and gap is not None and np.isfinite(gap)
+                and gap >= -1e-6
+                and w_max <= (f_max + 1e-6)
+            )
+            req_seeds = {42, 101, 2024}
+            has_seeds = req_seeds.issubset(set(sd.get("evaluated_seeds", [])))
+            req_pols = {
+                "RANDOM",
+                "BOTORCH_EI_DIRECT",
+                "BOTORCH_GPUCB_DIRECT",
+                "DISCOVERY_ONLY",
+                "PURE_FALSIFICATION",
+                "HYBRID_DEFAULT",
+            }
+            pols = set(sd.get("simulation_policies", {}).keys())
+            has_pols = req_pols.issubset(pols)
+
+            invariants_ok = True
+            for pol_name in req_pols:
+                p_sum = sd["simulation_policies"].get(pol_name, {})
+                if p_sum.get("simple_regret_latent_mean", -1) < -1e-6:
+                    invariants_ok = False
+                if p_sum.get("simple_regret_vs_full_latent_mean", -1) < -1e-6:
+                    invariants_ok = False
+                if p_sum.get("best_selected_latent_capacity_mean", 999) > (w_max + 1e-6):
+                    invariants_ok = False
+
+            surr_metric_ok = bool(finite_bounds and has_seeds and has_pols and invariants_ok)
+            surr_metric_msg = (
+                f"Mathematical invariants verified: full_max={f_max:.4f}, ws_max={w_max:.4f}, "
+                f"gap={gap:.4f}, all regrets non-negative across 6 policies and 3 seeds."
+            )
+        except Exception as e:
+            surr_metric_msg = f"Error evaluating surrogate metrics: {e}"
+    gates["surrogate_metric_integrity_gate"] = "PASS" if surr_metric_ok else "FAIL"
+    gate_details.append({
+        "gate": "surrogate_metric_integrity_gate",
+        "status": gates["surrogate_metric_integrity_gate"],
+        "evidence": surr_metric_msg or "Surrogate simulation JSON missing.",
     })
 
     # 13. Cross Domain Gate (Real End-to-End Lifecycle: initialize -> propose -> execute -> update)
@@ -598,12 +708,13 @@ def main():
 
 ## 2. Verdict Rationale
 
-All 15 scientific validation gates pass without exception:
-1. **Audit Readiness:** Frozen data contract and derived row-level CSVs exist.
+All local scientific validation gates pass without exception:
+1. **Audit Readiness:** Frozen data contract and derived row-level CSVs exist with verified independent target ratio semantics.
 2. **Information Firewall:** Visible candidate pool contains zero ground-truth capacity targets and zero future batch indicators.
 3. **Fail-Closed Oracle:** Historical experimental oracle reveals measured outcomes and strictly raises `UnmeasuredElectrolyteCandidateError` for unmeasured formulations.
 4. **Hypothesis Ensemble:** Competing structural explanations (smooth GP, sparse additive Ridge, local regime RF) show non-zero predictive divergence and valid Bayesian updates.
-5. **Two-Stage Screening:** Large-pool virtual candidates are screened into bounded working sets before decision engine initialization, preserving computational scalability.
+5. **Two-Stage Screening & Quality:** Large-pool virtual candidates are pre-screened into bounded working sets using historical experimental priors (Ridge + RF rank ensemble, RF uncertainty + nearest observed distance), with offline latent gap and working-set sensitivity quantified.
+6. **Surrogate Metric Integrity:** Omniscient latent evaluation confirms mathematical invariants (non-negative regret, bounded maxima, deprecated legacy aliases).
 
 ---
 *Generated by AIcoScientist Validation Suite.*

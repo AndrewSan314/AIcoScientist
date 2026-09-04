@@ -275,3 +275,32 @@ def test_local_trajectory_wording_distinguishes_upstream_full_reproduction(audit
     assert "Full Original Acquisition Reproduction" in audit_report_text
     assert "UPSTREAM ONLY" in audit_report_text or "SUPPORTED UPSTREAM" in audit_report_text
     assert "Local Batch Chronology" in audit_report_text
+
+
+def test_target_semantics_gate_uses_act_capacity_20_ratio_validation():
+    """Verify target_semantics_gate checks independent act_capacity_20 / theor_capacity alias ratio."""
+    readiness_path = os.path.join(AUDIT_DIR, "audit_readiness.json")
+    assert os.path.exists(readiness_path)
+    with open(readiness_path, "r", encoding="utf-8") as f:
+        readiness = json.load(f)
+    assert readiness["gates"]["target_semantics_gate"] == "PASS"
+
+    target_sem_path = os.path.join(AUDIT_DIR, "labeled_data_statistics.json")
+    assert os.path.exists(target_sem_path)
+    with open(target_sem_path, "r", encoding="utf-8") as f:
+        target_sem = json.load(f)["target_semantics"]
+
+    alias_val = target_sem["numerical_alias_validation"]
+    assert alias_val["verified_consistent"] is True
+    assert alias_val["exceptions_count"] == 0
+    assert alias_val["max_absolute_error"] <= 1e-6
+    assert target_sem["raw_target_column"] == "norm_capacity_3"
+    assert "20th cycle" in target_sem["scientific_meaning"]
+
+
+def test_float_jitter_report_does_not_say_mechanism_proven(audit_report_text):
+    """Verify Section 8 uses Mechanism Assessment rather than Mechanism Proven."""
+    assert "Mechanism Proven" not in audit_report_text
+    assert "PROVEN FLOATING-POINT JITTER" not in audit_report_text
+    assert "Mechanism Assessment" in audit_report_text or "Numerical Evidence" in audit_report_text
+

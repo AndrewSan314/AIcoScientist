@@ -114,7 +114,7 @@ Three distinct conceptual views are separated:
 # 8. Candidate Feature Identity Audit (388k vs 742k Anomaly)
 
 * **Investigation:** The candidate table contains 388,004 solvent strings, but raw float hashing produced 742,382 unique 11D solvent vectors across 333,470 multi-vector solvents.
-* **Mechanism Proven:** Across all 333,470 multi-vector solvents, within-solvent feature differences are bounded at approximately 3.3307e-15, molecular weights are identical, and rounding the solvent feature vector to 8 decimal places removes all within-solvent multiplicity. The anomaly is therefore numerically negligible and strongly consistent with floating-point precision effects.
+* **Mechanism Assessment:** Across all 333,470 multi-vector solvents, within-solvent feature differences are bounded at approximately 3.3307e-15, molecular weights are identical, and rounding the solvent feature vector to 8 decimal places removes all within-solvent multiplicity. The anomaly is therefore numerically negligible and strongly consistent with floating-point precision effects.
 * **Quantiles of Within-Solvent Feature Deltas:**
   * Median (P50): $4.4409e-16$
   * P90: $8.8818e-16$

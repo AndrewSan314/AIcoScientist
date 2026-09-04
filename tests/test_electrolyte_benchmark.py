@@ -791,4 +791,58 @@ def test_e2e_timing_component_names_match_actual_operations():
             assert run["screened_working_set_size"] > 0
 
 
+def test_surrogate_metric_gate_checks_full_search_space_scope():
+    """Verify that surrogate simulation strictly evaluates the 333,333 LiFSI candidate pool."""
+    surr_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
+    if os.path.exists(surr_path):
+        with open(surr_path) as f:
+            data = json.load(f)
+        assert data.get("actual_search_space_size") == 333333
+        assert data.get("requested_search_space_size") == 333333
+        assert np.isfinite(data.get("full_search_space_latent_max"))
+        assert np.isfinite(data.get("working_set_latent_max"))
+
+
+def test_surrogate_metric_gate_checks_latent_regret_invariants():
+    """Verify that surrogate simulation respects mathematical regret and latent bound invariants."""
+    surr_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
+    if os.path.exists(surr_path):
+        with open(surr_path) as f:
+            data = json.load(f)
+        f_max = data["full_search_space_latent_max"]
+        w_max = data["working_set_latent_max"]
+        assert w_max <= f_max + 1e-6
+        assert data["screening_latent_gap"] >= -1e-6
+
+        for pol_k, summ in data.get("simulation_policies", {}).items():
+            assert summ["simple_regret_latent_mean"] >= -1e-6
+            assert summ["simple_regret_vs_full_latent_mean"] >= -1e-6
+            assert summ["best_selected_latent_capacity_mean"] <= w_max + 1e-4
+
+
+def test_surrogate_legacy_oracle_max_aliases_are_removed_or_deprecated():
+    """Verify ambiguous oracle_latent_max and oracle_pool_maximum are deprecated or moved out of canonical keys."""
+    surr_path = "outputs/electrolyte/benchmark/surrogate_simulation.json"
+    if os.path.exists(surr_path):
+        with open(surr_path) as f:
+            data = json.load(f)
+        assert "oracle_latent_max" not in data, "oracle_latent_max should not be a top-level canonical key"
+        assert "oracle_pool_maximum" not in data, "oracle_pool_maximum should not be a top-level canonical key"
+        if "deprecated_aliases" in data:
+            assert "oracle_latent_max" in data["deprecated_aliases"]
+            assert "oracle_pool_maximum" in data["deprecated_aliases"]
+
+
+def test_surrogate_report_states_pre_screen_then_fixed_working_set():
+    """Verify that surrogate report accurately qualifies the two-stage screening protocol."""
+    surr_md_path = "outputs/electrolyte/benchmark/surrogate_simulation.md"
+    if os.path.exists(surr_md_path):
+        with open(surr_md_path, encoding="utf-8") as f:
+            text = f.read()
+        assert "pre-screened into a bounded working set" in text
+        assert "333k virtual pre-screen + bounded closed-loop simulation" in text
+        assert "Hybrid evaluated all 333,333 candidates at every decision step" not in text
+
+
+
 

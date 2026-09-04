@@ -2,17 +2,26 @@ import json
 import logging
 import os
 import time
+from enum import Enum
 from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import cdist
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 
 from src.domains.electrolyte.config import ELECTROLYTE_SOLVENT_FEATURES
 from src.domains.electrolyte.data import generate_candidate_id
 
 logger = logging.getLogger(__name__)
+
+
+class ScreeningEvidenceMode(str, Enum):
+    """Explicit evidence modes governing Stage-1 candidate pool screening."""
+    COLD_START_DESCRIPTOR_ONLY = "COLD_START_DESCRIPTOR_ONLY"
+    HISTORICAL_EVIDENCE = "HISTORICAL_EVIDENCE"
+    SEQUENTIAL_OBSERVED_EVIDENCE = "SEQUENTIAL_OBSERVED_EVIDENCE"
 
 # Canonical full 1-million candidate space moments (Chan et al. parallel Welford variance)
 CANONICAL_ELECTROLYTE_MOMENTS = {
@@ -100,16 +109,22 @@ def screen_large_pool_candidates(
     feature_cols: Sequence[str] = ELECTROLYTE_SOLVENT_FEATURES,
     screening_round: int = 0,
     random_state: int = 42,
+    evidence_mode: str | ScreeningEvidenceMode | None = None,
+    discovery_scorer: str = "ensemble",
+    diversity_reservoir_size: int = 20000,
 ) -> pd.DataFrame:
     """Scalable Stage-1 candidate screening: reduces virtual candidate libraries into a bounded working set.
 
     Partitions candidate selection into:
-    1. Discovery tranche: Top predicted capacity under current surrogate model.
-    2. Exploration tranche: Candidates with highest uncertainty / maximum distance to observed data.
+    1. Discovery tranche: Top predicted capacity under a learned prior model (Ridge + RandomForest ensemble).
+    2. Exploration tranche: Candidates with highest model uncertainty and maximum distance to observed data.
     3. Diversity tranche: Farthest-point chemical descriptor coverage across candidate pool.
     4. Random tranche: Seeded uniform exploration safeguarding against model blind spots.
 
     Guarantees:
+    - OFFLINE EVALUATION ONLY — NEVER USED FOR SCREENING OR POLICY SELECTION:
+      This function never accepts, queries, or receives latent surrogate truth f(x) or hidden oracle targets.
+      It relies strictly on legitimate pre-measurement evidence (historical outcomes or cold-start descriptors).
     - Standardizes 11D feature geometry using full candidate space moments so that mol_wt_solv does not dominate PCA 0-9.
     - Candidate IDs are deterministically assigned BEFORE screening.
     - Preserves stable candidate_id identity and stores tranche provenance metadata.
@@ -117,6 +132,15 @@ def screen_large_pool_candidates(
     """
     total_cands = len(candidates_df)
     df_work = candidates_df.copy()
+
+    # Resolve screening evidence mode
+    if evidence_mode is None:
+        if observed_features is not None and observed_targets is not None and len(observed_targets) >= 3:
+            mode = ScreeningEvidenceMode.HISTORICAL_EVIDENCE
+        else:
+            mode = ScreeningEvidenceMode.COLD_START_DESCRIPTOR_ONLY
+    else:
+        mode = ScreeningEvidenceMode(evidence_mode)
 
     # Deterministically ensure candidate_id is assigned BEFORE screening
     if "candidate_id" not in df_work.columns:
@@ -132,6 +156,7 @@ def screen_large_pool_candidates(
         df_work["screening_tranche"] = "all"
         df_work["screening_score"] = 0.0
         df_work["screening_round"] = screening_round
+        df_work["screening_evidence_mode"] = mode.value
         return df_work.reset_index(drop=True)
 
     f_cols = list(feature_cols)
@@ -160,48 +185,92 @@ def screen_large_pool_candidates(
     selected_info: dict[int, tuple[str, float]] = {}
 
     # 1. Discovery Tranche
-    if observed_features is not None and observed_targets is not None and len(observed_targets) >= 3:
+    unc_rf = None
+    X_obs_scaled = None
+    if mode in (ScreeningEvidenceMode.HISTORICAL_EVIDENCE, ScreeningEvidenceMode.SEQUENTIAL_OBSERVED_EVIDENCE):
+        if observed_features is None or observed_targets is None or len(observed_targets) < 3:
+            raise ValueError(
+                f"Evidence mode '{mode.value}' requires observed_features and observed_targets (>= 3 samples)."
+            )
         X_obs_scaled = scaler.transform(observed_features)
-        surrogate = Ridge(alpha=1.0)
-        surrogate.fit(X_obs_scaled, observed_targets)
-        pred_scores = surrogate.predict(X_pool_scaled)
+        y_obs = np.asarray(observed_targets, dtype=np.float64)
 
-        top_disc_idx = np.argsort(-pred_scores)
+        # Fit Ridge
+        ridge = Ridge(alpha=1.0)
+        ridge.fit(X_obs_scaled, y_obs)
+        pred_ridge = ridge.predict(X_pool_scaled)
+
+        # Fit lightweight RandomForest
+        rf = RandomForestRegressor(n_estimators=40, max_depth=6, random_state=random_state, n_jobs=-1)
+        rf.fit(X_obs_scaled, y_obs)
+        tree_preds = np.array([tree.predict(X_pool_scaled) for tree in rf.estimators_])
+        pred_rf = np.mean(tree_preds, axis=0)
+        unc_rf = np.std(tree_preds, axis=0)
+
+        if discovery_scorer == "ensemble":
+            rank_ridge = np.argsort(np.argsort(pred_ridge)) / float(len(pred_ridge))
+            rank_rf = np.argsort(np.argsort(pred_rf)) / float(len(pred_rf))
+            disc_scores = 0.5 * rank_ridge + 0.5 * rank_rf
+        elif discovery_scorer == "rf":
+            disc_scores = pred_rf
+        elif discovery_scorer == "ridge":
+            disc_scores = pred_ridge
+        else:
+            raise ValueError(f"Unknown discovery_scorer: {discovery_scorer}")
+
+        top_disc_idx = np.argsort(-disc_scores)
         for idx in top_disc_idx:
             idx_int = int(idx)
             if idx_int not in selected_info:
-                selected_info[idx_int] = ("discovery", float(pred_scores[idx_int]))
+                selected_info[idx_int] = ("discovery", float(disc_scores[idx_int]))
                 if len(selected_info) >= k_disc:
                     break
     else:
-        # Cold start: select candidates with highest standardized descriptor norm
+        # COLD_START_DESCRIPTOR_ONLY: select candidates with highest standardized descriptor norm
         norms = np.linalg.norm(X_pool_scaled, axis=1)
         top_disc_idx = np.argsort(-norms)
         for idx in top_disc_idx[:k_disc]:
             idx_int = int(idx)
             selected_info[idx_int] = ("discovery", float(norms[idx_int]))
 
-    # 2. Exploration Tranche (Max standardized distance to currently observed points)
-    if observed_features is not None and len(observed_features) > 0:
-        X_obs_scaled = scaler.transform(observed_features)
-        dists = cdist(X_pool_scaled, X_obs_scaled, metric="euclidean").min(axis=1)
+    # 2. Exploration Tranche
+    if mode in (ScreeningEvidenceMode.HISTORICAL_EVIDENCE, ScreeningEvidenceMode.SEQUENTIAL_OBSERVED_EVIDENCE) and X_obs_scaled is not None:
+        chunk_size = 50000
+        min_dists = np.empty(len(X_pool_scaled), dtype=np.float64)
+        for i in range(0, len(X_pool_scaled), chunk_size):
+            chunk = X_pool_scaled[i : i + chunk_size]
+            min_dists[i : i + chunk_size] = cdist(chunk, X_obs_scaled, metric="euclidean").min(axis=1)
+
+        norm_dist = (min_dists - min_dists.min()) / max(min_dists.max() - min_dists.min(), 1e-12)
+        if unc_rf is not None:
+            norm_unc = (unc_rf - unc_rf.min()) / max(unc_rf.max() - unc_rf.min(), 1e-12)
+            expl_scores = 0.5 * norm_unc + 0.5 * norm_dist
+        else:
+            expl_scores = norm_dist
+
+        expl_sorted = np.argsort(-expl_scores)
+        for idx in expl_sorted:
+            idx_int = int(idx)
+            if idx_int not in selected_info:
+                selected_info[idx_int] = ("exploration", float(expl_scores[idx_int]))
+                if len(selected_info) >= (k_disc + k_expl):
+                    break
     else:
-        # Standardized distance to centroid of pool
+        # COLD_START: Standardized distance to centroid of pool
         centroid = np.mean(X_pool_scaled, axis=0, keepdims=True)
         dists = cdist(X_pool_scaled, centroid, metric="euclidean").flatten()
+        expl_sorted = np.argsort(-dists)
+        for idx in expl_sorted:
+            idx_int = int(idx)
+            if idx_int not in selected_info:
+                selected_info[idx_int] = ("exploration", float(dists[idx_int]))
+                if len(selected_info) >= (k_disc + k_expl):
+                    break
 
-    expl_sorted = np.argsort(-dists)
-    for idx in expl_sorted:
-        idx_int = int(idx)
-        if idx_int not in selected_info:
-            selected_info[idx_int] = ("exploration", float(dists[idx_int]))
-            if len(selected_info) >= (k_disc + k_expl):
-                break
-
-    # 3. Diversity Tranche (Greedy farthest-point selection in standardized feature space)
+    # 3. Diversity Tranche (Greedy farthest-point selection from scalable reservoir)
     remaining_indices = [i for i in range(total_cands) if i not in selected_info]
     if remaining_indices and k_div > 0:
-        subset_size = min(len(remaining_indices), 2000)
+        subset_size = min(len(remaining_indices), diversity_reservoir_size)
         sub_rem = rng.choice(remaining_indices, size=subset_size, replace=False)
         curr_selected = list(selected_info.keys())
         d_to_sel = cdist(X_pool_scaled[sub_rem], X_pool_scaled[curr_selected], metric="euclidean").min(axis=1)
@@ -234,6 +303,19 @@ def screen_large_pool_candidates(
     res_df["screening_tranche"] = [selected_info[i][0] for i in sorted_indices]
     res_df["screening_score"] = [round(selected_info[i][1], 6) for i in sorted_indices]
     res_df["screening_round"] = screening_round
+    res_df["screening_evidence_mode"] = mode.value
+    res_df.attrs["screening_metadata"] = {
+        "evidence_mode": mode.value,
+        "working_set_size": len(res_df),
+        "discovery_scorer": discovery_scorer if mode != ScreeningEvidenceMode.COLD_START_DESCRIPTOR_ONLY else "descriptor_norm",
+        "diversity_reservoir_size": diversity_reservoir_size,
+        "tranche_counts": {
+            "discovery": sum(1 for v in selected_info.values() if v[0] == "discovery"),
+            "exploration": sum(1 for v in selected_info.values() if v[0] == "exploration"),
+            "diversity": sum(1 for v in selected_info.values() if v[0] == "diversity"),
+            "random": sum(1 for v in selected_info.values() if v[0] == "random"),
+        },
+    }
     return res_df
 
 
