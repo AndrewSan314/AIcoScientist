@@ -1,9 +1,115 @@
 {
-  "status": "DESCRIPTIVE_ONLY",
-  "note": "Controlled-world diagnostics validate contract and recovery bookkeeping; no prospective calibration claim is made.",
+  "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+  "split_manifest": "replay_split_manifest.json",
+  "holdout_rule": "deterministic grouped holdout by SHA256(sample_id) parity; no evaluation ID calibrates a model",
+  "metrics": {
+    "ece": null,
+    "brier": null,
+    "log_loss": null,
+    "holdout_n": 525
+  },
+  "note": "The CPU-safe hypothesis templates are controlled-world instruments, not calibrated retrospective models.",
   "hypotheses": [
     "H1_PHASE_PURITY_LIMITED",
     "H2_COMPOSITION_HOMOGENEITY_LIMITED",
     "H3_MORPHOLOGY_KINETICS_LIMITED"
-  ]
+  ],
+  "per_hypothesis_modality": {
+    "H1_PHASE_PURITY_LIMITED": {
+      "XRD": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "REFINEMENT": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "OUTCOME_TEST": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      }
+    },
+    "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
+      "XRD": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "REFINEMENT": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "OUTCOME_TEST": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      }
+    },
+    "H3_MORPHOLOGY_KINETICS_LIMITED": {
+      "XRD": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "REFINEMENT": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      },
+      "OUTCOME_TEST": {
+        "status": "NOT_EVALUATED_NO_CALIBRATED_MODEL",
+        "N_calibration": 510,
+        "N_evaluation": 525,
+        "MAE": null,
+        "RMSE": null,
+        "mean_log_predictive_density": null,
+        "coverage_50": null,
+        "coverage_90": null
+      }
+    }
+  }
 }

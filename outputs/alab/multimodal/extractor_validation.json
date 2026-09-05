@@ -1,15 +1,15 @@
 {
-  "status": "PASS",
+  "status": "CONTRACT_VALIDATED",
   "cases": {
     "XRD": {
       "extractor": "aicoscientist_xrd_descriptor_fallback",
-      "observable_count": 3,
+      "observable_count": 5,
       "observables": [
         {
-          "observable_id": "XRD:fixture-1:crystallinity",
+          "observable_id": "XRD:fixture-1:XRD.normalized_intensity_std_proxy",
           "candidate_id": "fixture-1",
           "modality": "XRD",
-          "name": "crystallinity",
+          "name": "XRD.normalized_intensity_std_proxy",
           "value": 0.3646422752776584,
           "uncertainty": 0.05,
           "units": null,
@@ -27,13 +27,16 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "XRD.normalized_intensity_std_proxy"
+          ]
         },
         {
-          "observable_id": "XRD:fixture-1:peak_position_index",
+          "observable_id": "XRD:fixture-1:XRD.dominant_peak_index_fraction",
           "candidate_id": "fixture-1",
           "modality": "XRD",
-          "name": "peak_position_index",
+          "name": "XRD.dominant_peak_index_fraction",
           "value": 0.5,
           "uncertainty": 0.2,
           "units": null,
@@ -51,13 +54,16 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "XRD.dominant_peak_index_fraction"
+          ]
         },
         {
-          "observable_id": "XRD:fixture-1:FWHM",
+          "observable_id": "XRD:fixture-1:XRD.global_halfmax_span_proxy",
           "candidate_id": "fixture-1",
           "modality": "XRD",
-          "name": "FWHM",
+          "name": "XRD.global_halfmax_span_proxy",
           "value": 0.0,
           "uncertainty": 0.05,
           "units": null,
@@ -75,30 +81,87 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "XRD.global_halfmax_span_proxy"
+          ]
+        },
+        {
+          "observable_id": "XRD:fixture-1:XRD.spectral_entropy",
+          "candidate_id": "fixture-1",
+          "modality": "XRD",
+          "name": "XRD.spectral_entropy",
+          "value": 0.6042352366400121,
+          "uncertainty": 0.05,
+          "units": null,
+          "raw_artifact_ref": "fixture://xrd",
+          "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://xrd",
+            "raw_artifact_sha256": "43e7d6e1008f104e2098a24799a2aa365c6f839bcdd9b52dc8d21940d5c0df83",
+            "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "normalization": "min_shift_then_peak_scale"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar",
+          "observable_names": [
+            "XRD.spectral_entropy"
+          ]
+        },
+        {
+          "observable_id": "XRD:fixture-1:XRD.peak_count_proxy",
+          "candidate_id": "fixture-1",
+          "modality": "XRD",
+          "name": "XRD.peak_count_proxy",
+          "value": 1.0,
+          "uncertainty": 1.0,
+          "units": null,
+          "raw_artifact_ref": "fixture://xrd",
+          "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+          "extractor_version": "1.0.0",
+          "provenance": {
+            "raw_artifact_ref": "fixture://xrd",
+            "raw_artifact_sha256": "43e7d6e1008f104e2098a24799a2aa365c6f839bcdd9b52dc8d21940d5c0df83",
+            "extractor_name": "aicoscientist_xrd_descriptor_fallback",
+            "extractor_version": "1.0.0",
+            "configuration": {
+              "normalization": "min_shift_then_peak_scale"
+            },
+            "model_checkpoint": null
+          },
+          "timestamp": null,
+          "observable_type": "scalar",
+          "observable_names": [
+            "XRD.peak_count_proxy"
+          ]
         }
       ],
       "provenance_complete": true
     },
     "SEM": {
-      "extractor": "atomai_optional_sem_cpu_fallback",
+      "extractor": "aicoscientist_classical_sem_descriptors",
       "observable_count": 4,
       "observables": [
         {
-          "observable_id": "SEM:fixture-1:grain_size_mean",
+          "observable_id": "SEM:fixture-1:SEM.inverse_gradient_scale_proxy",
           "candidate_id": "fixture-1",
           "modality": "SEM",
-          "name": "grain_size_mean",
+          "name": "SEM.inverse_gradient_scale_proxy",
           "value": 9.000000000000002,
-          "uncertainty": 0.2,
+          "uncertainty": 0.1,
           "units": null,
           "raw_artifact_ref": "fixture://sem",
-          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_sem_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://sem",
             "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
-            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_sem_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -107,23 +170,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "SEM.inverse_gradient_scale_proxy"
+          ]
         },
         {
-          "observable_id": "SEM:fixture-1:grain_size_std",
+          "observable_id": "SEM:fixture-1:SEM.intensity_texture_std",
           "candidate_id": "fixture-1",
           "modality": "SEM",
-          "name": "grain_size_std",
+          "name": "SEM.intensity_texture_std",
           "value": 0.29157646512850627,
           "uncertainty": 0.1,
           "units": null,
           "raw_artifact_ref": "fixture://sem",
-          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_sem_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://sem",
             "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
-            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_sem_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -132,23 +198,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "SEM.intensity_texture_std"
+          ]
         },
         {
-          "observable_id": "SEM:fixture-1:porosity",
+          "observable_id": "SEM:fixture-1:SEM.median_threshold_background_fraction",
           "candidate_id": "fixture-1",
           "modality": "SEM",
-          "name": "porosity",
+          "name": "SEM.median_threshold_background_fraction",
           "value": 0.5,
-          "uncertainty": 0.05,
+          "uncertainty": 0.1,
           "units": null,
           "raw_artifact_ref": "fixture://sem",
-          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_sem_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://sem",
             "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
-            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_sem_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -157,23 +226,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "SEM.median_threshold_background_fraction"
+          ]
         },
         {
-          "observable_id": "SEM:fixture-1:agglomeration",
+          "observable_id": "SEM:fixture-1:SEM.foreground_adjacency_fraction",
           "candidate_id": "fixture-1",
           "modality": "SEM",
-          "name": "agglomeration",
+          "name": "SEM.foreground_adjacency_fraction",
           "value": 0.5,
-          "uncertainty": 0.05,
+          "uncertainty": 0.1,
           "units": null,
           "raw_artifact_ref": "fixture://sem",
-          "extractor_name": "atomai_optional_sem_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_sem_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://sem",
             "raw_artifact_sha256": "7f2c91b92b69bc61dd4f7b5d69e45a90d8f400722dbb143be33eeea57d8693eb",
-            "extractor_name": "atomai_optional_sem_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_sem_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -182,30 +254,33 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "SEM.foreground_adjacency_fraction"
+          ]
         }
       ],
       "provenance_complete": true
     },
     "EDS": {
-      "extractor": "atomai_optional_eds_cpu_fallback",
+      "extractor": "aicoscientist_classical_eds_descriptors",
       "observable_count": 4,
       "observables": [
         {
-          "observable_id": "EDS:fixture-1:composition_error",
+          "observable_id": "EDS:fixture-1:EDS.composition_error",
           "candidate_id": "fixture-1",
           "modality": "EDS",
-          "name": "composition_error",
+          "name": "EDS.composition_error",
           "value": 0.0,
           "uncertainty": 0.05,
           "units": null,
           "raw_artifact_ref": "fixture://eds",
-          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_eds_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://eds",
             "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
-            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_eds_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -215,23 +290,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "EDS.composition_error"
+          ]
         },
         {
-          "observable_id": "EDS:fixture-1:spatial_variance",
+          "observable_id": "EDS:fixture-1:EDS.spatial_variance",
           "candidate_id": "fixture-1",
           "modality": "EDS",
-          "name": "spatial_variance",
+          "name": "EDS.spatial_variance",
           "value": 0.0006250000000000003,
           "uncertainty": 0.05,
           "units": null,
           "raw_artifact_ref": "fixture://eds",
-          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_eds_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://eds",
             "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
-            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_eds_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -241,23 +319,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "EDS.spatial_variance"
+          ]
         },
         {
-          "observable_id": "EDS:fixture-1:segregation_index",
+          "observable_id": "EDS:fixture-1:EDS.segregation_index",
           "candidate_id": "fixture-1",
           "modality": "EDS",
-          "name": "segregation_index",
+          "name": "EDS.segregation_index",
           "value": 0.05012531328320803,
           "uncertainty": 0.05,
           "units": null,
           "raw_artifact_ref": "fixture://eds",
-          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_eds_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://eds",
             "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
-            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_eds_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -267,23 +348,26 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "EDS.segregation_index"
+          ]
         },
         {
-          "observable_id": "EDS:fixture-1:element_colocalization",
+          "observable_id": "EDS:fixture-1:EDS.element_colocalization",
           "candidate_id": "fixture-1",
           "modality": "EDS",
-          "name": "element_colocalization",
+          "name": "EDS.element_colocalization",
           "value": 0.949874686716792,
           "uncertainty": 0.05,
           "units": null,
           "raw_artifact_ref": "fixture://eds",
-          "extractor_name": "atomai_optional_eds_cpu_fallback",
+          "extractor_name": "aicoscientist_classical_eds_descriptors",
           "extractor_version": "1.0.0",
           "provenance": {
             "raw_artifact_ref": "fixture://eds",
             "raw_artifact_sha256": "7b9c9a13d1177e128615db70efd177066649ecc7a7412f087913b4e3ae3b4703",
-            "extractor_name": "atomai_optional_eds_cpu_fallback",
+            "extractor_name": "aicoscientist_classical_eds_descriptors",
             "extractor_version": "1.0.0",
             "configuration": {
               "backend": "classical_cpu",
@@ -293,7 +377,10 @@
             "model_checkpoint": null
           },
           "timestamp": null,
-          "observable_type": "scalar"
+          "observable_type": "scalar",
+          "observable_names": [
+            "EDS.element_colocalization"
+          ]
         }
       ],
       "provenance_complete": true

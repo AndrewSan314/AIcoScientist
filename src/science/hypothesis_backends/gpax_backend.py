@@ -50,7 +50,19 @@ class GPaxBackend:
         return np.random.default_rng(seed).normal(mean, np.sqrt(variance), size=(n_samples, len(mean)))
 
     def diagnostics(self) -> dict[str, Any]:
-        return {"backend": "gpax", "available": self.available, "fitted": self.model is not None, "fallback": "sklearn_gaussian_process"}
+        available = self.available
+        return {
+            "backend": "gpax",
+            "status": "OPTIONAL_EXPERIMENTAL_INTEGRATION",
+            "available": available,
+            "actual_import_tested": available,
+            "upstream_api": "gpax.ExactGP(input_dim, kernel=...).fit(...).predict(...)",
+            "fit_tested": False,
+            "predict_tested": False,
+            "used_in_primary_benchmark": False,
+            "fitted": self.model is not None,
+            "fallback": "sklearn_gaussian_process",
+        }
 
 
 __all__ = ["GPaxBackend"]

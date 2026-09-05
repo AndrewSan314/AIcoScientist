@@ -1,0 +1,15 @@
+{
+  "status": "CONTROLLED_WORLD_DIAGNOSTIC",
+  "worlds": [
+    "WORLD_H1_PHASE_PURITY",
+    "WORLD_H2_COMPOSITION_HOMOGENEITY",
+    "WORLD_H3_MORPHOLOGY_KINETICS"
+  ],
+  "diagnostic_modality_by_world": {
+    "WORLD_H1_PHASE_PURITY": "REFINEMENT",
+    "WORLD_H2_COMPOSITION_HOMOGENEITY": "EDS",
+    "WORLD_H3_MORPHOLOGY_KINETICS": "SEM"
+  },
+  "natural_divergence_required": true,
+  "prospective_causal_identifiability": "NOT_ESTABLISHED"
+}

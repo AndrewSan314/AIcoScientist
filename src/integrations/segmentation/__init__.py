@@ -1,3 +1,3 @@
-from src.integrations.segmentation.cameo_reference import CAMEOInspiredSegmentationBaseline
+from src.integrations.segmentation.cameo_reference import MedianThresholdSegmentationBaseline
 
-__all__ = ["CAMEOInspiredSegmentationBaseline"]
+__all__ = ["MedianThresholdSegmentationBaseline"]

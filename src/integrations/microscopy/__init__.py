@@ -1,3 +1,3 @@
-from src.integrations.microscopy.atomai_adapter import AtomAIEDSExtractor, AtomAISEMExtractor
+from src.integrations.microscopy.atomai_adapter import ClassicalEDSDescriptorExtractor, ClassicalSEMDescriptorExtractor
 
-__all__ = ["AtomAIEDSExtractor", "AtomAISEMExtractor"]
+__all__ = ["ClassicalEDSDescriptorExtractor", "ClassicalSEMDescriptorExtractor"]

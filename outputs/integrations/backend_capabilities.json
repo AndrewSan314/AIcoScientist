@@ -1,0 +1,51 @@
+{
+  "generated_by": "scripts/run_alab_multimodal_benchmark.py",
+  "primary_benchmark": "A-Lab offline multimodal validation",
+  "backends": {
+    "gpax": {
+      "upstream": "https://github.com/ziatdinovmax/gpax",
+      "commit_sha": "b493ba26c0613e6ade694e5bb6847bfbf4511f36",
+      "license": "MIT",
+      "status": "OPTIONAL_EXPERIMENTAL_INTEGRATION",
+      "actual_api_exercised": false,
+      "used_in_primary_benchmark": false,
+      "reason": "Pinned ExactGP fit/predict API inspected; optional JAX/NumPyro runtime and explicit inference configuration are not part of the CPU-safe benchmark."
+    },
+    "autoxrd": {
+      "upstream": "https://github.com/njszym/XRD-AutoAnalyzer",
+      "commit_sha": "bf32082521e45c0fcf5cf9ae9bd1321e76bf9012",
+      "license": "MIT",
+      "status": "NOT_AVAILABLE",
+      "actual_api_exercised": false,
+      "used_in_primary_benchmark": false,
+      "reason": "No configured model checkpoint and reference directory; deterministic descriptors are not phase-model outputs."
+    },
+    "atomai": {
+      "upstream": "https://github.com/pycroscopy/atomai",
+      "commit_sha": "93c88817a577686d6b8a84ab954872ca5cab7fcc",
+      "license": "MIT",
+      "status": "REFERENCE_ONLY",
+      "actual_api_exercised": false,
+      "used_in_primary_benchmark": false,
+      "reason": "Classifier API inspected, but no trained A-Lab weights or model invocation is available."
+    },
+    "s4": {
+      "upstream": "https://github.com/CederGroupHub/s4",
+      "commit_sha": "58691ce37bc0f659dac29804805c0538f284850b",
+      "license": "MIT",
+      "status": "REFERENCE_ONLY",
+      "actual_api_exercised": false,
+      "used_in_primary_benchmark": false,
+      "reason": "Current feature-completeness heuristic is not S4."
+    },
+    "cameo": {
+      "upstream": "https://github.com/KusneNIST/CAMEO_NComm",
+      "commit_sha": "f4f1ef44a4f9dcb8fd8adba2edbcd91fd10feab",
+      "license": "MIXED_OR_UNCLEAR; Graph Cut GPLv2",
+      "status": "REFERENCE_ONLY",
+      "actual_api_exercised": false,
+      "used_in_primary_benchmark": false,
+      "reason": "Median-threshold baseline is a local comparison baseline, not CAMEO."
+    }
+  }
+}

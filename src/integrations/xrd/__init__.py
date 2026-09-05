@@ -1,3 +1,3 @@
-from src.integrations.xrd.autoxrd_adapter import AutoXRDObservableExtractor, XRDObservableExtractor
+from src.integrations.xrd.autoxrd_adapter import AutoXRDPhaseExtractor, DeterministicXRDSpectralDescriptorExtractor
 
-__all__ = ["AutoXRDObservableExtractor", "XRDObservableExtractor"]
+__all__ = ["AutoXRDPhaseExtractor", "DeterministicXRDSpectralDescriptorExtractor"]

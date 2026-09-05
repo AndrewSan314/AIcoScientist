@@ -1,0 +1,293 @@
+{
+  "XRD.normalized_intensity_std_proxy": {
+    "name": "XRD.normalized_intensity_std_proxy",
+    "modality": "XRD",
+    "semantic_definition": "Standard deviation of min-shifted, peak-scaled intensity; a descriptor, not crystallinity.",
+    "units": "normalized intensity",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_xrd",
+    "extractor_requirements": [
+      "finite intensity vector"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "XRD.dominant_peak_index_fraction": {
+    "name": "XRD.dominant_peak_index_fraction",
+    "modality": "XRD",
+    "semantic_definition": "Location of the dominant intensity sample as a fraction of the supplied grid.",
+    "units": "fraction of grid",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_xrd",
+    "extractor_requirements": [
+      "finite intensity vector"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "XRD.global_halfmax_span_proxy": {
+    "name": "XRD.global_halfmax_span_proxy",
+    "modality": "XRD",
+    "semantic_definition": "Fractional span of samples above half the maximum intensity; not a calibrated FWHM.",
+    "units": "fraction of grid",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_xrd",
+    "extractor_requirements": [
+      "finite intensity vector"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "XRD.spectral_entropy": {
+    "name": "XRD.spectral_entropy",
+    "modality": "XRD",
+    "semantic_definition": "Normalized Shannon entropy of non-negative intensity mass.",
+    "units": "normalized entropy",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_xrd",
+    "extractor_requirements": [
+      "finite intensity vector"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "XRD.peak_count_proxy": {
+    "name": "XRD.peak_count_proxy",
+    "modality": "XRD",
+    "semantic_definition": "Count of separated local maxima above a fixed 10% relative threshold.",
+    "units": "count",
+    "value_range": null,
+    "source_type": "raw_xrd",
+    "extractor_requirements": [
+      "finite intensity vector"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "REFINEMENT.target_phase_fraction": {
+    "name": "REFINEMENT.target_phase_fraction",
+    "modality": "REFINEMENT",
+    "semantic_definition": "Normalized refined phase weight chemically equivalent to the target compound.",
+    "units": "fraction",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "canonical_refinement",
+    "extractor_requirements": [
+      "phase weights",
+      "target formula"
+    ],
+    "uncertainty_semantics": "refinement/model uncertainty",
+    "observable_type": "scalar"
+  },
+  "REFINEMENT.precursor_phase_fraction": {
+    "name": "REFINEMENT.precursor_phase_fraction",
+    "modality": "REFINEMENT",
+    "semantic_definition": "Normalized refined phase weight chemically equivalent to an unreacted precursor.",
+    "units": "fraction",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "canonical_refinement",
+    "extractor_requirements": [
+      "phase weights",
+      "precursor formulas"
+    ],
+    "uncertainty_semantics": "refinement/model uncertainty",
+    "observable_type": "scalar"
+  },
+  "REFINEMENT.other_identified_phase_fraction": {
+    "name": "REFINEMENT.other_identified_phase_fraction",
+    "modality": "REFINEMENT",
+    "semantic_definition": "Normalized refined phase weight not assigned to target or precursor phases.",
+    "units": "fraction",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "canonical_refinement",
+    "extractor_requirements": [
+      "phase weights"
+    ],
+    "uncertainty_semantics": "refinement/model uncertainty",
+    "observable_type": "scalar"
+  },
+  "REFINEMENT.rwp_scaled": {
+    "name": "REFINEMENT.rwp_scaled",
+    "modality": "REFINEMENT",
+    "semantic_definition": "Stored Rietveld Rwp divided by 10 for a bounded comparison descriptor.",
+    "units": "scaled Rwp",
+    "value_range": [
+      0.0,
+      2.0
+    ],
+    "source_type": "canonical_refinement",
+    "extractor_requirements": [
+      "Rwp"
+    ],
+    "uncertainty_semantics": "refinement/model uncertainty",
+    "observable_type": "scalar"
+  },
+  "SEM.inverse_gradient_scale_proxy": {
+    "name": "SEM.inverse_gradient_scale_proxy",
+    "modality": "SEM",
+    "semantic_definition": "Inverse mean absolute image gradient; no pixel-size calibration implied.",
+    "units": "inverse normalized-pixel gradient",
+    "value_range": null,
+    "source_type": "raw_sem",
+    "extractor_requirements": [
+      "finite 2-D image"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "SEM.intensity_texture_std": {
+    "name": "SEM.intensity_texture_std",
+    "modality": "SEM",
+    "semantic_definition": "Standard deviation of normalized grayscale intensity.",
+    "units": "normalized intensity",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_sem",
+    "extractor_requirements": [
+      "finite 2-D image"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "SEM.median_threshold_background_fraction": {
+    "name": "SEM.median_threshold_background_fraction",
+    "modality": "SEM",
+    "semantic_definition": "Fraction below or equal to the image median threshold.",
+    "units": "fraction",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_sem",
+    "extractor_requirements": [
+      "finite 2-D image"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "SEM.foreground_adjacency_fraction": {
+    "name": "SEM.foreground_adjacency_fraction",
+    "modality": "SEM",
+    "semantic_definition": "Fraction of horizontal adjacent foreground pixels under a median threshold.",
+    "units": "fraction",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_sem",
+    "extractor_requirements": [
+      "finite 2-D image"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "EDS.composition_error": {
+    "name": "EDS.composition_error",
+    "modality": "EDS",
+    "semantic_definition": "Absolute deviation of mean tabulated composition from unit sum, or mean row spread when values are not fractions.",
+    "units": "composition units",
+    "value_range": null,
+    "source_type": "raw_eds",
+    "extractor_requirements": [
+      "finite numeric table"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "EDS.spatial_variance": {
+    "name": "EDS.spatial_variance",
+    "modality": "EDS",
+    "semantic_definition": "Mean per-column variance across tabulated EDS rows.",
+    "units": "squared composition units",
+    "value_range": null,
+    "source_type": "raw_eds",
+    "extractor_requirements": [
+      "finite numeric table"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "EDS.segregation_index": {
+    "name": "EDS.segregation_index",
+    "modality": "EDS",
+    "semantic_definition": "Clipped relative row-spread descriptor.",
+    "units": "index",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_eds",
+    "extractor_requirements": [
+      "finite numeric table"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "EDS.element_colocalization": {
+    "name": "EDS.element_colocalization",
+    "modality": "EDS",
+    "semantic_definition": "One minus the clipped segregation descriptor.",
+    "units": "index",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "raw_eds",
+    "extractor_requirements": [
+      "finite numeric table"
+    ],
+    "uncertainty_semantics": "heuristic descriptor uncertainty",
+    "observable_type": "scalar"
+  },
+  "OUTCOME.reaction_outcome_utility": {
+    "name": "OUTCOME.reaction_outcome_utility",
+    "modality": "OUTCOME_TEST",
+    "semantic_definition": "Ordinal decision utility mapped from the categorical reaction outcome; not a conversion fraction.",
+    "units": "ordinal decision utility",
+    "value_range": [
+      0.0,
+      1.0
+    ],
+    "source_type": "ledger_outcome",
+    "extractor_requirements": [
+      "reaction category"
+    ],
+    "uncertainty_semantics": "categorical observation mapped to decision utility",
+    "observable_type": "scalar"
+  },
+  "OUTCOME.reaction_category": {
+    "name": "OUTCOME.reaction_category",
+    "modality": "OUTCOME_TEST",
+    "semantic_definition": "Observed synthesis reaction category.",
+    "units": null,
+    "value_range": null,
+    "source_type": "ledger_outcome",
+    "extractor_requirements": [
+      "reaction category"
+    ],
+    "uncertainty_semantics": "categorical probability",
+    "observable_type": "categorical"
+  }
+}

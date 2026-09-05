@@ -5,10 +5,10 @@ from typing import Any, Mapping
 from src.integrations.synthesis.base import SynthesisFeasibility, SynthesisFeasibilityAdapter
 
 
-class S4FeasibilityAdapter(SynthesisFeasibilityAdapter):
-    """S4-inspired feasibility prior; it is not a trained synthesis predictor."""
+class FeatureCompletenessFeasibilityHeuristic(SynthesisFeasibilityAdapter):
+    """Dependency-free feature completeness heuristic; not an S4 model."""
 
-    source = "s4_reference_only_feasibility_prior"
+    source = "aicoscientist_feature_completeness_heuristic"
 
     def evaluate(self, candidate_features: Mapping[str, Any]) -> SynthesisFeasibility:
         present = sum(value is not None for value in candidate_features.values())
@@ -21,4 +21,4 @@ class S4FeasibilityAdapter(SynthesisFeasibilityAdapter):
         )
 
 
-__all__ = ["S4FeasibilityAdapter"]
+__all__ = ["FeatureCompletenessFeasibilityHeuristic"]

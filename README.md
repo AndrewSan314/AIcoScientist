@@ -1,5 +1,7 @@
 # Battery AI Co-Scientist
 
+The repository also contains an explicitly bounded A-Lab multimodal validation path. Its canonical replay source is [A-Lab Precursor Genome](https://github.com/lauren-walters/precursor-genome) (DOI [10.5281/zenodo.21285546](https://doi.org/10.5281/zenodo.21285546), CC BY 4.0), not the separate AmanchukwuLab `AL-anode-free` electrolyte dataset. Controlled worlds are methodology checks; they are not prospective or causal claims.
+
 Research-grade Bayesian optimization, probabilistic modeling, and closed-loop experimental design platform for battery materials synthesis and fast-charging protocol discovery.
 
 ```
@@ -111,6 +113,7 @@ CI workflows automatically run on GitHub Actions using `requirements-core.txt` a
 ## Key Output Artifacts
 
 - `outputs/alab/multimodal/`: A-Lab modality inventory, extractor validation, controlled hypothesis/policy recovery, retrospective replay, and append-only evidence ledger. This is offline validation; SEM/EDS archives are not candidate-linked and are excluded from action selection.
+- `outputs/integrations/backend_capabilities.json`: exact pinned upstream revisions, license notes, capability status, and whether each backend was exercised in the primary benchmark.
 - `outputs/electrolyte/benchmark/screening_cross_surrogate_robustness.json`: Independent ExtraTrees, GP, and nonlinear synthetic worlds using the same historical-evidence Stage-1 configuration.
 - `outputs/electrolyte/benchmark/screening_quality_diagnostics.json`: Measured WS=200/500/1000 screening, adapter, initialization, proposal, memory, and recovery diagnostics.
 - `outputs/overnight_upgrade_report.md`: Comprehensive scientific and benchmarking report.

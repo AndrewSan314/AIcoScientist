@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import hashlib
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Mapping, Sequence
 
@@ -40,6 +41,7 @@ class MultimodalDecisionEngine:
         w_cost: float = 1.0,
         sample_state_by_candidate: Mapping[str, Mapping[str, bool]] | None = None,
         seed: int = 42,
+        policy_name: str = "HYBRID",
     ) -> None:
         if not hypotheses:
             raise ValueError("at least one hypothesis is required")
@@ -54,7 +56,9 @@ class MultimodalDecisionEngine:
         self.w_hig = float(w_hig)
         self.w_discovery = float(w_discovery)
         self.w_cost = float(w_cost)
+        self.policy_name = str(policy_name).upper()
         self.sample_state_by_candidate = sample_state_by_candidate
+        self.seed = int(seed)
         self.rng = np.random.default_rng(seed)
         self.step = 0
         self.observed_by_modality: dict[str, dict[str, Any]] = {m: {} for m in self.modalities}
@@ -133,9 +137,13 @@ class MultimodalDecisionEngine:
         probs = np.asarray([self.beliefs[k] for k in keys], dtype=np.float64)
         before = self.current_entropy
         posterior_entropies = []
+        action_seed = hashlib.sha256(
+            f"{self.seed}|{self.step}|{action.action_id}|HIG-v2".encode("utf-8")
+        ).digest()
+        rng = np.random.default_rng(int.from_bytes(action_seed[:8], "big", signed=False))
         for _ in range(max(1, samples)):
-            idx = int(self.rng.choice(len(keys), p=probs / probs.sum()))
-            sample = preds[keys[idx]].sample(self.rng)
+            idx = int(rng.choice(len(keys), p=probs / probs.sum()))
+            sample = preds[keys[idx]].sample(rng)
             log_likes = {k: preds[k].log_pdf(sample) for k in keys}
             posterior = bayesian_update(self.beliefs, log_likes)
             posterior_entropies.append(entropy(posterior))
@@ -145,10 +153,66 @@ class MultimodalDecisionEngine:
         modality = normalize_action_type(action.action_type)
         return float(self.discovery_values.get((action.candidate_id, modality), self.discovery_values.get(action.candidate_id, 0.0)))
 
+    def register_selected_action(
+        self,
+        action: ScientificAction,
+        *,
+        predictions: Mapping[str, PredictiveObservableDistribution] | None = None,
+        hig: float | None = None,
+        discovery: float | None = None,
+    ) -> MultimodalRecommendation:
+        """Register one externally selected action without scoring/registering its siblings."""
+        if action.action_id not in {item.action_id for item in self.enumerate_actions()}:
+            raise ValueError(f"action is not currently feasible: {action.action_id}")
+        preds = dict(predictions or self._predictions(action))
+        expected_hig = float(self.expected_hypothesis_information_gain(action, preds) if hig is None else hig)
+        discovery_value = float(self._discovery_value(action) if discovery is None else discovery)
+        max_cost = max(max((item.estimated_cost for item in self.enumerate_actions()), default=1.0), 1.0)
+        score = self._score(
+            expected_hig,
+            discovery_value,
+            action.estimated_cost,
+            max_hig=max(expected_hig, 1e-12),
+            max_discovery=max(discovery_value, 1e-12),
+            max_cost=max_cost,
+        )
+        registration = self._preregister(action, preds, expected_hig, discovery_value, score)
+        why = {
+            "expected_hig_nats": expected_hig,
+            "discovery_utility": discovery_value,
+            "normalized_cost": action.estimated_cost / max_cost,
+            "current_entropy_nats": self.current_entropy,
+            "policy_name": self.policy_name,
+            "selection_mode": "external_policy_selector",
+        }
+        return MultimodalRecommendation(action, score, why, [], registration, [])
+
+    def _score(
+        self,
+        hig: float,
+        discovery: float,
+        cost: float,
+        *,
+        max_hig: float,
+        max_discovery: float,
+        max_cost: float,
+    ) -> float:
+        normalized_hig = hig / max(max_hig, 1e-12)
+        normalized_discovery = discovery / max(max_discovery, 1e-12) if max_discovery > 0 else 0.0
+        normalized_cost = cost / max(max_cost, 1e-12)
+        if self.policy_name in {"PURE_HIG", "HIG"}:
+            return normalized_hig
+        if self.policy_name in {"DISCOVERY_ONLY", "PROPERTY_ONLY", "PROPERTY_ONLY_BO"}:
+            return normalized_discovery
+        if self.policy_name == "UNCERTAINTY_ONLY":
+            return normalized_hig
+        return self.w_hig * normalized_hig + self.w_discovery * normalized_discovery - self.w_cost * normalized_cost
+
     def _preregister(self, action: ScientificAction, predictions: Mapping[str, PredictiveObservableDistribution], hig: float, discovery: float, score: float) -> dict[str, Any]:
         record = {
-            "event": "PREREGISTERED_PREDICTION",
+            "event": "PREREGISTERED_SELECTED_ACTION",
             "step": self.step + 1,
+            "event_sequence": len(self.ledger.events) + 1,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "measurement_revealed": False,
             "action": action.to_dict(),
@@ -169,13 +233,35 @@ class MultimodalDecisionEngine:
             raise RuntimeError("No feasible candidate×modality actions remain")
         max_cost = max(max((a.estimated_cost for a in actions), default=1.0), 1.0)
         scored: list[dict[str, Any]] = []
-        registrations: dict[str, dict[str, Any]] = {}
+        raw_scores: list[tuple[ScientificAction, dict[str, PredictiveObservableDistribution], float, float]] = []
         for action in actions:
             predictions = self._predictions(action)
             hig = self.expected_hypothesis_information_gain(action, predictions, samples=samples)
             discovery = self._discovery_value(action)
-            score = self.w_hig * hig + self.w_discovery * discovery - self.w_cost * (action.estimated_cost / max_cost)
-            registrations[action.action_id] = self._preregister(action, predictions, hig, discovery, score)
+            raw_scores.append((action, predictions, hig, discovery))
+        max_hig = max((row[2] for row in raw_scores), default=0.0)
+        max_discovery = max((row[3] for row in raw_scores), default=0.0)
+        for action, predictions, hig, discovery in raw_scores:
+            score = self._score(
+                hig,
+                discovery,
+                action.estimated_cost,
+                max_hig=max_hig,
+                max_discovery=max_discovery,
+                max_cost=max_cost,
+            )
+            self.ledger.append({
+                "event": "ACTION_SCORE_RECORD",
+                "event_sequence": len(self.ledger.events) + 1,
+                "step": self.step + 1,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "action": action.to_dict(),
+                "expected_hig_nats": hig,
+                "discovery_utility": discovery,
+                "normalized_cost": action.estimated_cost / max_cost,
+                "total_action_score": score,
+                "policy_name": self.policy_name,
+            })
             scored.append({
                 "action": action.to_dict(),
                 "expected_hig_nats": hig,
@@ -187,12 +273,25 @@ class MultimodalDecisionEngine:
         scored.sort(key=lambda row: row["total_action_score"], reverse=True)
         top = scored[0]
         action = ScientificAction.from_dict(top["action"])
+        registration = self._preregister(
+            action,
+            next(predictions for candidate, predictions, _, _ in raw_scores if candidate.action_id == action.action_id),
+            top["expected_hig_nats"],
+            top["discovery_utility"],
+            top["total_action_score"],
+        )
         why = {
             "expected_hig_nats": top["expected_hig_nats"],
             "discovery_utility": top["discovery_utility"],
             "normalized_cost": top["normalized_cost"],
             "dominant_hypothesis_disagreement": top["dominant_hypothesis_disagreement"],
             "current_entropy_nats": self.current_entropy,
+            "policy_name": self.policy_name,
+            "score_components": {
+                "normalized_hig": top["expected_hig_nats"] / max(max_hig, 1e-12),
+                "normalized_discovery": top["discovery_utility"] / max(max_discovery, 1e-12) if max_discovery > 0 else 0.0,
+                "normalized_cost": top["normalized_cost"],
+            },
             "falsification_signatures": {
                 hid: hypothesis.falsification_signature()
                 for hid, hypothesis in self.hypotheses.items()
@@ -203,11 +302,14 @@ class MultimodalDecisionEngine:
                 "action": row["action"],
                 "reason": "Lower preregistered action value under the same policy weights.",
                 "expected_hig_nats": row["expected_hig_nats"],
+                "discovery_utility": row["discovery_utility"],
+                "normalized_cost": row["normalized_cost"],
+                "score_gap": top["total_action_score"] - row["total_action_score"],
                 "total_action_score": row["total_action_score"],
             }
             for row in scored[1:4]
         ]
-        return MultimodalRecommendation(action, top["total_action_score"], why, why_not, registrations[action.action_id], scored)
+        return MultimodalRecommendation(action, top["total_action_score"], why, why_not, registration, scored)
 
     @staticmethod
     def _disagreement(predictions: Mapping[str, PredictiveObservableDistribution]) -> list[str]:
@@ -224,13 +326,21 @@ class MultimodalDecisionEngine:
             raise ValueError("measurement must be preregistered before reveal")
         if registration["measurement_revealed"]:
             raise ValueError(f"measurement already revealed: {action_id}")
+        if not observable.observable_names:
+            predicted_names = tuple(next(iter(registration["predictive_distributions"].values()))["observable_names"])
+            observable = replace(
+                observable,
+                observable_names=predicted_names,
+                observable_type="vector" if np.asarray(observable.value).size > 1 else observable.observable_type,
+                provenance={**observable.provenance, "legacy_schema_inferred": True},
+            )
         before = dict(self.beliefs)
         log_likelihoods = {
             hid: hypothesis.log_likelihood(observable, self.observed_by_modality)
             for hid, hypothesis in self.hypotheses.items()
         }
         self.beliefs = bayesian_update(self.beliefs, log_likelihoods)
-        self.observed_by_modality.setdefault(modality, {})[observable.candidate_id] = observable.value
+        self.observed_by_modality.setdefault(modality, {})[observable.candidate_id] = observable
         for hypothesis in self.hypotheses.values():
             hypothesis.fit(self.candidate_features_by_id, self.observed_by_modality)
         after = dict(self.beliefs)
@@ -239,6 +349,8 @@ class MultimodalDecisionEngine:
         event = {
             "event": "MEASUREMENT_REVEALED",
             "step": self.step + 1,
+            "event_sequence": len(self.ledger.events) + 1,
+            "timestamp": observable.timestamp or datetime.now(timezone.utc).isoformat(),
             "action": registration["action"],
             "observed_measurement": observable.to_dict(),
             "likelihood_under_hypothesis": log_likelihoods,
@@ -247,6 +359,16 @@ class MultimodalDecisionEngine:
             "realized_entropy_reduction_nats": entropy(before) - entropy(after),
         }
         self.ledger.append(event)
+        self.ledger.append({
+            "event": "BELIEF_UPDATE",
+            "step": self.step + 1,
+            "event_sequence": len(self.ledger.events) + 1,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "action": registration["action"],
+            "beliefs_before": before,
+            "beliefs_after": after,
+            "likelihood_under_hypothesis": log_likelihoods,
+        })
         self.step += 1
         return event
 

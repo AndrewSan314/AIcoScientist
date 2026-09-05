@@ -402,6 +402,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
             rwp = 5.0
             rank = None
             used_source = "structured_ledger"
+            source_artifact_member = None
+            source_artifact_sha256 = None
 
             if can_case.get("phase_weights"):
                 phase_weights = {str(k): float(v) for k, v in can_case.get("phase_weights", {}).items()}
@@ -420,6 +422,8 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     )
 
                 raw_bytes = self._artifact_index.read_artifact_bytes(ref)
+                source_artifact_member = ref.member_path
+                source_artifact_sha256 = ref.checksum
                 try:
                     pkl_data = _SafeALabUnpickler(io.BytesIO(raw_bytes)).load()
                 except Exception as e:
@@ -461,6 +465,9 @@ class ALabDomainAdapter(MaterialDomainAdapter, ObservationRepresentationManager)
                     "execution_mode": "offline_replay",
                     "sample_id": cid,
                     "refinement_source": used_source,
+                    "source_artifact_member": source_artifact_member,
+                    "source_artifact_sha256": source_artifact_sha256,
+                    "refinement_parser_version": "chemistry.parse_refinement_phases-v1",
                     "selected_scan_index": can_scan_idx,
                     "selected_case_index": can_case_idx,
                     "scan_selection_method": scan_method,

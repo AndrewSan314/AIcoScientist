@@ -10,13 +10,16 @@ from src.domains.alab.artifact_index import ALabArtifactIndex
 
 def _archive_inventory(path: str) -> dict[str, Any]:
     if not os.path.exists(path):
-        return {"present": False, "raw_artifact_count": 0, "members": []}
+        return {"present": False, "raw_artifact_count": 0, "precursor_group_count": 0, "member_sample": [], "members_omitted": 0}
     with zipfile.ZipFile(path) as archive:
         members = [info.filename for info in archive.infolist() if not info.is_dir()]
+    precursor_ids = sorted({part for member in members for part in member.split("/") if part.startswith("precursor_")})
     return {
         "present": True,
         "raw_artifact_count": len(members),
-        "members": members,
+        "precursor_group_count": len(precursor_ids),
+        "member_sample": members[:20],
+        "members_omitted": max(0, len(members) - 20),
     }
 
 
@@ -50,12 +53,15 @@ def inventory_alab_modalities(
     eds = _archive_inventory(os.path.join(data_dir, "eds.zip"))
 
     def precursor_coverage(archive: dict[str, Any], modality: str) -> dict[str, Any]:
-        precursor_ids = sorted({part for member in archive["members"] for part in member.split("/") if part.startswith("precursor_")})
         return {
             "modality": modality,
+            "dataset": "A-Lab Precursor Genome",
+            "dataset_key": "precursor_genome_2026",
+            "source": "https://github.com/lauren-walters/precursor-genome",
+            "doi": "https://doi.org/10.5281/zenodo.21285546",
             "archive_present": archive["present"],
             "raw_artifact_count": archive["raw_artifact_count"],
-            "archive_precursor_group_count": len(precursor_ids),
+            "archive_precursor_group_count": archive["precursor_group_count"],
             "linked_candidate_samples": 0,
             "candidate_sample_linkage_quality": "precursor_level_only_unlinked_to_sample_id",
             "derived_observable_coverage": 0,
@@ -65,6 +71,10 @@ def inventory_alab_modalities(
 
     modalities = {
         "XRD": {
+            "dataset": "A-Lab Precursor Genome",
+            "dataset_key": "precursor_genome_2026",
+            "source": "https://github.com/lauren-walters/precursor-genome",
+            "doi": "https://doi.org/10.5281/zenodo.21285546",
             "archive_present": os.path.exists(os.path.join(data_dir, "raw_scans.zip")),
             "raw_artifact_count": archive_counts["raw_scans.zip"]["raw_artifact_count"],
             "linked_candidate_samples": len(linked["XRD"]),
@@ -74,6 +84,10 @@ def inventory_alab_modalities(
             "action_space_supported": True,
         },
         "REFINEMENT": {
+            "dataset": "A-Lab Precursor Genome",
+            "dataset_key": "precursor_genome_2026",
+            "source": "https://github.com/lauren-walters/precursor-genome",
+            "doi": "https://doi.org/10.5281/zenodo.21285546",
             "archive_present": os.path.exists(os.path.join(data_dir, "refinement_pkls.zip")),
             "raw_artifact_count": archive_counts["refinement_pkls.zip"]["raw_artifact_count"],
             "linked_candidate_samples": len(linked["REFINEMENT"]),
@@ -85,6 +99,10 @@ def inventory_alab_modalities(
         "SEM": precursor_coverage(sem, "SEM"),
         "EDS": precursor_coverage(eds, "EDS"),
         "OUTCOME_TEST": {
+            "dataset": "A-Lab Precursor Genome",
+            "dataset_key": "precursor_genome_2026",
+            "source": "https://github.com/lauren-walters/precursor-genome",
+            "doi": "https://doi.org/10.5281/zenodo.21285546",
             "archive_present": True,
             "raw_artifact_count": 0,
             "linked_candidate_samples": len(outcome_ids),
@@ -95,7 +113,11 @@ def inventory_alab_modalities(
         },
     }
     return {
-        "dataset": "AmanchukwuLab/AL-anode-free precursor_genome_2026",
+        "dataset": "A-Lab Precursor Genome",
+        "dataset_key": "precursor_genome_2026",
+        "source": "https://github.com/lauren-walters/precursor-genome",
+        "doi": "https://doi.org/10.5281/zenodo.21285546",
+        "license": "CC BY 4.0",
         "data_dir": data_dir,
         "available_samples": len(sample_ids),
         "modalities": modalities,
@@ -104,6 +126,7 @@ def inventory_alab_modalities(
             for name in archive_counts
         },
         "linkage_rule": "Only canonical sample_id links are eligible for candidate×modality actions; precursor-level SEM/EDS members are inventory-only.",
+        "provenance_note": "The electrolyte AL-anode-free dataset is a separate source and is not used for this A-Lab inventory.",
     }
 
 

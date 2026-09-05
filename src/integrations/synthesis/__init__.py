@@ -1,3 +1,3 @@
-from src.integrations.synthesis.s4_adapter import S4FeasibilityAdapter
+from src.integrations.synthesis.s4_adapter import FeatureCompletenessFeasibilityHeuristic
 
-__all__ = ["S4FeasibilityAdapter"]
+__all__ = ["FeatureCompletenessFeasibilityHeuristic"]

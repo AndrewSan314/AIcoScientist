@@ -5,10 +5,10 @@ from typing import Any
 import numpy as np
 
 
-class CAMEOInspiredSegmentationBaseline:
-    """Dependency-light segmentation reference; no CAMEO source or weights are used."""
+class MedianThresholdSegmentationBaseline:
+    """Dependency-light median-threshold segmentation; no CAMEO code is used."""
 
-    name = "cameo_inspired_threshold_reference"
+    name = "median_threshold_segmentation"
     version = "1.0.0"
 
     def segment(self, image: Any) -> dict[str, Any]:
@@ -22,8 +22,8 @@ class CAMEOInspiredSegmentationBaseline:
             "threshold": threshold,
             "foreground_fraction": float(np.mean(mask)),
             "reference_only": True,
-            "limitation": "threshold segmentation is not a trained CAMEO model",
+            "limitation": "unvalidated classical threshold baseline; not a trained segmentation model",
         }
 
 
-__all__ = ["CAMEOInspiredSegmentationBaseline"]
+__all__ = ["MedianThresholdSegmentationBaseline"]

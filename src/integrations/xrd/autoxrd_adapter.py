@@ -7,6 +7,7 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 
 from src.science.multimodal.extractors import DeterministicExtractor, ExtractionError
+from src.science.multimodal.ontology import observable_names_for_modality
 from src.science.multimodal.provenance import build_observable_provenance
 from src.science.multimodal.schemas import ScientificObservable
 
@@ -21,8 +22,8 @@ def _raw_hash(raw: Any) -> str | None:
     return None
 
 
-class XRDObservableExtractor(DeterministicExtractor):
-    """Validated CPU fallback for XRD descriptors; AutoXRD is optional and never assumed truth."""
+class DeterministicXRDSpectralDescriptorExtractor(DeterministicExtractor):
+    """Dependency-light descriptors; names deliberately do not claim phase physics."""
 
     name = "aicoscientist_xrd_descriptor_fallback"
     version = "1.0.0"
@@ -63,7 +64,12 @@ class XRDObservableExtractor(DeterministicExtractor):
         peak_index = int(np.argmax(values))
         half_max = 0.5 * float(np.max(values))
         above = np.flatnonzero(values >= half_max)
-        fwhm = float(above[-1] - above[0]) / max(len(values) - 1, 1) if len(above) else 1.0
+        halfmax_span = float(above[-1] - above[0]) / max(len(values) - 1, 1) if len(above) else 1.0
+        mass = values / max(float(np.sum(values)), 1e-12)
+        spectral_entropy = float(-np.sum(mass * np.log(np.maximum(mass, 1e-12))) / np.log(len(values)))
+        threshold = 0.1 * float(np.max(values))
+        local_maxima = (values[1:-1] > values[:-2]) & (values[1:-1] >= values[2:]) & (values[1:-1] >= threshold)
+        peak_count = float(np.sum(local_maxima) + (1 if values.size >= 1 and values[0] >= threshold else 0))
         provenance = build_observable_provenance(
             meta.get("raw_artifact_ref"), self.name, self.version,
             raw_artifact_hash=_raw_hash(pattern),
@@ -75,26 +81,72 @@ class XRDObservableExtractor(DeterministicExtractor):
             "extractor_name": self.name, "extractor_version": self.version,
             "provenance": {**provenance, **meta}, "timestamp": meta.get("timestamp"),
         }
+        names = observable_names_for_modality("XRD")
+        values_by_name = {
+            names[0]: float(np.std(values)),
+            names[1]: peak_index / max(len(values) - 1, 1),
+            names[2]: halfmax_span,
+            names[3]: spectral_entropy,
+            names[4]: peak_count,
+        }
+        uncertainty = {name: 0.05 for name in names}
+        uncertainty[names[1]] = 1.0 / max(len(values), 1)
+        uncertainty[names[4]] = 1.0
         return [
-            ScientificObservable(observable_id=f"XRD:{candidate_id}:crystallinity", name="crystallinity", value=float(np.std(values)), uncertainty=0.05, observable_type="scalar", **common),
-            ScientificObservable(observable_id=f"XRD:{candidate_id}:peak_position_index", name="peak_position_index", value=peak_index / max(len(values) - 1, 1), uncertainty=1.0 / max(len(values), 1), observable_type="scalar", **common),
-            ScientificObservable(observable_id=f"XRD:{candidate_id}:FWHM", name="FWHM", value=fwhm, uncertainty=0.05, observable_type="scalar", **common),
+            ScientificObservable(
+                observable_id=f"XRD:{candidate_id}:{name}",
+                name=name,
+                value=value,
+                uncertainty=uncertainty[name],
+                observable_type="scalar",
+                **common,
+            )
+            for name, value in values_by_name.items()
         ]
 
 
-class AutoXRDObservableExtractor(XRDObservableExtractor):
-    """Optional AutoXRD boundary with deterministic fallback and explicit backend metadata."""
+class AutoXRDPhaseExtractor(DeterministicExtractor):
+    """Real AutoXRD boundary; it never silently falls back to descriptors."""
 
-    name = "autoxrd_optional_with_cpu_fallback"
+    name = "autoxrd_phase_model"
     version = "1.0.0"
 
+    def __init__(self, checkpoint: str | Path | None = None, references_dir: str | Path | None = None) -> None:
+        self.checkpoint = Path(checkpoint) if checkpoint else None
+        self.references_dir = Path(references_dir) if references_dir else None
+
     @property
-    def auto_xrd_available(self) -> bool:
+    def integration_status(self) -> str:
         try:
             import autoXRD  # type: ignore
         except ImportError:
-            return False
-        return autoXRD is not None
+            return "NOT_AVAILABLE"
+        if autoXRD is None or self.checkpoint is None or not self.checkpoint.is_file() or self.references_dir is None or not self.references_dir.is_dir():
+            return "NOT_AVAILABLE"
+        return "REAL_INTEGRATION"
+
+    @property
+    def auto_xrd_available(self) -> bool:
+        return self.integration_status == "REAL_INTEGRATION"
+
+    def extract(self, pattern: Any, candidate_id: str = "unknown", metadata: Mapping[str, Any] | None = None) -> Sequence[ScientificObservable]:
+        if not self.auto_xrd_available:
+            raise ExtractionError(
+                "AutoXRD inference is NOT_AVAILABLE: configure the pinned upstream model checkpoint and reference directory"
+            )
+        # The pinned upstream API requires a spectrum directory, reference CIFs, and a trained Keras checkpoint.
+        # Keep this boundary explicit until all three are configured; no descriptor is mislabeled as model output.
+        raise ExtractionError("AutoXRD inference configuration is present but this adapter requires a file-backed spectrum path")
 
 
-__all__ = ["AutoXRDObservableExtractor", "XRDObservableExtractor"]
+# Compatibility names retain import compatibility without using the upstream brand for the fallback.
+XRDObservableExtractor = DeterministicXRDSpectralDescriptorExtractor
+AutoXRDObservableExtractor = AutoXRDPhaseExtractor
+
+
+__all__ = [
+    "AutoXRDObservableExtractor",
+    "AutoXRDPhaseExtractor",
+    "DeterministicXRDSpectralDescriptorExtractor",
+    "XRDObservableExtractor",
+]

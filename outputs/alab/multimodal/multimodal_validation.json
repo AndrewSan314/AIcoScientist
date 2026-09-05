@@ -1,9 +1,50 @@
 {
-  "inventory": "PASS",
-  "extractor_contracts": "PASS",
-  "controlled_world": "PASS",
-  "policy_comparison": "PASS",
-  "retrospective_replay": "PASS",
-  "candidate_linkage_guard": "PASS",
-  "license_audit": "PASS"
+  "status": "METHODOLOGY_VALID",
+  "gates": {
+    "observable_schema_gate": "PASS",
+    "observable_semantics_alignment_gate": "PASS",
+    "raw_artifact_provenance_gate": "PASS",
+    "candidate_linkage_gate": "PASS",
+    "modality_contract_gate": "PASS",
+    "hypothesis_structure_gate": "PASS",
+    "hypothesis_directionality_gate": "PASS",
+    "hypothesis_calibration_gate": "PASS",
+    "controlled_world_coverage_gate": "PASS",
+    "controlled_recovery_methodology_gate": "PASS",
+    "pre_reveal_HIG_gate": "PASS",
+    "HIG_bound_gate": "PASS",
+    "HIG_order_invariance_gate": "PASS",
+    "policy_distinction_gate": "PASS",
+    "hybrid_formula_gate": "PASS",
+    "natural_policy_divergence_gate": "PASS",
+    "hybrid_cost_effect_gate": "PASS",
+    "preregistration_timeline_gate": "PASS",
+    "retrospective_split_gate": "PASS",
+    "retrospective_observable_alignment_gate": "PASS",
+    "retrospective_replay_gate": "PASS",
+    "third_party_license_gate": "PASS",
+    "third_party_functionality_gate": "PASS",
+    "report_consistency_gate": "PASS",
+    "local_test_gate": "PASS",
+    "external_CI_gate": "NOT_INSPECTED"
+  },
+  "gate_evidence": {
+    "ledger_event_count": 2499,
+    "controlled_worlds": [
+      "WORLD_H1_PHASE_PURITY",
+      "WORLD_H2_COMPOSITION_HOMOGENEITY",
+      "WORLD_H3_MORPHOLOGY_KINETICS"
+    ],
+    "required_seeds": [
+      7,
+      42,
+      101,
+      314,
+      2024
+    ],
+    "unsupported_retrospective_modalities": [
+      "SEM",
+      "EDS"
+    ]
+  }
 }

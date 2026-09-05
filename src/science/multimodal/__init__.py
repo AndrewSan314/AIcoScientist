@@ -13,7 +13,8 @@ from src.science.multimodal.hypotheses import (
     build_alab_multimodal_hypotheses,
 )
 from src.science.multimodal.measurement_models import PredictiveObservableDistribution
-from src.science.multimodal.schemas import ScientificObservable
+from src.science.multimodal.ontology import MODALITY_OBSERVABLE_NAMES, OBSERVABLE_REGISTRY
+from src.science.multimodal.schemas import ScientificObservable, ScientificObservableBundle
 
 __all__ = [
     "CompositionHomogeneityLimitedHypothesis",
@@ -25,5 +26,8 @@ __all__ = [
     "PhasePurityLimitedHypothesis",
     "PredictiveObservableDistribution",
     "ScientificObservable",
+    "ScientificObservableBundle",
+    "MODALITY_OBSERVABLE_NAMES",
+    "OBSERVABLE_REGISTRY",
     "build_alab_multimodal_hypotheses",
 ]

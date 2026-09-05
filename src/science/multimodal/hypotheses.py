@@ -6,6 +6,7 @@ from typing import Any, Mapping, Protocol
 import numpy as np
 
 from src.science.multimodal.measurement_models import PredictiveObservableDistribution
+from src.science.multimodal.ontology import observable_names_for_modality
 from src.science.multimodal.schemas import ScientificObservable
 
 
@@ -98,11 +99,17 @@ class _ALabHypothesisBase(ABC):
         xrd = self._context_value(candidate_id, "XRD", context)
         xrd_signal = float(np.clip(xrd[0], 0.0, 1.0)) if xrd is not None else purity
         if modality == "XRD":
-            return np.array([purity, 1.0 - purity, 0.1 * kinetics, 0.2 + 0.5 * (1.0 - purity)], dtype=np.float64)
+            return np.array([
+                0.18 + 0.45 * (1.0 - purity),
+                0.20 + 0.35 * (1.0 - purity) + 0.05 * kinetics,
+                0.08 + 0.65 * (1.0 - purity),
+                0.20 + 0.50 * (1.0 - purity),
+                1.0 + 4.0 * (1.0 - purity),
+            ], dtype=np.float64)
         if modality == "REFINEMENT":
             return np.array([purity, 1.0 - purity, 1.0 - completion, 0.1 + 0.7 * (1.0 - purity)], dtype=np.float64)
         if modality == "SEM":
-            return np.array([morphology, 1.0 - morphology, 0.5 * (1.0 - morphology), 0.25 + 0.5 * kinetics], dtype=np.float64)
+            return np.array([1.0 / max(morphology, 0.05), 0.18 + 0.30 * (1.0 - morphology), 1.0 - morphology, 0.25 + 0.5 * kinetics], dtype=np.float64)
         if modality == "EDS":
             return np.array([1.0 - homogeneity, 1.0 - homogeneity, 1.0 - homogeneity, homogeneity], dtype=np.float64)
         if modality in {"OUTCOME_TEST", "SYNTHESIS_OUTCOME", "PROPERTY"}:
@@ -124,12 +131,16 @@ class _ALabHypothesisBase(ABC):
         variance = np.full_like(means, 0.04 * self._variance_scale, dtype=np.float64)
         if means.size > 1:
             variance[1:] = 0.06 * self._variance_scale
+        names = observable_names_for_modality(str(modality).upper())
+        if means.size != len(names):
+            raise ValueError(f"prediction schema has {len(names)} names for {means.size} values")
         return PredictiveObservableDistribution(
             hypothesis_id=self.hypothesis_id,
             candidate_id=candidate_id,
             modality=str(modality).upper(),
             mean=means,
             variance=variance,
+            observable_names=names,
             metadata={"latent_state": state, "training_count": self.training_count},
         )
 
@@ -139,14 +150,24 @@ class _ALabHypothesisBase(ABC):
             observable.modality,
             observed_context,
         )
-        return prediction.log_pdf(observable.value)
+        observed_names = tuple(observable.observable_names or ())
+        if not observed_names:
+            raise ValueError("vector observation must declare observable_names")
+        return prediction.log_pdf(
+            observable.value,
+            observed_names=observed_names,
+            measurement_uncertainty=observable.uncertainty,
+        )
 
     def diagnostics(self) -> dict[str, Any]:
         return {
             "hypothesis_id": self.hypothesis_id,
             "title": self.title,
             "assumptions": list(self.assumptions),
-            "predicted_modalities": ["XRD", "REFINEMENT", "SEM", "EDS", "OUTCOME_TEST"],
+            "predicted_observables": {
+                modality: list(observable_names_for_modality(modality))
+                for modality in ("XRD", "REFINEMENT", "SEM", "EDS", "OUTCOME_TEST")
+            },
             "falsification_signature": self.falsification_signature(),
             "training_count": self.training_count,
         }
@@ -188,7 +209,7 @@ class CompositionHomogeneityLimitedHypothesis(_ALabHypothesisBase):
 
     def falsification_signature(self) -> dict[str, list[str]]:
         return {
-            "strongly_supporting_patterns": ["low EDS spatial variance", "near-nominal composition", "outcome tracks homogeneity"],
+            "strongly_supporting_patterns": ["high EDS spatial variance or segregation", "near-nominal bulk composition", "poor outcome tracks heterogeneity"],
             "strongly_falsifying_patterns": ["uniform EDS map with failed outcome", "high segregation predicted but absent"],
             "ambiguous_patterns": ["single-point EDS composition"],
         }

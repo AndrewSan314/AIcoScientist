@@ -5,13 +5,36 @@
     "assumptions": [
       "Intended crystalline phase formation is the primary limiting state."
     ],
-    "predicted_modalities": [
-      "XRD",
-      "REFINEMENT",
-      "SEM",
-      "EDS",
-      "OUTCOME_TEST"
-    ],
+    "predicted_observables": {
+      "XRD": [
+        "XRD.normalized_intensity_std_proxy",
+        "XRD.dominant_peak_index_fraction",
+        "XRD.global_halfmax_span_proxy",
+        "XRD.spectral_entropy",
+        "XRD.peak_count_proxy"
+      ],
+      "REFINEMENT": [
+        "REFINEMENT.target_phase_fraction",
+        "REFINEMENT.precursor_phase_fraction",
+        "REFINEMENT.other_identified_phase_fraction",
+        "REFINEMENT.rwp_scaled"
+      ],
+      "SEM": [
+        "SEM.inverse_gradient_scale_proxy",
+        "SEM.intensity_texture_std",
+        "SEM.median_threshold_background_fraction",
+        "SEM.foreground_adjacency_fraction"
+      ],
+      "EDS": [
+        "EDS.composition_error",
+        "EDS.spatial_variance",
+        "EDS.segregation_index",
+        "EDS.element_colocalization"
+      ],
+      "OUTCOME_TEST": [
+        "OUTCOME.reaction_outcome_utility"
+      ]
+    },
     "falsification_signature": {
       "strongly_supporting_patterns": [
         "high target phase fraction",
@@ -34,18 +57,41 @@
     "assumptions": [
       "Spatial composition variance can limit outcome despite acceptable bulk phase identity."
     ],
-    "predicted_modalities": [
-      "XRD",
-      "REFINEMENT",
-      "SEM",
-      "EDS",
-      "OUTCOME_TEST"
-    ],
+    "predicted_observables": {
+      "XRD": [
+        "XRD.normalized_intensity_std_proxy",
+        "XRD.dominant_peak_index_fraction",
+        "XRD.global_halfmax_span_proxy",
+        "XRD.spectral_entropy",
+        "XRD.peak_count_proxy"
+      ],
+      "REFINEMENT": [
+        "REFINEMENT.target_phase_fraction",
+        "REFINEMENT.precursor_phase_fraction",
+        "REFINEMENT.other_identified_phase_fraction",
+        "REFINEMENT.rwp_scaled"
+      ],
+      "SEM": [
+        "SEM.inverse_gradient_scale_proxy",
+        "SEM.intensity_texture_std",
+        "SEM.median_threshold_background_fraction",
+        "SEM.foreground_adjacency_fraction"
+      ],
+      "EDS": [
+        "EDS.composition_error",
+        "EDS.spatial_variance",
+        "EDS.segregation_index",
+        "EDS.element_colocalization"
+      ],
+      "OUTCOME_TEST": [
+        "OUTCOME.reaction_outcome_utility"
+      ]
+    },
     "falsification_signature": {
       "strongly_supporting_patterns": [
-        "low EDS spatial variance",
-        "near-nominal composition",
-        "outcome tracks homogeneity"
+        "high EDS spatial variance or segregation",
+        "near-nominal bulk composition",
+        "poor outcome tracks heterogeneity"
       ],
       "strongly_falsifying_patterns": [
         "uniform EDS map with failed outcome",
@@ -63,13 +109,36 @@
     "assumptions": [
       "Thermal pathway and morphology materially affect outcome beyond bulk phase identity."
     ],
-    "predicted_modalities": [
-      "XRD",
-      "REFINEMENT",
-      "SEM",
-      "EDS",
-      "OUTCOME_TEST"
-    ],
+    "predicted_observables": {
+      "XRD": [
+        "XRD.normalized_intensity_std_proxy",
+        "XRD.dominant_peak_index_fraction",
+        "XRD.global_halfmax_span_proxy",
+        "XRD.spectral_entropy",
+        "XRD.peak_count_proxy"
+      ],
+      "REFINEMENT": [
+        "REFINEMENT.target_phase_fraction",
+        "REFINEMENT.precursor_phase_fraction",
+        "REFINEMENT.other_identified_phase_fraction",
+        "REFINEMENT.rwp_scaled"
+      ],
+      "SEM": [
+        "SEM.inverse_gradient_scale_proxy",
+        "SEM.intensity_texture_std",
+        "SEM.median_threshold_background_fraction",
+        "SEM.foreground_adjacency_fraction"
+      ],
+      "EDS": [
+        "EDS.composition_error",
+        "EDS.spatial_variance",
+        "EDS.segregation_index",
+        "EDS.element_colocalization"
+      ],
+      "OUTCOME_TEST": [
+        "OUTCOME.reaction_outcome_utility"
+      ]
+    },
     "falsification_signature": {
       "strongly_supporting_patterns": [
         "SEM morphology tracks outcome",

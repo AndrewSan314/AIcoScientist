@@ -43,10 +43,10 @@ def _observables(common: dict[str, Any], values: Mapping[str, float], uncertaint
     ]
 
 
-class AtomAISEMExtractor(DeterministicExtractor):
-    """AtomAI-compatible boundary; classical CPU descriptors are the tested fallback."""
+class ClassicalSEMDescriptorExtractor(DeterministicExtractor):
+    """Dependency-light SEM descriptors; no AtomAI model is invoked."""
 
-    name = "atomai_optional_sem_cpu_fallback"
+    name = "aicoscientist_classical_sem_descriptors"
     version = "1.0.0"
 
     def extract(
@@ -64,8 +64,8 @@ class AtomAISEMExtractor(DeterministicExtractor):
         threshold = float(np.median(image))
         foreground = image > threshold
         texture = float(np.std(image))
-        porosity = float(np.mean(~foreground))
-        agglomeration = float(np.clip(np.mean(foreground[:, 1:] & foreground[:, :-1]), 0.0, 1.0))
+        background_fraction = float(np.mean(~foreground))
+        adjacency = float(np.clip(np.mean(foreground[:, 1:] & foreground[:, :-1]), 0.0, 1.0))
         provenance = build_observable_provenance(
             meta.get("raw_artifact_ref"), self.name, self.version,
             raw_artifact_hash=hashlib.sha256(np.asarray(image, dtype=np.float64).tobytes()).hexdigest(),
@@ -77,14 +77,19 @@ class AtomAISEMExtractor(DeterministicExtractor):
             "extractor_name": self.name, "extractor_version": self.version,
             "provenance": {**provenance, **meta}, "timestamp": meta.get("timestamp"),
         }
-        values = {"grain_size_mean": float(1.0 / max(gradient, 1e-6)), "grain_size_std": texture, "porosity": porosity, "agglomeration": agglomeration}
-        return _observables(common, values, {"grain_size_mean": 0.2, "grain_size_std": 0.1, "porosity": 0.05, "agglomeration": 0.05})
+        values = {
+            "SEM.inverse_gradient_scale_proxy": float(1.0 / max(gradient, 1e-6)),
+            "SEM.intensity_texture_std": texture,
+            "SEM.median_threshold_background_fraction": background_fraction,
+            "SEM.foreground_adjacency_fraction": adjacency,
+        }
+        return _observables(common, values, {name: 0.1 for name in values})
 
 
-class AtomAIEDSExtractor(DeterministicExtractor):
-    """AtomAI-compatible EDS boundary with a dependency-light numeric table fallback."""
+class ClassicalEDSDescriptorExtractor(DeterministicExtractor):
+    """Dependency-light EDS descriptors; no AtomAI model is invoked."""
 
-    name = "atomai_optional_eds_cpu_fallback"
+    name = "aicoscientist_classical_eds_descriptors"
     version = "1.0.0"
 
     def _values(self, raw: Any) -> np.ndarray:
@@ -136,8 +141,22 @@ class AtomAIEDSExtractor(DeterministicExtractor):
             "extractor_name": self.name, "extractor_version": self.version,
             "provenance": {**provenance, **meta}, "timestamp": meta.get("timestamp"),
         }
-        obs = {"composition_error": composition_error, "spatial_variance": spatial_variance, "segregation_index": segregation, "element_colocalization": 1.0 - segregation}
+        obs = {
+            "EDS.composition_error": composition_error,
+            "EDS.spatial_variance": spatial_variance,
+            "EDS.segregation_index": segregation,
+            "EDS.element_colocalization": 1.0 - segregation,
+        }
         return _observables(common, obs, {name: 0.05 for name in obs})
 
 
-__all__ = ["AtomAIEDSExtractor", "AtomAISEMExtractor"]
+AtomAISEMExtractor = ClassicalSEMDescriptorExtractor
+AtomAIEDSExtractor = ClassicalEDSDescriptorExtractor
+
+
+__all__ = [
+    "AtomAIEDSExtractor",
+    "AtomAISEMExtractor",
+    "ClassicalEDSDescriptorExtractor",
+    "ClassicalSEMDescriptorExtractor",
+]
