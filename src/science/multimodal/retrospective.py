@@ -137,10 +137,16 @@ def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any
             "group_key": "sample_id" if name.startswith("SAMPLE") else "reaction_signature" if name.startswith("REACTION") else "target_compound",
             "calibration_ids": calibration_ids,
             "evaluation_ids": evaluation_ids,
+            "group_by_id": dict(group_by_id),
             "calibration_groups": sorted(calibration_groups),
             "evaluation_groups": sorted(evaluation_groups),
             "calibration_count": len(calibration_ids),
             "evaluation_count": len(evaluation_ids),
+            "calibration_n": len(calibration_ids),
+            "evaluation_n": len(evaluation_ids),
+            "calibration_group_n": len(calibration_groups),
+            "evaluation_group_n": len(evaluation_groups),
+            "sample_overlap": sorted(set(calibration_ids).intersection(evaluation_ids)),
             "group_overlap": sorted(calibration_groups.intersection(evaluation_groups)),
             "target_overlap": sorted(
                 {descriptors["TARGET_COMPOUND_GROUP_HOLDOUT"][cid] for cid in calibration_ids}
@@ -150,9 +156,175 @@ def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any
                 {descriptors["REACTION_SIGNATURE_GROUP_HOLDOUT"][cid] for cid in calibration_ids}
                 .intersection(descriptors["REACTION_SIGNATURE_GROUP_HOLDOUT"][cid] for cid in evaluation_ids)
             ),
+            "reaction_signature_overlap": sorted(
+                {descriptors["REACTION_SIGNATURE_GROUP_HOLDOUT"][cid] for cid in calibration_ids}
+                .intersection(descriptors["REACTION_SIGNATURE_GROUP_HOLDOUT"][cid] for cid in evaluation_ids)
+            ),
+            "preprocessing_fit_scope": "calibration_ids_only",
             "deterministic_assignment": "SHA256(group_key) parity with deterministic alternating fallback",
         }
     return protocols
+
+
+class RetrospectiveSharedNuisanceModel:
+    """Frozen, hypothesis-agnostic structural predictor for unavailable mechanisms."""
+
+    model_kind = "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE"
+    model_version = "1.0.0"
+
+    def __init__(self, feature_indices: Sequence[int] = tuple(range(49)), ridge_alpha: float = 1.0) -> None:
+        self.feature_indices = tuple(int(index) for index in feature_indices)
+        self.ridge_alpha = float(ridge_alpha)
+        self._mean = np.zeros(len(self.feature_indices), dtype=np.float64)
+        self._scale = np.ones(len(self.feature_indices), dtype=np.float64)
+        self._parameters: dict[str, dict[str, Any]] = {}
+        self._candidate_features: dict[str, np.ndarray] = {}
+        self._fit_ids: tuple[str, ...] = ()
+        self._fitted = False
+
+    @property
+    def fitted_ids(self) -> tuple[str, ...]:
+        return self._fit_ids
+
+    def fit(
+        self,
+        candidate_features_by_id: Mapping[str, Any],
+        observed_context: Mapping[str, Mapping[str, ScientificObservable]],
+        training_ids: Sequence[str],
+    ) -> None:
+        if self._fitted:
+            self._candidate_features = {
+                str(cid): np.asarray(values, dtype=np.float64)
+                for cid, values in candidate_features_by_id.items()
+            }
+            return
+        training = tuple(sorted({str(item) for item in training_ids}))
+        if not training:
+            raise ValueError("shared nuisance calibration requires non-empty training_ids")
+        self._candidate_features = {
+            str(cid): np.asarray(values, dtype=np.float64)
+            for cid, values in candidate_features_by_id.items()
+        }
+        raw = np.asarray([self._candidate_features[cid][list(self.feature_indices)] for cid in training], dtype=np.float64)
+        if raw.ndim != 2 or not np.all(np.isfinite(raw)):
+            raise ValueError("shared nuisance features must be finite")
+        self._mean = np.mean(raw, axis=0)
+        self._scale = np.where(np.std(raw, axis=0) > 1e-12, np.std(raw, axis=0), 1.0)
+        design = self._design(raw)
+        for modality in ("XRD", "REFINEMENT"):
+            names = observable_names_for_modality(modality)
+            rows = []
+            targets = []
+            modality_observations = observed_context.get(modality, {})
+            for index, cid in enumerate(training):
+                observed = modality_observations.get(cid)
+                if observed is None:
+                    continue
+                rows.append(design[index])
+                targets.append(_as_numeric_observation(observed, names))
+            if targets:
+                self._parameters[modality] = self._fit_linear(np.asarray(rows), np.asarray(targets))
+        self._fit_ids = training
+        self._fitted = True
+
+    def _design(self, raw: np.ndarray) -> np.ndarray:
+        standardized = (raw - self._mean) / self._scale
+        return np.column_stack([np.ones(len(standardized)), standardized])
+
+    def _fit_linear(self, X: np.ndarray, Y: np.ndarray) -> dict[str, Any]:
+        penalty = np.eye(X.shape[1], dtype=np.float64)
+        penalty[0, 0] = 0.0
+        inverse = np.linalg.pinv(X.T @ X + self.ridge_alpha * penalty)
+        coefficients = inverse @ X.T @ Y
+        residuals = Y - X @ coefficients
+        return {
+            "coefficients": coefficients,
+            "gram_inverse": inverse,
+            "variance": np.maximum(np.mean(residuals**2, axis=0), 1e-4),
+            "n": int(len(Y)),
+        }
+
+    def _features(self, candidate_id: str, supplied: Any | None = None) -> np.ndarray:
+        raw = supplied if supplied is not None else self._candidate_features.get(str(candidate_id))
+        if raw is None:
+            raise KeyError(f"candidate features missing for {candidate_id}")
+        selected = np.asarray(raw, dtype=np.float64)[list(self.feature_indices)]
+        if not np.all(np.isfinite(selected)):
+            raise ValueError("candidate features must be finite")
+        return selected
+
+    def predict_observable_distribution(self, candidate_id: str, modality: str, candidate_features: Any | None = None) -> PredictiveObservableDistribution:
+        modality = str(modality).upper()
+        names = observable_names_for_modality(modality)
+        selected = self._features(candidate_id, candidate_features)
+        parameters = self._parameters.get(modality)
+        if parameters is None:
+            mean = np.full(len(names), 0.5, dtype=np.float64)
+            variance = np.ones(len(names), dtype=np.float64)
+        else:
+            design = self._design(selected.reshape(1, -1))[0]
+            mean = design @ parameters["coefficients"]
+            leverage = float(design @ parameters["gram_inverse"] @ design)
+            variance = parameters["variance"] * max(1.0, 1.0 + leverage)
+        for index, name in enumerate(names):
+            bounds = OBSERVABLE_REGISTRY[name].value_range
+            if bounds is not None:
+                mean[index] = np.clip(mean[index], *bounds)
+        return PredictiveObservableDistribution(
+            hypothesis_id="SHARED_STRUCTURAL_NUISANCE",
+            candidate_id=str(candidate_id),
+            modality=modality,
+            mean=mean,
+            variance=np.maximum(variance, 1e-6),
+            observable_names=names,
+            metadata={
+                "model_kind": self.model_kind,
+                "model_version": self.model_version,
+                "feature_family": "all_allowed_non_mechanistic_context_features",
+                "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+                "fit_ids_sha256": _id_hash(self._fit_ids),
+                "fit_scope": "calibration_ids_only",
+                "modality_role": "SHARED_NUISANCE",
+            },
+        )
+
+    def evaluate(self, observations: Mapping[str, ScientificObservable], features: Mapping[str, Any]) -> dict[str, Any]:
+        rows = []
+        for cid, observed in sorted(observations.items()):
+            if cid not in features:
+                continue
+            prediction = self.predict_observable_distribution(cid, observed.modality, features[cid])
+            target = _as_numeric_observation(observed, prediction.observable_names)
+            residual = target - prediction.mean
+            std = np.sqrt(prediction.variance)
+            rows.append({
+                "MAE": float(np.mean(np.abs(residual))),
+                "RMSE": float(np.sqrt(np.mean(residual**2))),
+                "NLL": float(-prediction.log_pdf(target, observed_names=prediction.observable_names, measurement_uncertainty=observed.uncertainty)),
+                "coverage50": float(np.mean(np.abs(residual) <= _Z50 * std)),
+                "coverage90": float(np.mean(np.abs(residual) <= _Z90 * std)),
+            })
+        return {
+            "N_evaluation": len(rows),
+            "MAE": float(np.mean([row["MAE"] for row in rows])) if rows else None,
+            "RMSE": float(np.mean([row["RMSE"] for row in rows])) if rows else None,
+            "NLL": float(np.mean([row["NLL"] for row in rows])) if rows else None,
+            "coverage50": float(np.mean([row["coverage50"] for row in rows])) if rows else None,
+            "coverage90": float(np.mean([row["coverage90"] for row in rows])) if rows else None,
+        }
+
+    def diagnostics(self) -> dict[str, Any]:
+        return {
+            "model_kind": self.model_kind,
+            "model_version": self.model_version,
+            "feature_indices": list(self.feature_indices),
+            "feature_family": "all_allowed_non_mechanistic_context_features",
+            "ridge_alpha": self.ridge_alpha,
+            "fit_ids": list(self._fit_ids),
+            "fit_ids_sha256": _id_hash(self._fit_ids),
+            "fit_scope": "calibration_ids_only",
+            "fitted_modalities": sorted(self._parameters),
+        }
 
 
 class RetrospectiveCalibratedHypothesisModel:
@@ -176,11 +348,13 @@ class RetrospectiveCalibratedHypothesisModel:
         identifiability_by_modality: Mapping[str, str],
         *,
         ridge_alpha: float = 1.0,
+        shared_nuisance_model: RetrospectiveSharedNuisanceModel | None = None,
     ) -> None:
         self.hypothesis_id = str(hypothesis_id)
         self.feature_indices = tuple(int(index) for index in feature_indices)
         self.identifiability_by_modality = {str(k).upper(): str(v) for k, v in identifiability_by_modality.items()}
         self.ridge_alpha = float(ridge_alpha)
+        self.shared_nuisance_model = shared_nuisance_model
         self._candidate_features: dict[str, np.ndarray] = {}
         self._feature_mean = np.zeros(len(self.feature_indices), dtype=np.float64)
         self._feature_scale = np.ones(len(self.feature_indices), dtype=np.float64)
@@ -194,6 +368,9 @@ class RetrospectiveCalibratedHypothesisModel:
     @property
     def fitted_ids(self) -> tuple[str, ...]:
         return self._fit_ids
+
+    def set_shared_nuisance_model(self, model: RetrospectiveSharedNuisanceModel | None) -> None:
+        self.shared_nuisance_model = model
 
     def fit(
         self,
@@ -299,6 +476,15 @@ class RetrospectiveCalibratedHypothesisModel:
             leverage = float(design @ parameters["gram_inverse"] @ design)
             variance = parameters["variance"] * max(1.0, 1.0 + leverage)
             role = "DIAGNOSTIC:fitted_hypothesis_model"
+        elif self.shared_nuisance_model is not None and modality in {"XRD", "REFINEMENT"}:
+            nuisance = self.shared_nuisance_model.predict_observable_distribution(
+                candidate_id,
+                modality,
+                candidate_features=candidate_features if candidate_features is not None else self._candidate_features.get(candidate_id),
+            )
+            mean = np.asarray(nuisance.mean, dtype=np.float64)
+            variance = np.asarray(nuisance.variance, dtype=np.float64)
+            role = "SHARED_NUISANCE:shared_predictive_nuisance_model"
         elif modality in self._pooled:
             pooled = self._pooled[modality]
             mean = np.asarray(pooled["mean"], dtype=np.float64)
@@ -397,6 +583,8 @@ class RetrospectiveCalibratedHypothesisModel:
                 "prediction_role": role,
                 "modality_role": self.modality_role(modality),
                 "likelihood_mode": "shared_nuisance" if self.modality_role(modality) == "SHARED_NUISANCE" else "mechanistic_fitted",
+                "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+                "measurement_uncertainty_semantics": "additional_measurement_error_only",
                 "identifiability": self.identifiability_by_modality.get(modality),
                 "conditioned_on": conditioned_on,
                 "latent_state": self.latent_state(candidate_id, candidate_features),
@@ -418,11 +606,18 @@ class RetrospectiveCalibratedHypothesisModel:
         probabilities = np.exp(log_weights)
         return probabilities / np.sum(probabilities)
 
-    def log_likelihood(self, observable: ScientificObservable, observed_context: Mapping[str, Any] | None = None) -> float:
+    def log_likelihood(
+        self,
+        observable: ScientificObservable,
+        observed_context: Mapping[str, Any] | None = None,
+        *,
+        candidate_features: Any | None = None,
+    ) -> float:
         prediction = self.predict_observable_distribution(
             observable.candidate_id,
             observable.modality,
             observed_context,
+            candidate_features=candidate_features,
         )
         return prediction.log_pdf(
             observable.value,
@@ -465,6 +660,7 @@ class RetrospectiveCalibratedHypothesisModel:
             "modality_roles": {modality: self.modality_role(modality) for modality in REAL_MODALITIES},
             "fitted_modalities": sorted(self._parameters),
             "pooled_nuisance_modalities": sorted(self._pooled),
+            "shared_nuisance_model": self.shared_nuisance_model.diagnostics() if self.shared_nuisance_model is not None else None,
         }
 
 
@@ -537,7 +733,9 @@ class RetrospectiveDiscoveryModel:
         }
 
 
-def build_retrospective_hypotheses() -> dict[str, RetrospectiveCalibratedHypothesisModel]:
+def build_retrospective_hypotheses(
+    shared_nuisance_model: RetrospectiveSharedNuisanceModel | None = None,
+) -> dict[str, RetrospectiveCalibratedHypothesisModel]:
     """Build fixed, interpretable competing hypotheses for retrospective fitting."""
     unavailable = "NOT_EVALUATED_INSUFFICIENT_LINKAGE"
     not_identifiable = "NOT_IDENTIFIABLE_FROM_AVAILABLE_DATA"
@@ -551,11 +749,13 @@ def build_retrospective_hypotheses() -> dict[str, RetrospectiveCalibratedHypothe
             "H2_COMPOSITION_HOMOGENEITY_LIMITED",
             tuple(range(3, 49)),
             {"XRD": not_identifiable, "REFINEMENT": not_identifiable, "OUTCOME_TEST": "CALIBRATED_OUTCOME_PROXY_WEAK", "SEM": unavailable, "EDS": unavailable},
+            shared_nuisance_model=shared_nuisance_model,
         ),
         "H3_MORPHOLOGY_KINETICS_LIMITED": RetrospectiveCalibratedHypothesisModel(
             "H3_MORPHOLOGY_KINETICS_LIMITED",
             (1, 2),
             {"XRD": not_identifiable, "REFINEMENT": not_identifiable, "OUTCOME_TEST": "CALIBRATED_OUTCOME_PROXY_WEAK", "SEM": unavailable, "EDS": unavailable},
+            shared_nuisance_model=shared_nuisance_model,
         ),
     }
 
@@ -698,6 +898,10 @@ def evaluate_retrospective_models(
     candidate_features: Mapping[str, Any],
     calibration_ids: Sequence[str],
     evaluation_ids: Sequence[str],
+    *,
+    split_protocol: str,
+    group_key: str,
+    split_metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     assert_no_evaluation_leakage(models, calibration_ids, evaluation_ids)
     per_hypothesis_modality: dict[str, dict[str, Any]] = {}
@@ -719,6 +923,7 @@ def evaluate_retrospective_models(
         record.get("calibration_coverage_status") == "CALIBRATION_COVERAGE_PASS"
         for record in supported_records
     )
+    metadata = dict(split_metadata or {})
     return {
         "status": "A_LAB_MODELS_EVALUATED",
         "retrospective_model_evaluation_status": "A_LAB_MODELS_EVALUATED",
@@ -727,12 +932,22 @@ def evaluate_retrospective_models(
         "model_kind": RetrospectiveCalibratedHypothesisModel.model_kind,
         "model_version": RetrospectiveCalibratedHypothesisModel.model_version,
         "split": {
-            "group_key": "sample_id",
+            "split_protocol": split_protocol,
+            "group_key": group_key,
             "calibration_n": len(set(calibration_ids)),
             "evaluation_n": len(set(evaluation_ids)),
+            "calibration_group_n": metadata.get("calibration_group_n", len(set(calibration_ids))),
+            "evaluation_group_n": metadata.get("evaluation_group_n", len(set(evaluation_ids))),
             "calibration_ids_sha256": _id_hash(calibration_ids),
             "evaluation_ids_sha256": _id_hash(evaluation_ids),
             "disjoint": set(calibration_ids).isdisjoint(evaluation_ids),
+            "sample_overlap": metadata.get("sample_overlap", []),
+            "group_overlap": metadata.get("group_overlap", []),
+            "target_overlap": metadata.get("target_overlap", []),
+            "reaction_signature_overlap": metadata.get(
+                "reaction_signature_overlap", metadata.get("precursor_signature_overlap", [])
+            ),
+            "preprocessing_fit_scope": metadata.get("preprocessing_fit_scope", "calibration_ids_only"),
         },
         "fit_contract": {
             "preprocessing_fit_on": "calibration_ids_only",
@@ -754,6 +969,7 @@ __all__ = [
     "CALIBRATION_ACCEPTANCE_THRESHOLDS",
     "RetrospectiveCalibratedHypothesisModel",
     "RetrospectiveDiscoveryModel",
+    "RetrospectiveSharedNuisanceModel",
     "RetrospectiveObservationSet",
     "assert_no_evaluation_leakage",
     "build_group_holdout_protocols",

@@ -31,6 +31,10 @@ from src.science.multimodal.retrospective import (
     RetrospectiveCalibratedHypothesisModel,
     RetrospectiveDiscoveryModel,
     RetrospectiveObservationSet,
+    RetrospectiveSharedNuisanceModel,
+    _Z50,
+    _Z90,
+    _as_numeric_observation,
     build_group_holdout_protocols,
     build_retrospective_hypotheses,
     canonical_formula,
@@ -145,6 +149,8 @@ def _make_reveal(engine: MultimodalDecisionEngine, action: Any, true_hypothesis:
             "signal_attenuation": 0.0,
             "adversarial_bias": 0.0,
             "noise_scale": 1.0,
+            "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+            "measurement_uncertainty_semantics": "zero_for_synthetic_total_variance",
         }
     else:
         diagnostic = _world_profile(world)["diagnostic"]
@@ -178,6 +184,8 @@ def _make_reveal(engine: MultimodalDecisionEngine, action: Any, true_hypothesis:
             "adversarial_bias": bias,
             "non_diagnostic_candidate": non_diagnostic_candidate,
             "noise_scale": scale,
+            "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+            "measurement_uncertainty_semantics": "zero_for_synthetic_total_variance",
         }
     for index, name in enumerate(prediction.observable_names):
         value_range = OBSERVABLE_REGISTRY[name].value_range
@@ -190,7 +198,9 @@ def _make_reveal(engine: MultimodalDecisionEngine, action: Any, true_hypothesis:
         name=prediction.observable_names[0] if value.size == 1 else "controlled_bundle",
         observable_names=tuple(prediction.observable_names),
         value=float(value[0]) if value.size == 1 else value,
-        uncertainty=noise,
+        # The generator already sampled from the declared total variance.
+        # Passing ``noise`` here would make posterior likelihoods add it again.
+        uncertainty=np.zeros_like(noise),
         raw_artifact_ref=f"controlled://{world}/{seed}/{action.action_id}",
         extractor_name="controlled_world_generator",
         extractor_version="1.0.0",
@@ -237,6 +247,67 @@ def _hig_order_invariant() -> bool:
     )
 
 
+def _clean_world_distribution_consistency() -> dict[str, Any]:
+    features = _controlled_candidates(2026, count=1)
+    hypotheses = build_alab_multimodal_hypotheses()
+    engine = MultimodalDecisionEngine(
+        features,
+        _controlled_modalities("CLEAN_WORLD_H1_PHASE_PURITY"),
+        hypotheses,
+        seed=2026,
+        policy_name="PURE_HIG",
+    )
+    action = next(item for item in engine.enumerate_actions() if normalize_action_type(item.action_type).upper() == "XRD")
+    true_hypothesis = hypotheses["H1_PHASE_PURITY_LIMITED"]
+    prediction = true_hypothesis.predict_observable_distribution(
+        action.candidate_id,
+        "XRD",
+        engine.observed_by_modality,
+        candidate_features=features[action.candidate_id],
+    )
+    observed = _make_reveal(engine, action, true_hypothesis, "CLEAN_WORLD_H1_PHASE_PURITY", 2026, features)
+    inference_variance = prediction.variance + np.asarray(observed.uncertainty, dtype=float) ** 2
+    expected_log_pdf = float(-0.5 * np.sum(
+        np.log(2.0 * np.pi * prediction.variance)
+        + (np.asarray(observed.value, dtype=float) - prediction.mean) ** 2 / prediction.variance
+    ))
+    actual_log_pdf = prediction.log_pdf(
+        observed.value,
+        observed_names=tuple(observed.observable_names),
+        measurement_uncertainty=observed.uncertainty,
+    )
+    hig_diagnostics = engine.expected_hypothesis_information_gain_diagnostics(action, samples=128)
+    hig_variance = np.asarray(hig_diagnostics["predictive_variance_by_hypothesis"][true_hypothesis.hypothesis_id], dtype=float)
+    draws = np.asarray([
+        _make_reveal(engine, action, true_hypothesis, "CLEAN_WORLD_H1_PHASE_PURITY", seed, features).value
+        for seed in range(256)
+    ], dtype=float)
+    empirical_variance = np.var(draws, axis=0, ddof=1)
+    generator_match = np.allclose(empirical_variance, prediction.variance, rtol=0.25, atol=0.01)
+    computed_match = bool(
+        np.allclose(inference_variance, prediction.variance)
+        and np.allclose(hig_variance, prediction.variance)
+        and np.isclose(actual_log_pdf, expected_log_pdf)
+        and generator_match
+    )
+    return {
+        "status": "PASS" if computed_match else "FAIL",
+        "generator_distribution": "Normal(mean, total_predictive_variance)",
+        "inference_distribution": "Normal(mean, total_predictive_variance + measurement_uncertainty^2)",
+        "hig_predictive_distribution": "Normal(mean, total_predictive_variance)",
+        "generator_variance": prediction.variance.tolist(),
+        "inference_variance": inference_variance.tolist(),
+        "hig_variance": hig_variance.tolist(),
+        "measurement_uncertainty": np.asarray(observed.uncertainty, dtype=float).tolist(),
+        "empirical_generator_variance": empirical_variance.tolist(),
+        "log_pdf_expected": expected_log_pdf,
+        "log_pdf_actual": actual_log_pdf,
+        "generator_variance_match": bool(generator_match),
+        "computed_distribution_match": computed_match,
+        "uncertainty_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+    }
+
+
 def _run_controlled_policy(
     world: str,
     seed: int,
@@ -244,7 +315,8 @@ def _run_controlled_policy(
     steps: int,
     run_label: str = "controlled_world",
     candidate_count: int = 12,
-    hig_samples: int = 24,
+    # Use enough MC draws for the raw-bound audit; this changes numerical precision, not model parameters.
+    hig_samples: int = 96,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     candidates = _controlled_candidates(seed, count=candidate_count)
     hypotheses = build_alab_multimodal_hypotheses()
@@ -289,7 +361,7 @@ def _run_controlled_policy(
             "pre_reveal_beliefs": dict(reveal["beliefs_before"]),
             "hig_upper_bound_ok": all(
                 float(row.get("expected_hig_nats", 0.0)) <= float(row.get("current_hypothesis_entropy_nats", engine.current_entropy)) + float(row.get("hig_upper_bound_epsilon_nats", 1e-8))
-                for row in recommendation.scored_actions or [{**recommendation.why, "current_hypothesis_entropy_nats": recommendation.why.get("current_entropy_nats", engine.current_entropy), "hig_upper_bound_epsilon_nats": engine._hig_epsilon(hig_samples)}]
+                for row in recommendation.scored_actions or [{**recommendation.why, "current_hypothesis_entropy_nats": recommendation.why.get("current_entropy_nats", engine.current_entropy), "hig_upper_bound_epsilon_nats": recommendation.why.get("hig_bound_epsilon_nats", 1e-8)}]
             ),
         })
     final_beliefs = dict(engine.beliefs)
@@ -319,6 +391,7 @@ def _run_controlled_policy(
         "step_posterior_crosses_0.5": first_crossing(0.5),
         "step_posterior_crosses_0.8": first_crossing(0.8),
         "step_posterior_crosses_0.9": first_crossing(0.9),
+        "trajectory_horizon": steps,
         "map_recovery": bool(map_steps),
         "expected_HIG_nats": float(sum(row["hig_nats"] for row in timeline)),
         "realized_information_gain_nats": float(initial_entropy - engine.current_entropy),
@@ -332,9 +405,31 @@ def _run_controlled_policy(
 
 
 def _summarize_controlled(records: Sequence[Mapping[str, Any]], worlds: Sequence[str]) -> dict[str, Any]:
+    def threshold_metrics(rows: Sequence[Mapping[str, Any]], field: str, horizon: int) -> dict[str, Any]:
+        crossed = [int(row[field]) for row in rows if row.get(field) is not None]
+        total = len(rows)
+        return {
+            "crossing_rate": float(len(crossed) / total) if total else 0.0,
+            "N_crossed": len(crossed),
+            "N_total": total,
+            "mean_steps_conditional_on_crossing": float(np.mean(crossed)) if crossed else None,
+            "median_steps_conditional_on_crossing": float(np.median(crossed)) if crossed else None,
+            "min_steps": min(crossed) if crossed else None,
+            "max_steps": max(crossed) if crossed else None,
+            "restricted_mean_steps_with_horizon": float(np.mean([step if step is not None else horizon + 1 for step in (row.get(field) for row in rows)])) if total else None,
+            "horizon": horizon,
+        }
+
     grouped = {world: [row for row in records if row["world"] == world] for world in worlds}
     summary = {}
     for world, rows in grouped.items():
+        horizon = max((int(row.get("trajectory_horizon", 0)) for row in rows), default=0)
+        thresholds = {
+            "MAP": threshold_metrics(rows, "step_true_hypothesis_becomes_MAP", horizon),
+            "P>0.5": threshold_metrics(rows, "step_posterior_crosses_0.5", horizon),
+            "P>0.8": threshold_metrics(rows, "step_posterior_crosses_0.8", horizon),
+            "P>0.9": threshold_metrics(rows, "step_posterior_crosses_0.9", horizon),
+        }
         summary[world] = {
             "seeds": [row["seed"] for row in rows],
             "policies": sorted({row["policy"] for row in rows}),
@@ -348,11 +443,33 @@ def _summarize_controlled(records: Sequence[Mapping[str, Any]], worlds: Sequence
             "mean_measurement_cost": float(np.mean([row["total_normalized_cost"] for row in rows])) if rows else 0.0,
             "std_measurement_cost": float(np.std([row["total_normalized_cost"] for row in rows])) if rows else 0.0,
             "median_measurement_cost": float(np.median([row["total_normalized_cost"] for row in rows])) if rows else 0.0,
-            "mean_steps_to_MAP": float(np.mean([row["step_true_hypothesis_becomes_MAP"] or 999 for row in rows])) if rows else None,
-            "mean_steps_to_posterior_gt_0.5": float(np.mean([row["step_posterior_crosses_0.5"] or 999 for row in rows])) if rows else None,
-            "mean_steps_to_posterior_gt_0.8": float(np.mean([row["step_posterior_crosses_0.8"] or 999 for row in rows])) if rows else None,
+            "trajectory_horizon": horizon,
+            "threshold_metrics": thresholds,
+            "mean_steps_to_MAP": thresholds["MAP"]["mean_steps_conditional_on_crossing"],
+            "mean_steps_to_posterior_gt_0.5": thresholds["P>0.5"]["mean_steps_conditional_on_crossing"],
+            "mean_steps_to_posterior_gt_0.8": thresholds["P>0.8"]["mean_steps_conditional_on_crossing"],
+            "mean_steps_to_posterior_gt_0.9": thresholds["P>0.9"]["mean_steps_conditional_on_crossing"],
         }
     return summary
+
+
+def _threshold_metric_semantics_valid(full_policy: Mapping[str, Any]) -> bool:
+    summaries = full_policy.get("summary_by_world_policy", {})
+    if not summaries:
+        summaries = full_policy.get("summary", {})
+    for world_summary in summaries.values():
+        candidates = world_summary.values() if isinstance(world_summary, Mapping) and "threshold_metrics" not in world_summary else (world_summary,)
+        for summary in candidates:
+            metrics = summary.get("threshold_metrics", {}) if isinstance(summary, Mapping) else {}
+            horizon = int(summary.get("trajectory_horizon", 0)) if isinstance(summary, Mapping) else 0
+            for item in metrics.values():
+                if item.get("N_crossed", 0) > item.get("N_total", 0):
+                    return False
+                for key in ("mean_steps_conditional_on_crossing", "median_steps_conditional_on_crossing", "min_steps", "max_steps"):
+                    value = item.get(key)
+                    if value is not None and (value > horizon or value == 999):
+                        return False
+    return True
 
 
 def controlled_hypothesis_benchmark(seed: int = 42, steps: int = 4, world_profiles: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, Any]:
@@ -587,7 +704,9 @@ def _fit_retrospective_calibration(
     calibration_ids = [str(item) for item in split_manifest.get("calibration_ids", [])]
     evaluation_ids = [str(item) for item in split_manifest.get("evaluation_ids", [])]
     calibration, calibration_features = _collect_retrospective_observations(data_dir, cache_dir, calibration_ids, "calibration")
-    models = build_retrospective_hypotheses()
+    shared_nuisance = RetrospectiveSharedNuisanceModel()
+    shared_nuisance.fit(calibration_features, calibration.by_modality, calibration_ids)
+    models = build_retrospective_hypotheses(shared_nuisance_model=shared_nuisance)
     for model in models.values():
         model.fit(calibration_features, calibration.by_modality, training_ids=calibration_ids)
     evaluation, evaluation_features = _collect_retrospective_observations(data_dir, cache_dir, evaluation_ids, "evaluation")
@@ -599,10 +718,15 @@ def _fit_retrospective_calibration(
         all_features,
         calibration_ids,
         evaluation_ids,
+        split_protocol=split_manifest.get("split_protocol", "SAMPLE_ID_INTERPOLATION_HOLDOUT"),
+        group_key=split_manifest.get("group_key", "sample_id"),
+        split_metadata=split_manifest,
     )
     metrics["evaluation_loaded_after_fit"] = True
     metrics["split_protocol"] = split_manifest.get("split_protocol", "SAMPLE_ID_INTERPOLATION_HOLDOUT")
     metrics["group_key"] = split_manifest.get("group_key", "sample_id")
+    metrics["shared_nuisance_model"] = shared_nuisance.diagnostics()
+    metrics["shared_nuisance_comparison"] = _shared_nuisance_model_metrics(models, calibration, evaluation, all_features)
     metrics["leakage_assertions"] = {
         "split_disjoint": metrics["split"]["disjoint"],
         "all_models_fit_ids_subset_calibration": all(set(model.fitted_ids).issubset(calibration_ids) for model in models.values()),
@@ -926,19 +1050,38 @@ def _fit_protocol(
     calibration_ids = list(protocol.get("calibration_ids", []))
     evaluation_ids = list(protocol.get("evaluation_ids", []))
     calibration, calibration_features = _collect_retrospective_observations(data_dir, cache_dir, calibration_ids, "calibration")
-    models = build_retrospective_hypotheses()
+    shared_nuisance = RetrospectiveSharedNuisanceModel()
+    shared_nuisance.fit(calibration_features, calibration.by_modality, calibration_ids)
+    models = build_retrospective_hypotheses(shared_nuisance_model=shared_nuisance)
     for model in models.values():
         model.fit(calibration_features, calibration.by_modality, training_ids=calibration_ids)
     evaluation, evaluation_features = _collect_retrospective_observations(data_dir, cache_dir, evaluation_ids, "evaluation")
     all_features = {**calibration_features, **evaluation_features}
-    metrics = evaluate_retrospective_models(models, calibration, evaluation, all_features, calibration_ids, evaluation_ids)
+    metrics = evaluate_retrospective_models(
+        models,
+        calibration,
+        evaluation,
+        all_features,
+        calibration_ids,
+        evaluation_ids,
+        split_protocol=protocol.get("split_protocol", "SAMPLE_ID_INTERPOLATION_HOLDOUT"),
+        group_key=protocol.get("group_key", "sample_id"),
+        split_metadata=protocol,
+    )
     metrics.update({
         "split_protocol": protocol.get("split_protocol"),
         "group_key": protocol.get("group_key"),
         "group_overlap": protocol.get("group_overlap", []),
         "target_overlap": protocol.get("target_overlap", []),
         "precursor_signature_overlap": protocol.get("precursor_signature_overlap", []),
+        "reaction_signature_overlap": protocol.get("reaction_signature_overlap", protocol.get("precursor_signature_overlap", [])),
+        "calibration_group_n": protocol.get("calibration_group_n"),
+        "evaluation_group_n": protocol.get("evaluation_group_n"),
+        "sample_overlap": protocol.get("sample_overlap", []),
+        "preprocessing_fit_scope": protocol.get("preprocessing_fit_scope", "calibration_ids_only"),
         "evaluation_loaded_after_fit": True,
+        "shared_nuisance_model": shared_nuisance.diagnostics(),
+        "shared_nuisance_comparison": _shared_nuisance_model_metrics(models, calibration, evaluation, all_features),
         "leakage_assertions": {
             "split_disjoint": metrics["split"]["disjoint"],
             "all_models_fit_ids_subset_calibration": all(set(model.fitted_ids).issubset(calibration_ids) for model in models.values()),
@@ -972,6 +1115,116 @@ def _fit_discovery_model(
         "evaluation_MAE": float(np.mean(np.abs(errors))) if len(errors) else None,
         "evaluation_RMSE": float(np.sqrt(np.mean(errors ** 2))) if len(errors) else None,
         "evaluation_outcomes_hidden_from_policy": True,
+    }
+
+
+def _predictive_metrics(
+    predictor: Any,
+    modality: str,
+    observations: Mapping[str, ScientificObservable],
+    features: Mapping[str, np.ndarray],
+    *,
+    model_type: str,
+    feature_family: str,
+    training_n: int,
+) -> dict[str, Any]:
+    errors = []
+    nll = []
+    covered50 = []
+    covered90 = []
+    for cid, observed in sorted(observations.items()):
+        if cid not in features:
+            continue
+        prediction = predictor.predict_observable_distribution(cid, modality, candidate_features=features[cid])
+        target = np.atleast_1d(np.asarray(observed.value, dtype=float))
+        residual = target - prediction.mean
+        measurement = np.asarray(observed.uncertainty, dtype=float)
+        if measurement.ndim == 0:
+            measurement = np.full_like(prediction.mean, float(measurement))
+        total_std = np.sqrt(prediction.variance + measurement ** 2)
+        errors.extend(np.abs(residual).tolist())
+        nll.append(-prediction.log_pdf(target, observed_names=tuple(observed.observable_names), measurement_uncertainty=measurement))
+        covered50.extend((np.abs(residual) <= _Z50 * total_std).tolist())
+        covered90.extend((np.abs(residual) <= _Z90 * total_std).tolist())
+    return {
+        "modality": modality,
+        "model_type": model_type,
+        "feature_family": feature_family,
+        "training_N": training_n,
+        "evaluation_N": len(nll),
+        "MAE": float(np.mean(errors)) if errors else None,
+        "RMSE": float(np.sqrt(np.mean(np.square(errors)))) if errors else None,
+        "NLL": float(np.mean(nll)) if nll else None,
+        "coverage50": float(np.mean(covered50)) if covered50 else None,
+        "coverage90": float(np.mean(covered90)) if covered90 else None,
+    }
+
+
+def _shared_nuisance_model_metrics(
+    models: Mapping[str, RetrospectiveCalibratedHypothesisModel],
+    calibration: RetrospectiveObservationSet,
+    evaluation: RetrospectiveObservationSet,
+    features: Mapping[str, np.ndarray],
+) -> dict[str, Any]:
+    h1 = models["H1_PHASE_PURITY_LIMITED"]
+    h2 = models["H2_COMPOSITION_HOMOGENEITY_LIMITED"]
+    h3 = models["H3_MORPHOLOGY_KINETICS_LIMITED"]
+    shared = h2.shared_nuisance_model
+    if shared is None:
+        return {"status": "NOT_EVALUATED", "reason": "shared nuisance model was not fitted"}
+    per_modality = {}
+    for modality in ("XRD", "REFINEMENT"):
+        calibration_values = [
+            _as_numeric_observation(observed, observable_names_for_modality(modality))
+            for observed in calibration.by_modality.get(modality, {}).values()
+        ]
+        pooled_mean = np.mean(calibration_values, axis=0) if calibration_values else np.full(len(observable_names_for_modality(modality)), 0.5)
+        pooled_variance = np.maximum(np.var(calibration_values, axis=0), 0.04) if calibration_values else np.ones_like(pooled_mean)
+
+        class PooledMeanPredictor:
+            def predict_observable_distribution(self, candidate_id: str, requested_modality: str, *, candidate_features: Any | None = None) -> PredictiveObservableDistribution:
+                return PredictiveObservableDistribution(
+                    "POOLED_MEAN_BASELINE", str(candidate_id), requested_modality,
+                    pooled_mean, pooled_variance, observable_names_for_modality(requested_modality),
+                    metadata={"model_kind": "POOLED_MEAN_BASELINE"},
+                )
+
+        eval_obs = evaluation.by_modality.get(modality, {})
+        per_modality[modality] = {
+            "pooled_mean_baseline": _predictive_metrics(
+                PooledMeanPredictor(), modality, eval_obs, features,
+                model_type="POOLED_MEAN_BASELINE", feature_family="calibration_observation_mean", training_n=len(calibration_values),
+            ),
+            "shared_predictive_nuisance": _predictive_metrics(
+                shared, modality, eval_obs, features,
+                model_type=shared.model_kind, feature_family="all_allowed_non_mechanistic_context_features", training_n=len(shared.fitted_ids),
+            ),
+            "H1_scientific_structural_model": _predictive_metrics(
+                h1, modality, eval_obs, features,
+                model_type=h1.model_kind, feature_family="H1_phase_purity_feature_family", training_n=len(h1.fitted_ids),
+            ),
+        }
+    symmetry_rows = []
+    for modality in ("XRD", "REFINEMENT"):
+        for cid in sorted(set(evaluation.by_modality.get(modality, {})).intersection(features)):
+            left = h2.predict_observable_distribution(cid, modality, candidate_features=features[cid])
+            right = h3.predict_observable_distribution(cid, modality, candidate_features=features[cid])
+            symmetry_rows.append({
+                "candidate_id": cid,
+                "modality": modality,
+                "mean_max_abs_diff": float(np.max(np.abs(left.mean - right.mean))),
+                "variance_max_abs_diff": float(np.max(np.abs(left.variance - right.variance))),
+            })
+    return {
+        "status": "PASS" if symmetry_rows and all(row["mean_max_abs_diff"] <= 1e-12 and row["variance_max_abs_diff"] <= 1e-12 for row in symmetry_rows) else "PARTIAL",
+        "model": {
+            **shared.diagnostics(),
+            "training_N": len(shared.fitted_ids),
+            "evaluation_N": sum(len(evaluation.by_modality.get(modality, {})) for modality in ("XRD", "REFINEMENT")),
+        },
+        "per_modality": per_modality,
+        "h2_h3_symmetry": {"status": "PASS" if symmetry_rows and all(row["mean_max_abs_diff"] <= 1e-12 and row["variance_max_abs_diff"] <= 1e-12 for row in symmetry_rows) else "FAIL", "rows": symmetry_rows},
+        "h2_h3_odds_contribution": "BF_H2/H3 = 1 for identical shared XRD/refinement nuisance predictions",
     }
 
 
@@ -1093,20 +1346,40 @@ def _hig_monte_carlo_diagnostics() -> dict[str, Any]:
     modalities = [m for m in ALAB_DOMAIN_CONFIG.modalities if m.name in {"XRD", "REFINEMENT", "OUTCOME_TEST"}]
     values = {}
     rankings = {}
-    for samples in (16, 32, 64, 128):
+    all_scores: dict[int, dict[str, dict[str, Any]]] = {}
+    for samples in (12, 16, 32, 64, 128):
         engine = MultimodalDecisionEngine(candidates, modalities, build_alab_multimodal_hypotheses(), seed=2024, policy_name="PURE_HIG")
         rows = []
         for action in engine.enumerate_actions():
-            rows.append((action.action_id, engine.expected_hypothesis_information_gain(action, samples=samples)))
-        rows.sort(key=lambda item: (-item[1], item[0]))
+            rows.append((action.action_id, engine.expected_hypothesis_information_gain_diagnostics(action, samples=samples)))
+        rows.sort(key=lambda item: (-float(item[1]["clipped_hig_nats"]), item[0]))
+        all_scores[samples] = {action_id: diagnostics for action_id, diagnostics in rows}
         rankings[str(samples)] = [item[0] for item in rows[:5]]
-        values[str(samples)] = {action_id: float(score) for action_id, score in rows[:5]}
+        values[str(samples)] = {
+            action_id: {
+                **{key: diagnostics[key] for key in ("raw_hig_mc_nats", "clipped_hig_nats", "hig_mc_standard_error", "mc_samples")},
+                "rank": index + 1,
+            }
+            for index, (action_id, diagnostics) in enumerate(rows[:5])
+        }
+    def rank_correlation(left: int, right: int) -> float:
+        ids = sorted(set(all_scores[left]).intersection(all_scores[right]))
+        left_ranks = np.asarray([sorted(all_scores[left], key=lambda key: (-all_scores[left][key]["clipped_hig_nats"], key)).index(cid) for cid in ids], dtype=float)
+        right_ranks = np.asarray([sorted(all_scores[right], key=lambda key: (-all_scores[right][key]["clipped_hig_nats"], key)).index(cid) for cid in ids], dtype=float)
+        return float(np.corrcoef(left_ranks, right_ranks)[0, 1]) if len(ids) > 1 else 1.0
     return {
         "status": "PASS" if rankings["64"][0] == rankings["128"][0] else "REVIEW",
         "samples": [16, 32, 64, 128],
+        "default_matrix_samples": 12,
         "representative_state": {"candidate_count": len(candidates), "modalities": [m.name for m in modalities], "seed": 2024},
         "top_action_by_samples": rankings,
         "top_action_scores_by_samples": values,
+        "rank_correlation_64_vs_128": rank_correlation(64, 128),
+        "rank_correlation_12_vs_128": rank_correlation(12, 128),
+        "top1_agreement_64_vs_128": rankings["64"][0] == rankings["128"][0],
+        "top1_agreement_12_vs_128": rankings["12"][0] == rankings["128"][0],
+        "top3_overlap_64_vs_128": len(set(rankings["64"][:3]).intersection(rankings["128"][:3])),
+        "top3_overlap_12_vs_128": len(set(rankings["12"][:3]).intersection(rankings["128"][:3])),
         "ranking_stable_64_vs_128": rankings["64"][:3] == rankings["128"][:3],
     }
 
@@ -1277,6 +1550,30 @@ def _variance_sensitivity(models: Mapping[str, RetrospectiveCalibratedHypothesis
     return {"status": "PASS", "variance_multipliers": scales, "final_beliefs": final, "qualitative_top_hypothesis": {name: max(beliefs, key=beliefs.get) for name, beliefs in final.items()}, "variance_is_frozen_not_optimized": True}
 
 
+def _posterior_concentration_diagnostics(
+    evaluation: RetrospectiveObservationSet,
+    split_protocols: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    observation_count = sum(len(values) for values in evaluation.by_modality.values())
+    evaluation_ids = sorted({cid for values in evaluation.by_modality.values() for cid in values})
+    target_groups = split_protocols.get("TARGET_COMPOUND_GROUP_HOLDOUT", {}).get("group_by_id", {})
+    reaction_groups = split_protocols.get("REACTION_SIGNATURE_GROUP_HOLDOUT", {}).get("group_by_id", {})
+    unique_targets = {target_groups[cid] for cid in evaluation_ids if cid in target_groups}
+    unique_reactions = {reaction_groups[cid] for cid in evaluation_ids if cid in reaction_groups}
+    return {
+        "status": "PASS" if observation_count and unique_targets and unique_reactions else "NOT_EVALUATED",
+        "number_of_observations": observation_count,
+        "n_observations": observation_count,
+        "number_of_unique_candidate_ids": len(evaluation_ids),
+        "number_of_unique_target_groups": len(unique_targets),
+        "n_unique_target_groups": len(unique_targets),
+        "number_of_unique_reaction_signatures": len(unique_reactions),
+        "n_unique_reaction_signatures": len(unique_reactions),
+        "independence_warning": "Evidence observations may be statistically and chemically correlated; sample-product posterior concentration must not be interpreted as hundreds of independent scientific trials.",
+        "posterior_interpretation": "Posterior values represent relative explanatory model weights among simplified competing models and not physical probabilities that exactly one mechanism is exclusively true.",
+    }
+
+
 def build_validation(
     inventory: Mapping[str, Any], extractors: Mapping[str, Any], controlled: Mapping[str, Any],
     policy_comparison: Mapping[str, Any], replay: Mapping[str, Any], calibration: Mapping[str, Any],
@@ -1284,12 +1581,18 @@ def build_validation(
     full_policy: Mapping[str, Any] | None = None, group_metrics: Mapping[str, Any] | None = None,
     real_policy_matrix: Mapping[str, Any] | None = None,
     nondiagnostic: Mapping[str, Any] | None = None, partial_identifiability: Mapping[str, Any] | None = None,
+    clean_distribution_consistency: Mapping[str, Any] | None = None,
+    shared_nuisance: Mapping[str, Any] | None = None,
+    hig_monte_carlo: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     clean = clean or {}
     stress = stress or controlled
     full_policy = full_policy or {}
     group_metrics = group_metrics or {}
     real_policy_matrix = real_policy_matrix or {}
+    clean_distribution_consistency = clean_distribution_consistency or {}
+    shared_nuisance = shared_nuisance or {}
+    hig_monte_carlo = hig_monte_carlo or {}
     ledger = list(clean.get("ledger_events", [])) + list(stress.get("ledger_events", [])) + list(policy_comparison.get("ledger_events", [])) + list(replay.get("ledger_events", []))
     calibration_split = calibration.get("split", {})
     fit_contract = calibration.get("fit_contract", {})
@@ -1303,6 +1606,23 @@ def build_validation(
         for item in group_metrics.values()
     )
     hig_records = [event for event in ledger if event.get("event") in {"ACTION_SCORE_RECORD", "PREREGISTERED_SELECTED_ACTION"}]
+    split_metadata_pass = bool(group_metrics) and all(
+        all(key in item.get("split", {}) for key in (
+            "split_protocol", "group_key", "calibration_n", "evaluation_n", "calibration_group_n",
+            "evaluation_group_n", "sample_overlap", "group_overlap", "target_overlap",
+            "reaction_signature_overlap", "preprocessing_fit_scope",
+        ))
+        for item in group_metrics.values()
+    )
+    shared_fit_scope_pass = bool(shared_nuisance) and shared_nuisance.get("fit_scope") == "calibration_ids_only" and bool(shared_nuisance.get("fit_ids_sha256"))
+    raw_hig_lower_pass = bool(hig_records) and all(
+        event.get("raw_hig_lower_bound_ok", event.get("hig_diagnostics", {}).get("raw_hig_lower_bound_ok")) is True
+        for event in hig_records
+    )
+    raw_hig_upper_pass = bool(hig_records) and all(
+        event.get("raw_hig_upper_bound_ok", event.get("hig_diagnostics", {}).get("raw_hig_upper_bound_ok")) is True
+        for event in hig_records
+    )
     required_gates = {
         "observable_schema_gate": all(set(names) for names in MODALITY_OBSERVABLE_NAMES.values()),
         "observable_semantics_alignment_gate": extractors.get("status") == "CONTRACT_VALIDATED",
@@ -1321,12 +1641,20 @@ def build_validation(
         "calibration_coverage_gate": all(calibration_metrics.get(modality, {}).get("calibration_coverage_status") == "CALIBRATION_COVERAGE_PASS" for modality in ("XRD", "REFINEMENT", "OUTCOME_TEST")),
         "identifiability_disclosure_gate": all(str(calibration.get("per_hypothesis_modality", {}).get(hypothesis_id, {}).get(modality, {}).get("status", "")).startswith("NOT_") for hypothesis_id, modality in (("H2_COMPOSITION_HOMOGENEITY_LIMITED", "EDS"), ("H3_MORPHOLOGY_KINETICS_LIMITED", "SEM"))),
         "clean_world_methodology_gate": clean.get("status") == "METHODOLOGY_VALID" and all(row.get("world_type") == "CLEAN" and not row.get("world_is_misspecified") for row in clean.get("records", [])),
+        "clean_world_distribution_consistency_gate": clean_distribution_consistency.get("status") == "PASS" and clean_distribution_consistency.get("computed_distribution_match") is True,
         "stress_world_methodology_gate": stress.get("status") == "METHODOLOGY_VALID" and all(row.get("world_is_misspecified") for row in stress.get("records", [])),
         "full_policy_matrix_gate": full_policy.get("trajectory_count") == 180 and len(full_policy.get("policies", [])) == 6,
         "group_generalization_methodology_gate": group_pass,
+        "threshold_metric_semantics_gate": _threshold_metric_semantics_valid(full_policy),
+        "split_metadata_consistency_gate": split_metadata_pass,
+        "shared_nuisance_fit_scope_gate": shared_fit_scope_pass,
+        "shared_nuisance_h2_h3_symmetry_gate": shared_nuisance.get("h2_h3_symmetry", {}).get("status") == "PASS",
         "pre_reveal_HIG_gate": all(event.get("event") != "MEASUREMENT_REVEALED" or any(prev.get("event") == "PREREGISTERED_SELECTED_ACTION" and prev.get("action", {}).get("action_id") == event.get("action", {}).get("action_id") for prev in ledger[:i]) for i, event in enumerate(ledger)),
-        "HIG_lower_bound_gate": all(float(event.get("expected_hig_nats", 0.0)) >= -float(event.get("hig_upper_bound_epsilon_nats", 1e-8)) for event in hig_records),
-        "HIG_upper_bound_gate": all(event.get("hig_upper_bound_ok", float(event.get("expected_hig_nats", 0.0)) <= float(event.get("current_hypothesis_entropy_nats", 0.0)) + float(event.get("hig_upper_bound_epsilon_nats", 1e-8))) for event in hig_records),
+        "HIG_lower_bound_gate": raw_hig_lower_pass,
+        "HIG_upper_bound_gate": raw_hig_upper_pass,
+        "raw_HIG_lower_bound_gate": raw_hig_lower_pass,
+        "raw_HIG_upper_bound_gate": raw_hig_upper_pass,
+        "HIG_rank_stability_gate": hig_monte_carlo.get("status") == "PASS" and hig_monte_carlo.get("top1_agreement_12_vs_128") is True,
         "HIG_order_invariance_gate": _hig_order_invariant(),
         "policy_distinction_gate": len(set(policy_comparison.get("policy_formulas", {}).values())) == len(POLICIES),
         "hybrid_formula_gate": "normalized cost" in policy_comparison.get("policy_formulas", {}).get("HYBRID", ""),
@@ -1347,7 +1675,7 @@ def build_validation(
         "third_party_functionality_gate": _third_party_capability_gate("status"),
         "report_consistency_gate": inventory.get("dataset") == "A-Lab Precursor Genome" and replay.get("status") == "METHODOLOGY_VALID",
     }
-    scientific_methodology_ready = all(required_gates[key] is True for key in ("observable_schema_gate", "observable_semantics_alignment_gate", "raw_artifact_provenance_gate", "candidate_linkage_gate", "modality_contract_gate", "hypothesis_structure_gate", "hypothesis_directionality_gate", "clean_world_methodology_gate", "stress_world_methodology_gate", "full_policy_matrix_gate", "pre_reveal_HIG_gate", "HIG_lower_bound_gate", "HIG_upper_bound_gate", "HIG_order_invariance_gate", "policy_distinction_gate", "hybrid_formula_gate", "discovery_hig_conflict_gate", "hybrid_score_recomputation_gate", "hybrid_cost_causality_gate", "conditional_prediction_gate", "nondiagnostic_evidence_gate", "partial_identifiability_gate"))
+    scientific_methodology_ready = all(required_gates[key] is True for key in ("observable_schema_gate", "observable_semantics_alignment_gate", "raw_artifact_provenance_gate", "candidate_linkage_gate", "modality_contract_gate", "hypothesis_structure_gate", "hypothesis_directionality_gate", "clean_world_methodology_gate", "clean_world_distribution_consistency_gate", "stress_world_methodology_gate", "full_policy_matrix_gate", "threshold_metric_semantics_gate", "split_metadata_consistency_gate", "shared_nuisance_fit_scope_gate", "shared_nuisance_h2_h3_symmetry_gate", "pre_reveal_HIG_gate", "raw_HIG_lower_bound_gate", "raw_HIG_upper_bound_gate", "HIG_rank_stability_gate", "HIG_order_invariance_gate", "policy_distinction_gate", "hybrid_formula_gate", "discovery_hig_conflict_gate", "hybrid_score_recomputation_gate", "hybrid_cost_causality_gate", "conditional_prediction_gate", "nondiagnostic_evidence_gate", "partial_identifiability_gate"))
     local_status = os.environ.get("AICOSCIENTIST_LOCAL_TEST_GATE", "NOT_RUN")
     external_status = os.environ.get("AICOSCIENTIST_EXTERNAL_CI_GATE", "NOT_INSPECTED")
     core_science_ready = scientific_methodology_ready and required_gates["group_generalization_methodology_gate"] and required_gates["retrospective_replay_gate"] and required_gates["real_policy_replay_gate"]
@@ -1373,7 +1701,7 @@ def build_validation(
         },
         "gates": {key: ("PASS" if value is True else value if isinstance(value, str) else "FAIL") for key, value in {**required_gates, "local_test_gate": local_status, "external_CI_gate": external_status}.items()},
         "gate_evidence": {
-            "ledger_event_count": len(ledger), "controlled_worlds_clean": sorted(clean.get("worlds", [])), "controlled_worlds_stress": sorted(stress.get("worlds", [])), "required_seeds": list(SEEDS), "unsupported_retrospective_modalities": ["SEM", "EDS"], "calibration_evaluation_disjoint": calibration_split.get("disjoint"), "boolean_gate_count": sum(isinstance(value, bool) for value in required_gates.values()), "boolean_gate_pass_count": sum(value is True for value in required_gates.values() if isinstance(value, bool)),
+            "ledger_event_count": len(ledger), "controlled_worlds_clean": sorted(clean.get("worlds", [])), "controlled_worlds_stress": sorted(stress.get("worlds", [])), "required_seeds": list(SEEDS), "unsupported_retrospective_modalities": ["SEM", "EDS"], "calibration_evaluation_disjoint": calibration_split.get("disjoint"), "boolean_gate_count": sum(isinstance(value, bool) for value in required_gates.values()), "boolean_gate_pass_count": sum(value is True for value in required_gates.values() if isinstance(value, bool)), "hig_raw_bound_violation_count": sum(event.get("raw_hig_lower_bound_ok", event.get("hig_diagnostics", {}).get("raw_hig_lower_bound_ok")) is not True or event.get("raw_hig_upper_bound_ok", event.get("hig_diagnostics", {}).get("raw_hig_upper_bound_ok")) is not True for event in hig_records),
         },
     }
 
@@ -1414,6 +1742,7 @@ def main() -> None:
     hypotheses = {hid: model.diagnostics() for hid, model in build_alab_multimodal_hypotheses().items()}
     clean = clean_controlled_worlds()
     stress = stress_controlled_worlds()
+    clean_distribution_consistency = _clean_world_distribution_consistency()
     controlled = stress
     full_policy = full_policy_matrix()
     policy_results = controlled_policy_comparison()
@@ -1428,6 +1757,17 @@ def main() -> None:
         modality: calibration["per_hypothesis_modality"]["H1_PHASE_PURITY_LIMITED"][modality]
         for modality in ("XRD", "REFINEMENT", "OUTCOME_TEST")
     }
+    refinement_target_fraction = calibration["metrics"]["REFINEMENT"].get("per_observable", {}).get("REFINEMENT.target_phase_fraction", {})
+    if refinement_target_fraction.get("coverage50", 0.0) > 0.65:
+        calibration["interpretation_annotations"] = {
+            "REFINEMENT.target_phase_fraction": {
+                "coverage50": refinement_target_fraction.get("coverage50"),
+                "interpretation": "over-dispersed / conservative predictive interval",
+            }
+        }
+    shared_nuisance_metrics = _shared_nuisance_model_metrics(
+        retrospective_models, calibration_observations, evaluation_observations, all_features,
+    )
     discovery_model, discovery_metrics = _fit_discovery_model(
         {cid: all_features[cid] for cid in split_manifest.get("calibration_ids", []) if cid in all_features},
         calibration_observations,
@@ -1461,6 +1801,7 @@ def main() -> None:
     variance_sensitivity = _variance_sensitivity(retrospective_models, evaluation_observations, all_features)
     hig_mc = _hig_monte_carlo_diagnostics()
     chemistry_protocols = _chemistry_split_protocols(data_dir, cache_dir)
+    posterior_concentration = _posterior_concentration_diagnostics(evaluation_observations, chemistry_protocols)
     group_metrics: dict[str, Any] = {
         "SAMPLE_ID_INTERPOLATION_HOLDOUT": {
             **calibration,
@@ -1469,6 +1810,7 @@ def main() -> None:
             "group_overlap": split_manifest.get("group_overlap", []),
             "target_overlap": split_manifest.get("target_overlap", []),
             "precursor_signature_overlap": split_manifest.get("precursor_signature_overlap", []),
+            "reaction_signature_overlap": split_manifest.get("reaction_signature_overlap", split_manifest.get("precursor_signature_overlap", [])),
         }
     }
     for protocol_name in ("REACTION_SIGNATURE_GROUP_HOLDOUT", "TARGET_COMPOUND_GROUP_HOLDOUT"):
@@ -1483,6 +1825,16 @@ def main() -> None:
         "calibration_n": split_manifest.get("calibration_n"),
         "evaluation_n": split_manifest.get("evaluation_n"),
     })
+    for name, metric in group_metrics.items():
+        split = metric.get("split", {})
+        split_protocol_artifact[name].update({
+            key: split.get(key, metric.get(key))
+            for key in (
+                "calibration_n", "evaluation_n", "calibration_group_n", "evaluation_group_n",
+                "calibration_ids_sha256", "evaluation_ids_sha256", "disjoint", "sample_overlap",
+                "group_overlap", "target_overlap", "reaction_signature_overlap", "preprocessing_fit_scope",
+            )
+        })
     policy_comparison = {
         "status": policy_results["status"],
         "scope": "controlled policy comparison plus separate real retrospective policy replay",
@@ -1510,6 +1862,9 @@ def main() -> None:
         clean=clean, stress=stress, full_policy=full_policy, group_metrics=group_metrics,
         real_policy_matrix=real_policy_matrix, nondiagnostic=nondiagnostic,
         partial_identifiability=partial_identifiability,
+        clean_distribution_consistency=clean_distribution_consistency,
+        shared_nuisance=shared_nuisance_metrics["model"] | {"h2_h3_symmetry": shared_nuisance_metrics.get("h2_h3_symmetry", {})},
+        hig_monte_carlo=hig_mc,
     )
     _write("observable_schema.json", {name: definition.__dict__ for name, definition in OBSERVABLE_REGISTRY.items()})
     split_manifest["calibration_status"] = calibration["status"]
@@ -1539,6 +1894,7 @@ def main() -> None:
         },
         "sem_eds_status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
         "prospective_causal_identifiability": "NOT_ESTABLISHED",
+        "posterior_concentration": posterior_concentration,
         "exclusive_posterior_interpretation": "P(H_i) is relative explanatory model weight among simplified competing models, not the physical probability that exactly one mechanism alone is true.",
         "future_design_note": "A factorial/compositional representation could model simultaneous phase, composition, and kinetic limitation activations; not implemented in this backward-compatible patch.",
     })
@@ -1565,9 +1921,12 @@ def main() -> None:
         "acceptance_thresholds": CALIBRATION_ACCEPTANCE_THRESHOLDS,
         "XRD": calibration["per_hypothesis_modality"]["H1_PHASE_PURITY_LIMITED"]["XRD"].get("per_observable", {}),
         "REFINEMENT": calibration["per_hypothesis_modality"]["H1_PHASE_PURITY_LIMITED"]["REFINEMENT"].get("per_observable", {}),
+        "interpretation_annotations": calibration.get("interpretation_annotations", {}),
     })
     _write("hig_monte_carlo_diagnostics.json", hig_mc)
     _write("discovery_model_metrics.json", discovery_metrics)
+    _write("shared_nuisance_model_metrics.json", shared_nuisance_metrics)
+    _write("posterior_concentration_diagnostics.json", posterior_concentration)
     _write("retrospective_policy_comparison.json", policy_comparison)
     _write("retrospective_replay.json", replay)
     _write("conditional_hig_diagnostics.json", conditional_hig)
@@ -1585,6 +1944,9 @@ def main() -> None:
         f"- Retrospective replay: `{replay['status']}`\n"
         f"- Scientific methodology: `{validation['scientific_methodology_status']}`\n"
         f"- Release readiness: `{validation['release_readiness']}` (external CI: `{validation['external_ci_status']}`)\n"
+        f"- Clean distribution consistency: `{clean_distribution_consistency['status']}`\n"
+        f"- Shared structural nuisance: `{shared_nuisance_metrics['status']}`\n"
+        f"- Posterior concentration warning: `{posterior_concentration['status']}` (sample-product evidence is chemistry-correlated)\n"
         f"- Sample interpolation: `{group_metrics['SAMPLE_ID_INTERPOLATION_HOLDOUT']['split_protocol']}` ({split_manifest['calibration_n']} calibration / {split_manifest['evaluation_n']} evaluation)\n"
         f"- Reaction group holdout: `{group_metrics['REACTION_SIGNATURE_GROUP_HOLDOUT']['split_protocol']}`\n"
         f"- Target holdout: `{group_metrics['TARGET_COMPOUND_GROUP_HOLDOUT']['split_protocol']}`\n"

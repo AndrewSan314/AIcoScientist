@@ -7,6 +7,9 @@
 - Retrospective replay: `METHODOLOGY_VALID`
 - Scientific methodology: `CONTROLLED_CLEAN_AND_STRESS_METHODOLOGY_VALIDATED`
 - Release readiness: `PENDING_EXTERNAL_CI` (external CI: `NOT_INSPECTED`)
+- Clean distribution consistency: `PASS`
+- Shared structural nuisance: `PASS`
+- Posterior concentration warning: `PASS` (sample-product evidence is chemistry-correlated)
 - Sample interpolation: `SAMPLE_ID_INTERPOLATION_HOLDOUT` (510 calibration / 525 evaluation)
 - Reaction group holdout: `REACTION_SIGNATURE_GROUP_HOLDOUT`
 - Target holdout: `TARGET_COMPOUND_GROUP_HOLDOUT`

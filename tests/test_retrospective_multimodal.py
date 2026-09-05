@@ -188,7 +188,9 @@ def test_clean_world_draws_from_true_hypothesis_distribution():
     prediction = hypotheses["H1_PHASE_PURITY_LIMITED"].predict_observable_distribution("c", "XRD", candidate_features=features["c"])
     observation = _make_reveal(engine, action, hypotheses["H1_PHASE_PURITY_LIMITED"], "CLEAN_WORLD_H1_PHASE_PURITY", 7, features)
     assert observation.provenance["world_type"] == "CLEAN_CORRECTLY_SPECIFIED"
-    assert np.allclose(observation.uncertainty, np.sqrt(prediction.variance))
+    assert np.allclose(observation.uncertainty, 0.0)
+    assert observation.provenance["variance_convention"] == "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE"
+    assert np.all(prediction.variance > 0.0)
 
 
 def test_stress_world_is_labeled_misspecified():

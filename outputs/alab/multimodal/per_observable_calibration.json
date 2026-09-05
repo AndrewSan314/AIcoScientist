@@ -123,5 +123,11 @@
       },
       "NRMSE": 0.15832635460467018
     }
+  },
+  "interpretation_annotations": {
+    "REFINEMENT.target_phase_fraction": {
+      "coverage50": 0.9522821576763485,
+      "interpretation": "over-dispersed / conservative predictive interval"
+    }
   }
 }

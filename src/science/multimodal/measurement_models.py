@@ -10,7 +10,13 @@ from src.science.multimodal.ontology import observable_names_for_modality
 
 @dataclass(frozen=True)
 class PredictiveObservableDistribution:
-    """Diagonal-Gaussian predictive distribution for scalar or vector observables."""
+    """Diagonal-Gaussian predictive distribution for scalar or vector observables.
+
+    ``variance`` is the total predictive observation variance.  The optional
+    ``measurement_uncertainty`` accepted by :meth:`log_pdf` is an additional
+    measurement-error term and must not repeat variance already represented by
+    the predictive distribution.
+    """
 
     hypothesis_id: str
     candidate_id: str

@@ -1,0 +1,6700 @@
+{
+  "status": "PASS",
+  "model": {
+    "model_kind": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
+    "model_version": "1.0.0",
+    "feature_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48
+    ],
+    "feature_family": "all_allowed_non_mechanistic_context_features",
+    "ridge_alpha": 1.0,
+    "fit_ids": [
+      "PG_0102",
+      "PG_0103",
+      "PG_0106",
+      "PG_0108",
+      "PG_0112",
+      "PG_0113",
+      "PG_0114",
+      "PG_0117",
+      "PG_0122",
+      "PG_0124",
+      "PG_0127",
+      "PG_0129",
+      "PG_0130",
+      "PG_0134",
+      "PG_0135",
+      "PG_0138",
+      "PG_0141",
+      "PG_0145",
+      "PG_0147",
+      "PG_0150",
+      "PG_0204",
+      "PG_0205",
+      "PG_0207",
+      "PG_0208",
+      "PG_0213",
+      "PG_0215",
+      "PG_0218",
+      "PG_0219",
+      "PG_0222",
+      "PG_0230",
+      "PG_0231",
+      "PG_0234",
+      "PG_0235",
+      "PG_0238",
+      "PG_0239",
+      "PG_0244",
+      "PG_0245",
+      "PG_0247",
+      "PG_0248",
+      "PG_0249",
+      "PG_0251",
+      "PG_0304",
+      "PG_0306",
+      "PG_0307",
+      "PG_0308",
+      "PG_0312",
+      "PG_0314",
+      "PG_0316",
+      "PG_0318",
+      "PG_0322",
+      "PG_0326",
+      "PG_0330",
+      "PG_0331",
+      "PG_0338",
+      "PG_0339",
+      "PG_0340",
+      "PG_0341",
+      "PG_0345",
+      "PG_0347",
+      "PG_0348",
+      "PG_0405",
+      "PG_0406",
+      "PG_0408",
+      "PG_0409",
+      "PG_0410",
+      "PG_0411",
+      "PG_0413",
+      "PG_0414",
+      "PG_0415",
+      "PG_0416",
+      "PG_0419",
+      "PG_0424",
+      "PG_0428",
+      "PG_0431",
+      "PG_0434",
+      "PG_0438",
+      "PG_0441",
+      "PG_0443",
+      "PG_0446",
+      "PG_0447",
+      "PG_0448",
+      "PG_0451",
+      "PG_0506",
+      "PG_0510",
+      "PG_0511",
+      "PG_0513",
+      "PG_0517",
+      "PG_0518",
+      "PG_0519",
+      "PG_0521",
+      "PG_0528",
+      "PG_0529",
+      "PG_0530",
+      "PG_0531",
+      "PG_0538",
+      "PG_0539",
+      "PG_0540",
+      "PG_0541",
+      "PG_0543",
+      "PG_0544",
+      "PG_0545",
+      "PG_0546",
+      "PG_0549",
+      "PG_0550",
+      "PG_0551",
+      "PG_0552",
+      "PG_0610",
+      "PG_0611",
+      "PG_0612",
+      "PG_0613",
+      "PG_0614",
+      "PG_0616",
+      "PG_0617",
+      "PG_0620",
+      "PG_0622",
+      "PG_0624",
+      "PG_0639",
+      "PG_0640",
+      "PG_0643",
+      "PG_0644",
+      "PG_0649",
+      "PG_0650",
+      "PG_0717",
+      "PG_0718",
+      "PG_0719",
+      "PG_0720",
+      "PG_0721",
+      "PG_0725",
+      "PG_0727",
+      "PG_0728",
+      "PG_0730",
+      "PG_0731",
+      "PG_0735",
+      "PG_0739",
+      "PG_0743",
+      "PG_0744",
+      "PG_0745",
+      "PG_0748",
+      "PG_0749",
+      "PG_0750",
+      "PG_0810",
+      "PG_0814",
+      "PG_0816",
+      "PG_0817",
+      "PG_0818",
+      "PG_0821",
+      "PG_0826",
+      "PG_0828",
+      "PG_0830",
+      "PG_0831",
+      "PG_0834",
+      "PG_0839",
+      "PG_0841",
+      "PG_0843",
+      "PG_0844",
+      "PG_0845",
+      "PG_0846",
+      "PG_0847",
+      "PG_0849",
+      "PG_0850",
+      "PG_0911",
+      "PG_0915",
+      "PG_0916",
+      "PG_0918",
+      "PG_0919",
+      "PG_0921",
+      "PG_0922",
+      "PG_0928",
+      "PG_0930",
+      "PG_0935",
+      "PG_0939",
+      "PG_0943",
+      "PG_0947",
+      "PG_0948",
+      "PG_0951",
+      "PG_0952",
+      "PG_1012",
+      "PG_1014",
+      "PG_1016",
+      "PG_1019",
+      "PG_1020",
+      "PG_1021",
+      "PG_1022",
+      "PG_1025",
+      "PG_1027",
+      "PG_1029",
+      "PG_1030",
+      "PG_1031",
+      "PG_1034",
+      "PG_1039",
+      "PG_1040",
+      "PG_1041",
+      "PG_1043",
+      "PG_1044",
+      "PG_1046",
+      "PG_1047",
+      "PG_1049",
+      "PG_1051",
+      "PG_1112",
+      "PG_1117",
+      "PG_1119",
+      "PG_1120",
+      "PG_1121",
+      "PG_1122",
+      "PG_1124",
+      "PG_1128",
+      "PG_1129",
+      "PG_1130",
+      "PG_1131",
+      "PG_1134",
+      "PG_1135",
+      "PG_1138",
+      "PG_1139",
+      "PG_1141",
+      "PG_1147",
+      "PG_1149",
+      "PG_1150",
+      "PG_1215",
+      "PG_1218",
+      "PG_1219",
+      "PG_1221",
+      "PG_1222",
+      "PG_1224",
+      "PG_1226",
+      "PG_1227",
+      "PG_1230",
+      "PG_1231",
+      "PG_1234",
+      "PG_1241",
+      "PG_1245",
+      "PG_1248",
+      "PG_1251",
+      "PG_1315",
+      "PG_1316",
+      "PG_1319",
+      "PG_1325",
+      "PG_1326",
+      "PG_1328",
+      "PG_1329",
+      "PG_1331",
+      "PG_1338",
+      "PG_1340",
+      "PG_1341",
+      "PG_1345",
+      "PG_1346",
+      "PG_1347",
+      "PG_1348",
+      "PG_1351",
+      "PG_1352",
+      "PG_1415",
+      "PG_1418",
+      "PG_1419",
+      "PG_1420",
+      "PG_1424",
+      "PG_1425",
+      "PG_1426",
+      "PG_1427",
+      "PG_1430",
+      "PG_1431",
+      "PG_1435",
+      "PG_1439",
+      "PG_1443",
+      "PG_1444",
+      "PG_1447",
+      "PG_1450",
+      "PG_1452",
+      "PG_1516",
+      "PG_1518",
+      "PG_1519",
+      "PG_1520",
+      "PG_1526",
+      "PG_1529",
+      "PG_1531",
+      "PG_1535",
+      "PG_1538",
+      "PG_1539",
+      "PG_1540",
+      "PG_1543",
+      "PG_1546",
+      "PG_1547",
+      "PG_1550",
+      "PG_1552",
+      "PG_1619",
+      "PG_1621",
+      "PG_1622",
+      "PG_1625",
+      "PG_1626",
+      "PG_1630",
+      "PG_1634",
+      "PG_1638",
+      "PG_1639",
+      "PG_1640",
+      "PG_1641",
+      "PG_1646",
+      "PG_1648",
+      "PG_1650",
+      "PG_1719",
+      "PG_1721",
+      "PG_1722",
+      "PG_1726",
+      "PG_1727",
+      "PG_1728",
+      "PG_1731",
+      "PG_1740",
+      "PG_1741",
+      "PG_1744",
+      "PG_1746",
+      "PG_1748",
+      "PG_1749",
+      "PG_1819",
+      "PG_1822",
+      "PG_1824",
+      "PG_1826",
+      "PG_1830",
+      "PG_1834",
+      "PG_1838",
+      "PG_1839",
+      "PG_1840",
+      "PG_1841",
+      "PG_1846",
+      "PG_1847",
+      "PG_1850",
+      "PG_1921",
+      "PG_1922",
+      "PG_1924",
+      "PG_1925",
+      "PG_1929",
+      "PG_1935",
+      "PG_1940",
+      "PG_1943",
+      "PG_1944",
+      "PG_1946",
+      "PG_1947",
+      "PG_1952",
+      "PG_2022",
+      "PG_2029",
+      "PG_2030",
+      "PG_2031",
+      "PG_2040",
+      "PG_2044",
+      "PG_2046",
+      "PG_2048",
+      "PG_2050",
+      "PG_2051",
+      "PG_2122",
+      "PG_2128",
+      "PG_2129",
+      "PG_2138",
+      "PG_2139",
+      "PG_2140",
+      "PG_2141",
+      "PG_2145",
+      "PG_2225",
+      "PG_2227",
+      "PG_2228",
+      "PG_2231",
+      "PG_2235",
+      "PG_2238",
+      "PG_2239",
+      "PG_2240",
+      "PG_2241",
+      "PG_2243",
+      "PG_2246",
+      "PG_2248",
+      "PG_2252",
+      "PG_2425",
+      "PG_2426",
+      "PG_2427",
+      "PG_2428",
+      "PG_2430",
+      "PG_2431",
+      "PG_2434",
+      "PG_2441",
+      "PG_2445",
+      "PG_2446",
+      "PG_2447",
+      "PG_2448",
+      "PG_2449",
+      "PG_2450",
+      "PG_2451",
+      "PG_2452",
+      "PG_2529",
+      "PG_2534",
+      "PG_2535",
+      "PG_2538",
+      "PG_2539",
+      "PG_2541",
+      "PG_2543",
+      "PG_2544",
+      "PG_2547",
+      "PG_2551",
+      "PG_2635",
+      "PG_2640",
+      "PG_2641",
+      "PG_2644",
+      "PG_2645",
+      "PG_2648",
+      "PG_2649",
+      "PG_2650",
+      "PG_2651",
+      "PG_2729",
+      "PG_2730",
+      "PG_2734",
+      "PG_2735",
+      "PG_2740",
+      "PG_2741",
+      "PG_2746",
+      "PG_2749",
+      "PG_2826",
+      "PG_2835",
+      "PG_2838",
+      "PG_2839",
+      "PG_2840",
+      "PG_2841",
+      "PG_2843",
+      "PG_2844",
+      "PG_2846",
+      "PG_2849",
+      "PG_2850",
+      "PG_2930",
+      "PG_2931",
+      "PG_2934",
+      "PG_2939",
+      "PG_2941",
+      "PG_2943",
+      "PG_2944",
+      "PG_2945",
+      "PG_2946",
+      "PG_2948",
+      "PG_2952",
+      "PG_3038",
+      "PG_3039",
+      "PG_3040",
+      "PG_3041",
+      "PG_3044",
+      "PG_3048",
+      "PG_3049",
+      "PG_3050",
+      "PG_3052",
+      "PG_3140",
+      "PG_3141",
+      "PG_3143",
+      "PG_3144",
+      "PG_3145",
+      "PG_3147",
+      "PG_3150",
+      "PG_3151",
+      "PG_3431",
+      "PG_3443",
+      "PG_3445",
+      "PG_3446",
+      "PG_3447",
+      "PG_3449",
+      "PG_3450",
+      "PG_3531",
+      "PG_3534",
+      "PG_3538",
+      "PG_3540",
+      "PG_3541",
+      "PG_3545",
+      "PG_3549",
+      "PG_3550",
+      "PG_3552",
+      "PG_3840",
+      "PG_3841",
+      "PG_3843",
+      "PG_3845",
+      "PG_3847",
+      "PG_3849",
+      "PG_3850",
+      "PG_3931",
+      "PG_3934",
+      "PG_3944",
+      "PG_3945",
+      "PG_3946",
+      "PG_3951",
+      "PG_3952",
+      "PG_4043",
+      "PG_4045",
+      "PG_4047",
+      "PG_4048",
+      "PG_4049",
+      "PG_4050",
+      "PG_4051",
+      "PG_4052",
+      "PG_4143",
+      "PG_4144",
+      "PG_4146",
+      "PG_4147",
+      "PG_4149",
+      "PG_4151",
+      "PG_4344",
+      "PG_4346",
+      "PG_4348",
+      "PG_4349",
+      "PG_4350",
+      "PG_4447",
+      "PG_4448",
+      "PG_4449",
+      "PG_4547",
+      "PG_4551",
+      "PG_4552",
+      "PG_4648",
+      "PG_4650",
+      "PG_4750",
+      "PG_4751",
+      "PG_4849",
+      "PG_4851",
+      "PG_4852",
+      "PG_5051"
+    ],
+    "fit_ids_sha256": "053023dfc68faca886a15bb08a07b3bb25c9c99f44a4d12e5c4b56f7baab4533",
+    "fit_scope": "calibration_ids_only",
+    "fitted_modalities": [
+      "REFINEMENT",
+      "XRD"
+    ],
+    "training_N": 510,
+    "evaluation_N": 1006
+  },
+  "per_modality": {
+    "XRD": {
+      "pooled_mean_baseline": {
+        "modality": "XRD",
+        "model_type": "POOLED_MEAN_BASELINE",
+        "feature_family": "calibration_observation_mean",
+        "training_N": 510,
+        "evaluation_N": 524,
+        "MAE": 4.4446422724314525,
+        "RMSE": 14.12521028261505,
+        "NLL": 2.790431156510164,
+        "coverage50": 0.8076335877862595,
+        "coverage90": 0.9641221374045802
+      },
+      "shared_predictive_nuisance": {
+        "modality": "XRD",
+        "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
+        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "training_N": 510,
+        "evaluation_N": 524,
+        "MAE": 3.552527611706476,
+        "RMSE": 10.44026320648859,
+        "NLL": -0.21704902926081468,
+        "coverage50": 0.683587786259542,
+        "coverage90": 0.9385496183206107
+      },
+      "H1_scientific_structural_model": {
+        "modality": "XRD",
+        "model_type": "RETROSPECTIVE_CALIBRATED_HYPOTHESIS_MODEL",
+        "feature_family": "H1_phase_purity_feature_family",
+        "training_N": 510,
+        "evaluation_N": 524,
+        "MAE": 4.299477969932813,
+        "RMSE": 14.023595700389471,
+        "NLL": 0.4890987791835322,
+        "coverage50": 0.6946564885496184,
+        "coverage90": 0.9381679389312977
+      }
+    },
+    "REFINEMENT": {
+      "pooled_mean_baseline": {
+        "modality": "REFINEMENT",
+        "model_type": "POOLED_MEAN_BASELINE",
+        "feature_family": "calibration_observation_mean",
+        "training_N": 456,
+        "evaluation_N": 482,
+        "MAE": 0.22009384925866735,
+        "RMSE": 0.2966003985259419,
+        "NLL": 0.47770071699500066,
+        "coverage50": 0.5062240663900415,
+        "coverage90": 0.9216804979253111
+      },
+      "shared_predictive_nuisance": {
+        "modality": "REFINEMENT",
+        "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
+        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "training_N": 510,
+        "evaluation_N": 482,
+        "MAE": 0.15917532415059174,
+        "RMSE": 0.23606650825736838,
+        "NLL": -0.4596617297309117,
+        "coverage50": 0.5876556016597511,
+        "coverage90": 0.8973029045643154
+      },
+      "H1_scientific_structural_model": {
+        "modality": "REFINEMENT",
+        "model_type": "RETROSPECTIVE_CALIBRATED_HYPOTHESIS_MODEL",
+        "feature_family": "H1_phase_purity_feature_family",
+        "training_N": 510,
+        "evaluation_N": 482,
+        "MAE": 0.20781925689953556,
+        "RMSE": 0.28168852156783997,
+        "NLL": 0.14750974756367538,
+        "coverage50": 0.6063278008298755,
+        "coverage90": 0.933091286307054
+      }
+    }
+  },
+  "h2_h3_symmetry": {
+    "status": "PASS",
+    "rows": [
+      {
+        "candidate_id": "PG_0104",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0105",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0107",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0109",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0110",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0111",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0115",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0116",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0118",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0119",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0120",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0121",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0125",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0126",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0128",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0131",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0139",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0140",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0143",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0144",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0146",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0148",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0149",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0151",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0203",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0206",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0209",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0210",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0211",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0212",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0214",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0216",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0217",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0220",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0221",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0224",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0225",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0226",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0227",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0228",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0229",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0240",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0241",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0243",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0246",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0250",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0252",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0305",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0309",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0310",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0311",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0313",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0315",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0317",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0319",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0320",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0321",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0324",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0325",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0327",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0328",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0329",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0334",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0335",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0343",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0344",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0346",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0349",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0350",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0351",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0352",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0407",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0412",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0417",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0418",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0420",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0421",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0422",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0425",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0426",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0427",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0429",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0430",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0435",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0439",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0440",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0444",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0445",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0449",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0450",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0452",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0507",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0508",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0509",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0512",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0514",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0515",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0516",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0520",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0522",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0524",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0525",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0526",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0527",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0534",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0535",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0547",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0548",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0607",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0608",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0609",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0615",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0618",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0619",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0621",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0625",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0626",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0627",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0628",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0629",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0630",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0631",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0634",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0635",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0638",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0641",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0645",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0646",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0647",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0648",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0651",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0652",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0708",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0709",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0710",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0711",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0712",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0713",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0714",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0715",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0716",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0722",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0724",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0726",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0729",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0734",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0738",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0740",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0741",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0746",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0747",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0751",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0752",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0811",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0812",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0813",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0815",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0819",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0820",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0822",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0824",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0825",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0827",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0829",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0835",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0838",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0840",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0848",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0851",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0852",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0908",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0910",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0912",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0913",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0914",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0917",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0920",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0924",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0925",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0926",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0927",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0929",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0931",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0934",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0938",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0940",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0941",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0944",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0945",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0946",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0949",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0950",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1011",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1013",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1015",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1017",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1018",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1024",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1026",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1028",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1035",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1038",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1045",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1048",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1050",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1052",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1113",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1114",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1115",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1116",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1118",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1125",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1126",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1127",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1140",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1143",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1144",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1145",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1146",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1148",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1151",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1214",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1216",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1217",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1220",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1225",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1228",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1229",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1235",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1238",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1239",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1240",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1243",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1244",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1246",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1247",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1249",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1250",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1252",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1312",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1314",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1317",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1318",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1320",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1321",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1322",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1324",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1327",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1330",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1334",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1335",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1339",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1343",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1344",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1349",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1350",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1416",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1417",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1421",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1422",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1428",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1429",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1434",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1438",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1440",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1441",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1445",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1446",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1448",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1449",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1451",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1517",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1521",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1522",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1524",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1525",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1527",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1528",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1530",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1534",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1541",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1544",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1545",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1548",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1549",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1551",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1617",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1618",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1620",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1624",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1627",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1628",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1629",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1631",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1635",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1643",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1644",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1645",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1647",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1649",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1651",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1652",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1718",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1720",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1724",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1725",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1729",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1730",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1734",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1735",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1738",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1739",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1743",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1745",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1747",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1750",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1751",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1752",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1820",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1821",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1825",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1827",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1828",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1829",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1831",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1835",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1843",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1844",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1845",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1848",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1849",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1851",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1852",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1920",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1926",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1927",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1928",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1930",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1931",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1934",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1938",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1939",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1941",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1945",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1948",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1949",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1950",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1951",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2021",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2024",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2025",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2026",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2027",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2028",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2034",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2035",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2038",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2039",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2041",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2043",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2045",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2047",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2049",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2052",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2124",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2125",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2126",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2127",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2130",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2131",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2134",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2135",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2143",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2144",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2146",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2147",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2148",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2149",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2150",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2151",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2224",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2226",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2229",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2230",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2234",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2244",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2245",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2247",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2249",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2250",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2251",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2429",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2435",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2438",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2439",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2440",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2443",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2444",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2526",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2527",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2528",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2530",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2531",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2540",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2545",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2546",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2548",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2549",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2550",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2552",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2629",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2630",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2631",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2634",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2638",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2639",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2643",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2646",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2647",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2652",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2726",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2731",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2738",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2739",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2743",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2744",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2745",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2747",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2748",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2750",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2751",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2752",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2827",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2829",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2830",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2831",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2834",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2845",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2847",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2848",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2851",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2852",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2935",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2938",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2940",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2947",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2949",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2950",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2951",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3031",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3034",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3035",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3043",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3045",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3046",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3047",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3051",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3146",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3148",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3149",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3440",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3441",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3444",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3448",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3451",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3452",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3539",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3543",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3544",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3546",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3547",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3548",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3551",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3831",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3834",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3839",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3844",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3846",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3848",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3851",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3852",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3940",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3941",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3943",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3947",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3948",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3949",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3950",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4041",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4044",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4046",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4145",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4148",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4150",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4345",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4347",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4351",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4352",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4445",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4446",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4451",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4452",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4546",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4548",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4549",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4550",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4647",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4649",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4651",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4652",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4748",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4749",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4752",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4850",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4950",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4951",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4952",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_5052",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_5152",
+        "modality": "XRD",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0104",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0105",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0107",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0109",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0110",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0111",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0115",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0116",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0118",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0119",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0121",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0125",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0126",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0128",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0139",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0140",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0143",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0144",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0146",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0148",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0149",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0151",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0203",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0206",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0209",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0210",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0211",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0212",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0214",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0216",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0217",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0220",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0221",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0225",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0226",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0227",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0228",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0229",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0240",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0241",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0243",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0246",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0250",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0252",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0305",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0309",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0310",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0311",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0313",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0315",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0317",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0319",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0320",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0321",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0324",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0325",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0327",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0328",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0329",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0334",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0335",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0343",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0344",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0346",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0349",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0350",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0351",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0352",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0407",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0412",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0417",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0418",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0420",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0421",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0422",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0425",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0426",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0427",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0429",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0430",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0435",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0439",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0440",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0444",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0445",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0449",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0450",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0452",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0507",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0508",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0509",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0512",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0515",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0516",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0522",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0525",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0526",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0527",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0535",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0547",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0548",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0607",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0608",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0609",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0615",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0618",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0619",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0621",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0625",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0626",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0627",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0628",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0629",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0630",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0631",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0634",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0635",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0638",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0641",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0645",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0646",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0647",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0648",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0651",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0652",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0708",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0709",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0710",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0711",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0712",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0713",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0715",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0716",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0722",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0724",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0726",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0729",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0738",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0740",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0741",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0746",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0747",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0751",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0752",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0811",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0812",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0813",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0815",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0819",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0820",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0822",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0824",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0825",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0827",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0829",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0835",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0838",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0840",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0848",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0851",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0852",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0908",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0910",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0912",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0913",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0914",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0917",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0920",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0925",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0926",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0927",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0929",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0931",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0934",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0938",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0940",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0941",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0944",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0945",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0946",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0949",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_0950",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1011",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1013",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1015",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1017",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1018",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1024",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1026",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1028",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1035",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1038",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1045",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1048",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1050",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1052",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1113",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1114",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1115",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1116",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1118",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1125",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1126",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1127",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1140",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1143",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1144",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1145",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1146",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1148",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1151",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1214",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1216",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1217",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1225",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1228",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1229",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1235",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1238",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1239",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1240",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1243",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1244",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1246",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1247",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1249",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1250",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1252",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1312",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1317",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1318",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1320",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1321",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1322",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1327",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1330",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1334",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1335",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1339",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1343",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1344",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1349",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1350",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1416",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1417",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1422",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1445",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1446",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1448",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1449",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1451",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1517",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1521",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1522",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1525",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1527",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1528",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1530",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1541",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1544",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1545",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1548",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1549",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1551",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1617",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1618",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1620",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1624",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1627",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1628",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1629",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1635",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1643",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1644",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1645",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1647",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1649",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1651",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1652",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1718",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1720",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1725",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1729",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1730",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1734",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1735",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1738",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1739",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1743",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1745",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1747",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1750",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1751",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1752",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1820",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1821",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1825",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1827",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1828",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1829",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1831",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1835",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1843",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1844",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1845",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1848",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1849",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1851",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1852",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1920",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1926",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1927",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1928",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1930",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1934",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1938",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1939",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1941",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1945",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1948",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1949",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1950",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_1951",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2021",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2025",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2026",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2027",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2028",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2035",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2038",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2039",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2041",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2047",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2049",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2052",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2124",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2125",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2126",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2127",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2130",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2131",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2134",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2135",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2143",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2144",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2146",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2147",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2148",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2149",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2150",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2151",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2226",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2229",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2230",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2234",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2244",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2245",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2247",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2249",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2250",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2251",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2444",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2526",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2527",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2528",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2530",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2540",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2545",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2546",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2548",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2549",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2550",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2552",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2629",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2630",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2634",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2638",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2639",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2643",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2646",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2647",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2652",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2726",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2731",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2738",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2739",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2743",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2744",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2745",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2747",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2748",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2750",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2751",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2752",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2827",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2829",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2830",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2834",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2845",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2847",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2848",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2851",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2852",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2935",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2938",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2940",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2947",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2949",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2950",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_2951",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3034",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3035",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3043",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3045",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3046",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3047",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3051",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3146",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3149",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3440",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3441",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3444",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3448",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3452",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3539",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3543",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3544",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3546",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3547",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3548",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3551",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3831",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3834",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3839",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3844",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3846",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3848",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3851",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3852",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3940",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3941",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3943",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3947",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3948",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3949",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_3950",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4041",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4044",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4046",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4145",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4148",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4150",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4345",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4347",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4351",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4352",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4445",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4446",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4451",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4452",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4546",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4548",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4549",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4550",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4647",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4649",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4651",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4652",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4748",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4749",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4752",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4850",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4950",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4951",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_4952",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_5052",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      },
+      {
+        "candidate_id": "PG_5152",
+        "modality": "REFINEMENT",
+        "mean_max_abs_diff": 0.0,
+        "variance_max_abs_diff": 0.0
+      }
+    ]
+  },
+  "h2_h3_odds_contribution": "BF_H2/H3 = 1 for identical shared XRD/refinement nuisance predictions"
+}

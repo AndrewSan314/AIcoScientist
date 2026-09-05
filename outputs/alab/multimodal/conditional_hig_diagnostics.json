@@ -12,8 +12,8 @@
     }
   },
   "hig_before_xrd_reveal_nats": 0.007772291509549278,
-  "hig_after_xrd_reveal_nats": 0.016955968176989744,
-  "absolute_hig_delta_nats": 0.009183676667440466,
+  "hig_after_xrd_reveal_nats": 0.013135342262881933,
+  "absolute_hig_delta_nats": 0.005363050753332654,
   "H1_outcome_mean_before": [
     0.4987487336965395
   ],

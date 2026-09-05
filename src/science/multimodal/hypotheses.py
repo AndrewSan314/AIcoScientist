@@ -141,7 +141,12 @@ class _ALabHypothesisBase(ABC):
             mean=means,
             variance=variance,
             observable_names=names,
-            metadata={"latent_state": state, "training_count": self.training_count},
+            metadata={
+                "latent_state": state,
+                "training_count": self.training_count,
+                "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+                "measurement_uncertainty_semantics": "additional_measurement_error_only",
+            },
         )
 
     def log_likelihood(self, observable: ScientificObservable, observed_context: Mapping[str, Any] | None = None) -> float:

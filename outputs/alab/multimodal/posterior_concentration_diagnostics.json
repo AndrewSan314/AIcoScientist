@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "number_of_observations": 1518,
+  "n_observations": 1518,
+  "number_of_unique_candidate_ids": 525,
+  "number_of_unique_target_groups": 523,
+  "n_unique_target_groups": 523,
+  "number_of_unique_reaction_signatures": 525,
+  "n_unique_reaction_signatures": 525,
+  "independence_warning": "Evidence observations may be statistically and chemically correlated; sample-product posterior concentration must not be interpreted as hundreds of independent scientific trials.",
+  "posterior_interpretation": "Posterior values represent relative explanatory model weights among simplified competing models and not physical probabilities that exactly one mechanism is exclusively true."
+}

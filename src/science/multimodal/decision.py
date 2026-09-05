@@ -63,6 +63,7 @@ class MultimodalDecisionEngine:
         self.step = 0
         self.observed_by_modality: dict[str, dict[str, Any]] = {m: {} for m in self.modalities}
         self.preregistered: dict[str, dict[str, Any]] = {}
+        self._hig_diagnostics_by_action: dict[str, dict[str, Any]] = {}
         self.ledger = MultimodalEvidenceLedger()
 
         for hypothesis in self.hypotheses.values():
@@ -81,9 +82,9 @@ class MultimodalDecisionEngine:
         return entropy(self.beliefs)
 
     @staticmethod
-    def _hig_epsilon(samples: int) -> float:
-        # Conservative numerical allowance for Monte-Carlo entropy estimates.
-        return max(1e-8, 3.0 / np.sqrt(max(1, int(samples))))
+    def _hig_epsilon(standard_error: float) -> float:
+        """Three Monte-Carlo standard errors plus a small numeric allowance."""
+        return 3.0 * max(0.0, float(standard_error)) + 1e-8
 
     def _requires_satisfied(self, candidate_id: str, modality: ModalityDefinition) -> bool:
         for prerequisite in modality.requires:
@@ -135,13 +136,37 @@ class MultimodalDecisionEngine:
         predictions: Mapping[str, PredictiveObservableDistribution] | None = None,
         samples: int = 128,
     ) -> float:
+        return float(self.expected_hypothesis_information_gain_diagnostics(action, predictions, samples)["clipped_hig_nats"])
+
+    def expected_hypothesis_information_gain_diagnostics(
+        self,
+        action: ScientificAction,
+        predictions: Mapping[str, PredictiveObservableDistribution] | None = None,
+        samples: int = 128,
+    ) -> dict[str, Any]:
         preds = dict(predictions or self._predictions(action))
         if len(preds) < 2:
-            return 0.0
+            result = {
+                "raw_hig_mc_nats": 0.0,
+                "clipped_hig_nats": 0.0,
+                "current_entropy_nats": self.current_entropy,
+                "posterior_entropy_mc_mean": self.current_entropy,
+                "posterior_entropy_mc_std": 0.0,
+                "hig_mc_standard_error": 0.0,
+                "mc_samples": 0,
+                "hig_bound_k": 3.0,
+                "hig_numeric_epsilon_nats": 1e-8,
+                "hig_bound_epsilon_nats": 1e-8,
+                "raw_hig_lower_bound_ok": True,
+                "raw_hig_upper_bound_ok": True,
+                "predictive_variance_by_hypothesis": {hid: np.asarray(pred.variance, dtype=float).tolist() for hid, pred in preds.items()},
+            }
+            self._hig_diagnostics_by_action[action.action_id] = result
+            return result
         keys = list(preds)
         probs = np.asarray([self.beliefs[k] for k in keys], dtype=np.float64)
         before = self.current_entropy
-        posterior_entropies = []
+        posterior_entropies: list[float] = []
         action_seed = hashlib.sha256(
             f"{self.seed}|{self.step}|{action.action_id}|HIG-v2".encode("utf-8")
         ).digest()
@@ -152,7 +177,28 @@ class MultimodalDecisionEngine:
             log_likes = {k: preds[k].log_pdf(sample) for k in keys}
             posterior = bayesian_update(self.beliefs, log_likes)
             posterior_entropies.append(entropy(posterior))
-        return float(np.clip(before - float(np.mean(posterior_entropies)), 0.0, before))
+        posterior_mean = float(np.mean(posterior_entropies))
+        posterior_std = float(np.std(posterior_entropies, ddof=1)) if len(posterior_entropies) > 1 else 0.0
+        standard_error = posterior_std / np.sqrt(max(1, len(posterior_entropies)))
+        raw_hig = float(before - posterior_mean)
+        epsilon = self._hig_epsilon(standard_error)
+        result = {
+            "raw_hig_mc_nats": raw_hig,
+            "clipped_hig_nats": float(np.clip(raw_hig, 0.0, before)),
+            "current_entropy_nats": float(before),
+            "posterior_entropy_mc_mean": posterior_mean,
+            "posterior_entropy_mc_std": posterior_std,
+            "hig_mc_standard_error": float(standard_error),
+            "mc_samples": len(posterior_entropies),
+            "hig_bound_k": 3.0,
+            "hig_numeric_epsilon_nats": 1e-8,
+            "hig_bound_epsilon_nats": float(epsilon),
+            "raw_hig_lower_bound_ok": bool(raw_hig >= -epsilon),
+            "raw_hig_upper_bound_ok": bool(raw_hig <= before + epsilon),
+            "predictive_variance_by_hypothesis": {hid: np.asarray(pred.variance, dtype=float).tolist() for hid, pred in preds.items()},
+        }
+        self._hig_diagnostics_by_action[action.action_id] = result
+        return result
 
     def _discovery_value(self, action: ScientificAction) -> float:
         modality = normalize_action_type(action.action_type)
@@ -171,6 +217,23 @@ class MultimodalDecisionEngine:
             raise ValueError(f"action is not currently feasible: {action.action_id}")
         preds = dict(predictions or self._predictions(action))
         expected_hig = float(self.expected_hypothesis_information_gain(action, preds) if hig is None else hig)
+        hig_diagnostics = dict(self._hig_diagnostics_by_action.get(action.action_id, {}))
+        if not hig_diagnostics:
+            hig_diagnostics = {
+                "raw_hig_mc_nats": expected_hig,
+                "clipped_hig_nats": expected_hig,
+                "current_entropy_nats": self.current_entropy,
+                "posterior_entropy_mc_mean": self.current_entropy - expected_hig,
+                "posterior_entropy_mc_std": None,
+                "hig_mc_standard_error": None,
+                "mc_samples": 0,
+                "hig_bound_k": 3.0,
+                "hig_numeric_epsilon_nats": 1e-8,
+                "hig_bound_epsilon_nats": None,
+                "raw_hig_lower_bound_ok": None,
+                "raw_hig_upper_bound_ok": None,
+                "audit_source": "externally_supplied_hig",
+            }
         discovery_value = float(self._discovery_value(action) if discovery is None else discovery)
         max_cost = max(max((item.estimated_cost for item in self.enumerate_actions()), default=1.0), 1.0)
         score = self._score(
@@ -181,7 +244,7 @@ class MultimodalDecisionEngine:
             max_discovery=max(discovery_value, 1e-12),
             max_cost=max_cost,
         )
-        registration = self._preregister(action, preds, expected_hig, discovery_value, score)
+        registration = self._preregister(action, preds, expected_hig, discovery_value, score, hig_diagnostics)
         why = {
             "expected_hig_nats": expected_hig,
             "discovery_utility": discovery_value,
@@ -189,8 +252,13 @@ class MultimodalDecisionEngine:
             "current_entropy_nats": self.current_entropy,
             "policy_name": self.policy_name,
             "selection_mode": "external_policy_selector",
-            "hig_upper_bound_epsilon_nats": self._hig_epsilon(128),
-            "hig_upper_bound_ok": expected_hig <= self.current_entropy + self._hig_epsilon(128),
+            "hig_diagnostics": hig_diagnostics,
+            "raw_hig_mc_nats": hig_diagnostics["raw_hig_mc_nats"],
+            "clipped_hig_nats": hig_diagnostics["clipped_hig_nats"],
+            "hig_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+            "hig_upper_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+            "hig_lower_bound_ok": hig_diagnostics["raw_hig_lower_bound_ok"],
+            "hig_upper_bound_ok": hig_diagnostics["raw_hig_upper_bound_ok"],
         }
         return MultimodalRecommendation(action, score, why, [], registration, [])
 
@@ -215,7 +283,17 @@ class MultimodalDecisionEngine:
             return normalized_hig
         return self.w_hig * normalized_hig + self.w_discovery * normalized_discovery - self.w_cost * normalized_cost
 
-    def _preregister(self, action: ScientificAction, predictions: Mapping[str, PredictiveObservableDistribution], hig: float, discovery: float, score: float) -> dict[str, Any]:
+    def _preregister(
+        self,
+        action: ScientificAction,
+        predictions: Mapping[str, PredictiveObservableDistribution],
+        hig: float,
+        discovery: float,
+        score: float,
+        hig_diagnostics: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        diagnostics = dict(hig_diagnostics or self._hig_diagnostics_by_action.get(action.action_id, {}))
+        epsilon = diagnostics.get("hig_bound_epsilon_nats")
         record = {
             "event": "PREREGISTERED_SELECTED_ACTION",
             "step": self.step + 1,
@@ -230,9 +308,19 @@ class MultimodalDecisionEngine:
             "normalized_cost": action.estimated_cost,
             "total_action_score": score,
             "current_hypothesis_entropy_nats": self.current_entropy,
-            "hig_upper_bound_epsilon_nats": self._hig_epsilon(128),
-            "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(128)),
-            "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(128)),
+            "hig_diagnostics": diagnostics,
+            "raw_hig_mc_nats": diagnostics.get("raw_hig_mc_nats", hig),
+            "clipped_hig_nats": diagnostics.get("clipped_hig_nats", hig),
+            "posterior_entropy_mc_mean": diagnostics.get("posterior_entropy_mc_mean"),
+            "posterior_entropy_mc_std": diagnostics.get("posterior_entropy_mc_std"),
+            "hig_mc_standard_error": diagnostics.get("hig_mc_standard_error"),
+            "mc_samples": diagnostics.get("mc_samples"),
+            "hig_bound_epsilon_nats": epsilon,
+            "hig_upper_bound_epsilon_nats": epsilon,
+            "raw_hig_lower_bound_ok": diagnostics.get("raw_hig_lower_bound_ok"),
+            "raw_hig_upper_bound_ok": diagnostics.get("raw_hig_upper_bound_ok"),
+            "hig_lower_bound_ok": diagnostics.get("raw_hig_lower_bound_ok"),
+            "hig_upper_bound_ok": diagnostics.get("raw_hig_upper_bound_ok"),
         }
         self.preregistered[action.action_id] = record
         self.ledger.append(record)
@@ -253,6 +341,7 @@ class MultimodalDecisionEngine:
         max_hig = max((row[2] for row in raw_scores), default=0.0)
         max_discovery = max((row[3] for row in raw_scores), default=0.0)
         for action, predictions, hig, discovery in raw_scores:
+            hig_diagnostics = self._hig_diagnostics_by_action[action.action_id]
             score = self._score(
                 hig,
                 discovery,
@@ -273,9 +362,19 @@ class MultimodalDecisionEngine:
                 "total_action_score": score,
                 "policy_name": self.policy_name,
                 "current_hypothesis_entropy_nats": self.current_entropy,
-                "hig_upper_bound_epsilon_nats": self._hig_epsilon(samples),
-                "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(samples)),
-                "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(samples)),
+                "hig_diagnostics": hig_diagnostics,
+                "raw_hig_mc_nats": hig_diagnostics["raw_hig_mc_nats"],
+                "clipped_hig_nats": hig_diagnostics["clipped_hig_nats"],
+                "posterior_entropy_mc_mean": hig_diagnostics["posterior_entropy_mc_mean"],
+                "posterior_entropy_mc_std": hig_diagnostics["posterior_entropy_mc_std"],
+                "hig_mc_standard_error": hig_diagnostics["hig_mc_standard_error"],
+                "mc_samples": hig_diagnostics["mc_samples"],
+                "hig_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+                "hig_upper_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+                "raw_hig_lower_bound_ok": hig_diagnostics["raw_hig_lower_bound_ok"],
+                "raw_hig_upper_bound_ok": hig_diagnostics["raw_hig_upper_bound_ok"],
+                "hig_lower_bound_ok": hig_diagnostics["raw_hig_lower_bound_ok"],
+                "hig_upper_bound_ok": hig_diagnostics["raw_hig_upper_bound_ok"],
             })
             scored.append({
                 "action": action.to_dict(),
@@ -285,9 +384,19 @@ class MultimodalDecisionEngine:
                 "total_action_score": score,
                 "dominant_hypothesis_disagreement": self._disagreement(predictions),
                 "current_hypothesis_entropy_nats": self.current_entropy,
-                "hig_upper_bound_epsilon_nats": self._hig_epsilon(samples),
-                "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(samples)),
-                "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(samples)),
+                "hig_diagnostics": hig_diagnostics,
+                "raw_hig_mc_nats": hig_diagnostics["raw_hig_mc_nats"],
+                "clipped_hig_nats": hig_diagnostics["clipped_hig_nats"],
+                "posterior_entropy_mc_mean": hig_diagnostics["posterior_entropy_mc_mean"],
+                "posterior_entropy_mc_std": hig_diagnostics["posterior_entropy_mc_std"],
+                "hig_mc_standard_error": hig_diagnostics["hig_mc_standard_error"],
+                "mc_samples": hig_diagnostics["mc_samples"],
+                "hig_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+                "hig_upper_bound_epsilon_nats": hig_diagnostics["hig_bound_epsilon_nats"],
+                "raw_hig_lower_bound_ok": hig_diagnostics["raw_hig_lower_bound_ok"],
+                "raw_hig_upper_bound_ok": hig_diagnostics["raw_hig_upper_bound_ok"],
+                "hig_lower_bound_ok": hig_diagnostics["raw_hig_lower_bound_ok"],
+                "hig_upper_bound_ok": hig_diagnostics["raw_hig_upper_bound_ok"],
             })
         scored.sort(key=lambda row: row["total_action_score"], reverse=True)
         top = scored[0]
@@ -298,6 +407,7 @@ class MultimodalDecisionEngine:
             top["expected_hig_nats"],
             top["discovery_utility"],
             top["total_action_score"],
+            top["hig_diagnostics"],
         )
         why = {
             "expected_hig_nats": top["expected_hig_nats"],
@@ -305,6 +415,12 @@ class MultimodalDecisionEngine:
             "normalized_cost": top["normalized_cost"],
             "dominant_hypothesis_disagreement": top["dominant_hypothesis_disagreement"],
             "current_entropy_nats": self.current_entropy,
+            "hig_diagnostics": top["hig_diagnostics"],
+            "raw_hig_mc_nats": top["raw_hig_mc_nats"],
+            "clipped_hig_nats": top["clipped_hig_nats"],
+            "hig_bound_epsilon_nats": top["hig_bound_epsilon_nats"],
+            "hig_lower_bound_ok": top["hig_lower_bound_ok"],
+            "hig_upper_bound_ok": top["hig_upper_bound_ok"],
             "policy_name": self.policy_name,
             "score_components": {
                 "normalized_hig": top["expected_hig_nats"] / max(max_hig, 1e-12),
