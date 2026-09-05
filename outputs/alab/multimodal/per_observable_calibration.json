@@ -1,0 +1,127 @@
+{
+  "acceptance_thresholds": {
+    "coverage50_abs_error_max": 0.15,
+    "coverage90_abs_error_max": 0.1
+  },
+  "XRD": {
+    "XRD.normalized_intensity_std_proxy": {
+      "MAE": 0.028631386957277186,
+      "RMSE": 0.04063725313615818,
+      "NLL": -1.6321962675147148,
+      "coverage50": 0.601145038167939,
+      "coverage90": 0.9141221374045801,
+      "calibration_error": 0.057633587786259544,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 0.2520487900870142
+      },
+      "NRMSE": 0.16122772548175723
+    },
+    "XRD.dominant_peak_index_fraction": {
+      "MAE": 0.06251953267894689,
+      "RMSE": 0.10689423354730417,
+      "NLL": -0.8066811480025419,
+      "coverage50": 0.7080152671755725,
+      "coverage90": 0.8950381679389313,
+      "calibration_error": 0.1064885496183206,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.0
+      },
+      "NRMSE": 0.10689423354730417
+    },
+    "XRD.global_halfmax_span_proxy": {
+      "MAE": 0.13803577793199798,
+      "RMSE": 0.1860902761873528,
+      "NLL": -0.2637296267165978,
+      "coverage50": 0.5229007633587787,
+      "coverage90": 0.9236641221374046,
+      "calibration_error": 0.023282442748091603,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.0
+      },
+      "NRMSE": 0.1860902761873528
+    },
+    "XRD.spectral_entropy": {
+      "MAE": 0.02822964433597779,
+      "RMSE": 0.03756628834597929,
+      "NLL": -1.6745174604691277,
+      "coverage50": 0.566793893129771,
+      "coverage90": 0.8835877862595419,
+      "calibration_error": 0.041603053435114556,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 0.26450302602199094
+      },
+      "NRMSE": 0.1420259303304001
+    },
+    "XRD.peak_count_proxy": {
+      "MAE": 21.239973507759867,
+      "RMSE": 31.3569300675224,
+      "NLL": 4.866223281886514,
+      "coverage50": 0.6412213740458015,
+      "coverage90": 0.8969465648854962,
+      "calibration_error": 0.07213740458015266,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 142.0
+      },
+      "NRMSE": 0.2208234511797352
+    }
+  },
+  "REFINEMENT": {
+    "REFINEMENT.target_phase_fraction": {
+      "MAE": 0.04484835052133095,
+      "RMSE": 0.1217192812136524,
+      "NLL": -0.6676614769462211,
+      "coverage50": 0.9522821576763485,
+      "coverage90": 0.9730290456431535,
+      "calibration_error": 0.262655601659751,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.0
+      },
+      "NRMSE": 0.1217192812136524
+    },
+    "REFINEMENT.precursor_phase_fraction": {
+      "MAE": 0.2772794266168365,
+      "RMSE": 0.32575701634733345,
+      "NLL": 0.2985334229233929,
+      "coverage50": 0.4854771784232365,
+      "coverage90": 0.9045643153526971,
+      "calibration_error": 0.009543568464730284,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.0
+      },
+      "NRMSE": 0.32575701634733345
+    },
+    "REFINEMENT.other_identified_phase_fraction": {
+      "MAE": 0.27486307951651157,
+      "RMSE": 0.3250873217525049,
+      "NLL": 0.2965479917706554,
+      "coverage50": 0.4896265560165975,
+      "coverage90": 0.8983402489626556,
+      "calibration_error": 0.00601659751037345,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.0
+      },
+      "NRMSE": 0.3250873217525049
+    },
+    "REFINEMENT.rwp_scaled": {
+      "MAE": 0.23428617094346324,
+      "RMSE": 0.30129505281268737,
+      "NLL": 0.22008980981584814,
+      "coverage50": 0.48132780082987553,
+      "coverage90": 0.941908713692946,
+      "calibration_error": 0.030290456431535245,
+      "normalization": {
+        "method": "calibration_range_then_std",
+        "scale": 1.903
+      },
+      "NRMSE": 0.15832635460467018
+    }
+  }
+}

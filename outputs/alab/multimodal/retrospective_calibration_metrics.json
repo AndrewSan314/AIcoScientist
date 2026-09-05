@@ -1,5 +1,11 @@
 {
-  "status": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
+  "status": "A_LAB_MODELS_EVALUATED",
+  "retrospective_model_evaluation_status": "A_LAB_MODELS_EVALUATED",
+  "calibration_coverage_status": "A_LAB_CALIBRATION_PARTIAL",
+  "calibration_acceptance_thresholds": {
+    "coverage50_abs_error_max": 0.15,
+    "coverage90_abs_error_max": 0.1
+  },
   "model_kind": "RETROSPECTIVE_CALIBRATED_HYPOTHESIS_MODEL",
   "model_version": "1.0.0",
   "split": {
@@ -37,7 +43,75 @@
         "coverage_90": 0.9026717557251909,
         "calibration_error": 0.05534351145038169,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {
+          "XRD.normalized_intensity_std_proxy": {
+            "MAE": 0.028631386957277186,
+            "RMSE": 0.04063725313615818,
+            "NLL": -1.6321962675147148,
+            "coverage50": 0.601145038167939,
+            "coverage90": 0.9141221374045801,
+            "calibration_error": 0.057633587786259544,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 0.2520487900870142
+            },
+            "NRMSE": 0.16122772548175723
+          },
+          "XRD.dominant_peak_index_fraction": {
+            "MAE": 0.06251953267894689,
+            "RMSE": 0.10689423354730417,
+            "NLL": -0.8066811480025419,
+            "coverage50": 0.7080152671755725,
+            "coverage90": 0.8950381679389313,
+            "calibration_error": 0.1064885496183206,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.10689423354730417
+          },
+          "XRD.global_halfmax_span_proxy": {
+            "MAE": 0.13803577793199798,
+            "RMSE": 0.1860902761873528,
+            "NLL": -0.2637296267165978,
+            "coverage50": 0.5229007633587787,
+            "coverage90": 0.9236641221374046,
+            "calibration_error": 0.023282442748091603,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.1860902761873528
+          },
+          "XRD.spectral_entropy": {
+            "MAE": 0.02822964433597779,
+            "RMSE": 0.03756628834597929,
+            "NLL": -1.6745174604691277,
+            "coverage50": 0.566793893129771,
+            "coverage90": 0.8835877862595419,
+            "calibration_error": 0.041603053435114556,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 0.26450302602199094
+            },
+            "NRMSE": 0.1420259303304001
+          },
+          "XRD.peak_count_proxy": {
+            "MAE": 21.239973507759867,
+            "RMSE": 31.3569300675224,
+            "NLL": 4.866223281886514,
+            "coverage50": 0.6412213740458015,
+            "coverage90": 0.8969465648854962,
+            "calibration_error": 0.07213740458015266,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 142.0
+            },
+            "NRMSE": 0.2208234511797352
+          }
+        },
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
       },
       "REFINEMENT": {
         "status": "CALIBRATED_DIRECT_STRUCTURAL",
@@ -51,7 +125,62 @@
         "coverage_90": 0.9294605809128631,
         "calibration_error": 0.06581950207468878,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {
+          "REFINEMENT.target_phase_fraction": {
+            "MAE": 0.04484835052133095,
+            "RMSE": 0.1217192812136524,
+            "NLL": -0.6676614769462211,
+            "coverage50": 0.9522821576763485,
+            "coverage90": 0.9730290456431535,
+            "calibration_error": 0.262655601659751,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.1217192812136524
+          },
+          "REFINEMENT.precursor_phase_fraction": {
+            "MAE": 0.2772794266168365,
+            "RMSE": 0.32575701634733345,
+            "NLL": 0.2985334229233929,
+            "coverage50": 0.4854771784232365,
+            "coverage90": 0.9045643153526971,
+            "calibration_error": 0.009543568464730284,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.32575701634733345
+          },
+          "REFINEMENT.other_identified_phase_fraction": {
+            "MAE": 0.27486307951651157,
+            "RMSE": 0.3250873217525049,
+            "NLL": 0.2965479917706554,
+            "coverage50": 0.4896265560165975,
+            "coverage90": 0.8983402489626556,
+            "calibration_error": 0.00601659751037345,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.3250873217525049
+          },
+          "REFINEMENT.rwp_scaled": {
+            "MAE": 0.23428617094346324,
+            "RMSE": 0.30129505281268737,
+            "NLL": 0.22008980981584814,
+            "coverage50": 0.48132780082987553,
+            "coverage90": 0.941908713692946,
+            "calibration_error": 0.030290456431535245,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.903
+            },
+            "NRMSE": 0.15832635460467018
+          }
+        },
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_LINKED",
@@ -65,7 +194,23 @@
         "coverage_90": 0.9765625,
         "calibration_error": 0.1251953125,
         "Brier": 0.19726889291737107,
-        "log_loss": 1.4517890142525682
+        "log_loss": 1.4517890142525682,
+        "per_observable": {
+          "OUTCOME.reaction_outcome_utility": {
+            "MAE": 0.3373035855411062,
+            "RMSE": 0.3749775106487679,
+            "NLL": 0.4396385340650163,
+            "coverage50": 0.326171875,
+            "coverage90": 0.9765625,
+            "calibration_error": 0.1251953125,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.3749775106487679
+          }
+        },
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -79,7 +224,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -93,7 +240,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       }
     },
     "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
@@ -109,7 +258,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "REFINEMENT": {
         "status": "NOT_IDENTIFIABLE_FROM_AVAILABLE_DATA",
@@ -123,7 +274,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_PROXY_WEAK",
@@ -137,7 +290,23 @@
         "coverage_90": 0.880859375,
         "calibration_error": 0.03789062500000001,
         "Brier": 0.17396298842822047,
-        "log_loss": 1.2961298790185725
+        "log_loss": 1.2961298790185725,
+        "per_observable": {
+          "OUTCOME.reaction_outcome_utility": {
+            "MAE": 0.2661826197132829,
+            "RMSE": 0.3296566830131965,
+            "NLL": 0.30965372462552576,
+            "coverage50": 0.443359375,
+            "coverage90": 0.880859375,
+            "calibration_error": 0.03789062500000001,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.3296566830131965
+          }
+        },
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -151,7 +320,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -165,7 +336,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       }
     },
     "H3_MORPHOLOGY_KINETICS_LIMITED": {
@@ -181,7 +354,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "REFINEMENT": {
         "status": "NOT_IDENTIFIABLE_FROM_AVAILABLE_DATA",
@@ -195,7 +370,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_PROXY_WEAK",
@@ -209,7 +386,23 @@
         "coverage_90": 0.98828125,
         "calibration_error": 0.1388671875,
         "Brier": 0.19903213510376838,
-        "log_loss": 1.4691654830418608
+        "log_loss": 1.4691654830418608,
+        "per_observable": {
+          "OUTCOME.reaction_outcome_utility": {
+            "MAE": 0.34442904273399894,
+            "RMSE": 0.3815575469670861,
+            "NLL": 0.4556051608347812,
+            "coverage50": 0.310546875,
+            "coverage90": 0.98828125,
+            "calibration_error": 0.1388671875,
+            "normalization": {
+              "method": "calibration_range_then_std",
+              "scale": 1.0
+            },
+            "NRMSE": 0.3815575469670861
+          }
+        },
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -223,7 +416,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -237,7 +432,9 @@
         "coverage_90": null,
         "calibration_error": null,
         "Brier": null,
-        "log_loss": null
+        "log_loss": null,
+        "per_observable": {},
+        "calibration_coverage_status": "NOT_EVALUATED"
       }
     }
   },
@@ -284,13 +481,15 @@
     }
   },
   "evaluation_loaded_after_fit": true,
+  "split_protocol": "SAMPLE_ID_INTERPOLATION_HOLDOUT",
+  "group_key": "sample_id",
   "leakage_assertions": {
     "split_disjoint": true,
     "all_models_fit_ids_subset_calibration": true,
     "no_evaluation_ids_in_model_fit": true
   },
   "split_manifest": "replay_split_manifest.json",
-  "holdout_rule": "deterministic grouped holdout by SHA256(sample_id) parity; no evaluation ID calibrates a model",
+  "holdout_rule": "deterministic sample-ID holdout by SHA256(sample_id) parity; no evaluation ID calibrates a model",
   "metrics": {
     "XRD": {
       "status": "CALIBRATED_DIRECT_STRUCTURAL",
@@ -304,7 +503,75 @@
       "coverage_90": 0.9026717557251909,
       "calibration_error": 0.05534351145038169,
       "Brier": null,
-      "log_loss": null
+      "log_loss": null,
+      "per_observable": {
+        "XRD.normalized_intensity_std_proxy": {
+          "MAE": 0.028631386957277186,
+          "RMSE": 0.04063725313615818,
+          "NLL": -1.6321962675147148,
+          "coverage50": 0.601145038167939,
+          "coverage90": 0.9141221374045801,
+          "calibration_error": 0.057633587786259544,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 0.2520487900870142
+          },
+          "NRMSE": 0.16122772548175723
+        },
+        "XRD.dominant_peak_index_fraction": {
+          "MAE": 0.06251953267894689,
+          "RMSE": 0.10689423354730417,
+          "NLL": -0.8066811480025419,
+          "coverage50": 0.7080152671755725,
+          "coverage90": 0.8950381679389313,
+          "calibration_error": 0.1064885496183206,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.10689423354730417
+        },
+        "XRD.global_halfmax_span_proxy": {
+          "MAE": 0.13803577793199798,
+          "RMSE": 0.1860902761873528,
+          "NLL": -0.2637296267165978,
+          "coverage50": 0.5229007633587787,
+          "coverage90": 0.9236641221374046,
+          "calibration_error": 0.023282442748091603,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.1860902761873528
+        },
+        "XRD.spectral_entropy": {
+          "MAE": 0.02822964433597779,
+          "RMSE": 0.03756628834597929,
+          "NLL": -1.6745174604691277,
+          "coverage50": 0.566793893129771,
+          "coverage90": 0.8835877862595419,
+          "calibration_error": 0.041603053435114556,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 0.26450302602199094
+          },
+          "NRMSE": 0.1420259303304001
+        },
+        "XRD.peak_count_proxy": {
+          "MAE": 21.239973507759867,
+          "RMSE": 31.3569300675224,
+          "NLL": 4.866223281886514,
+          "coverage50": 0.6412213740458015,
+          "coverage90": 0.8969465648854962,
+          "calibration_error": 0.07213740458015266,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 142.0
+          },
+          "NRMSE": 0.2208234511797352
+        }
+      },
+      "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
     },
     "REFINEMENT": {
       "status": "CALIBRATED_DIRECT_STRUCTURAL",
@@ -318,7 +585,62 @@
       "coverage_90": 0.9294605809128631,
       "calibration_error": 0.06581950207468878,
       "Brier": null,
-      "log_loss": null
+      "log_loss": null,
+      "per_observable": {
+        "REFINEMENT.target_phase_fraction": {
+          "MAE": 0.04484835052133095,
+          "RMSE": 0.1217192812136524,
+          "NLL": -0.6676614769462211,
+          "coverage50": 0.9522821576763485,
+          "coverage90": 0.9730290456431535,
+          "calibration_error": 0.262655601659751,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.1217192812136524
+        },
+        "REFINEMENT.precursor_phase_fraction": {
+          "MAE": 0.2772794266168365,
+          "RMSE": 0.32575701634733345,
+          "NLL": 0.2985334229233929,
+          "coverage50": 0.4854771784232365,
+          "coverage90": 0.9045643153526971,
+          "calibration_error": 0.009543568464730284,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.32575701634733345
+        },
+        "REFINEMENT.other_identified_phase_fraction": {
+          "MAE": 0.27486307951651157,
+          "RMSE": 0.3250873217525049,
+          "NLL": 0.2965479917706554,
+          "coverage50": 0.4896265560165975,
+          "coverage90": 0.8983402489626556,
+          "calibration_error": 0.00601659751037345,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.3250873217525049
+        },
+        "REFINEMENT.rwp_scaled": {
+          "MAE": 0.23428617094346324,
+          "RMSE": 0.30129505281268737,
+          "NLL": 0.22008980981584814,
+          "coverage50": 0.48132780082987553,
+          "coverage90": 0.941908713692946,
+          "calibration_error": 0.030290456431535245,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.903
+          },
+          "NRMSE": 0.15832635460467018
+        }
+      },
+      "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
     },
     "OUTCOME_TEST": {
       "status": "CALIBRATED_OUTCOME_LINKED",
@@ -332,7 +654,23 @@
       "coverage_90": 0.9765625,
       "calibration_error": 0.1251953125,
       "Brier": 0.19726889291737107,
-      "log_loss": 1.4517890142525682
+      "log_loss": 1.4517890142525682,
+      "per_observable": {
+        "OUTCOME.reaction_outcome_utility": {
+          "MAE": 0.3373035855411062,
+          "RMSE": 0.3749775106487679,
+          "NLL": 0.4396385340650163,
+          "coverage50": 0.326171875,
+          "coverage90": 0.9765625,
+          "calibration_error": 0.1251953125,
+          "normalization": {
+            "method": "calibration_range_then_std",
+            "scale": 1.0
+          },
+          "NRMSE": 0.3749775106487679
+        }
+      },
+      "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
     }
   }
 }

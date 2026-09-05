@@ -1,0 +1,3049 @@
+{
+  "discovery_vs_hig": [
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 2,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "REFINEMENT_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 3,
+      "discovery_best": "OUTCOME_TEST_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "OUTCOME_TEST_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 4,
+      "discovery_best": "XRD_controlled-4",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-4"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-2"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 3,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "XRD_controlled-7",
+      "hybrid_selected": "XRD_controlled-7"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 4,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "REFINEMENT_controlled-2",
+      "hybrid_selected": "REFINEMENT_controlled-2"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-3"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 2,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "REFINEMENT_controlled-3"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 3,
+      "discovery_best": "OUTCOME_TEST_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-7"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 7,
+      "step": 4,
+      "discovery_best": "OUTCOME_TEST_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "XRD_controlled-6"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-5",
+      "hybrid_selected": "XRD_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 2,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "REFINEMENT_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 3,
+      "discovery_best": "OUTCOME_TEST_controlled-3",
+      "hig_best": "XRD_controlled-5",
+      "hybrid_selected": "OUTCOME_TEST_controlled-3"
+    },
+    {
+      "policy": "DISCOVERY_ONLY",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 4,
+      "discovery_best": "XRD_controlled-1",
+      "hig_best": "XRD_controlled-7",
+      "hybrid_selected": "XRD_controlled-1"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-5",
+      "hybrid_selected": "XRD_controlled-5"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 2,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-7",
+      "hybrid_selected": "XRD_controlled-7"
+    },
+    {
+      "policy": "PURE_HIG",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 3,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-0",
+      "hybrid_selected": "XRD_controlled-0"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 1,
+      "discovery_best": "XRD_controlled-3",
+      "hig_best": "XRD_controlled-5",
+      "hybrid_selected": "XRD_controlled-3"
+    },
+    {
+      "policy": "HYBRID",
+      "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+      "world_type": "CLEAN",
+      "seed": 42,
+      "step": 2,
+      "discovery_best": "REFINEMENT_controlled-3",
+      "hig_best": "XRD_controlled-2",
+      "hybrid_selected": "REFINEMENT_controlled-3"
+    }
+  ],
+  "policy_validation": {
+    "discovery_hig_conflict_gate": "PASS",
+    "discovery_hig_conflicts": [
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 2,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "REFINEMENT_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 3,
+        "discovery_best": "OUTCOME_TEST_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "OUTCOME_TEST_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 4,
+        "discovery_best": "XRD_controlled-4",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-4"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-2"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 3,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "XRD_controlled-7",
+        "hybrid_selected": "XRD_controlled-7"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 4,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "REFINEMENT_controlled-2",
+        "hybrid_selected": "REFINEMENT_controlled-2"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-3"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 2,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "REFINEMENT_controlled-3"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 3,
+        "discovery_best": "OUTCOME_TEST_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-7"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 7,
+        "step": 4,
+        "discovery_best": "OUTCOME_TEST_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "XRD_controlled-6"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-5",
+        "hybrid_selected": "XRD_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 2,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "REFINEMENT_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 3,
+        "discovery_best": "OUTCOME_TEST_controlled-3",
+        "hig_best": "XRD_controlled-5",
+        "hybrid_selected": "OUTCOME_TEST_controlled-3"
+      },
+      {
+        "policy": "DISCOVERY_ONLY",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 4,
+        "discovery_best": "XRD_controlled-1",
+        "hig_best": "XRD_controlled-7",
+        "hybrid_selected": "XRD_controlled-1"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-5",
+        "hybrid_selected": "XRD_controlled-5"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 2,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-7",
+        "hybrid_selected": "XRD_controlled-7"
+      },
+      {
+        "policy": "PURE_HIG",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 3,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-0",
+        "hybrid_selected": "XRD_controlled-0"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 1,
+        "discovery_best": "XRD_controlled-3",
+        "hig_best": "XRD_controlled-5",
+        "hybrid_selected": "XRD_controlled-3"
+      },
+      {
+        "policy": "HYBRID",
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "world_type": "CLEAN",
+        "seed": 42,
+        "step": 2,
+        "discovery_best": "REFINEMENT_controlled-3",
+        "hig_best": "XRD_controlled-2",
+        "hybrid_selected": "REFINEMENT_controlled-3"
+      }
+    ],
+    "hybrid_score_recomputation_gate": "PASS",
+    "hybrid_score_recomputation": [
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-3",
+        "selected_score_record": 0.30000000000000004,
+        "recomputed_selected_score": 0.30000000000000004,
+        "recomputed_best_action": "REFINEMENT_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.12042289252372229,
+        "recomputed_selected_score": -0.12042289252372229,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-6",
+        "selected_score_record": -0.032614064797224396,
+        "recomputed_selected_score": -0.032614064797224396,
+        "recomputed_best_action": "XRD_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.48149407535598154,
+        "recomputed_selected_score": 0.48149407535598154,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-3",
+        "selected_score_record": 0.7869224510067738,
+        "recomputed_selected_score": 0.7869224510067738,
+        "recomputed_best_action": "REFINEMENT_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.2731658104727468,
+        "recomputed_selected_score": 0.2731658104727468,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.6407346760040902,
+        "recomputed_selected_score": 0.6407346760040902,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.5453824383798551,
+        "recomputed_selected_score": 0.5453824383798551,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-1",
+        "selected_score_record": 0.5848429470558068,
+        "recomputed_selected_score": 0.5848429470558068,
+        "recomputed_best_action": "REFINEMENT_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.15071445589274424,
+        "recomputed_selected_score": 0.15071445589274424,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.7515419797728586,
+        "recomputed_selected_score": 0.7515419797728586,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.35286567207923625,
+        "recomputed_selected_score": 0.35286567207923647,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-4",
+        "selected_score_record": 0.30000000000000004,
+        "recomputed_selected_score": 0.30000000000000004,
+        "recomputed_best_action": "REFINEMENT_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.010989776096377302,
+        "recomputed_selected_score": 0.010989776096377302,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.26997714874021206,
+        "recomputed_selected_score": 0.26997714874021206,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.6000000000000001,
+        "recomputed_selected_score": 0.6000000000000001,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-0",
+        "selected_score_record": 0.7456269282188741,
+        "recomputed_selected_score": 0.7456269282188741,
+        "recomputed_best_action": "REFINEMENT_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.09838049954002814,
+        "recomputed_selected_score": -0.09838049954002825,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.25488526190982974,
+        "recomputed_selected_score": 0.25488526190982974,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-3",
+        "selected_score_record": 0.07019020118245112,
+        "recomputed_selected_score": 0.07019020118245112,
+        "recomputed_best_action": "EDS_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-4",
+        "selected_score_record": -0.08735571706409617,
+        "recomputed_selected_score": -0.08735571706409617,
+        "recomputed_best_action": "EDS_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.03913432921186688,
+        "recomputed_selected_score": 0.03913432921186688,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3955332264584619,
+        "recomputed_selected_score": 0.3955332264584617,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.09099555469317555,
+        "recomputed_selected_score": -0.09099555469317555,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-3",
+        "selected_score_record": 0.09973347300440927,
+        "recomputed_selected_score": 0.09973347300440905,
+        "recomputed_best_action": "EDS_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-1",
+        "selected_score_record": 0.008484742849109939,
+        "recomputed_selected_score": 0.008484742849109939,
+        "recomputed_best_action": "EDS_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.4645952035796763,
+        "recomputed_selected_score": 0.4645952035796763,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-1",
+        "selected_score_record": 0.021515723264446063,
+        "recomputed_selected_score": 0.021515723264446063,
+        "recomputed_best_action": "EDS_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.050560692170708466,
+        "recomputed_selected_score": -0.050560692170708466,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-7",
+        "selected_score_record": -0.15640054090675504,
+        "recomputed_selected_score": -0.15640054090675504,
+        "recomputed_best_action": "EDS_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.22719172844086777,
+        "recomputed_selected_score": 0.22719172844086777,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-7",
+        "selected_score_record": 0.03495209190052795,
+        "recomputed_selected_score": 0.03495209190052795,
+        "recomputed_best_action": "EDS_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-4",
+        "selected_score_record": 0.09872059413652634,
+        "recomputed_selected_score": 0.09872059413652634,
+        "recomputed_best_action": "EDS_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.23002285125978794,
+        "recomputed_selected_score": -0.23002285125978794,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.5002053432463247,
+        "recomputed_selected_score": 0.5002053432463245,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-0",
+        "selected_score_record": 0.07630379257279607,
+        "recomputed_selected_score": 0.07630379257279607,
+        "recomputed_best_action": "EDS_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-3",
+        "selected_score_record": -0.11055773058896112,
+        "recomputed_selected_score": -0.11055773058896134,
+        "recomputed_best_action": "EDS_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-7",
+        "selected_score_record": -0.12886648504301879,
+        "recomputed_selected_score": -0.12886648504301879,
+        "recomputed_best_action": "EDS_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "SEM_controlled-4",
+        "selected_score_record": -0.20953707183086356,
+        "recomputed_selected_score": -0.20953707183086334,
+        "recomputed_best_action": "SEM_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-0",
+        "selected_score_record": -0.13522397146978182,
+        "recomputed_selected_score": -0.1352239714697816,
+        "recomputed_best_action": "SEM_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": -0.2024227685037997,
+        "recomputed_selected_score": -0.2024227685037996,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.25555799276004554,
+        "recomputed_selected_score": 0.2555579927600453,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": -0.17697954089408607,
+        "recomputed_selected_score": -0.17697954089408607,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-5",
+        "selected_score_record": -0.21661505913743118,
+        "recomputed_selected_score": -0.21661505913743118,
+        "recomputed_best_action": "XRD_controlled-5",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "SEM_controlled-7",
+        "selected_score_record": -0.22258712038718587,
+        "recomputed_selected_score": -0.22258712038718587,
+        "recomputed_best_action": "SEM_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.386616007367778,
+        "recomputed_selected_score": 0.386616007367778,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "SEM_controlled-1",
+        "selected_score_record": 0.10000000000000009,
+        "recomputed_selected_score": 0.10000000000000009,
+        "recomputed_best_action": "SEM_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-5",
+        "selected_score_record": -0.11108586998340919,
+        "recomputed_selected_score": -0.11108586998340908,
+        "recomputed_best_action": "XRD_controlled-5",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.02529264362386363,
+        "recomputed_selected_score": 0.025292643623863853,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.19784935211918686,
+        "recomputed_selected_score": 0.19784935211918708,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.14040380613014736,
+        "recomputed_selected_score": -0.14040380613014736,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-6",
+        "selected_score_record": -0.13940708399814516,
+        "recomputed_selected_score": -0.13940708399814516,
+        "recomputed_best_action": "SEM_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-6",
+        "selected_score_record": -0.17819258276347627,
+        "recomputed_selected_score": -0.17819258276347627,
+        "recomputed_best_action": "XRD_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.4334931139492033,
+        "recomputed_selected_score": 0.4334931139492033,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "SEM_controlled-0",
+        "selected_score_record": 0.043781959933191006,
+        "recomputed_selected_score": 0.043781959933191006,
+        "recomputed_best_action": "SEM_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-7",
+        "selected_score_record": -0.12023770135412803,
+        "recomputed_selected_score": -0.12023770135412803,
+        "recomputed_best_action": "SEM_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "SEM_controlled-3",
+        "selected_score_record": -0.12208831613252924,
+        "recomputed_selected_score": -0.12208831613252924,
+        "recomputed_best_action": "SEM_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-3",
+        "selected_score_record": 0.3495592636761402,
+        "recomputed_selected_score": 0.3495592636761402,
+        "recomputed_best_action": "REFINEMENT_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.061866261241139586,
+        "recomputed_selected_score": -0.061866261241139586,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-6",
+        "selected_score_record": 0.010042991388068856,
+        "recomputed_selected_score": 0.010042991388068856,
+        "recomputed_best_action": "XRD_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.48149407535598154,
+        "recomputed_selected_score": 0.48149407535598154,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-3",
+        "selected_score_record": 0.5468597520101657,
+        "recomputed_selected_score": 0.5468597520101655,
+        "recomputed_best_action": "REFINEMENT_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.25494382963362083,
+        "recomputed_selected_score": 0.2549438296336206,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.6434284945379294,
+        "recomputed_selected_score": 0.6434284945379294,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.5453824383798551,
+        "recomputed_selected_score": 0.5453824383798551,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-1",
+        "selected_score_record": 0.6435299587935792,
+        "recomputed_selected_score": 0.6435299587935792,
+        "recomputed_best_action": "REFINEMENT_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.22274853707078623,
+        "recomputed_selected_score": 0.22274853707078646,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.5257208910251141,
+        "recomputed_selected_score": 0.5257208910251141,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.35286567207923625,
+        "recomputed_selected_score": 0.35286567207923647,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-4",
+        "selected_score_record": 0.5597812232007644,
+        "recomputed_selected_score": 0.5597812232007644,
+        "recomputed_best_action": "REFINEMENT_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-6",
+        "selected_score_record": 0.13411101470772469,
+        "recomputed_selected_score": 0.13411101470772469,
+        "recomputed_best_action": "XRD_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-6",
+        "selected_score_record": 0.17281198978114853,
+        "recomputed_selected_score": 0.17281198978114853,
+        "recomputed_best_action": "REFINEMENT_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.6000000000000001,
+        "recomputed_selected_score": 0.6000000000000001,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "REFINEMENT_controlled-0",
+        "selected_score_record": 0.8570722742621135,
+        "recomputed_selected_score": 0.8570722742621135,
+        "recomputed_best_action": "REFINEMENT_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.008413389019567896,
+        "recomputed_selected_score": 0.008413389019567896,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H1_PHASE_PURITY",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "REFINEMENT_controlled-7",
+        "selected_score_record": 0.2683659953988079,
+        "recomputed_selected_score": 0.2683659953988079,
+        "recomputed_best_action": "REFINEMENT_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-3",
+        "selected_score_record": -0.006692799010773243,
+        "recomputed_selected_score": -0.006692799010773243,
+        "recomputed_best_action": "EDS_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": -0.017665732959533664,
+        "recomputed_selected_score": -0.017665732959533553,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-6",
+        "selected_score_record": -0.14429203369446286,
+        "recomputed_selected_score": -0.14429203369446286,
+        "recomputed_best_action": "EDS_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3955332264584619,
+        "recomputed_selected_score": 0.3955332264584617,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-3",
+        "selected_score_record": 0.017641472396219937,
+        "recomputed_selected_score": 0.017641472396219715,
+        "recomputed_best_action": "EDS_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-1",
+        "selected_score_record": -0.09935847331638192,
+        "recomputed_selected_score": -0.09935847331638192,
+        "recomputed_best_action": "EDS_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-6",
+        "selected_score_record": -0.2070426919513868,
+        "recomputed_selected_score": -0.2070426919513868,
+        "recomputed_best_action": "EDS_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.4645952035796763,
+        "recomputed_selected_score": 0.4645952035796763,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.13613836741896002,
+        "recomputed_selected_score": 0.13613836741896002,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.016801607302187715,
+        "recomputed_selected_score": 0.016801607302187715,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "EDS_controlled-1",
+        "selected_score_record": 0.10000000000000009,
+        "recomputed_selected_score": 0.10000000000000009,
+        "recomputed_best_action": "EDS_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.22719172844086777,
+        "recomputed_selected_score": 0.22719172844086777,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "EDS_controlled-7",
+        "selected_score_record": 0.0699771487402121,
+        "recomputed_selected_score": 0.0699771487402121,
+        "recomputed_best_action": "EDS_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "EDS_controlled-4",
+        "selected_score_record": -0.005265402977993938,
+        "recomputed_selected_score": -0.00526540297799416,
+        "recomputed_best_action": "EDS_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.1836166100786173,
+        "recomputed_selected_score": -0.1836166100786173,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.5002053432463247,
+        "recomputed_selected_score": 0.5002053432463245,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": -0.03136323676899888,
+        "recomputed_selected_score": -0.03136323676899888,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": -0.19999999999999996,
+        "recomputed_selected_score": -0.19999999999999996,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": -0.04236950548324514,
+        "recomputed_selected_score": -0.04236950548324514,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.3275248947852889,
+        "recomputed_selected_score": 0.3275248947852889,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 2
+        },
+        "selected_action": "SEM_controlled-4",
+        "selected_score_record": -0.1781308578080667,
+        "recomputed_selected_score": -0.1781308578080667,
+        "recomputed_best_action": "SEM_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-0",
+        "selected_score_record": -0.14805221759321174,
+        "recomputed_selected_score": -0.14805221759321152,
+        "recomputed_best_action": "SEM_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 7,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": -0.22066330983481075,
+        "recomputed_selected_score": -0.22066330983481064,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-3",
+        "selected_score_record": 0.25555799276004554,
+        "recomputed_selected_score": 0.2555579927600453,
+        "recomputed_best_action": "XRD_controlled-3",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-5",
+        "selected_score_record": 0.248880163988634,
+        "recomputed_selected_score": 0.248880163988634,
+        "recomputed_best_action": "XRD_controlled-5",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 3
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.09701240032889302,
+        "recomputed_selected_score": 0.09701240032889302,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 42,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": -0.1286656736368066,
+        "recomputed_selected_score": -0.1286656736368066,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-1",
+        "selected_score_record": 0.386616007367778,
+        "recomputed_selected_score": 0.386616007367778,
+        "recomputed_best_action": "XRD_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": 0.21145739444510614,
+        "recomputed_selected_score": 0.21145739444510614,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-1",
+        "selected_score_record": 0.10000000000000009,
+        "recomputed_selected_score": 0.10000000000000009,
+        "recomputed_best_action": "SEM_controlled-1",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 101,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.027920338382590115,
+        "recomputed_selected_score": 0.027920338382590115,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-4",
+        "selected_score_record": 0.19784935211918686,
+        "recomputed_selected_score": 0.19784935211918708,
+        "recomputed_best_action": "XRD_controlled-4",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 2
+        },
+        "selected_action": "XRD_controlled-7",
+        "selected_score_record": -0.12687959945632699,
+        "recomputed_selected_score": -0.1268795994563271,
+        "recomputed_best_action": "XRD_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-6",
+        "selected_score_record": -0.13940708399814516,
+        "recomputed_selected_score": -0.13940708399814516,
+        "recomputed_best_action": "SEM_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 314,
+          "step": 4
+        },
+        "selected_action": "XRD_controlled-6",
+        "selected_score_record": -0.13308357611297006,
+        "recomputed_selected_score": -0.13308357611297006,
+        "recomputed_best_action": "XRD_controlled-6",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 1
+        },
+        "selected_action": "XRD_controlled-0",
+        "selected_score_record": 0.4334931139492033,
+        "recomputed_selected_score": 0.4334931139492033,
+        "recomputed_best_action": "XRD_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 2
+        },
+        "selected_action": "SEM_controlled-0",
+        "selected_score_record": -0.08199106588092309,
+        "recomputed_selected_score": -0.08199106588092286,
+        "recomputed_best_action": "SEM_controlled-0",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 3
+        },
+        "selected_action": "SEM_controlled-7",
+        "selected_score_record": -0.12026447667326279,
+        "recomputed_selected_score": -0.12026447667326279,
+        "recomputed_best_action": "SEM_controlled-7",
+        "matches": "True"
+      },
+      {
+        "run": {
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
+          "seed": 2024,
+          "step": 4
+        },
+        "selected_action": "SEM_controlled-3",
+        "selected_score_record": -0.1183602773118575,
+        "recomputed_selected_score": -0.1183602773118575,
+        "recomputed_best_action": "SEM_controlled-3",
+        "matches": "True"
+      }
+    ],
+    "hybrid_cost_causality_gate": "PASS",
+    "hybrid_cost_effects": [
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 7,
+        "step": 2,
+        "with_cost": "REFINEMENT_controlled-3",
+        "without_cost": "XRD_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-3",
+            "candidate_id": "controlled-3",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.0,
+          "discovery_utility": 0.6297742559621494,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.30000000000000004,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.7678, 0.2322, 0.2322, 0.2626]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.4641, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.09224692375776421,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.06811485061271215,
+          "discovery_utility": 0.10874134068766397,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.10157304760733543,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.4247, 0.4175, 0.4334, 0.4719, 3.175]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.09224692375776421,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 7,
+        "step": 3,
+        "with_cost": "XRD_controlled-7",
+        "without_cost": "OUTCOME_TEST_controlled-4",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.050201056390974094,
+          "discovery_utility": 0.10874134068766397,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.12042289252372229,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.4247, 0.4175, 0.4334, 0.4719, 3.175]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.054174374598061695,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "OUTCOME_TEST_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "OUTCOME_TEST",
+            "estimated_cost": 2.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.018604868306609783,
+          "discovery_utility": 0.482815601783626,
+          "normalized_cost": 1.0,
+          "total_action_score": -1.1118968739986321,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.6737]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.5215]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.4915]"
+          ],
+          "current_hypothesis_entropy_nats": 0.054174374598061695,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 42,
+        "step": 4,
+        "with_cost": "REFINEMENT_controlled-7",
+        "without_cost": "XRD_controlled-5",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.15340905816610753,
+          "discovery_utility": 0.4223671662722607,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.6407346760040902,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.8612, 0.1388, 0.1388, 0.1972]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.6, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.19234511440539132,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-5",
+            "candidate_id": "controlled-5",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.17714032320362794,
+          "discovery_utility": 0.37743765542986607,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.18605979850901955,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.4493, 0.4394, 0.469, 0.4993, 3.3941]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.19234511440539132,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 101,
+        "step": 2,
+        "with_cost": "REFINEMENT_controlled-1",
+        "without_cost": "XRD_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.24521992758566802,
+          "discovery_utility": 0.9730141352130937,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.5848429470558068,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.8094, 0.1906, 0.1906, 0.2334]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.6, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.896041132601047,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6416415558327078,
+          "discovery_utility": 0.6643991683094581,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.29157965278013886,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2299, 0.2443, 0.152, 0.2554, 1.4432]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.896041132601047,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 314,
+        "step": 2,
+        "with_cost": "REFINEMENT_controlled-4",
+        "without_cost": "XRD_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.0,
+          "discovery_utility": 0.6801459671086396,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.30000000000000004,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.7664, 0.2336, 0.2336, 0.2635]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.443, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.3192981301106459,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.05826016651335436,
+          "discovery_utility": 0.6546210656018304,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.05060446929486295,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3268, 0.3305, 0.2921, 0.3631, 2.305]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3521, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.3192981301106459,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 314,
+        "step": 4,
+        "with_cost": "REFINEMENT_controlled-7",
+        "without_cost": "XRD_controlled-6",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.0,
+          "discovery_utility": 0.6546210656018304,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.26997714874021206,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.6738, 0.3262, 0.3262, 0.3284]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.3532, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.1671563805617927,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-6",
+            "candidate_id": "controlled-6",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.10411722571759927,
+          "discovery_utility": 0.4766062637604173,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.058891500099887084,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.4055, 0.4004, 0.4057, 0.4505, 3.004]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.1671563805617927,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 2024,
+        "step": 3,
+        "with_cost": "XRD_controlled-7",
+        "without_cost": "OUTCOME_TEST_controlled-0",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.1578402129535787,
+          "discovery_utility": 0.6143486794837153,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.09838049954002814,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3846, 0.3819, 0.3755, 0.4273, 2.8187]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.4289642227352811,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "OUTCOME_TEST_controlled-0",
+            "candidate_id": "controlled-0",
+            "action_type": "OUTCOME_TEST",
+            "estimated_cost": 2.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.07645796760669282,
+          "discovery_utility": 0.8475062501785321,
+          "normalized_cost": 1.0,
+          "total_action_score": -1.0441644857324555,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.5724]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.4026]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3341]"
+          ],
+          "current_hypothesis_entropy_nats": 0.4289642227352811,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
+        "seed": 2024,
+        "step": 4,
+        "with_cost": "REFINEMENT_controlled-7",
+        "without_cost": "OUTCOME_TEST_controlled-0",
+        "with_cost_components": {
+          "action": {
+            "action_id": "REFINEMENT_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "REFINEMENT",
+            "estimated_cost": 0.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": [
+                "XRD"
+              ]
+            }
+          },
+          "expected_hig_nats": 0.05104396910163017,
+          "discovery_utility": 0.6143486794837153,
+          "normalized_cost": 0.25,
+          "total_action_score": 0.25488526190982974,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.5453, 0.4547, 0.4547, 0.4183]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.58, 0.42, 0.55, 0.394]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.63, 0.37, 0.6, 0.359]"
+          ],
+          "current_hypothesis_entropy_nats": 0.24279800955931624,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "OUTCOME_TEST_controlled-0",
+            "candidate_id": "controlled-0",
+            "action_type": "OUTCOME_TEST",
+            "estimated_cost": 2.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.05970771024268845,
+          "discovery_utility": 0.8475062501785321,
+          "normalized_cost": 1.0,
+          "total_action_score": -0.9953282215430752,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.5724]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.4026]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3341]"
+          ],
+          "current_hypothesis_entropy_nats": 0.24279800955931624,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 7,
+        "step": 1,
+        "with_cost": "XRD_controlled-3",
+        "without_cost": "EDS_controlled-3",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-3",
+            "candidate_id": "controlled-3",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.5280683291041093,
+          "discovery_utility": 0.6297742559621494,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.3275248947852889,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2845, 0.2929, 0.231, 0.3161, 1.9289]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3644, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-3",
+            "candidate_id": "controlled-3",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.5624496100726877,
+          "discovery_utility": 0.6297742559621494,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.1381292059703787,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 7,
+        "step": 4,
+        "with_cost": "XRD_controlled-4",
+        "without_cost": "EDS_controlled-0",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 3.0298398762722296e-07,
+          "discovery_utility": 0.482815601783626,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.03913432921186688,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3129, 0.3181, 0.272, 0.3477, 2.1813]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3762, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 5.692342465717702e-07,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-0",
+            "candidate_id": "controlled-0",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 5.692307002999432e-07,
+          "discovery_utility": 0.4685054138616131,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.10485923719337142,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 5.692342465717702e-07,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 42,
+        "step": 1,
+        "with_cost": "XRD_controlled-3",
+        "without_cost": "EDS_controlled-3",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-3",
+            "candidate_id": "controlled-3",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.5248594917452735,
+          "discovery_utility": 0.6726742426326919,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.3955332264584619,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2792, 0.2882, 0.2233, 0.3102, 1.8818]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3651, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-3",
+            "candidate_id": "controlled-3",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6402181471395652,
+          "discovery_utility": 0.6726742426326919,
+          "normalized_cost": 0.75,
+          "total_action_score": 0.02642523341908687,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 42,
+        "step": 2,
+        "with_cost": "XRD_controlled-7",
+        "without_cost": "EDS_controlled-1",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.390553105955025,
+          "discovery_utility": 0.4223671662722607,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.09099555469317555,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2425, 0.2555, 0.1702, 0.2694, 1.5554]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.9612467093624546,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6495717899885416,
+          "discovery_utility": 0.5957592066648888,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.1150622751010002,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 0.9612467093624546,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 101,
+        "step": 3,
+        "with_cost": "XRD_controlled-7",
+        "without_cost": "EDS_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.0014519706914800379,
+          "discovery_utility": 0.6643991683094581,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.050560692170708466,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2299, 0.2443, 0.152, 0.2554, 1.4432]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.002881047674861034,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.0028544988619002417,
+          "discovery_utility": 0.6643991683094581,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.16111107886528342,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 0.002881047674861034,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 314,
+        "step": 1,
+        "with_cost": "XRD_controlled-4",
+        "without_cost": "EDS_controlled-4",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.40832691405589117,
+          "discovery_utility": 0.6801459671086396,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.22719172844086777,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2851, 0.2934, 0.2318, 0.3168, 1.9342]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3621, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6391661949983785,
+          "discovery_utility": 0.6801459671086396,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.03130415311062307,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 314,
+        "step": 4,
+        "with_cost": "XRD_controlled-7",
+        "without_cost": "EDS_controlled-1",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.0,
+          "discovery_utility": 0.6546210656018304,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.23002285125978794,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3268, 0.3305, 0.2921, 0.3631, 2.305]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3521, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 9.753622386423767e-06,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 9.752919967799854e-06,
+          "discovery_utility": 0.37144497637101803,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.2631507169159153,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 9.753622386423767e-06,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+        "seed": 2024,
+        "step": 1,
+        "with_cost": "XRD_controlled-0",
+        "without_cost": "EDS_controlled-0",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-0",
+            "candidate_id": "controlled-0",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6612248590426673,
+          "discovery_utility": 0.8475062501785321,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.5002053432463247,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2517, 0.2638, 0.1836, 0.2797, 1.6375]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "EDS_controlled-0",
+            "candidate_id": "controlled-0",
+            "action_type": "EDS",
+            "estimated_cost": 1.5,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.7535503372010273,
+          "discovery_utility": 0.8475062501785321,
+          "normalized_cost": 0.75,
+          "total_action_score": 0.0979735868932019,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.38, 0.38, 0.38, 0.62]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.0, 1.0, 1.0, 0.0]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.36, 0.36, 0.36, 0.64]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+        "seed": 7,
+        "step": 4,
+        "with_cost": "XRD_controlled-4",
+        "without_cost": "SEM_controlled-1",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-4",
+            "candidate_id": "controlled-4",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.0018499675181788081,
+          "discovery_utility": 0.482815601783626,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.2024227685037997,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3129, 0.3181, 0.272, 0.3477, 2.1813]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3762, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.00803211140546061,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "SEM_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "SEM",
+            "estimated_cost": 1.5,
+            "requested_at_step": 4,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.008028383145577555,
+          "discovery_utility": 0.22251695246691655,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.4177039350704712,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[1.8182, 0.315, 0.45, 0.4271]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.7241, 0.306, 0.42, 0.425]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[2.8571, 0.375, 0.65, 0.75]"
+          ],
+          "current_hypothesis_entropy_nats": 0.00803211140546061,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+        "seed": 42,
+        "step": 2,
+        "with_cost": "XRD_controlled-1",
+        "without_cost": "SEM_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.10179827419433174,
+          "discovery_utility": 0.5957592066648888,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.17697954089408607,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.3504, 0.3515, 0.3261, 0.3893, 2.5147]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3481, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.891082617417176,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "SEM_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "SEM",
+            "estimated_cost": 1.5,
+            "requested_at_step": 2,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6636440470227467,
+          "discovery_utility": 0.4223671662722607,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.2512745226028055,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[1.8182, 0.315, 0.45, 0.3194]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.7241, 0.306, 0.42, 0.425]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[2.8571, 0.375, 0.65, 0.75]"
+          ],
+          "current_hypothesis_entropy_nats": 0.891082617417176,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+        "seed": 42,
+        "step": 3,
+        "with_cost": "XRD_controlled-5",
+        "without_cost": "SEM_controlled-7",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-5",
+            "candidate_id": "controlled-5",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.3055433348871299,
+          "discovery_utility": 0.37743765542986607,
+          "normalized_cost": 0.5,
+          "total_action_score": -0.21661505913743118,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.4493, 0.4394, 0.469, 0.4993, 3.3941]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 0.8709072992546314,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "SEM_controlled-7",
+            "candidate_id": "controlled-7",
+            "action_type": "SEM",
+            "estimated_cost": 1.5,
+            "requested_at_step": 3,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6883880333393607,
+          "discovery_utility": 0.4223671662722607,
+          "normalized_cost": 0.75,
+          "total_action_score": -0.24404787747180023,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[1.8182, 0.315, 0.45, 0.3194]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.7241, 0.306, 0.42, 0.425]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[2.8571, 0.375, 0.65, 0.75]"
+          ],
+          "current_hypothesis_entropy_nats": 0.8709072992546314,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      },
+      {
+        "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
+        "seed": 101,
+        "step": 1,
+        "with_cost": "XRD_controlled-1",
+        "without_cost": "SEM_controlled-1",
+        "with_cost_components": {
+          "action": {
+            "action_id": "XRD_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "XRD",
+            "estimated_cost": 1.0,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.6257776042620298,
+          "discovery_utility": 0.9730141352130937,
+          "normalized_cost": 0.5,
+          "total_action_score": 0.386616007367778,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[0.2658, 0.2762, 0.2039, 0.2953, 1.7625]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[0.369, 0.3645, 0.353, 0.41, 2.68]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[0.3465, 0.3795, 0.3205, 0.385, 2.48]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        },
+        "without_cost_components": {
+          "action": {
+            "action_id": "SEM_controlled-1",
+            "candidate_id": "controlled-1",
+            "action_type": "SEM",
+            "estimated_cost": 1.5,
+            "requested_at_step": 1,
+            "metadata": {
+              "cost_units": "SIMULATED_NORMALIZED_COST",
+              "prerequisites": []
+            }
+          },
+          "expected_hig_nats": 0.8534067893168822,
+          "discovery_utility": 0.9730141352130937,
+          "normalized_cost": 0.75,
+          "total_action_score": 0.10000000000000009,
+          "dominant_hypothesis_disagreement": [
+            "H1_PHASE_PURITY_LIMITED predicts mean=[1.8182, 0.315, 0.45, 0.3453]",
+            "H2_COMPOSITION_HOMOGENEITY_LIMITED predicts mean=[1.7241, 0.306, 0.42, 0.425]",
+            "H3_MORPHOLOGY_KINETICS_LIMITED predicts mean=[2.8571, 0.375, 0.65, 0.75]"
+          ],
+          "current_hypothesis_entropy_nats": 1.0986122886681096,
+          "hig_upper_bound_epsilon_nats": 0.8660254037844387,
+          "hig_lower_bound_ok": true,
+          "hig_upper_bound_ok": true
+        }
+      }
+    ],
+    "policy_sequence_distinction_gate": "PASS",
+    "distinct_modality_sequences": 33
+  }
+}

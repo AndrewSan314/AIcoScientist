@@ -1,0 +1,79 @@
+{
+  "status": "PASS",
+  "samples": [
+    16,
+    32,
+    64,
+    128
+  ],
+  "representative_state": {
+    "candidate_count": 4,
+    "modalities": [
+      "XRD",
+      "REFINEMENT",
+      "OUTCOME_TEST"
+    ],
+    "seed": 2024
+  },
+  "top_action_by_samples": {
+    "16": [
+      "XRD_controlled-0",
+      "XRD_controlled-3",
+      "XRD_controlled-1",
+      "XRD_controlled-2",
+      "OUTCOME_TEST_controlled-0"
+    ],
+    "32": [
+      "XRD_controlled-0",
+      "XRD_controlled-3",
+      "XRD_controlled-1",
+      "XRD_controlled-2",
+      "OUTCOME_TEST_controlled-0"
+    ],
+    "64": [
+      "XRD_controlled-0",
+      "XRD_controlled-1",
+      "XRD_controlled-3",
+      "XRD_controlled-2",
+      "OUTCOME_TEST_controlled-0"
+    ],
+    "128": [
+      "XRD_controlled-0",
+      "XRD_controlled-1",
+      "XRD_controlled-3",
+      "XRD_controlled-2",
+      "OUTCOME_TEST_controlled-0"
+    ]
+  },
+  "top_action_scores_by_samples": {
+    "16": {
+      "XRD_controlled-0": 0.6419004978282405,
+      "XRD_controlled-3": 0.2909335876907606,
+      "XRD_controlled-1": 0.2765909172314519,
+      "XRD_controlled-2": 0.2633867744648013,
+      "OUTCOME_TEST_controlled-0": 0.15431440137375474
+    },
+    "32": {
+      "XRD_controlled-0": 0.6515888931244307,
+      "XRD_controlled-3": 0.26760429298279287,
+      "XRD_controlled-1": 0.2593639643094837,
+      "XRD_controlled-2": 0.2279745297738751,
+      "OUTCOME_TEST_controlled-0": 0.18688653859022175
+    },
+    "64": {
+      "XRD_controlled-0": 0.6241553799886085,
+      "XRD_controlled-1": 0.2909120899495301,
+      "XRD_controlled-3": 0.2531740906102018,
+      "XRD_controlled-2": 0.2494230999017628,
+      "OUTCOME_TEST_controlled-0": 0.18699581308077529
+    },
+    "128": {
+      "XRD_controlled-0": 0.6363136133586264,
+      "XRD_controlled-1": 0.2827431312904345,
+      "XRD_controlled-3": 0.2537816484114064,
+      "XRD_controlled-2": 0.21908246709575896,
+      "OUTCOME_TEST_controlled-0": 0.1825317792329455
+    }
+  },
+  "ranking_stable_64_vs_128": true
+}

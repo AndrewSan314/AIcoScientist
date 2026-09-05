@@ -672,5 +672,10 @@
       },
       "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
     }
-  }
+  },
+  "group_overlap": [],
+  "target_overlap": [
+    "Mn2O7V2"
+  ],
+  "precursor_signature_overlap": []
 }

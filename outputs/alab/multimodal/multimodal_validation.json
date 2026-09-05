@@ -1,9 +1,21 @@
 {
-  "status": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
+  "status": "A_LAB_MODELS_EVALUATED",
+  "scientific_methodology_status": "CONTROLLED_CLEAN_AND_STRESS_METHODOLOGY_VALIDATED",
+  "artifact_generation_status": "ARTIFACTS_GENERATED",
+  "local_test_status": "PASS",
+  "external_ci_status": "NOT_INSPECTED",
+  "release_readiness": "PENDING_EXTERNAL_CI",
   "readiness": {
-    "controlled_multimodal_method": "CONTROLLED_MULTIMODAL_METHOD_VALIDATED",
-    "a_lab_retrospective_calibration": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
-    "prospective_physical_validation": "PROSPECTIVE_PHYSICAL_VALIDATION_NOT_EVALUATED"
+    "controlled_clean_world_status": "CONTROLLED_CLEAN_WORLD_METHOD_VALIDATED",
+    "controlled_stress_world_status": "CONTROLLED_STRESS_WORLD_METHOD_VALIDATED",
+    "sample_interpolation_status": "A_LAB_SAMPLE_INTERPOLATION_EVALUATED",
+    "reaction_group_generalization_status": "A_LAB_GROUP_GENERALIZATION_EVALUATED",
+    "target_generalization_status": "A_LAB_GROUP_GENERALIZATION_EVALUATED",
+    "retrospective_model_evaluation_status": "A_LAB_MODELS_EVALUATED",
+    "calibration_coverage_status": "A_LAB_CALIBRATION_PARTIAL",
+    "real_policy_replay_status": "METHODOLOGY_VALID",
+    "external_ci_status": "NOT_INSPECTED",
+    "prospective_physical_validation_status": "PROSPECTIVE_PHYSICAL_VALIDATION_NOT_EVALUATED"
   },
   "gates": {
     "observable_schema_gate": "PASS",
@@ -17,27 +29,31 @@
     "calibration_evaluation_disjoint_gate": "PASS",
     "calibration_fit_contract_gate": "PASS",
     "real_calibration_metrics_gate": "PASS",
+    "calibration_coverage_gate": "FAIL",
     "identifiability_disclosure_gate": "PASS",
-    "controlled_world_coverage_gate": "PASS",
-    "controlled_difficulty_gate": "PASS",
-    "controlled_recovery_methodology_gate": "PASS",
+    "clean_world_methodology_gate": "PASS",
+    "stress_world_methodology_gate": "PASS",
+    "full_policy_matrix_gate": "PASS",
+    "group_generalization_methodology_gate": "PASS",
     "pre_reveal_HIG_gate": "PASS",
-    "HIG_bound_gate": "PASS",
+    "HIG_lower_bound_gate": "PASS",
+    "HIG_upper_bound_gate": "PASS",
     "HIG_order_invariance_gate": "PASS",
     "policy_distinction_gate": "PASS",
     "hybrid_formula_gate": "PASS",
-    "natural_policy_divergence_gate": "PASS",
-    "hybrid_cost_effect_gate": "PASS",
     "discovery_hig_conflict_gate": "PASS",
     "hybrid_score_recomputation_gate": "PASS",
     "hybrid_cost_causality_gate": "PASS",
     "policy_sequence_distinction_gate": "PASS",
     "conditional_prediction_gate": "PASS",
+    "nondiagnostic_evidence_gate": "PASS",
+    "partial_identifiability_gate": "PASS",
     "preregistration_timeline_gate": "PASS",
     "action_namespace_gate": "PASS",
     "retrospective_split_gate": "PASS",
     "retrospective_observable_alignment_gate": "PASS",
     "retrospective_replay_gate": "PASS",
+    "real_policy_replay_gate": "PASS",
     "third_party_license_gate": "PASS",
     "third_party_functionality_gate": "PASS",
     "report_consistency_gate": "PASS",
@@ -45,11 +61,16 @@
     "external_CI_gate": "NOT_INSPECTED"
   },
   "gate_evidence": {
-    "ledger_event_count": 3312,
-    "controlled_worlds": [
-      "WORLD_H1_PHASE_PURITY",
-      "WORLD_H2_COMPOSITION_HOMOGENEITY",
-      "WORLD_H3_MORPHOLOGY_KINETICS"
+    "ledger_event_count": 5340,
+    "controlled_worlds_clean": [
+      "CLEAN_WORLD_H1_PHASE_PURITY",
+      "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
+      "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+    ],
+    "controlled_worlds_stress": [
+      "STRESS_WORLD_H1_PHASE_PURITY",
+      "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+      "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
     ],
     "required_seeds": [
       7,
@@ -63,7 +84,7 @@
       "EDS"
     ],
     "calibration_evaluation_disjoint": true,
-    "boolean_gate_count": 35,
-    "boolean_gate_pass_count": 35
+    "boolean_gate_count": 39,
+    "boolean_gate_pass_count": 38
   }
 }

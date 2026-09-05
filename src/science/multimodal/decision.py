@@ -80,6 +80,11 @@ class MultimodalDecisionEngine:
     def current_entropy(self) -> float:
         return entropy(self.beliefs)
 
+    @staticmethod
+    def _hig_epsilon(samples: int) -> float:
+        # Conservative numerical allowance for Monte-Carlo entropy estimates.
+        return max(1e-8, 3.0 / np.sqrt(max(1, int(samples))))
+
     def _requires_satisfied(self, candidate_id: str, modality: ModalityDefinition) -> bool:
         for prerequisite in modality.requires:
             if candidate_id not in self.observed_by_modality.get(prerequisite, {}):
@@ -184,6 +189,8 @@ class MultimodalDecisionEngine:
             "current_entropy_nats": self.current_entropy,
             "policy_name": self.policy_name,
             "selection_mode": "external_policy_selector",
+            "hig_upper_bound_epsilon_nats": self._hig_epsilon(128),
+            "hig_upper_bound_ok": expected_hig <= self.current_entropy + self._hig_epsilon(128),
         }
         return MultimodalRecommendation(action, score, why, [], registration, [])
 
@@ -222,6 +229,10 @@ class MultimodalDecisionEngine:
             "discovery_utility": discovery,
             "normalized_cost": action.estimated_cost,
             "total_action_score": score,
+            "current_hypothesis_entropy_nats": self.current_entropy,
+            "hig_upper_bound_epsilon_nats": self._hig_epsilon(128),
+            "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(128)),
+            "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(128)),
         }
         self.preregistered[action.action_id] = record
         self.ledger.append(record)
@@ -261,6 +272,10 @@ class MultimodalDecisionEngine:
                 "normalized_cost": action.estimated_cost / max_cost,
                 "total_action_score": score,
                 "policy_name": self.policy_name,
+                "current_hypothesis_entropy_nats": self.current_entropy,
+                "hig_upper_bound_epsilon_nats": self._hig_epsilon(samples),
+                "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(samples)),
+                "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(samples)),
             })
             scored.append({
                 "action": action.to_dict(),
@@ -269,6 +284,10 @@ class MultimodalDecisionEngine:
                 "normalized_cost": action.estimated_cost / max_cost,
                 "total_action_score": score,
                 "dominant_hypothesis_disagreement": self._disagreement(predictions),
+                "current_hypothesis_entropy_nats": self.current_entropy,
+                "hig_upper_bound_epsilon_nats": self._hig_epsilon(samples),
+                "hig_lower_bound_ok": bool(hig >= -self._hig_epsilon(samples)),
+                "hig_upper_bound_ok": bool(hig <= self.current_entropy + self._hig_epsilon(samples)),
             })
         scored.sort(key=lambda row: row["total_action_score"], reverse=True)
         top = scored[0]
@@ -344,6 +363,19 @@ class MultimodalDecisionEngine:
         for hypothesis in self.hypotheses.values():
             hypothesis.fit(self.candidate_features_by_id, self.observed_by_modality)
         after = dict(self.beliefs)
+        pairwise_log_bayes_factors = {}
+        hypothesis_ids = list(log_likelihoods)
+        for left_index, left in enumerate(hypothesis_ids):
+            for right in hypothesis_ids[left_index + 1:]:
+                pairwise_log_bayes_factors[f"{left}_vs_{right}"] = log_likelihoods[left] - log_likelihoods[right]
+        modality_roles = {
+            hid: registration["predictive_distributions"].get(hid, {}).get("metadata", {}).get("modality_role", "UNSPECIFIED")
+            for hid in hypothesis_ids
+        }
+        likelihood_modes = {
+            hid: registration["predictive_distributions"].get(hid, {}).get("metadata", {}).get("likelihood_mode", "UNSPECIFIED")
+            for hid in hypothesis_ids
+        }
         registration["measurement_revealed"] = True
         registration["reveal_timestamp"] = observable.timestamp or datetime.now(timezone.utc).isoformat()
         event = {
@@ -354,8 +386,12 @@ class MultimodalDecisionEngine:
             "action": registration["action"],
             "observed_measurement": observable.to_dict(),
             "likelihood_under_hypothesis": log_likelihoods,
+            "log_bayes_factor_pairwise": pairwise_log_bayes_factors,
+            "modality_diagnostic_role": modality_roles,
+            "likelihood_mode": likelihood_modes,
             "beliefs_before": before,
             "beliefs_after": after,
+            "posterior_delta": {hid: after[hid] - before[hid] for hid in after},
             "realized_entropy_reduction_nats": entropy(before) - entropy(after),
         }
         self.ledger.append(event)

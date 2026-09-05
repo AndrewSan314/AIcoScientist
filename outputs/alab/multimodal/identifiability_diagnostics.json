@@ -3,14 +3,14 @@
   "controlled_model_kind": "CONTROLLED_HYPOTHESIS_TEMPLATE",
   "retrospective_model_kind": "RETROSPECTIVE_CALIBRATED_HYPOTHESIS_MODEL",
   "worlds": [
-    "WORLD_H1_PHASE_PURITY",
-    "WORLD_H2_COMPOSITION_HOMOGENEITY",
-    "WORLD_H3_MORPHOLOGY_KINETICS"
+    "STRESS_WORLD_H1_PHASE_PURITY",
+    "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
+    "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
   ],
   "diagnostic_modality_by_world": {
-    "WORLD_H1_PHASE_PURITY": "REFINEMENT",
-    "WORLD_H2_COMPOSITION_HOMOGENEITY": "EDS",
-    "WORLD_H3_MORPHOLOGY_KINETICS": "SEM"
+    "STRESS_WORLD_H1_PHASE_PURITY": "REFINEMENT",
+    "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY": "EDS",
+    "STRESS_WORLD_H3_MORPHOLOGY_KINETICS": "SEM"
   },
   "natural_divergence_required": true,
   "real_data_by_hypothesis": [
@@ -24,5 +24,7 @@
     "H3_MORPHOLOGY_KINETICS_LIMITED": "candidate-linked SEM is unavailable; morphology mechanism is not identifiable and process features are only weak outcome proxies"
   },
   "sem_eds_status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
-  "prospective_causal_identifiability": "NOT_ESTABLISHED"
+  "prospective_causal_identifiability": "NOT_ESTABLISHED",
+  "exclusive_posterior_interpretation": "P(H_i) is relative explanatory model weight among simplified competing models, not the physical probability that exactly one mechanism alone is true.",
+  "future_design_note": "A factorial/compositional representation could model simultaneous phase, composition, and kinetic limitation activations; not implemented in this backward-compatible patch."
 }
