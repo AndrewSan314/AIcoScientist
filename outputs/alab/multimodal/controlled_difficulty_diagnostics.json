@@ -1,0 +1,94 @@
+{
+  "status": "PASS",
+  "design": {
+    "diagnostic_signal_scale": 0.45,
+    "non_diagnostic_signal_scale": 0.25,
+    "diagnostic_noise_scale": 1.25,
+    "non_diagnostic_noise_scale": 1.5,
+    "non_diagnostic_candidate_rule": "SHA256(world|candidate|difficulty-v1) first byte modulo 4 equals zero",
+    "misleading_measurement_rule": "deterministic SHA256 candidate hash can add signed 0.12 bias to the first observable",
+    "controlled_modality_semantics": "SYNTHETIC_CONTROLLED_MODALITY"
+  },
+  "summary": {
+    "WORLD_H1_PHASE_PURITY": {
+      "seeds": [
+        7,
+        42,
+        101,
+        314,
+        2024
+      ],
+      "recovery_rate_MAP": 0.6,
+      "recovery_rate_posterior_gt_0.5": 0.0,
+      "recovery_rate_posterior_gt_0.8": 0.0,
+      "mean_final_true_hypothesis_probability": 0.23395423138692326,
+      "mean_entropy_reduction": 0.29128905349521184,
+      "mean_measurement_cost": 1.95,
+      "std_final_true_hypothesis_probability": 0.1797359898038958,
+      "std_entropy_reduction": 0.15164552409681553,
+      "std_measurement_cost": 0.09999999999999999
+    },
+    "WORLD_H2_COMPOSITION_HOMOGENEITY": {
+      "seeds": [
+        7,
+        42,
+        101,
+        314,
+        2024
+      ],
+      "recovery_rate_MAP": 1.0,
+      "recovery_rate_posterior_gt_0.5": 0.6,
+      "recovery_rate_posterior_gt_0.8": 0.6,
+      "mean_final_true_hypothesis_probability": 0.64257459431798,
+      "mean_entropy_reduction": 0.8206575687378619,
+      "mean_measurement_cost": 2.85,
+      "std_final_true_hypothesis_probability": 0.4333684033464018,
+      "std_entropy_reduction": 0.3698141136750625,
+      "std_measurement_cost": 0.19999999999999998
+    },
+    "WORLD_H3_MORPHOLOGY_KINETICS": {
+      "seeds": [
+        7,
+        42,
+        101,
+        314,
+        2024
+      ],
+      "recovery_rate_MAP": 0.8,
+      "recovery_rate_posterior_gt_0.5": 0.8,
+      "recovery_rate_posterior_gt_0.8": 0.8,
+      "mean_final_true_hypothesis_probability": 0.7860628035849043,
+      "mean_entropy_reduction": 1.0140246604312797,
+      "mean_measurement_cost": 2.85,
+      "std_final_true_hypothesis_probability": 0.39155073727567297,
+      "std_entropy_reduction": 0.11674008774981809,
+      "std_measurement_cost": 0.19999999999999998
+    }
+  },
+  "worlds": {
+    "WORLD_H1_PHASE_PURITY": {
+      "diagnostic": "REFINEMENT",
+      "modalities": [
+        "REFINEMENT",
+        "XRD",
+        "OUTCOME_TEST"
+      ]
+    },
+    "WORLD_H2_COMPOSITION_HOMOGENEITY": {
+      "diagnostic": "EDS",
+      "modalities": [
+        "EDS",
+        "OUTCOME_TEST",
+        "XRD"
+      ]
+    },
+    "WORLD_H3_MORPHOLOGY_KINETICS": {
+      "diagnostic": "SEM",
+      "modalities": [
+        "SEM",
+        "OUTCOME_TEST",
+        "XRD"
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 {
-  "status": "CONTROLLED_WORLD_DIAGNOSTIC",
+  "status": "REAL_RETROSPECTIVE_IDENTIFIABILITY",
+  "controlled_model_kind": "CONTROLLED_HYPOTHESIS_TEMPLATE",
+  "retrospective_model_kind": "RETROSPECTIVE_CALIBRATED_HYPOTHESIS_MODEL",
   "worlds": [
     "WORLD_H1_PHASE_PURITY",
     "WORLD_H2_COMPOSITION_HOMOGENEITY",
@@ -11,5 +13,16 @@
     "WORLD_H3_MORPHOLOGY_KINETICS": "SEM"
   },
   "natural_divergence_required": true,
+  "real_data_by_hypothesis": [
+    "H1_PHASE_PURITY_LIMITED",
+    "H2_COMPOSITION_HOMOGENEITY_LIMITED",
+    "H3_MORPHOLOGY_KINETICS_LIMITED"
+  ],
+  "real_data_limitations": {
+    "H1_PHASE_PURITY_LIMITED": "directly supported by canonical XRD descriptors and refinement observables; outcome linkage is retrospective",
+    "H2_COMPOSITION_HOMOGENEITY_LIMITED": "candidate-linked EDS is unavailable; composition mechanism is not identifiable from the available real observations",
+    "H3_MORPHOLOGY_KINETICS_LIMITED": "candidate-linked SEM is unavailable; morphology mechanism is not identifiable and process features are only weak outcome proxies"
+  },
+  "sem_eds_status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
   "prospective_causal_identifiability": "NOT_ESTABLISHED"
 }

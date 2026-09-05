@@ -440,6 +440,7 @@ def render_surrogate_markdown(surr_results: dict[str, Any]) -> str:
 **Screening Runtime:** {surr_results.get('screening_time_sec', 0.0):.4f} seconds  
 **Surrogate Model Family:** {surr_results.get('surrogate_model_family')}  
 **Model Coupling Limitation:** {surr_results.get('MODEL_COUPLING_LIMITATION', 'Not reported.')}
+**Scientific Limitation:** {surr_results.get('scientific_limitation', 'Not reported.')}
 
 ### Omniscient Latent Oracle Maxima:
 * **Full-Space Latent Maximum $f(x)$:** `{surr_results.get('full_search_space_latent_max', 0.0):.4f}`  
@@ -736,6 +737,12 @@ def run_surrogate_simulation(
         "MODEL_COUPLING_LIMITATION": (
             "The surrogate oracle is a frozen univariate target model: it does not model coupling "
             "between multiple measured modalities or causal process structure."
+        ),
+        "scientific_limitation": (
+            "The Stage-1 screening model and the ExtraTrees surrogate oracle are both informed by the same "
+            "finite historical label set and related tree-based function classes; therefore zero screening "
+            "gap under the ExtraTrees surrogate world is not independent evidence of universal screening quality. "
+            "The independent GP and nonlinear synthetic worlds remain robustness controls."
         ),
         "evaluated_seeds": list(seeds),
         "full_search_space_latent_max": round(full_search_space_latent_max, 4),

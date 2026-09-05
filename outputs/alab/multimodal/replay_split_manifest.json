@@ -1042,5 +1042,10 @@
   ],
   "calibration_n": 510,
   "evaluation_n": 525,
-  "calibration_status": "NOT_EVALUATED_NO_CALIBRATED_MODEL"
+  "calibration_status": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
+  "leakage_assertions": {
+    "split_disjoint": true,
+    "all_models_fit_ids_subset_calibration": true,
+    "no_evaluation_ids_in_model_fit": true
+  }
 }

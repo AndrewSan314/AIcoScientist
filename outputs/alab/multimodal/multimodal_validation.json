@@ -1,5 +1,10 @@
 {
-  "status": "METHODOLOGY_VALID",
+  "status": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
+  "readiness": {
+    "controlled_multimodal_method": "CONTROLLED_MULTIMODAL_METHOD_VALIDATED",
+    "a_lab_retrospective_calibration": "A_LAB_RETROSPECTIVE_CALIBRATION_VALIDATED",
+    "prospective_physical_validation": "PROSPECTIVE_PHYSICAL_VALIDATION_NOT_EVALUATED"
+  },
   "gates": {
     "observable_schema_gate": "PASS",
     "observable_semantics_alignment_gate": "PASS",
@@ -9,7 +14,12 @@
     "hypothesis_structure_gate": "PASS",
     "hypothesis_directionality_gate": "PASS",
     "hypothesis_calibration_gate": "PASS",
+    "calibration_evaluation_disjoint_gate": "PASS",
+    "calibration_fit_contract_gate": "PASS",
+    "real_calibration_metrics_gate": "PASS",
+    "identifiability_disclosure_gate": "PASS",
     "controlled_world_coverage_gate": "PASS",
+    "controlled_difficulty_gate": "PASS",
     "controlled_recovery_methodology_gate": "PASS",
     "pre_reveal_HIG_gate": "PASS",
     "HIG_bound_gate": "PASS",
@@ -18,7 +28,13 @@
     "hybrid_formula_gate": "PASS",
     "natural_policy_divergence_gate": "PASS",
     "hybrid_cost_effect_gate": "PASS",
+    "discovery_hig_conflict_gate": "PASS",
+    "hybrid_score_recomputation_gate": "PASS",
+    "hybrid_cost_causality_gate": "PASS",
+    "policy_sequence_distinction_gate": "PASS",
+    "conditional_prediction_gate": "PASS",
     "preregistration_timeline_gate": "PASS",
+    "action_namespace_gate": "PASS",
     "retrospective_split_gate": "PASS",
     "retrospective_observable_alignment_gate": "PASS",
     "retrospective_replay_gate": "PASS",
@@ -29,7 +45,7 @@
     "external_CI_gate": "NOT_INSPECTED"
   },
   "gate_evidence": {
-    "ledger_event_count": 2499,
+    "ledger_event_count": 3312,
     "controlled_worlds": [
       "WORLD_H1_PHASE_PURITY",
       "WORLD_H2_COMPOSITION_HOMOGENEITY",
@@ -45,6 +61,9 @@
     "unsupported_retrospective_modalities": [
       "SEM",
       "EDS"
-    ]
+    ],
+    "calibration_evaluation_disjoint": true,
+    "boolean_gate_count": 35,
+    "boolean_gate_pass_count": 35
   }
 }

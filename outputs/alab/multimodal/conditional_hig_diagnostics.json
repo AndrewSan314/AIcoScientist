@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "action": {
+    "action_id": "OUTCOME_TEST_conditional-0",
+    "candidate_id": "conditional-0",
+    "action_type": "OUTCOME_TEST",
+    "estimated_cost": 2.0,
+    "requested_at_step": 1,
+    "metadata": {
+      "cost_units": "SIMULATED_NORMALIZED_COST",
+      "prerequisites": []
+    }
+  },
+  "hig_before_xrd_reveal_nats": 0.007772291509549278,
+  "hig_after_xrd_reveal_nats": 0.016955968176989744,
+  "absolute_hig_delta_nats": 0.009183676667440466,
+  "H1_outcome_mean_before": [
+    0.4987487336965395
+  ],
+  "H1_outcome_mean_after": [
+    0.45131614881050264
+  ],
+  "conditioned_on": "XRD",
+  "pre_reveal_prediction_snapshot_used": true
+}
