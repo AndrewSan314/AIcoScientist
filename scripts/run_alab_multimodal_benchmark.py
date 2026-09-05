@@ -127,6 +127,17 @@ def _select_policy_action(engine: MultimodalDecisionEngine, policy_name: str, rn
     return engine.recommend(samples=samples).action
 
 
+def _tag_ledger_events(events: list[dict[str, Any]], run_id: str) -> list[dict[str, Any]]:
+    tagged = []
+    for event in events:
+        item = {**event, "run_id": run_id}
+        action = item.get("action")
+        if isinstance(action, Mapping) and action.get("action_id"):
+            item["action"] = {**action, "action_id": f"{run_id}:{action['action_id']}"}
+        tagged.append(item)
+    return tagged
+
+
 def _hig_order_invariant() -> bool:
     features = {"a": np.linspace(0.0, 1.0, 49), "b": np.linspace(1.0, 0.0, 49)}
     left = MultimodalDecisionEngine(features, ALAB_DOMAIN_CONFIG.modalities, build_alab_multimodal_hypotheses(), seed=19)
@@ -142,7 +153,7 @@ def _hig_order_invariant() -> bool:
     )
 
 
-def _run_controlled_policy(world: str, seed: int, policy_name: str, steps: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def _run_controlled_policy(world: str, seed: int, policy_name: str, steps: int, run_label: str = "controlled_world") -> tuple[dict[str, Any], list[dict[str, Any]]]:
     candidates = _controlled_candidates(seed)
     hypotheses = build_alab_multimodal_hypotheses()
     discovery = {(cid, modality): _discovery_prediction(features) for cid, features in candidates.items() for modality in ("XRD", "REFINEMENT", "SEM", "EDS", "OUTCOME_TEST")}
@@ -201,7 +212,7 @@ def _run_controlled_policy(world: str, seed: int, policy_name: str, steps: int) 
         "step_posterior_crosses_0.5": first_crossing(0.5),
         "step_posterior_crosses_0.8": first_crossing(0.8),
         "step_posterior_crosses_0.9": first_crossing(0.9),
-    }, engine.ledger.events
+    }, _tag_ledger_events(engine.ledger.events, f"{run_label}:{world}:{seed}:{policy_name}")
 
 
 def controlled_hypothesis_benchmark(seed: int = 42, steps: int = 4) -> dict[str, Any]:
@@ -211,7 +222,7 @@ def controlled_hypothesis_benchmark(seed: int = 42, steps: int = 4) -> dict[str,
     seeds = (seed,) if seed != 42 else SEEDS
     for world in worlds:
         for run_seed in seeds:
-            record, events = _run_controlled_policy(world, run_seed, "PURE_HIG", steps)
+            record, events = _run_controlled_policy(world, run_seed, "PURE_HIG", steps, "controlled_world")
             records.append(record)
             ledger_events.extend(events)
     grouped = {world: [row for row in records if row["world"] == world] for world in worlds}
@@ -243,7 +254,7 @@ def controlled_policy_comparison(seed: int = 42, steps: int = 4) -> dict[str, An
     ledger_events: list[dict[str, Any]] = []
     world = "WORLD_H1_PHASE_PURITY"
     for policy_name in POLICIES:
-        record, events = _run_controlled_policy(world, seed, policy_name, steps)
+        record, events = _run_controlled_policy(world, seed, policy_name, steps, "policy_comparison")
         records.append(record)
         ledger_events.extend(events)
     return {
@@ -382,7 +393,7 @@ def retrospective_replay(data_dir: str, cache_dir: str, seed: int = 42, steps: i
         "split_method": split_manifest.get("split_method"),
         "events": events,
         "final_beliefs": engine.beliefs,
-        "ledger_events": ledger,
+        "ledger_events": _tag_ledger_events(ledger, f"replay:{seed}"),
         "strict_replay_errors": replay_errors,
     }
 
