@@ -83,7 +83,7 @@ def test_shared_nuisance_model_is_calibration_only():
     artifact = _artifact("shared_nuisance_model_metrics.json")
     assert artifact["status"] == "PASS"
     assert artifact["model"]["fit_scope"] == "calibration_ids_only"
-    assert artifact["model"]["feature_family"] == "all_allowed_non_mechanistic_context_features"
+    assert artifact["model"]["feature_family"] == "all_context_features"
     assert artifact["model"]["feature_indices"] == list(range(49))
     assert artifact["model"]["training_N"] > 0 and artifact["model"]["evaluation_N"] > 0
 

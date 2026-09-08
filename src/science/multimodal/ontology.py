@@ -20,7 +20,7 @@ class ObservableDefinition:
     uncertainty_semantics: str
     observable_type: str = "scalar"
 
-    def validate(self, value: Any, uncertainty: Any | None = None) -> None:
+    def validate(self, value: Any, uncertainty: Any | None = None, *, check_range: bool = True) -> None:
         if self.observable_type == "categorical":
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{self.name} requires a non-empty categorical value")
@@ -28,7 +28,7 @@ class ObservableDefinition:
             values = np.asarray(value, dtype=np.float64)
             if values.size == 0 or not np.all(np.isfinite(values)):
                 raise ValueError(f"{self.name} requires finite values")
-            if self.value_range is not None and (
+            if check_range and self.value_range is not None and (
                 np.any(values < self.value_range[0]) or np.any(values > self.value_range[1])
             ):
                 raise ValueError(f"{self.name} is outside its declared range {self.value_range}")
@@ -104,12 +104,12 @@ def observable_names_for_modality(modality: str) -> tuple[str, ...]:
         raise ValueError(f"No observable schema registered for modality {modality!r}") from exc
 
 
-def validate_observable(name: str, value: Any, uncertainty: Any | None = None) -> None:
+def validate_observable(name: str, value: Any, uncertainty: Any | None = None, *, check_range: bool = True) -> None:
     try:
         definition = OBSERVABLE_REGISTRY[name]
     except KeyError as exc:
         raise ValueError(f"Unknown scientific observable {name!r}") from exc
-    definition.validate(value, uncertainty)
+    definition.validate(value, uncertainty, check_range=check_range)
 
 
 __all__ = [

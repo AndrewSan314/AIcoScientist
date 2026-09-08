@@ -96,8 +96,33 @@ def reaction_signature(target_formula: str, precursor_formulas: Sequence[str]) -
     return canonical_formula(target_formula), tuple(sorted(canonical_formula(item) for item in precursor_formulas if str(item).strip()))
 
 
+def canonical_elemental_system(formula: str) -> str:
+    """Return an order-invariant element-set key for family-level holdouts."""
+    try:
+        return "-".join(sorted(str(element) for element in parse_chemical_formula(str(formula))))
+    except (TypeError, ValueError):
+        return "-".join(sorted(str(formula).replace(" ", "")))
+
+
+def _group_size_statistics(group_by_id: Mapping[str, str]) -> dict[str, Any]:
+    sizes = np.asarray([list(group_by_id.values()).count(group) for group in set(group_by_id.values())], dtype=float)
+    singleton_groups = int(np.sum(sizes == 1))
+    return {
+        "number_of_groups": int(len(sizes)),
+        "number_of_samples": int(len(group_by_id)),
+        "mean_group_size": float(np.mean(sizes)) if len(sizes) else 0.0,
+        "median_group_size": float(np.median(sizes)) if len(sizes) else 0.0,
+        "p90_group_size": float(np.percentile(sizes, 90)) if len(sizes) else 0.0,
+        "max_group_size": int(np.max(sizes)) if len(sizes) else 0,
+        "fraction_singleton_groups": float(singleton_groups / len(sizes)) if len(sizes) else 0.0,
+        "fraction_samples_in_singleton_groups": float(singleton_groups / len(group_by_id)) if group_by_id else 0.0,
+        "number_of_groups_with_size_at_least_2": int(np.sum(sizes >= 2)),
+        "number_of_groups_with_size_at_least_5": int(np.sum(sizes >= 5)),
+    }
+
+
 def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    """Build deterministic sample, reaction-signature, and target holdouts."""
+    """Build deterministic sample, chemistry-group, and family holdouts."""
     ids = sorted(str(item) for item in sample_metadata)
     descriptors = {
         "SAMPLE_ID_INTERPOLATION_HOLDOUT": {cid: cid for cid in ids},
@@ -115,6 +140,42 @@ def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any
             cid: canonical_formula(str(sample_metadata[cid].get("target_compound", "")))
             for cid in ids
         },
+        "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT": {
+            cid: canonical_elemental_system(str(sample_metadata[cid].get("target_compound", "")))
+            for cid in ids
+        },
+        "PRECURSOR_ELEMENTAL_SYSTEM_GROUP_HOLDOUT": {
+            cid: json.dumps(sorted({
+                canonical_elemental_system(str(formula))
+                for formula in sample_metadata[cid].get("precursor_formulas", ())
+                if str(formula).strip()
+            }), separators=(",", ":"))
+            for cid in ids
+        },
+        "PRECURSOR_SET_GROUP_HOLDOUT": {
+            cid: json.dumps(tuple(sorted(
+                canonical_formula(str(formula))
+                for formula in sample_metadata[cid].get("precursor_formulas", ())
+                if str(formula).strip()
+            )), separators=(",", ":"))
+            for cid in ids
+        },
+    }
+    family_values = {
+        cid: str(sample_metadata[cid].get("chemical_family", sample_metadata[cid].get("prototype", ""))).strip()
+        for cid in ids
+    }
+    if any(family_values.values()):
+        descriptors["DOCUMENTED_CHEMICAL_FAMILY_GROUP_HOLDOUT"] = family_values
+    metadata_manifest_sha256 = hashlib.sha256(json.dumps(sample_metadata, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")).hexdigest()
+    group_keys = {
+        "SAMPLE_ID_INTERPOLATION_HOLDOUT": "sample_id",
+        "REACTION_SIGNATURE_GROUP_HOLDOUT": "reaction_signature",
+        "TARGET_COMPOUND_GROUP_HOLDOUT": "target_compound",
+        "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT": "target_elemental_system",
+        "PRECURSOR_ELEMENTAL_SYSTEM_GROUP_HOLDOUT": "precursor_elemental_system",
+        "PRECURSOR_SET_GROUP_HOLDOUT": "precursor_set",
+        "DOCUMENTED_CHEMICAL_FAMILY_GROUP_HOLDOUT": "documented_chemical_family",
     }
     protocols: dict[str, dict[str, Any]] = {}
     for name, group_by_id in descriptors.items():
@@ -134,12 +195,16 @@ def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any
         evaluation_ids = sorted(cid for group in evaluation_groups for cid in groups[group])
         protocols[name] = {
             "split_protocol": name,
-            "group_key": "sample_id" if name.startswith("SAMPLE") else "reaction_signature" if name.startswith("REACTION") else "target_compound",
+            "group_key": group_keys[name],
             "calibration_ids": calibration_ids,
             "evaluation_ids": evaluation_ids,
             "group_by_id": dict(group_by_id),
             "calibration_groups": sorted(calibration_groups),
             "evaluation_groups": sorted(evaluation_groups),
+            "calibration_ids_sha256": _id_hash(calibration_ids),
+            "evaluation_ids_sha256": _id_hash(evaluation_ids),
+            "calibration_groups_sha256": _id_hash(sorted(calibration_groups)),
+            "evaluation_groups_sha256": _id_hash(sorted(evaluation_groups)),
             "calibration_count": len(calibration_ids),
             "evaluation_count": len(evaluation_ids),
             "calibration_n": len(calibration_ids),
@@ -162,6 +227,10 @@ def build_group_holdout_protocols(sample_metadata: Mapping[str, Mapping[str, Any
             ),
             "preprocessing_fit_scope": "calibration_ids_only",
             "deterministic_assignment": "SHA256(group_key) parity with deterministic alternating fallback",
+            "group_function": "canonical_formula/reaction_signature/canonical_elemental_system",
+            "group_function_version": "2026-09-08",
+            "metadata_manifest_sha256": metadata_manifest_sha256,
+            "group_size_audit": _group_size_statistics(group_by_id),
         }
     return protocols
 
@@ -280,7 +349,7 @@ class RetrospectiveSharedNuisanceModel:
             metadata={
                 "model_kind": self.model_kind,
                 "model_version": self.model_version,
-                "feature_family": "all_allowed_non_mechanistic_context_features",
+                "feature_family": "all_context_features",
                 "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
                 "fit_ids_sha256": _id_hash(self._fit_ids),
                 "fit_scope": "calibration_ids_only",
@@ -300,7 +369,7 @@ class RetrospectiveSharedNuisanceModel:
             rows.append({
                 "MAE": float(np.mean(np.abs(residual))),
                 "RMSE": float(np.sqrt(np.mean(residual**2))),
-                "NLL": float(-prediction.log_pdf(target, observed_names=prediction.observable_names, measurement_uncertainty=observed.uncertainty)),
+                "NLL": float(-prediction.log_pdf(target, observed_names=prediction.observable_names)),
                 "coverage50": float(np.mean(np.abs(residual) <= _Z50 * std)),
                 "coverage90": float(np.mean(np.abs(residual) <= _Z90 * std)),
             })
@@ -318,12 +387,14 @@ class RetrospectiveSharedNuisanceModel:
             "model_kind": self.model_kind,
             "model_version": self.model_version,
             "feature_indices": list(self.feature_indices),
-            "feature_family": "all_allowed_non_mechanistic_context_features",
+            "feature_family": "all_context_features",
             "ridge_alpha": self.ridge_alpha,
             "fit_ids": list(self._fit_ids),
             "fit_ids_sha256": _id_hash(self._fit_ids),
             "fit_scope": "calibration_ids_only",
             "fitted_modalities": sorted(self._parameters),
+            "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+            "measurement_uncertainty_applied": False,
         }
 
 
@@ -584,7 +655,7 @@ class RetrospectiveCalibratedHypothesisModel:
                 "modality_role": self.modality_role(modality),
                 "likelihood_mode": "shared_nuisance" if self.modality_role(modality) == "SHARED_NUISANCE" else "mechanistic_fitted",
                 "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
-                "measurement_uncertainty_semantics": "additional_measurement_error_only",
+                "measurement_uncertainty_semantics": "raw_extractor_uncertainty_not_added_to_total_predictive_variance",
                 "identifiability": self.identifiability_by_modality.get(modality),
                 "conditioned_on": conditioned_on,
                 "latent_state": self.latent_state(candidate_id, candidate_features),
@@ -599,7 +670,7 @@ class RetrospectiveCalibratedHypothesisModel:
 
     def predict_category_probabilities(self, candidate_id: str, candidate_features: Any | None = None) -> np.ndarray:
         prediction = self.predict_observable_distribution(candidate_id, "OUTCOME_TEST", candidate_features=candidate_features)
-        sigma = float(np.sqrt(prediction.variance[0] + 0.05**2))
+        sigma = float(np.sqrt(prediction.variance[0]))
         utilities = np.asarray([OUTCOME_UTILITIES[category] for category in OUTCOME_CATEGORIES], dtype=np.float64)
         log_weights = -0.5 * ((utilities - prediction.mean[0]) / sigma) ** 2
         log_weights -= np.max(log_weights)
@@ -622,7 +693,6 @@ class RetrospectiveCalibratedHypothesisModel:
         return prediction.log_pdf(
             observable.value,
             observed_names=tuple(observable.observable_names),
-            measurement_uncertainty=observable.uncertainty,
         )
 
     def falsification_signature(self) -> dict[str, list[str]]:
@@ -661,6 +731,8 @@ class RetrospectiveCalibratedHypothesisModel:
             "fitted_modalities": sorted(self._parameters),
             "pooled_nuisance_modalities": sorted(self._pooled),
             "shared_nuisance_model": self.shared_nuisance_model.diagnostics() if self.shared_nuisance_model is not None else None,
+            "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+            "measurement_uncertainty_applied": False,
         }
 
 
@@ -803,6 +875,8 @@ def _metric_record(
         "log_loss": None,
         "per_observable": {},
         "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": False,
     }
     if identifiability.startswith("NOT_") or not evaluation_observations:
         if not evaluation_observations and not identifiability.startswith("NOT_"):
@@ -835,14 +909,10 @@ def _metric_record(
         std = np.sqrt(prediction.variance)
         errors.extend(np.abs(residual).tolist())
         squared_errors.extend((residual**2).tolist())
-        log_densities.append(prediction.log_pdf(target, observed_names=names, measurement_uncertainty=observed.uncertainty))
+        log_densities.append(prediction.log_pdf(target, observed_names=names))
         covered_50.extend((np.abs(residual) <= _Z50 * std).tolist())
         covered_90.extend((np.abs(residual) <= _Z90 * std).tolist())
-        measurement_uncertainty = np.atleast_1d(np.asarray(observed.uncertainty, dtype=np.float64))
-        if measurement_uncertainty.size == 1:
-            measurement_uncertainty = np.full(len(names), float(measurement_uncertainty[0]))
-        total_variance = prediction.variance + measurement_uncertainty ** 2
-        per_nll = 0.5 * (np.log(2.0 * np.pi * total_variance) + residual ** 2 / total_variance)
+        per_nll = 0.5 * (np.log(2.0 * np.pi * prediction.variance) + residual ** 2 / prediction.variance)
         for index, name in enumerate(names):
             row = per_observable[name]
             row["MAE"].append(float(abs(residual[index])))
