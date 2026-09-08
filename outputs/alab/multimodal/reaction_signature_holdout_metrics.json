@@ -75,7 +75,9 @@
         "REFINEMENT",
         "XRD"
       ],
-      "shared_nuisance_model": null
+      "shared_nuisance_model": null,
+      "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+      "measurement_uncertainty_applied": false
     },
     "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
       "hypothesis_id": "H2_COMPOSITION_HOMOGENEITY_LIMITED",
@@ -211,7 +213,7 @@
           47,
           48
         ],
-        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "feature_family": "all_context_features",
         "ridge_alpha": 1.0,
         "fit_ids": [
           "PG_0104",
@@ -722,8 +724,12 @@
         "fitted_modalities": [
           "REFINEMENT",
           "XRD"
-        ]
-      }
+        ],
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
+      },
+      "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+      "measurement_uncertainty_applied": false
     },
     "H3_MORPHOLOGY_KINETICS_LIMITED": {
       "hypothesis_id": "H3_MORPHOLOGY_KINETICS_LIMITED",
@@ -815,7 +821,7 @@
           47,
           48
         ],
-        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "feature_family": "all_context_features",
         "ridge_alpha": 1.0,
         "fit_ids": [
           "PG_0104",
@@ -1326,8 +1332,12 @@
         "fitted_modalities": [
           "REFINEMENT",
           "XRD"
-        ]
-      }
+        ],
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
+      },
+      "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+      "measurement_uncertainty_applied": false
     }
   },
   "per_hypothesis_modality": {
@@ -1339,7 +1349,7 @@
         "N_evaluation": 532,
         "MAE": 4.399689240189953,
         "RMSE": 14.329894575623292,
-        "mean_log_predictive_density": -0.5340502688835433,
+        "mean_log_predictive_density": -0.2290165478187901,
         "coverage_50": 0.6101503759398497,
         "coverage_90": 0.9030075187969925,
         "calibration_error": 0.05657894736842106,
@@ -1349,7 +1359,7 @@
           "XRD.normalized_intensity_std_proxy": {
             "MAE": 0.029782064548653068,
             "RMSE": 0.04229059391789609,
-            "NLL": -1.6238599435854522,
+            "NLL": -1.7319761979839003,
             "coverage50": 0.5808270676691729,
             "coverage90": 0.8778195488721805,
             "calibration_error": 0.05150375939849622,
@@ -1362,7 +1372,7 @@
           "XRD.dominant_peak_index_fraction": {
             "MAE": 0.0632678663251549,
             "RMSE": 0.10596407504486796,
-            "NLL": -0.8204494019398004,
+            "NLL": -0.8204073954385275,
             "coverage50": 0.6860902255639098,
             "coverage90": 0.9285714285714286,
             "calibration_error": 0.10733082706766917,
@@ -1375,7 +1385,7 @@
           "XRD.global_halfmax_span_proxy": {
             "MAE": 0.13870071183452398,
             "RMSE": 0.1890994964598658,
-            "NLL": -0.24397562042600282,
+            "NLL": -0.23675389589257628,
             "coverage50": 0.5488721804511278,
             "coverage90": 0.9229323308270677,
             "calibration_error": 0.03590225563909777,
@@ -1388,7 +1398,7 @@
           "XRD.spectral_entropy": {
             "MAE": 0.027608082949740043,
             "RMSE": 0.03689278051577214,
-            "NLL": -1.6756412281988782,
+            "NLL": -1.8799769916660267,
             "coverage50": 0.5883458646616542,
             "coverage90": 0.8966165413533834,
             "calibration_error": 0.045864661654135386,
@@ -1401,7 +1411,7 @@
           "XRD.peak_count_proxy": {
             "MAE": 21.739087475291694,
             "RMSE": 32.041836029885054,
-            "NLL": 4.897976463033677,
+            "NLL": 4.898131028799821,
             "coverage50": 0.6466165413533834,
             "coverage90": 0.8890977443609023,
             "calibration_error": 0.07875939849624058,
@@ -1412,7 +1422,9 @@
             "NRMSE": 0.2305168059703961
           }
         },
-        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "REFINEMENT": {
         "status": "CALIBRATED_DIRECT_STRUCTURAL",
@@ -1421,7 +1433,7 @@
         "N_evaluation": 479,
         "MAE": 0.21163354002203777,
         "RMSE": 0.29311542097545473,
-        "mean_log_predictive_density": -0.34747939297942954,
+        "mean_log_predictive_density": -0.3583164906295163,
         "coverage_50": 0.6069937369519833,
         "coverage_90": 0.9029227557411273,
         "calibration_error": 0.05495824634655533,
@@ -1431,7 +1443,7 @@
           "REFINEMENT.target_phase_fraction": {
             "MAE": 0.044049160564476976,
             "RMSE": 0.13017499039604885,
-            "NLL": -0.6210046065459209,
+            "NLL": -0.6188161533352668,
             "coverage50": 0.9603340292275574,
             "coverage90": 0.9665970772442589,
             "calibration_error": 0.26346555323590815,
@@ -1444,7 +1456,7 @@
           "REFINEMENT.precursor_phase_fraction": {
             "MAE": 0.2773397536003257,
             "RMSE": 0.3322769358288921,
-            "NLL": 0.316984878086849,
+            "NLL": 0.3171712052167303,
             "coverage50": 0.5135699373695198,
             "coverage90": 0.8768267223382046,
             "calibration_error": 0.01837160751565764,
@@ -1457,7 +1469,7 @@
           "REFINEMENT.other_identified_phase_fraction": {
             "MAE": 0.2759953251434921,
             "RMSE": 0.33197011910223434,
-            "NLL": 0.316275206056773,
+            "NLL": 0.31666110892295973,
             "coverage50": 0.5135699373695198,
             "coverage90": 0.8810020876826722,
             "calibration_error": 0.016283924843423836,
@@ -1470,7 +1482,7 @@
           "REFINEMENT.rwp_scaled": {
             "MAE": 0.24914992077985637,
             "RMSE": 0.3257436873820756,
-            "NLL": 0.3352239153817284,
+            "NLL": 0.343300329825093,
             "coverage50": 0.4405010438413361,
             "coverage90": 0.8872651356993737,
             "calibration_error": 0.03611691022964511,
@@ -1481,7 +1493,9 @@
             "NRMSE": 0.17126376833968224
           }
         },
-        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_LINKED",
@@ -1490,17 +1504,17 @@
         "N_evaluation": 525,
         "MAE": 0.34366927591721713,
         "RMSE": 0.37737701306769916,
-        "mean_log_predictive_density": -0.44500773886108047,
+        "mean_log_predictive_density": -0.4449675987378045,
         "coverage_50": 0.26095238095238094,
         "coverage_90": 0.9523809523809523,
         "calibration_error": 0.14571428571428569,
-        "Brier": 0.1967890987084577,
-        "log_loss": 1.4435494176411114,
+        "Brier": 0.19714276658950639,
+        "log_loss": 1.4460521408505722,
         "per_observable": {
           "OUTCOME.reaction_outcome_utility": {
             "MAE": 0.34366927591721713,
             "RMSE": 0.37737701306769916,
-            "NLL": 0.44500773886108047,
+            "NLL": 0.4449675987378045,
             "coverage50": 0.26095238095238094,
             "coverage90": 0.9523809523809523,
             "calibration_error": 0.14571428571428569,
@@ -1511,7 +1525,9 @@
             "NRMSE": 0.37737701306769916
           }
         },
-        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1527,7 +1543,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1543,7 +1561,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       }
     },
     "H2_COMPOSITION_HOMOGENEITY_LIMITED": {
@@ -1561,7 +1581,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "REFINEMENT": {
         "status": "NOT_IDENTIFIABLE_FROM_AVAILABLE_DATA",
@@ -1577,7 +1599,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_PROXY_WEAK",
@@ -1586,17 +1610,17 @@
         "N_evaluation": 525,
         "MAE": 0.2720442429655454,
         "RMSE": 0.3332414307174196,
-        "mean_log_predictive_density": -0.3245955007643711,
+        "mean_log_predictive_density": -0.3265385900454077,
         "coverage_50": 0.43238095238095237,
         "coverage_90": 0.8742857142857143,
         "calibration_error": 0.04666666666666666,
-        "Brier": 0.1763669421629313,
-        "log_loss": 1.3150365812146725,
+        "Brier": 0.17668668108532481,
+        "log_loss": 1.3196261192615524,
         "per_observable": {
           "OUTCOME.reaction_outcome_utility": {
             "MAE": 0.2720442429655454,
             "RMSE": 0.3332414307174196,
-            "NLL": 0.3245955007643711,
+            "NLL": 0.3265385900454077,
             "coverage50": 0.43238095238095237,
             "coverage90": 0.8742857142857143,
             "calibration_error": 0.04666666666666666,
@@ -1607,7 +1631,9 @@
             "NRMSE": 0.3332414307174196
           }
         },
-        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS"
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_PASS",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1623,7 +1649,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1639,7 +1667,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       }
     },
     "H3_MORPHOLOGY_KINETICS_LIMITED": {
@@ -1657,7 +1687,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "REFINEMENT": {
         "status": "NOT_IDENTIFIABLE_FROM_AVAILABLE_DATA",
@@ -1673,7 +1705,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "OUTCOME_TEST": {
         "status": "CALIBRATED_OUTCOME_PROXY_WEAK",
@@ -1682,17 +1716,17 @@
         "N_evaluation": 525,
         "MAE": 0.3484229316574413,
         "RMSE": 0.38099970092603497,
-        "mean_log_predictive_density": -0.4541919247802191,
+        "mean_log_predictive_density": -0.4540481918745107,
         "coverage_50": 0.26666666666666666,
         "coverage_90": 0.9809523809523809,
         "calibration_error": 0.1571428571428571,
-        "Brier": 0.19833300848899987,
-        "log_loss": 1.4561140650260063,
+        "Brier": 0.1986894030078463,
+        "log_loss": 1.458589260593455,
         "per_observable": {
           "OUTCOME.reaction_outcome_utility": {
             "MAE": 0.3484229316574413,
             "RMSE": 0.38099970092603497,
-            "NLL": 0.4541919247802191,
+            "NLL": 0.4540481918745107,
             "coverage50": 0.26666666666666666,
             "coverage90": 0.9809523809523809,
             "calibration_error": 0.1571428571428571,
@@ -1703,7 +1737,9 @@
             "NRMSE": 0.38099970092603497
           }
         },
-        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL"
+        "calibration_coverage_status": "CALIBRATION_COVERAGE_FAIL",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "SEM": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1719,7 +1755,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "EDS": {
         "status": "NOT_EVALUATED_INSUFFICIENT_LINKAGE",
@@ -1735,7 +1773,9 @@
         "Brier": null,
         "log_loss": null,
         "per_observable": {},
-        "calibration_coverage_status": "NOT_EVALUATED"
+        "calibration_coverage_status": "NOT_EVALUATED",
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       }
     }
   },
@@ -1793,6 +1833,25 @@
   "calibration_group_n": 502,
   "evaluation_group_n": 533,
   "sample_overlap": [],
+  "calibration_ids_sha256": "41e17d07d64937023b60e6bf925638c6c616c8ae77a0e97b30e1bbf462e40b3c",
+  "evaluation_ids_sha256": "7876c926914bd7f0816ec219ab9ee14d559e92fd0bc39da3f10a49d5d41f5858",
+  "calibration_groups_sha256": "3787863853173a126bf73027466596793e8e1b89172456cdcfe9c949045cfa46",
+  "evaluation_groups_sha256": "e043bed9277b28bdb55731809683d9e1c7006a5880f54a2c2e8b08bf607c40f3",
+  "metadata_manifest_sha256": "aee1fc72624ee404ad2b343e2271cb118ba727d881b4074371b7209d40fd3284",
+  "group_function": "canonical_formula/reaction_signature/canonical_elemental_system",
+  "group_function_version": "2026-09-08",
+  "group_size_audit": {
+    "number_of_groups": 1035,
+    "number_of_samples": 1035,
+    "mean_group_size": 1.0,
+    "median_group_size": 1.0,
+    "p90_group_size": 1.0,
+    "max_group_size": 1,
+    "fraction_singleton_groups": 1.0,
+    "fraction_samples_in_singleton_groups": 1.0,
+    "number_of_groups_with_size_at_least_2": 0,
+    "number_of_groups_with_size_at_least_5": 0
+  },
   "preprocessing_fit_scope": "calibration_ids_only",
   "evaluation_loaded_after_fit": true,
   "shared_nuisance_model": {
@@ -1849,7 +1908,7 @@
       47,
       48
     ],
-    "feature_family": "all_allowed_non_mechanistic_context_features",
+    "feature_family": "all_context_features",
     "ridge_alpha": 1.0,
     "fit_ids": [
       "PG_0104",
@@ -2360,7 +2419,9 @@
     "fitted_modalities": [
       "REFINEMENT",
       "XRD"
-    ]
+    ],
+    "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+    "measurement_uncertainty_applied": false
   },
   "shared_nuisance_comparison": {
     "status": "PASS",
@@ -2418,7 +2479,7 @@
         47,
         48
       ],
-      "feature_family": "all_allowed_non_mechanistic_context_features",
+      "feature_family": "all_context_features",
       "ridge_alpha": 1.0,
       "fit_ids": [
         "PG_0104",
@@ -2930,6 +2991,8 @@
         "REFINEMENT",
         "XRD"
       ],
+      "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+      "measurement_uncertainty_applied": false,
       "training_N": 502,
       "evaluation_N": 1011
     },
@@ -2943,21 +3006,25 @@
           "evaluation_N": 532,
           "MAE": 4.436393206193473,
           "RMSE": 14.359788331017032,
-          "NLL": 2.8265424965306094,
-          "coverage50": 0.8530075187969924,
-          "coverage90": 0.9631578947368421
+          "NLL": 2.7641824041368355,
+          "coverage50": 0.8045112781954887,
+          "coverage90": 0.9620300751879699,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         },
         "shared_predictive_nuisance": {
           "modality": "XRD",
           "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
-          "feature_family": "all_allowed_non_mechanistic_context_features",
+          "feature_family": "all_context_features",
           "training_N": 502,
           "evaluation_N": 532,
           "MAE": 3.6018055421920563,
           "RMSE": 10.68880686595116,
-          "NLL": -0.1759611348334602,
-          "coverage50": 0.6815789473684211,
-          "coverage90": 0.931203007518797
+          "NLL": -0.6847143569955567,
+          "coverage50": 0.5721804511278196,
+          "coverage90": 0.899624060150376,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         },
         "H1_scientific_structural_model": {
           "modality": "XRD",
@@ -2967,9 +3034,11 @@
           "evaluation_N": 532,
           "MAE": 4.399689240189953,
           "RMSE": 14.329894575623292,
-          "NLL": 0.5340502688835433,
-          "coverage50": 0.693984962406015,
-          "coverage90": 0.9421052631578948
+          "NLL": 0.2290165478187901,
+          "coverage50": 0.6101503759398497,
+          "coverage90": 0.9030075187969925,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         }
       },
       "REFINEMENT": {
@@ -2981,21 +3050,25 @@
           "evaluation_N": 479,
           "MAE": 0.2246280470359823,
           "RMSE": 0.3065115786404863,
-          "NLL": 0.6418366462525668,
-          "coverage50": 0.49373695198329853,
-          "coverage90": 0.9039665970772442
+          "NLL": 0.63326101405875,
+          "coverage50": 0.48956158663883087,
+          "coverage90": 0.9008350730688935,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         },
         "shared_predictive_nuisance": {
           "modality": "REFINEMENT",
           "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
-          "feature_family": "all_allowed_non_mechanistic_context_features",
+          "feature_family": "all_context_features",
           "training_N": 502,
           "evaluation_N": 479,
           "MAE": 0.1545745736665848,
           "RMSE": 0.23308525037296435,
-          "NLL": -0.3957542489739684,
-          "coverage50": 0.6080375782881002,
-          "coverage90": 0.9050104384133612
+          "NLL": -0.36012802982675474,
+          "coverage50": 0.5955114822546973,
+          "coverage90": 0.8992693110647182,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         },
         "H1_scientific_structural_model": {
           "modality": "REFINEMENT",
@@ -3005,9 +3078,11 @@
           "evaluation_N": 479,
           "MAE": 0.21163354002203777,
           "RMSE": 0.29311542097545473,
-          "NLL": 0.34747939297942954,
-          "coverage50": 0.6122129436325678,
-          "coverage90": 0.9050104384133612
+          "NLL": 0.3583164906295163,
+          "coverage50": 0.6069937369519833,
+          "coverage90": 0.9029227557411273,
+          "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+          "measurement_uncertainty_applied": false
         }
       }
     },

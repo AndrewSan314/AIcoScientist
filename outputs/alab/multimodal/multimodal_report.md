@@ -8,11 +8,15 @@
 - Scientific methodology: `CONTROLLED_CLEAN_AND_STRESS_METHODOLOGY_VALIDATED`
 - Release readiness: `PENDING_EXTERNAL_CI` (external CI: `NOT_INSPECTED`)
 - Clean distribution consistency: `PASS`
+- Clean boundary point-mass check: `False`
 - Shared structural nuisance: `PASS`
+- Real-data variance convention: `PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE`
 - Posterior concentration warning: `PASS` (sample-product evidence is chemistry-correlated)
 - Sample interpolation: `SAMPLE_ID_INTERPOLATION_HOLDOUT` (510 calibration / 525 evaluation)
 - Reaction group holdout: `REACTION_SIGNATURE_GROUP_HOLDOUT`
 - Target holdout: `TARGET_COMPOUND_GROUP_HOLDOUT`
+- Chemistry family holdout: `TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT` (`CHEMISTRY_FAMILY_GENERALIZATION_NOT_ESTABLISHED`)
+- HIG trajectory sensitivity: `USE_32_FOR_FULL_MATRIX`
 - SEM/EDS candidate actions: disabled because archives are precursor-level and not canonically linked to sample IDs.
 - Scope: retrospective historical replay only; no prospective or causal claim.
 - H1 structural metrics are held-out evaluation metrics; H2/H3 mechanistic components remain explicitly weakly identified or not identifiable.

@@ -11,6 +11,9 @@
     "sample_interpolation_status": "A_LAB_SAMPLE_INTERPOLATION_EVALUATED",
     "reaction_group_generalization_status": "A_LAB_GROUP_GENERALIZATION_EVALUATED",
     "target_generalization_status": "A_LAB_GROUP_GENERALIZATION_EVALUATED",
+    "chemistry_generalization_status": "CHEMISTRY_FAMILY_GENERALIZATION_NOT_ESTABLISHED",
+    "HIG_trajectory_sensitivity_status": "USE_32_FOR_FULL_MATRIX",
+    "real_data_uncertainty_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
     "retrospective_model_evaluation_status": "A_LAB_MODELS_EVALUATED",
     "calibration_coverage_status": "A_LAB_CALIBRATION_PARTIAL",
     "real_policy_replay_status": "METHODOLOGY_VALID",
@@ -36,6 +39,8 @@
     "stress_world_methodology_gate": "PASS",
     "full_policy_matrix_gate": "PASS",
     "group_generalization_methodology_gate": "PASS",
+    "chemistry_group_audit_gate": "PASS",
+    "chemistry_family_generalization_gate": "FAIL",
     "threshold_metric_semantics_gate": "PASS",
     "split_metadata_consistency_gate": "PASS",
     "shared_nuisance_fit_scope_gate": "PASS",
@@ -47,6 +52,7 @@
     "raw_HIG_upper_bound_gate": "PASS",
     "HIG_rank_stability_gate": "PASS",
     "HIG_order_invariance_gate": "PASS",
+    "HIG_trajectory_sensitivity_gate": "PASS",
     "policy_distinction_gate": "PASS",
     "hybrid_formula_gate": "PASS",
     "discovery_hig_conflict_gate": "PASS",
@@ -92,8 +98,8 @@
       "EDS"
     ],
     "calibration_evaluation_disjoint": true,
-    "boolean_gate_count": 47,
-    "boolean_gate_pass_count": 46,
+    "boolean_gate_count": 50,
+    "boolean_gate_pass_count": 48,
     "hig_raw_bound_violation_count": 0
   }
 }

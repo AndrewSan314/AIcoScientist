@@ -54,7 +54,7 @@
       47,
       48
     ],
-    "feature_family": "all_allowed_non_mechanistic_context_features",
+    "feature_family": "all_context_features",
     "ridge_alpha": 1.0,
     "fit_ids": [
       "PG_0102",
@@ -574,6 +574,8 @@
       "REFINEMENT",
       "XRD"
     ],
+    "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+    "measurement_uncertainty_applied": false,
     "training_N": 510,
     "evaluation_N": 1006
   },
@@ -587,21 +589,25 @@
         "evaluation_N": 524,
         "MAE": 4.4446422724314525,
         "RMSE": 14.12521028261505,
-        "NLL": 2.790431156510164,
-        "coverage50": 0.8076335877862595,
-        "coverage90": 0.9641221374045802
+        "NLL": 2.726929070528523,
+        "coverage50": 0.7984732824427481,
+        "coverage90": 0.9641221374045802,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "shared_predictive_nuisance": {
         "modality": "XRD",
         "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
-        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "feature_family": "all_context_features",
         "training_N": 510,
         "evaluation_N": 524,
         "MAE": 3.552527611706476,
         "RMSE": 10.44026320648859,
-        "NLL": -0.21704902926081468,
-        "coverage50": 0.683587786259542,
-        "coverage90": 0.9385496183206107
+        "NLL": -0.7298111272162898,
+        "coverage50": 0.565648854961832,
+        "coverage90": 0.9,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "H1_scientific_structural_model": {
         "modality": "XRD",
@@ -611,9 +617,11 @@
         "evaluation_N": 524,
         "MAE": 4.299477969932813,
         "RMSE": 14.023595700389471,
-        "NLL": 0.4890987791835322,
-        "coverage50": 0.6946564885496184,
-        "coverage90": 0.9381679389312977
+        "NLL": 0.1524618620394693,
+        "coverage50": 0.6080152671755725,
+        "coverage90": 0.9026717557251909,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       }
     },
     "REFINEMENT": {
@@ -625,21 +633,25 @@
         "evaluation_N": 482,
         "MAE": 0.22009384925866735,
         "RMSE": 0.2966003985259419,
-        "NLL": 0.47770071699500066,
-        "coverage50": 0.5062240663900415,
-        "coverage90": 0.9216804979253111
+        "NLL": 0.45917702097904267,
+        "coverage50": 0.5036307053941909,
+        "coverage90": 0.9206431535269709,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "shared_predictive_nuisance": {
         "modality": "REFINEMENT",
         "model_type": "RETROSPECTIVE_SHARED_PREDICTIVE_NUISANCE_RIDGE",
-        "feature_family": "all_allowed_non_mechanistic_context_features",
+        "feature_family": "all_context_features",
         "training_N": 510,
         "evaluation_N": 482,
         "MAE": 0.15917532415059174,
         "RMSE": 0.23606650825736838,
-        "NLL": -0.4596617297309117,
-        "coverage50": 0.5876556016597511,
-        "coverage90": 0.8973029045643154
+        "NLL": -0.45765365851031947,
+        "coverage50": 0.5793568464730291,
+        "coverage90": 0.8931535269709544,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       },
       "H1_scientific_structural_model": {
         "modality": "REFINEMENT",
@@ -649,9 +661,11 @@
         "evaluation_N": 482,
         "MAE": 0.20781925689953556,
         "RMSE": 0.28168852156783997,
-        "NLL": 0.14750974756367538,
-        "coverage50": 0.6063278008298755,
-        "coverage90": 0.933091286307054
+        "NLL": 0.13166510219573863,
+        "coverage50": 0.6021784232365145,
+        "coverage90": 0.9294605809128631,
+        "variance_convention": "PREDICTIVE_VARIANCE_IS_TOTAL_OBSERVATION_VARIANCE",
+        "measurement_uncertainty_applied": false
       }
     }
   },
