@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SnapshotData, CampaignStep, ScoredActionRecord } from '../types/mission_control';
 import { ModeBadge } from '../components/ModeBadge';
+import { StarkHologramSphere } from '../components/StarkHologramSphere';
 import { 
   Lock, 
   Unlock, 
@@ -18,7 +19,8 @@ import {
   BarChart2, 
   Info,
   Clock,
-  Fingerprint
+  Fingerprint,
+  Zap
 } from 'lucide-react';
 
 interface DecisionCockpitViewProps {
@@ -40,6 +42,8 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [showWhyNot, setShowWhyNot] = useState<boolean>(false);
   const [counterfactualPolicy, setCounterfactualPolicy] = useState<string>('HYBRID');
+  const [candidateViewMode, setCandidateViewMode] = useState<'3D_STARK' | '2D_GRID'>('3D_STARK');
+  const [isHologramScanning, setIsHologramScanning] = useState<boolean>(false);
 
   const currentStepNum = controlledStep !== undefined ? controlledStep : internalStep;
 
@@ -405,52 +409,96 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
         {/* Center Zone: Candidate x Measurement Landscape (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
           <div className="sci-card p-4">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
                 <FlaskConical className="w-4 h-4 text-emerald-700" />
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Candidate Space</h2>
               </div>
-              <span className="text-2xs font-mono text-slate-500">
-                {selectedCampaignType === 'controlled' ? '12 Controlled Syn' : 'A-Lab Synthesis Library'}
-              </span>
+
+              {/* View Mode Toggle: 3D Stark Lattice vs 2D Matrix */}
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                <button
+                  onClick={() => setCandidateViewMode('3D_STARK')}
+                  className={`px-2 py-1 rounded text-2xs font-mono font-bold flex items-center gap-1 transition cursor-pointer ${
+                    candidateViewMode === '3D_STARK'
+                      ? 'bg-slate-900 text-cyan-300 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="Iron Man 2 Holographic 3D Atomic Lattice"
+                >
+                  <Zap className="w-3 h-3 text-amber-400" />
+                  <span>3D Stark Lattice</span>
+                </button>
+                <button
+                  onClick={() => setCandidateViewMode('2D_GRID')}
+                  className={`px-2 py-1 rounded text-2xs font-mono font-bold flex items-center gap-1 transition cursor-pointer ${
+                    candidateViewMode === '2D_GRID'
+                      ? 'bg-slate-900 text-cyan-300 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  title="2D Candidate Grid Matrix"
+                >
+                  <span>2D Grid</span>
+                </button>
+              </div>
             </div>
+
             <p className="text-xs text-slate-500 mb-3">
-              Candidate materials with multi-modal action feasibility and characterization history.
+              {candidateViewMode === '3D_STARK'
+                ? 'Holographic 3D spherical atomic lattice projecting candidate precursor formulations with real-time target locking.'
+                : 'Candidate materials with multi-modal action feasibility and characterization history.'}
             </p>
 
-            {/* Candidate Grid */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
-              {(data.flagship_campaign.candidates || []).map((cand) => {
-                const isCurrentActionCand = cand.candidate_id === action?.candidate_id;
-                const isSelected = cand.candidate_id === selectedCandidateId;
+            {/* 3D Stark Hologram View */}
+            {candidateViewMode === '3D_STARK' ? (
+              <div className="space-y-3 mb-4">
+                <StarkHologramSphere
+                  candidates={data.flagship_campaign.candidates || []}
+                  selectedCandidateId={selectedCandidateId || action?.candidate_id}
+                  onSelectCandidate={(id) => setSelectedCandidateId(id)}
+                  currentStep={currentStepData}
+                  isScanning={isHologramScanning}
+                  onScanComplete={(winner) => {
+                    setIsHologramScanning(false);
+                    setSelectedCandidateId(winner);
+                  }}
+                />
+              </div>
+            ) : (
+              /* 2D Candidate Grid */
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
+                {(data.flagship_campaign.candidates || []).map((cand) => {
+                  const isCurrentActionCand = cand.candidate_id === action?.candidate_id;
+                  const isSelected = cand.candidate_id === selectedCandidateId;
 
-                return (
-                  <button
-                    key={cand.candidate_id}
-                    onClick={() => setSelectedCandidateId(cand.candidate_id)}
-                    className={`p-2 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
-                      isCurrentActionCand
-                        ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-400'
-                        : isSelected
-                        ? 'border-slate-400 bg-slate-100'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-2xs font-bold text-slate-900">
-                        {cand.candidate_id.replace('controlled-', 'Syn-')}
-                      </span>
-                      {isCurrentActionCand && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" title="Next action target" />
-                      )}
-                    </div>
-                    <div className="text-2xs text-slate-500 mt-1">
-                      {cand.composition_label}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                  return (
+                    <button
+                      key={cand.candidate_id}
+                      onClick={() => setSelectedCandidateId(cand.candidate_id)}
+                      className={`p-2 rounded-lg border text-left transition cursor-pointer flex flex-col justify-between ${
+                        isCurrentActionCand
+                          ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-400'
+                          : isSelected
+                          ? 'border-slate-400 bg-slate-100'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-2xs font-bold text-slate-900">
+                          {cand.candidate_id.replace('controlled-', 'Syn-')}
+                        </span>
+                        {isCurrentActionCand && (
+                          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" title="Next action target" />
+                        )}
+                      </div>
+                      <div className="text-2xs text-slate-500 mt-1">
+                        {cand.composition_label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Selected Candidate Inspector */}
             {selectedCandidateId && (
