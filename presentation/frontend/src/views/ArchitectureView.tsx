@@ -44,7 +44,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
       {/* GlowBal Header */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">
             System Abstractions & Auditability
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -58,7 +58,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
                   onClick={() => setActiveSubTab('architecture')}
                   className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
                     activeSubTab === 'architecture'
-                      ? 'bg-white text-emerald-800 shadow-xs font-bold'
+                      ? 'bg-white text-red-800 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -68,7 +68,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
                   onClick={() => setActiveSubTab('ledger')}
                   className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
                     activeSubTab === 'ledger'
-                      ? 'bg-white text-emerald-800 shadow-xs font-bold'
+                      ? 'bg-white text-red-800 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -91,7 +91,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
                   01
                 </span>
                 <div>
@@ -103,16 +103,16 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {arch.core_abstractions.map((item, idx) => (
-                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2 hover:border-emerald-300 transition">
+                <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2 hover:border-red-300 transition">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs font-bold text-slate-900">{item.name}</span>
-                    <span className="text-2xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 truncate max-w-[180px]" title={item.file}>
+                    <span className="text-2xs font-mono px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 truncate max-w-[180px]" title={item.file}>
                       {item.file}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">{item.role}</p>
                   <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 text-2xs font-mono text-slate-400">
-                    <Code className="w-3 h-3 text-emerald-600" />
+                    <Code className="w-3 h-3 text-red-600" />
                     <span>Contract Interface</span>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
           <section className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
                   02
                 </span>
                 <div>
@@ -150,7 +150,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
                     </div>
                     <div>
                       <span className="text-slate-500">Candidate Pool: </span>
-                      <span className="font-mono font-bold text-emerald-800">{dom.candidates_count.toLocaleString()}</span>
+                      <span className="font-mono font-bold text-red-800">{dom.candidates_count.toLocaleString()}</span>
                     </div>
                     <div>
                       <span className="text-slate-500">Modalities: </span>
@@ -167,7 +167,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
         <section className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
                 01
               </span>
               <div>
@@ -202,7 +202,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
                   onClick={() => setSelectedEventIndex(idx)}
                   className={`w-full p-3 rounded-xl border text-left transition cursor-pointer text-xs space-y-1 ${
                     selectedEventIndex === idx
-                      ? 'border-emerald-500 bg-emerald-50/50 shadow-2xs'
+                      ? 'border-red-500 bg-red-50/50 shadow-2xs'
                       : 'border-slate-100 bg-white hover:border-slate-200'
                   }`}
                 >
@@ -229,7 +229,7 @@ export const ArchitectureView: React.FC<ArchitectureViewProps> = ({ data }) => {
                   onClick={handleCopyJson}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-2xs transition cursor-pointer"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-red-600" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
                   <span>{copied ? 'Copied JSON!' : 'Copy JSON'}</span>
                 </button>
               </div>

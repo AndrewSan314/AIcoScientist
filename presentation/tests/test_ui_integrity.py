@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -76,7 +76,7 @@ def test_alab_sample_provenance_and_count(snapshot):
     for s in samples:
         assert s.get("source_archive") == "data/external/precursor_genome_2026/ledger_precursor_genome.json"
         assert s.get("source_record_identifier") == s["sample_id"]
-        assert s.get("extractor_name") == "ALabDomainAdapter.canonical_extractor"
+        assert s.get("extractor_name") == "ALabSourceLedgerExtractor.direct_v1"
         assert isinstance(s.get("precursors"), list)
 
 
@@ -131,6 +131,100 @@ def test_step_1_counterfactual_policy_rankings(snapshot):
     assert disc_sorted[0]["normalized_discovery"] == 1.0
 
 
+def test_predictive_distribution_action_binding(snapshot):
+    """Verify predictive distributions are strictly bound to preregistered actions."""
+    flagship = snapshot["flagship_campaign"]
+    for step in flagship["steps"]:
+        s_num = step["step"]
+        prereg = step["preregistration"]
+        selected_candidate = prereg["action"]["candidate_id"]
+        selected_modality = prereg["action"]["action_type"]
+
+        dists = prereg["predictive_distributions"]
+        assert len(dists) == 3, f"Step {s_num} must have exactly 3 hypothesis distributions"
+
+        for hid, dist in dists.items():
+            assert dist["candidate_id"] == selected_candidate
+            assert dist["modality"] == selected_modality
+            # Strictly positive variances
+            for v in dist.get("variance", []):
+                assert v > 0, f"Step {s_num} {hid} non-positive variance: {v}"
+
+        # In all_scored_actions, non-selected actions must be marked unavailable
+        for act in step.get("all_scored_actions", []):
+            cid = act["action"]["candidate_id"]
+            mtype = act["action"]["action_type"]
+            if cid == selected_candidate and mtype == selected_modality:
+                assert act.get("predictive_distribution_available") is True
+            else:
+                assert act.get("predictive_distribution_available") is False
+                assert "predictive_distribution_unavailability_reason" in act
+
+
+def test_belief_continuity_and_sequence_ordering(snapshot):
+    flagship = snapshot["flagship_campaign"]
+    init_beliefs = flagship["initial_beliefs"]
+    prev_beliefs = init_beliefs
+
+    for step in flagship["steps"]:
+        s_num = step["step"]
+        prereg = step["preregistration"]
+        obs = step["observation"]
+        upd = step["belief_update"]
+
+        # Sequence ordering
+        assert prereg["event_sequence"] < obs["event_sequence"] < upd["event_sequence"]
+
+        # Action consistency
+        assert prereg["action"]["candidate_id"] == obs["action"]["candidate_id"]
+        assert prereg["action"]["action_type"] == obs["action"]["action_type"]
+
+        # Belief continuity
+        prior = prereg["beliefs_before"]
+        for hid, p_val in prior.items():
+            assert abs(p_val - prev_beliefs[hid]) < 1e-4
+
+        post = upd["beliefs_after"]
+        assert abs(sum(post.values()) - 1.0) < 1e-4
+        prev_beliefs = post
+
+
+def test_tested_candidates_before_tracking(snapshot):
+    steps = snapshot["flagship_campaign"]["steps"]
+    tested_so_far = []
+    for step in steps:
+        assert step.get("tested_candidates_before") == tested_so_far
+        cand = step["preregistration"]["action"]["candidate_id"]
+        if cand not in tested_so_far:
+            tested_so_far.append(cand)
+
+
+def test_benchmark_claims_grounded_in_artifacts(snapshot):
+    benchmarks = snapshot["benchmarks"]
+    assert benchmarks["status"] == "METHODOLOGY_VALID"
+    assert benchmarks["trajectory_count"] == 180
+
+    swp = benchmarks["summary_by_world_policy"]
+
+    # Q1: Clean H1 MAP recovery is 1.0 (100%)
+    clean_h1_hybrid = swp["CLEAN_WORLD_H1_PHASE_PURITY"]["HYBRID"]
+    assert clean_h1_hybrid["recovery_rate_MAP"] == 1.0
+    clean_h2_hybrid = swp["CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"]["HYBRID"]
+    assert clean_h2_hybrid["recovery_rate_MAP"] == 1.0
+
+    # Q3: Hybrid vs Pure HIG cost reduction in Clean H1: 1.95 down to 1.55 (20.5% reduction)
+    h1_cost_pure = swp["CLEAN_WORLD_H1_PHASE_PURITY"]["PURE_HIG"]["mean_measurement_cost"]
+    h1_cost_hybrid = clean_h1_hybrid["mean_measurement_cost"]
+    h1_reduction = (h1_cost_pure - h1_cost_hybrid) / h1_cost_pure
+    assert 0.20 < h1_reduction < 0.21
+
+    # Q4: Calibration coverage
+    calib = snapshot["calibration"]
+    xrd_calib = calib["XRD"]["XRD.normalized_intensity_std_proxy"]
+    assert abs(xrd_calib["coverage50"] - 0.601) < 0.01
+    assert abs(xrd_calib["coverage90"] - 0.914) < 0.01
+
+
 def test_no_synthetic_fabrications_or_fake_constants():
     frontend_src = ROOT / "presentation" / "frontend" / "src"
     ts_files = list(frontend_src.rglob("*.tsx")) + list(frontend_src.rglob("*.ts"))
@@ -141,6 +235,15 @@ def test_no_synthetic_fabrications_or_fake_constants():
         (r"i\s*%\s*5\s*===\s*0", "Fake i % 5 tested selection"),
         (r"VoI:\s*\+0\.482", "Hardcoded fake VoI string"),
         (r"SYNTHESIZE NEXT ELEMENT", "Old misleading synthesis button"),
+        (r"0\.746", "Synthetic HIG normalization fallback 0.746"),
+        (r"0\.978", "Synthetic discovery normalization fallback 0.978"),
+        (r"0\.5066", "Synthetic raw HIG fallback 0.5066"),
+        (r"0\.2861", "Synthetic net score fallback 0.2861"),
+        (r"0\.536", "Synthetic HIG fallback 0.536"),
+        (r"0\.7886", "Synthetic latent max fallback 0.7886"),
+        (r"\?\?\s*0\.88", "Synthetic utility fallback 0.88"),
+        (r"\?\?\s*0\.3333", "Synthetic prior fallback 0.3333"),
+        (r"\?\?\s*['\"]1\.0['\"]", "Synthetic string cost fallback '1.0'"),
     ]
 
     for fpath in ts_files:
@@ -148,3 +251,4 @@ def test_no_synthetic_fabrications_or_fake_constants():
         for pat, desc in forbidden_patterns:
             matches = re.findall(pat, text)
             assert not matches, f"Found forbidden pattern '{desc}' in {fpath.name}: {matches}"
+

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """presentation/scripts/preflight_check.py
 
 Automated comprehensive preflight checker for AIcoScientist Discovery Mission Control.
@@ -81,25 +81,38 @@ def main():
 
     all_ok &= check("Source Artifact Hashes", hash_mismatches == 0, f"{len(hashes) - hash_mismatches}/{len(hashes)} verified")
 
-    # 3. Authentic Samples
+    # 3. Runtime Schema & Scientific Invariant Validation
+    val_proc = subprocess.run(
+        [sys.executable, str(PRESENTATION_DIR / "scripts" / "validate_snapshot.py")],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+    )
+    val_passed = val_proc.returncode == 0
+    all_ok &= check("Runtime Schema & Invariants", val_passed, "All scientific invariants verified" if val_passed else (val_proc.stderr or val_proc.stdout)[:80].strip())
+
+    # 4. Authentic Samples
     sample_count = len(snapshot.get("samples", []))
     all_ok &= check("Physical Sample Catalog", sample_count == 1035, f"{sample_count} authentic A-Lab records")
 
-    # 4. Frontend Production Build
+    # 5. Frontend Production Build
     has_html = (DIST_DIR / "index.html").exists()
     all_ok &= check("Frontend Production Dist", has_html, "dist/index.html ready")
 
-    # 5. Automated Integrity Tests
+    # 6. Automated Integrity Tests
     test_proc = subprocess.run(
-        [sys.executable, "-m", "pytest", str(PRESENTATION_DIR / "tests" / "test_ui_integrity.py"), "-q"],
+        [sys.executable, "-m", "pytest", str(PRESENTATION_DIR / "tests" / "test_ui_integrity.py"), "-v"],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
     )
     tests_passed = test_proc.returncode == 0
-    all_ok &= check("Automated Integrity Tests", tests_passed, "5/5 tests passed in pytest" if tests_passed else test_proc.stderr[:80])
+    import re
+    m = re.search(r"(\d+)\s+passed", test_proc.stdout)
+    passed_summary = f"{m.group(1)} passed in pytest" if m else ("All passed" if tests_passed else "Tests failed")
+    all_ok &= check("Automated Integrity Tests", tests_passed, passed_summary if tests_passed else (test_proc.stderr or test_proc.stdout)[:80].strip())
 
-    # 6. Live Local Server Inspection (port 8501)
+    # 7. Live Local Server Inspection (port 8501)
     server_online = False
     try:
         req = urllib.request.urlopen("http://127.0.0.1:8501/api/health", timeout=1.5)
@@ -109,7 +122,7 @@ def main():
     except Exception:
         server_online = False
 
-    check("Live API Server (port 8501)", server_online, "Online (FastAPI / Uvicorn)" if server_online else "Offline (run server.py --port 8501)")
+    all_ok &= check("Live API Server (port 8501)", server_online, "Online (FastAPI / Uvicorn)" if server_online else "Offline (run server.py --port 8501)")
 
     print("-" * 75)
     if all_ok:

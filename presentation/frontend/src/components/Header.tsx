@@ -1,7 +1,7 @@
 import { DataMode, WorkspaceTab, LegacyNavTab } from '../types/mission_control';
 
 export type NavTab = LegacyNavTab;
-import { Compass, Layers, ShieldCheck } from 'lucide-react';
+import { Compass, Layers, ShieldCheck, Play } from 'lucide-react';
 
 interface HeaderProps {
   currentWorkspace: WorkspaceTab;
@@ -16,66 +16,73 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentWorkspace,
   onSelectWorkspace,
+  onLaunchPresenter,
 }) => {
-  const workspaces: { id: WorkspaceTab; label: string; hotkey: string; icon: React.ReactNode }[] = [
+  const workspaces: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
     {
       id: 'discovery',
-      label: 'Discovery Lab',
-      hotkey: '1',
+      label: 'Run discovery',
       icon: <Compass className="w-4 h-4" />
     },
     {
       id: 'benchmarks',
-      label: 'Evidence & Benchmarks',
-      hotkey: '2',
+      label: 'Evidence',
       icon: <Layers className="w-4 h-4" />
     },
     {
       id: 'system',
-      label: 'Research System',
-      hotkey: '3',
+      label: 'How it works',
       icon: <ShieldCheck className="w-4 h-4" />
     },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-        {/* Left: Project Name Only */}
+    <header className="sticky top-0 z-40 bg-[#FCFCFA] border-b border-[#D9DFDB] shadow-2xs">
+      <div className="max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 h-14 flex items-center justify-between">
+        {/* Left: Project Wordmark */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-700 flex items-center justify-center text-white font-bold text-base shadow-xs">
+          <div className="w-7 h-7 rounded-lg bg-[#B91C1C] flex items-center justify-center text-white font-bold text-sm shadow-xs">
             Ψ
           </div>
-          <span className="font-bold text-slate-900 tracking-tight text-lg">
+          <span className="font-bold text-[#17201F] tracking-tight text-base sm:text-lg">
             AIcoScientist
           </span>
         </div>
 
-        {/* Same Line: 3 Main Tabs (No Sublines) */}
-        <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto" aria-label="Workspaces">
+        {/* Center: 3 Clean Navigation Items */}
+        <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto" aria-label="Workspaces">
           {workspaces.map((tab) => {
             const isActive = currentWorkspace === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => onSelectWorkspace(tab.id)}
-                className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition cursor-pointer ${
                   isActive
-                    ? 'bg-emerald-50 text-emerald-900 border border-emerald-200 shadow-2xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                    ? 'bg-[#FEF2F2] text-[#991B1B] font-semibold border border-[#FECACA]'
+                    : 'text-[#66706C] hover:text-[#17201F] hover:bg-[#F4F3EE] border border-transparent'
                 }`}
               >
-                <span className={isActive ? 'text-emerald-700' : 'text-slate-400'}>{tab.icon}</span>
+                <span className={isActive ? 'text-[#DC2626]' : 'text-[#8F9995]'}>{tab.icon}</span>
                 <span>{tab.label}</span>
-                <kbd className={`text-3xs font-mono px-1 py-0.5 rounded ${
-                  isActive ? 'bg-emerald-200/60 text-emerald-900' : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {tab.hotkey}
-                </kbd>
               </button>
             );
           })}
         </nav>
+
+        {/* Right: Start Guided Demo Action */}
+        <div className="flex items-center">
+          {onLaunchPresenter && (
+            <button
+              onClick={onLaunchPresenter}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#B91C1C] hover:bg-[#991B1B] rounded-lg shadow-xs transition cursor-pointer"
+              title="Launch guided presentation (Hotkey: P)"
+            >
+              <Play className="w-3.5 h-3.5 fill-white" />
+              <span>Start guided demo</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

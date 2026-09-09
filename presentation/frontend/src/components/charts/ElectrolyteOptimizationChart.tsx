@@ -48,14 +48,14 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData }
     });
   }
 
-  const latentMax = simulationData?.working_set_latent_max ?? 0.7886;
+  const latentMax: number | null = simulationData?.working_set_latent_max ?? simulationData?.full_search_space_latent_max ?? null;
 
   return (
     <div className="w-full flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div>
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-emerald-600" />
+            <Zap className="w-4 h-4 text-red-600" />
             <h4 className="text-sm font-bold text-slate-900 tracking-tight">
               Electrolyte Closed-Loop Optimization Trajectories
             </h4>
@@ -69,7 +69,7 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData }
         </div>
 
         <div className="text-2xs font-mono text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
-          Latent Optimum: <strong className="text-emerald-700 font-bold">{latentMax.toFixed(4)}</strong>
+          Latent Optimum: <strong className="text-red-700 font-bold">{latentMax !== null ? latentMax.toFixed(4) : 'N/A'}</strong>
         </div>
       </div>
 
@@ -81,44 +81,49 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData }
         </div>
       </div>
 
-      <div className="w-full h-64">
+      <div className="w-full h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 12, right: 24, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+          <LineChart data={chartData} margin={{ top: 16, right: 30, left: 10, bottom: 24 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
             <XAxis
               dataKey="query"
-              tick={{ fill: '#475569', fontSize: 10, fontFamily: 'monospace' }}
+              tick={{ fill: '#334155', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
               tickLine={false}
-              axisLine={{ stroke: '#cbd5e1' }}
+              axisLine={{ stroke: '#D9DFDB' }}
               label={{
                 value: 'Sequential Query Iterations (Budget: 15 Experiments)',
                 position: 'insideBottom',
                 offset: -12,
-                fill: '#64748b',
-                fontSize: 10
+                fill: '#475569',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
             />
             <YAxis
               domain={[0.2, 0.85]}
-              tick={{ fill: '#64748b', fontSize: 10 }}
+              tick={{ fill: '#475569', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
               tickLine={false}
-              axisLine={{ stroke: '#cbd5e1' }}
+              axisLine={{ stroke: '#D9DFDB' }}
               label={{
                 value: 'Best Observed Latent Capacity',
                 angle: -90,
                 position: 'insideLeft',
                 offset: 15,
-                fill: '#64748b',
-                fontSize: 10
+                fill: '#475569',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#ffffff',
-                borderColor: '#e2e8f0',
+                borderColor: '#D9DFDB',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                fontSize: '11px'
+                fontSize: '12px',
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
               formatter={(value: any, name: any) => [
                 Number(value).toFixed(4),
@@ -148,17 +153,19 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData }
               }}
             />
 
-            <ReferenceLine
-              y={latentMax}
-              stroke="#059669"
-              strokeDasharray="4 4"
-              label={{
-                value: `Latent Max: ${latentMax.toFixed(4)}`,
-                fill: '#059669',
-                fontSize: 10,
-                position: 'insideTopRight'
-              }}
-            />
+            {latentMax !== null && (
+              <ReferenceLine
+                y={latentMax}
+                stroke="#B91C1C"
+                strokeDasharray="4 4"
+                label={{
+                  value: `Latent Max: ${latentMax.toFixed(4)}`,
+                  fill: '#B91C1C',
+                  fontSize: 10,
+                  position: 'insideTopRight'
+                }}
+              />
+            )}
 
             <Line
               type="stepAfter"
@@ -172,9 +179,9 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData }
               type="stepAfter"
               dataKey="HYBRID"
               name="HYBRID"
-              stroke="#059669"
+              stroke="#B91C1C"
               strokeWidth={3}
-              dot={{ r: 4, fill: '#059669' }}
+              dot={{ r: 4, fill: '#B91C1C' }}
             />
             <Line
               type="stepAfter"

@@ -37,7 +37,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
       {/* GlowBal-style Report Header in White & Emerald */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">
             A-Lab Synthesis Evidence Atlas
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -50,10 +50,10 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                 href="https://doi.org/10.5281/zenodo.21285546"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-emerald-500 hover:bg-emerald-50 text-xs font-semibold text-slate-700 shadow-2xs transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-200 bg-white hover:border-red-500 hover:bg-red-50 text-xs font-semibold text-slate-700 shadow-2xs transition"
               >
                 <span>Zenodo Precursor Genome</span>
-                <ExternalLink className="w-3.5 h-3.5 text-emerald-600" />
+                <ExternalLink className="w-3.5 h-3.5 text-red-600" />
               </a>
             </div>
           </div>
@@ -67,23 +67,23 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
         <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
           <a
             href="#dataset-provenance"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 transition"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-red-500 hover:bg-red-50 hover:text-red-800 transition"
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">1</span>
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-700">1</span>
             <span>Dataset Provenance</span>
           </a>
           <a
             href="#sample-explorer"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 transition"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-red-500 hover:bg-red-50 hover:text-red-800 transition"
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">2</span>
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-700">2</span>
             <span>XRD & Refinement Inspector</span>
           </a>
           <a
             href="#calibration-limits"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-800 transition"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-red-500 hover:bg-red-50 hover:text-red-800 transition"
           >
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700">3</span>
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-700">3</span>
             <span>Calibration & Limits</span>
           </a>
         </div>
@@ -93,7 +93,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
       <section id="dataset-provenance" className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               01
             </span>
             <div>
@@ -101,7 +101,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
               <p className="text-xs text-slate-500">Audited sample linkages and firewalled offline experimental modalities</p>
             </div>
           </div>
-          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-800">
+          <span className="rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-800">
             CC BY 4.0 License
           </span>
         </div>
@@ -126,13 +126,13 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                   <td className="font-mono font-bold text-slate-800">1,030 / 1,035 (99.5%)</td>
                   <td className="font-mono text-slate-600">5 canonical spectral descriptors</td>
                   <td>
-                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Feasible</span>
                     </span>
                   </td>
                   <td>
-                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                       VERIFIED
                     </span>
                   </td>
@@ -143,13 +143,13 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                   <td className="font-mono font-bold text-slate-800">1,030 / 1,035 (99.5%)</td>
                   <td className="font-mono text-slate-600">4 phase fractions & scaled Rwp</td>
                   <td>
-                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Feasible</span>
                     </span>
                   </td>
                   <td>
-                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                       VERIFIED
                     </span>
                   </td>
@@ -160,13 +160,13 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                   <td className="font-mono font-bold text-slate-800">1,035 / 1,035 (100.0%)</td>
                   <td className="font-mono text-slate-600">Peak temp, ramp rate, dwell time</td>
                   <td>
-                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                    <span className="inline-flex items-center gap-1 text-red-700 font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Feasible</span>
                     </span>
                   </td>
                   <td>
-                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="font-mono text-2xs px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">
                       VERIFIED
                     </span>
                   </td>
@@ -198,7 +198,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
       <section id="sample-explorer" className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               02
             </span>
             <div>
@@ -214,12 +214,12 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
               placeholder="Search 1,035 samples (e.g. PG_0309, Co3O4)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 w-56"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-red-500 w-56"
             />
             <select
               value={selectedSampleId}
               onChange={(e) => setSelectedSampleId(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 font-mono font-semibold focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 font-mono font-semibold focus:outline-hidden focus:ring-2 focus:ring-red-500"
             >
               {filteredSamples.slice(0, 100).map((s) => (
                 <option key={s.sample_id} value={s.sample_id}>
@@ -239,8 +239,8 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
               onClick={() => setSelectedSampleId(pid)}
               className={`px-2.5 py-1 rounded-md text-2xs font-mono font-semibold transition cursor-pointer ${
                 selectedSampleId === pid
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'
+                  ? 'bg-red-600 text-white shadow-xs font-bold'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-red-400'
               }`}
             >
               {pid}
@@ -258,7 +258,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <span className="font-mono text-xs font-bold text-slate-900">{currentSample.sample_id}</span>
-                  <span className="text-2xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+                  <span className="text-2xs font-mono px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 font-semibold">
                     Target: {currentSample.target_formula}
                   </span>
                 </div>
@@ -285,7 +285,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                   </div>
                   <div>
                     <span className="text-slate-500">Reaction Outcome: </span>
-                    <span className={`font-bold font-mono capitalize ${(currentSample.outcome_utility ?? 0) >= 0.75 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                    <span className={`font-bold font-mono capitalize ${(currentSample.outcome_utility ?? 0) >= 0.75 ? 'text-red-700' : 'text-slate-700'}`}>
                       {currentSample.reaction_category?.replace('_', ' ') || 'Observed'}
                     </span>
                   </div>
@@ -297,7 +297,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                   )}
                   <div>
                     <span className="text-slate-500">Refinement Rwp: </span>
-                    <span className="font-mono font-bold text-emerald-800">
+                    <span className="font-mono font-bold text-red-800">
                       {currentSample.refinement_rwp !== null && currentSample.refinement_rwp !== undefined
                         ? currentSample.refinement_rwp.toFixed(4)
                         : (currentSample.refinement_available ? 'Available in scan' : 'N/A')}
@@ -314,7 +314,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                       return (
                         <div key={i} className="flex justify-between p-1.5 rounded bg-slate-50 border border-slate-100">
                           <span className="font-semibold text-slate-800">{name}</span>
-                          <span className="text-emerald-700 font-medium">Reagent #{i + 1}</span>
+                          <span className="text-red-700 font-medium">Reagent #{i + 1}</span>
                         </div>
                       );
                     })}
@@ -327,9 +327,9 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                     <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Refined Phases</span>
                     <div className="space-y-1 text-2xs font-mono">
                       {currentSample.refinement_phases.map((ph: any, i: number) => (
-                        <div key={i} className="flex justify-between p-1.5 rounded bg-emerald-50/40 border border-emerald-100">
+                        <div key={i} className="flex justify-between p-1.5 rounded bg-red-50/40 border border-red-100">
                           <span className="font-semibold text-slate-800 truncate max-w-[160px]" title={ph.name}>{ph.name}</span>
-                          <span className="font-bold text-emerald-800">
+                          <span className="font-bold text-red-800">
                             {ph.weight_percent !== null && ph.weight_percent !== undefined
                               ? `${(ph.weight_percent * 100).toFixed(1)}%`
                               : 'Present'}
@@ -347,7 +347,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                   <div className="flex items-center gap-2">
-                    <Flame className="w-4 h-4 text-emerald-600" />
+                    <Flame className="w-4 h-4 text-red-600" />
                     <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
                       Powder X-ray Diffraction (Cu Kα, λ = 1.5406 Å)
                     </span>
@@ -365,14 +365,14 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                     <path
                       d="M 40 128 L 100 128 L 120 126 L 140 128 L 180 128 L 195 40 L 210 128 L 240 128 L 255 70 L 270 128 L 320 128 L 335 90 L 350 128 L 390 128 L 405 60 L 420 128 L 480 128"
                       fill="none"
-                      stroke="#059669"
+                      stroke="#B91C1C"
                       strokeWidth="1.8"
                     />
                     
                     {/* Major Peak Labels */}
-                    <text x="195" y="32" textAnchor="middle" fontSize="9" fill="#047857" fontFamily="monospace" fontWeight="bold">(003)</text>
-                    <text x="255" y="62" textAnchor="middle" fontSize="9" fill="#047857" fontFamily="monospace" fontWeight="bold">(104)</text>
-                    <text x="405" y="52" textAnchor="middle" fontSize="9" fill="#047857" fontFamily="monospace" fontWeight="bold">(110)</text>
+                    <text x="195" y="32" textAnchor="middle" fontSize="9" fill="#991B1B" fontFamily="monospace" fontWeight="bold">(003)</text>
+                    <text x="255" y="62" textAnchor="middle" fontSize="9" fill="#991B1B" fontFamily="monospace" fontWeight="bold">(104)</text>
+                    <text x="405" y="52" textAnchor="middle" fontSize="9" fill="#991B1B" fontFamily="monospace" fontWeight="bold">(110)</text>
 
                     <text x="260" y="150" textAnchor="middle" fontSize="10" fill="#64748b" fontFamily="sans-serif">2θ Angle (Degrees)</text>
                     <text x="18" y="75" textAnchor="middle" transform="rotate(-90 18 75)" fontSize="9" fill="#64748b" fontFamily="sans-serif">Intensity (a.u.)</text>
@@ -388,7 +388,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
       <section id="calibration-limits" className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               03
             </span>
             <div>
@@ -401,7 +401,7 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-              <Check className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-red-600" />
               <span>Calibrated Physical Predictors</span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">

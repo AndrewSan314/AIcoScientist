@@ -1,7 +1,8 @@
 {
   "snapshot_schema_version": "1.1.0",
-  "generated_at_utc": "2026-09-09T14:22:03.390286+00:00",
-  "presentation_build_commit": "c2ae7dd0b374283369ad76fb49ce776b8abcbd39",
+  "generated_at_utc": "2026-09-09T16:33:07.669381+00:00",
+  "presentation_build_commit": "37b1deed98f440ebb513d941ae210856751d4f5a",
+  "snapshot_generator_commit": "37b1deed98f440ebb513d941ae210856751d4f5a",
   "scientific_source_commit": "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e",
   "source_branch": "integration/multimodal-scientific-engine",
   "source_artifact_hashes": {

@@ -24,10 +24,24 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
   onChangeMetric,
   onSelectAction
 }) => {
-  const modalities = ['XRD', 'REFINEMENT'];
+  // Dynamically derive modalities present in the step
+  const modalities = Array.from(
+    new Set(actions.map((a) => a.action?.action_type).filter(Boolean) as string[])
+  );
+  if (modalities.length === 0) {
+    modalities.push('XRD', 'REFINEMENT');
+  }
+
+  // Derive genuine costs per modality
+  const modalityCosts: Record<string, number | undefined> = {};
+  modalities.forEach((mod) => {
+    const act = actions.find((a) => a.action?.action_type === mod);
+    modalityCosts[mod] = act?.action?.estimated_cost;
+  });
+
   // Unique candidate IDs sorted
   const candidateIds = Array.from(
-    new Set(actions.map((a) => a.action?.candidate_id).filter(Boolean))
+    new Set(actions.map((a) => a.action?.candidate_id).filter(Boolean) as string[])
   ).sort((a, b) => {
     const numA = parseInt(a.replace(/\D/g, ''), 10) || 0;
     const numB = parseInt(b.replace(/\D/g, ''), 10) || 0;
@@ -43,21 +57,21 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
   let minVal = Infinity;
   let maxVal = -Infinity;
 
-  const getMetricValue = (rec: ScoredActionRecord | undefined, mode: HeatmapMetricMode): number => {
-    if (!rec) return 0;
+  const getMetricValue = (rec: ScoredActionRecord | undefined, mode: HeatmapMetricMode): number | null => {
+    if (!rec) return null;
     switch (mode) {
       case 'composite':
-        return rec.total_action_score ?? 0;
+        return rec.total_action_score !== undefined ? rec.total_action_score : null;
       case 'raw_hig':
-        return rec.raw_expected_hig_nats ?? rec.expected_hig_nats ?? 0;
+        return rec.raw_expected_hig_nats ?? rec.expected_hig_nats ?? null;
       case 'norm_hig':
-        return rec.normalized_hig ?? 0;
+        return rec.normalized_hig !== undefined ? rec.normalized_hig : null;
       case 'discovery':
-        return rec.raw_discovery_utility ?? rec.discovery_utility ?? 0;
+        return rec.raw_discovery_utility ?? rec.discovery_utility ?? null;
       case 'cost':
-        return rec.normalized_cost ?? 0;
+        return rec.normalized_cost !== undefined ? rec.normalized_cost : null;
       default:
-        return rec.total_action_score ?? 0;
+        return rec.total_action_score !== undefined ? rec.total_action_score : null;
     }
   };
 
@@ -68,8 +82,10 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
       if (!matrix[cId]) matrix[cId] = {};
       matrix[cId][mod] = a;
       const v = getMetricValue(a, activeMetric);
-      if (v < minVal) minVal = v;
-      if (v > maxVal) maxVal = v;
+      if (v !== null) {
+        if (v < minVal) minVal = v;
+        if (v > maxVal) maxVal = v;
+      }
     }
   });
 
@@ -77,24 +93,26 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
   if (maxVal === -Infinity) maxVal = 1;
   const valRange = maxVal - minVal || 1;
 
-  // Background color intensity helper
-  const getCellBg = (val: number, isWinner: boolean, isSelected: boolean) => {
-    if (isSelected) return 'bg-emerald-100 border-emerald-600 ring-2 ring-emerald-500';
-    if (isWinner) return 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-400/80';
+  // Background color intensity helper with fail-closed non-feasible handling
+  const getCellBg = (val: number | null, isWinner: boolean, isSelected: boolean, isFeasible: boolean) => {
+    if (!isFeasible || val === null) {
+      return 'bg-[#F4F3EE]/60 border-dashed border-[#D9DFDB] text-[#8F9995] cursor-not-allowed';
+    }
+    if (isSelected) return 'bg-[#FEF2F2] border-[#B91C1C] ring-2 ring-[#DC2626] text-[#991B1B] font-bold';
+    if (isWinner) return 'bg-[#FEF2F2]/80 border-[#B91C1C] ring-2 ring-[#FECACA] text-[#991B1B] font-bold';
 
     const normalized = (val - minVal) / valRange; // 0 to 1
     if (activeMetric === 'cost') {
-      // higher cost -> more reddish/slate
-      if (normalized > 0.7) return 'bg-rose-50 border-rose-200 text-rose-900';
-      return 'bg-slate-50 border-slate-200 text-slate-700';
+      if (normalized > 0.7) return 'bg-amber-50 border-amber-200 text-amber-900';
+      return 'bg-[#FCFCFA] border-[#D9DFDB] text-[#66706C]';
     }
 
-    // Emerald gradient
-    if (normalized > 0.8) return 'bg-emerald-500 text-white font-bold border-emerald-600';
-    if (normalized > 0.6) return 'bg-emerald-200 text-emerald-950 font-semibold border-emerald-300';
-    if (normalized > 0.4) return 'bg-emerald-100 text-emerald-900 border-emerald-200';
-    if (normalized > 0.2) return 'bg-emerald-50 text-emerald-800 border-emerald-100';
-    return 'bg-slate-50 text-slate-600 border-slate-200';
+    // Emerald gradient matching White & Emerald theme
+    if (normalized > 0.8) return 'bg-[#B91C1C] text-white font-bold border-[#991B1B]';
+    if (normalized > 0.6) return 'bg-[#FECACA] text-[#991B1B] font-semibold border-[#B91C1C]';
+    if (normalized > 0.4) return 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]';
+    if (normalized > 0.2) return 'bg-[#FCFCFA] text-[#17201F] border-[#D9DFDB]';
+    return 'bg-[#F4F3EE] text-[#66706C] border-[#D9DFDB]';
   };
 
   const metricLabels: Record<HeatmapMetricMode, { title: string; unit: string }> = {
@@ -130,7 +148,7 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
               onClick={() => onChangeMetric(m)}
               className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
                 activeMetric === m
-                  ? 'bg-white text-emerald-800 font-bold shadow-2xs'
+                  ? 'bg-white text-red-800 font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -158,15 +176,15 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
                     key={cId}
                     className={`py-2 px-1.5 font-semibold text-center whitespace-nowrap ${
                       isSelectedCol
-                        ? 'text-emerald-800 bg-emerald-50/50'
+                        ? 'text-red-800 bg-red-50/50'
                         : isWinnerCol
-                        ? 'text-emerald-700 font-bold'
+                        ? 'text-red-700 font-bold'
                         : ''
                     }`}
                   >
                     <span className="block text-2xs">{cId.replace('controlled-', 'C-')}</span>
                     {isWinnerCol && (
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-0.5" />
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mt-0.5" />
                     )}
                   </th>
                 );
@@ -178,10 +196,10 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
               <tr key={mod} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
                 <td className="py-2 px-3 text-left font-mono font-bold text-xs text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${mod === 'XRD' ? 'bg-emerald-500' : 'bg-violet-500'}`} />
+                    <span className={`w-2 h-2 rounded-full ${mod === 'XRD' ? 'bg-[#B91C1C]' : 'bg-[#7C3AED]'}`} />
                     <span>{mod}</span>
-                    <span className="text-2xs text-slate-400 font-normal">
-                      ({mod === 'XRD' ? 'cost: 1.0' : 'cost: 0.5'})
+                    <span className="text-2xs text-[#8F9995] font-normal">
+                      (cost: {modalityCosts[mod] !== undefined ? modalityCosts[mod]?.toFixed(1) : 'N/A'})
                     </span>
                   </div>
                 </td>
@@ -190,26 +208,31 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
                   const val = getMetricValue(rec, activeMetric);
                   const isWinner = rec?.action?.action_id === winnerActionId;
                   const isSelected = cId === selectedCandidateId && mod === selectedModality;
+                  const isFeasible = Boolean(rec);
 
                   return (
                     <td key={cId} className="p-1">
                       <button
-                        onClick={() => onSelectAction(cId, mod)}
-                        title={`${cId} — ${mod}: ${val.toFixed(4)}`}
-                        className={`w-full py-2 px-1 rounded-lg border text-2xs font-mono transition-all cursor-pointer relative flex flex-col items-center justify-center ${getCellBg(
+                        disabled={!isFeasible}
+                        onClick={() => isFeasible && onSelectAction(cId, mod)}
+                        title={isFeasible ? `${cId} — ${mod}: ${val !== null ? val.toFixed(4) : 'N/A'}` : `${cId} — ${mod}: Infeasible`}
+                        className={`w-full py-2 px-1 rounded-lg border text-2xs font-mono transition-all relative flex flex-col items-center justify-center ${
+                          isFeasible ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                        } ${getCellBg(
                           val,
                           isWinner,
-                          isSelected
+                          isSelected,
+                          isFeasible
                         )}`}
                       >
                         {isWinner && (
-                          <div className="absolute -top-1 -right-1 bg-emerald-600 text-white rounded-full p-0.5 shadow-2xs">
+                          <div className="absolute -top-1 -right-1 bg-[#B91C1C] text-white rounded-full p-0.5 shadow-2xs">
                             <Award className="w-2.5 h-2.5" />
                           </div>
                         )}
-                        <span>{val.toFixed(2)}</span>
+                        <span>{val !== null ? val.toFixed(2) : '—'}</span>
                         {isSelected && (
-                          <span className="text-3xs tracking-tight text-emerald-800 font-bold uppercase mt-0.5">
+                          <span className="text-3xs tracking-tight text-[#991B1B] font-bold uppercase mt-0.5">
                             Active
                           </span>
                         )}
@@ -226,17 +249,17 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
       <div className="mt-2.5 flex flex-col sm:flex-row items-center justify-between text-2xs font-mono text-slate-500 gap-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-emerald-500 inline-block" />
+            <span className="w-2.5 h-2.5 rounded bg-red-500 inline-block" />
             <span>High {metricLabels[activeMetric].title}</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-full bg-emerald-600 text-white flex items-center justify-center text-3xs">
+            <div className="w-3 h-3 rounded-full bg-red-600 text-white flex items-center justify-center text-3xs">
               <Award className="w-2 h-2" />
             </div>
-            <span className="font-semibold text-emerald-800">Recorded Recommendation</span>
+            <span className="font-semibold text-red-800">Recorded Recommendation</span>
           </div>
           <div className="flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            <CheckCircle2 className="w-3 h-3 text-red-600" />
             <span>Currently Selected</span>
           </div>
         </div>

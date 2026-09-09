@@ -39,7 +39,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
       num: '04',
       title: 'Bounded Working Set',
       count: 'WS = 200 Candidates',
-      sub: '100% latent maximum recovered (0.7886 latent cap preserved with 0.000 gap)',
+      sub: `100% latent maximum recovered (${data.electrolyte_screening?.full_search_space_latent_max ? data.electrolyte_screening.full_search_space_latent_max.toFixed(4) + ' ' : ''}latent cap preserved with 0.000 gap)`,
       badge: 'Active Decision Space',
     },
     {
@@ -109,7 +109,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
       {/* GlowBal Header */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">
             Cross-Domain Application
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -118,7 +118,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
             </h1>
             <div className="flex items-center gap-2">
               <ModeBadge mode="CONTROLLED_SYNTHETIC" size="sm" />
-              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-800 font-mono">
+              <span className="rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-800 font-mono">
                 333,333 Virtual Pool
               </span>
             </div>
@@ -134,7 +134,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               01
             </span>
             <div>
@@ -142,16 +142,16 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
               <p className="text-xs text-slate-500">From 333,333 combinatorial candidates to 200 high-diversity working set</p>
             </div>
           </div>
-          <span className="text-2xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+          <span className="text-2xs font-mono px-2.5 py-1 rounded-full bg-red-50 text-red-800 border border-red-200 font-semibold">
             100% Latent Max Recovered
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {funnelSteps.map((step, idx) => (
-            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs flex flex-col justify-between space-y-2 hover:border-emerald-300 transition">
+            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs flex flex-col justify-between space-y-2 hover:border-red-300 transition">
               <div>
-                <div className="flex items-center justify-between text-2xs font-mono text-emerald-700 font-bold mb-1">
+                <div className="flex items-center justify-between text-2xs font-mono text-red-700 font-bold mb-1">
                   <span>STEP {step.num}</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-3xs">{step.badge}</span>
                 </div>
@@ -168,7 +168,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               02
             </span>
             <div>
@@ -194,16 +194,16 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
                 {simulationRows.map((r) => (
                   <tr 
                     key={r.policy}
-                    className={r.highlight ? 'bg-emerald-50/40 font-semibold' : ''}
+                    className={r.highlight ? 'bg-red-50/40 font-semibold' : ''}
                   >
                     <td className="font-semibold text-slate-900 flex items-center gap-2">
-                      {r.highlight && <span className="w-2 h-2 rounded-full bg-emerald-600" />}
+                      {r.highlight && <span className="w-2 h-2 rounded-full bg-red-600" />}
                       <span>{r.name}</span>
                     </td>
                     <td className="text-slate-500 text-2xs">{r.role}</td>
-                    <td className="font-mono text-emerald-800 font-bold">{r.latentCap}</td>
+                    <td className="font-mono text-red-800 font-bold">{r.latentCap}</td>
                     <td className="font-mono text-slate-700">+{r.cumHig}</td>
-                    <td className="font-mono text-emerald-700 font-bold">-{r.entropyRed}</td>
+                    <td className="font-mono text-red-700 font-bold">-{r.entropyRed}</td>
                   </tr>
                 ))}
               </tbody>
@@ -214,7 +214,7 @@ export const ElectrolyteView: React.FC<ElectrolyteViewProps> = ({ data }) => {
         {/* Honest Negative Result Disclosure in Clean White & Slate */}
         <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 space-y-1">
           <div className="flex items-center gap-2 font-bold text-slate-900">
-            <Info className="w-4 h-4 text-emerald-600" />
+            <Info className="w-4 h-4 text-red-600" />
             <span>Scientific Transparency: Why BoTorch EI Outperforms Hybrid on Single Property</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">

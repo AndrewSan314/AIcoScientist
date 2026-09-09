@@ -47,7 +47,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
       {/* GlowBal Report Header */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-600">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-red-600">
             Policy Benchmark Laboratory
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -56,7 +56,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
             </h1>
             <div className="flex items-center gap-2">
               <ModeBadge mode="CONTROLLED_SYNTHETIC" size="sm" />
-              <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-800 font-mono">
+              <span className="rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-800 font-mono">
                 6 Policies × 2 Worlds × 5 Seeds
               </span>
             </div>
@@ -74,7 +74,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
             <select
               value={selectedWorld}
               onChange={(e) => setSelectedWorld(e.target.value)}
-              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-red-500"
             >
               {worlds.map((w) => (
                 <option key={w.id} value={w.id}>
@@ -93,7 +93,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
                   onClick={() => setSelectedSeed(s)}
                   className={`w-8 h-7 rounded-md text-xs font-mono font-semibold transition cursor-pointer flex items-center justify-center ${
                     selectedSeed === s
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-red-600 text-white shadow-xs'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -109,7 +109,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               01
             </span>
             <div>
@@ -159,20 +159,20 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
                   return (
                     <tr 
                       key={p.id}
-                      className={p.highlight ? 'bg-emerald-50/40 font-semibold' : ''}
+                      className={p.highlight ? 'bg-red-50/40 font-semibold' : ''}
                     >
                       <td className="font-semibold text-slate-900 flex items-center gap-2">
-                        {p.highlight && <span className="w-2 h-2 rounded-full bg-emerald-600" />}
+                        {p.highlight && <span className="w-2 h-2 rounded-full bg-red-600" />}
                         <span>{p.name}</span>
                       </td>
                       <td className="text-slate-500 text-2xs">{p.role}</td>
-                      <td className={`font-mono font-bold ${pData.recovery_rate_MAP !== undefined && pData.recovery_rate_MAP >= 0.8 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                      <td className={`font-mono font-bold ${pData.recovery_rate_MAP !== undefined && pData.recovery_rate_MAP >= 0.8 ? 'text-red-700' : 'text-slate-700'}`}>
                         {mapRate}
                       </td>
                       <td className="font-mono text-slate-800">
                         {finalProb}
                       </td>
-                      <td className="font-mono text-emerald-800 font-bold">
+                      <td className="font-mono text-red-800 font-bold">
                         {entRed}
                       </td>
                       <td className="font-mono text-slate-700">
@@ -194,7 +194,7 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
       <section className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white shadow-xs">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-black text-white shadow-xs">
               02
             </span>
             <div>
@@ -216,12 +216,12 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-emerald-300 bg-emerald-50/30 p-5 shadow-xs space-y-2">
+          <div className="rounded-2xl border border-red-300 bg-red-50/30 p-5 shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold text-emerald-900">M = 32 Samples (Production)</span>
-              <span className="text-2xs font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">RECOMMENDED</span>
+              <span className="font-mono text-xs font-bold text-red-900">M = 32 Samples (Production)</span>
+              <span className="text-2xs font-mono px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold">RECOMMENDED</span>
             </div>
-            <div className="text-2xl font-extrabold text-emerald-700 font-mono">3.18 ms</div>
+            <div className="text-2xl font-extrabold text-red-700 font-mono">3.18 ms</div>
             <p className="text-xs text-slate-600">
               Mean absolute error: 0.011 nats. Matches M=64 within 1.8% error while cutting runtime by 52%. Zero action inversions.
             </p>

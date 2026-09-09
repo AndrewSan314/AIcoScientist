@@ -80,7 +80,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
   const atomsRef = useRef<AtomNode[]>([]);
   const scanProgressRef = useRef(0);
 
-  // Generate 3D Fibonacci Sphere Atom Lattice in Emerald & White
+  // Generate 3D Fibonacci Sphere Atom Lattice in Crimson & White
   // Grounded: Only candidates passed in prop are real scientific candidates; all others are decorative lattice points.
   useEffect(() => {
     const TOTAL_ATOMS = 180;
@@ -120,23 +120,24 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         const isWinner = Boolean(winnerId && cid === winnerId);
         const isSelected = Boolean(selectedCandidateId && cid === selectedCandidateId);
         const scoreInfo = scoredLookup.get(cid);
-        const isTested = cand.status === 'characterized' || cand.status === 'outcome_tested' || (currentStep?.step ?? 1) > 1 && i < (currentStep?.step ?? 1);
+        const testedSet = new Set(currentStep?.tested_candidates_before || []);
+        const isTested = testedSet.has(cid) || cand.status === 'characterized' || cand.status === 'outcome_tested';
 
-        let color = '#34d399'; // Emerald-400 for candidate pool
-        let glowColor = 'rgba(52, 211, 153, 0.4)';
+        let color = '#f87171'; // Red-400 for candidate pool // Emerald-400 for candidate pool
+        let glowColor = 'rgba(248, 113, 113, 0.4)';
         let radius = 3.6;
 
         if (isWinner) {
           color = '#ffffff'; // Pure brilliant white for recommended winner
-          glowColor = 'rgba(16, 185, 129, 0.95)';
+          glowColor = 'rgba(220, 38, 38, 0.95)';
           radius = 5.5;
         } else if (isSelected) {
-          color = '#6ee7b7'; // Bright mint for user-selected
-          glowColor = 'rgba(110, 231, 183, 0.8)';
+          color = '#fca5a5'; // Soft rose for user-selected // Bright mint for user-selected
+          glowColor = 'rgba(252, 165, 165, 0.8)';
           radius = 4.8;
         } else if (isTested) {
-          color = '#047857'; // Deep forest emerald for tested
-          glowColor = 'rgba(4, 120, 87, 0.4)';
+          color = '#991b1b'; // Deep ruby for tested // Deep forest emerald for tested
+          glowColor = 'rgba(153, 27, 27, 0.4)';
           radius = 3.2;
         }
 
@@ -185,8 +186,8 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           sy: 0,
           scale: 1,
           radius: 1.6,
-          color: '#064e3b',
-          glowColor: 'rgba(6, 78, 59, 0.2)',
+          color: '#450a0a',
+          glowColor: 'rgba(69, 10, 10, 0.2)',
           isWinner: false,
           isSelected: false,
           isPareto: false,
@@ -217,7 +218,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       scanProgressRef.current = progress;
 
       if (progress < 0.45) {
-        setScanStatusText(`// PHASE I: EMERALD LASER SWEEP [${Math.round(progress * 220)}%] //`);
+        setScanStatusText(`// PHASE I: CRIMSON LASER SWEEP [${Math.round(progress * 220)}%] //`);
       } else if (progress < 0.8) {
         setScanStatusText('// PHASE II: CONVERGING w_H·HIG + w_D·ΔU - w_C·C //');
         velocityRef.current.x *= 0.94;
@@ -273,7 +274,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       isBack: boolean
     ) => {
       c.save();
-      c.strokeStyle = isBack ? 'rgba(16, 185, 129, 0.07)' : 'rgba(16, 185, 129, 0.25)';
+      c.strokeStyle = isBack ? 'rgba(239, 68, 68, 0.07)' : 'rgba(239, 68, 68, 0.25)';
       c.lineWidth = 1.0;
       c.setLineDash([6, 8]);
 
@@ -283,14 +284,14 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       c.stroke();
 
       // Polar Meridian Ring
-      c.strokeStyle = isBack ? 'rgba(5, 150, 105, 0.05)' : 'rgba(16, 185, 129, 0.18)';
+      c.strokeStyle = isBack ? 'rgba(185, 28, 28, 0.05)' : 'rgba(239, 68, 68, 0.18)';
       c.beginPath();
       c.ellipse(cx, cy, r * Math.abs(Math.cos(ry)), r, rx, 0, Math.PI * 2);
       c.stroke();
 
       if (!isBack) {
         c.setLineDash([]);
-        c.strokeStyle = 'rgba(52, 211, 153, 0.35)';
+        c.strokeStyle = 'rgba(248, 113, 113, 0.35)';
         c.lineWidth = 1.0;
         for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
           const x1 = cx + Math.cos(angle) * r;
@@ -318,14 +319,14 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
       c.save();
       // Rotating emerald dashed ring
-      c.strokeStyle = 'rgba(16, 185, 129, 0.95)';
+      c.strokeStyle = 'rgba(239, 68, 68, 0.95)';
       c.lineWidth = 1.5;
       c.setLineDash([5, 5]);
       c.beginPath();
       c.arc(sx, sy, lockSize * 0.85, t * 2, t * 2 + Math.PI * 2);
       c.stroke();
 
-      c.strokeStyle = 'rgba(52, 211, 153, 0.8)';
+      c.strokeStyle = 'rgba(248, 113, 113, 0.8)';
       c.setLineDash([3, 4]);
       c.beginPath();
       c.arc(sx, sy, lockSize * 1.25, -t * 2.5, -t * 2.5 + Math.PI * 2);
@@ -364,17 +365,17 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
       // Shockwave ring in emerald
       const ripple = (t * 2) % 1;
-      c.strokeStyle = `rgba(16, 185, 129, ${1 - ripple})`;
+      c.strokeStyle = `rgba(239, 68, 68, ${1 - ripple})`;
       c.lineWidth = 1.2;
       c.beginPath();
       c.arc(sx, sy, lockSize * 0.8 + ripple * 28, 0, Math.PI * 2);
       c.stroke();
 
-      // Leader line & Callout Card in Emerald & White
+      // Leader line & Callout Card in Crimson & White
       const cardX = sx + 45 > cx + 60 ? sx - 170 : sx + 40;
       const cardY = sy - 36;
 
-      c.strokeStyle = 'rgba(16, 185, 129, 0.65)';
+      c.strokeStyle = 'rgba(239, 68, 68, 0.65)';
       c.lineWidth = 1.0;
       c.setLineDash([2, 2]);
       c.beginPath();
@@ -383,15 +384,15 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       c.stroke();
 
       c.setLineDash([]);
-      c.fillStyle = 'rgba(2, 24, 16, 0.92)';
-      c.strokeStyle = 'rgba(16, 185, 129, 0.75)';
+      c.fillStyle = 'rgba(25, 4, 4, 0.94)';
+      c.strokeStyle = 'rgba(239, 68, 68, 0.75)';
       c.lineWidth = 1.0;
       c.beginPath();
       c.roundRect(cardX, cardY, 160, 50, 6);
       c.fill();
       c.stroke();
 
-      c.fillStyle = '#34d399';
+      c.fillStyle = '#f87171';
       c.font = 'bold 9px monospace';
       c.fillText(`⚡ RECOMMENDED ACTION`, cardX + 8, cardY + 14);
 
@@ -399,7 +400,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       c.font = 'bold 11px monospace';
       c.fillText(`${atom.id} [${atom.actionType || 'XRD'}]`, cardX + 8, cardY + 28);
 
-      c.fillStyle = '#a7f3d0';
+      c.fillStyle = '#fca5a5';
       c.font = '8px monospace';
       const scoreStr = atom.score !== null ? `Score: ${atom.score > 0 ? '+' : ''}${atom.score.toFixed(4)}` : 'Preregistered Target';
       c.fillText(`${scoreStr} | LOCKED`, cardX + 8, cardY + 41);
@@ -412,8 +413,8 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       const hx = atom.sx + 15;
       const hy = atom.sy - 25;
 
-      c.fillStyle = 'rgba(2, 24, 16, 0.96)';
-      c.strokeStyle = atom.kind === 'SCIENTIFIC_CANDIDATE' ? 'rgba(52, 211, 153, 0.8)' : 'rgba(100, 116, 139, 0.4)';
+      c.fillStyle = 'rgba(25, 4, 4, 0.96)';
+      c.strokeStyle = atom.kind === 'SCIENTIFIC_CANDIDATE' ? 'rgba(248, 113, 113, 0.8)' : 'rgba(100, 116, 139, 0.4)';
       c.lineWidth = 1;
       c.beginPath();
       c.roundRect(hx, hy, 160, 46, 4);
@@ -421,7 +422,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       c.stroke();
 
       if (atom.kind === 'SCIENTIFIC_CANDIDATE') {
-        c.fillStyle = '#34d399';
+        c.fillStyle = '#f87171';
         c.font = 'bold 9px monospace';
         c.fillText(`// SCIENTIFIC CANDIDATE`, hx + 6, hy + 13);
 
@@ -429,7 +430,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         c.font = 'bold 10px monospace';
         c.fillText(atom.id, hx + 6, hy + 26);
 
-        c.fillStyle = '#a7f3d0';
+        c.fillStyle = '#fca5a5';
         c.font = '8px monospace';
         const scoreInfo = atom.score !== null ? `Score: ${atom.score > 0 ? '+' : ''}${atom.score.toFixed(4)} (${atom.actionType || 'XRD'})` : atom.composition.slice(0, 24);
         c.fillText(scoreInfo, hx + 6, hy + 38);
@@ -473,9 +474,9 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
       // 1. Deep Obsidian Forest Background Glow
       const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, sphereRadius * 1.5);
-      bgGrad.addColorStop(0, 'rgba(3, 43, 30, 0.55)');
-      bgGrad.addColorStop(0.5, 'rgba(2, 24, 16, 0.3)');
-      bgGrad.addColorStop(1, 'rgba(1, 13, 9, 0)');
+      bgGrad.addColorStop(0, 'rgba(42, 8, 8, 0.55)');
+      bgGrad.addColorStop(0.5, 'rgba(22, 3, 3, 0.35)');
+      bgGrad.addColorStop(1, 'rgba(5, 1, 1, 0)');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
@@ -483,9 +484,9 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       const corePulse = 1 + Math.sin(time * 3) * 0.12;
       const coreGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 38 * corePulse);
       coreGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-      coreGrad.addColorStop(0.2, 'rgba(16, 185, 129, 0.85)');
-      coreGrad.addColorStop(0.6, 'rgba(5, 150, 105, 0.25)');
-      coreGrad.addColorStop(1, 'rgba(1, 13, 9, 0)');
+      coreGrad.addColorStop(0.2, 'rgba(239, 68, 68, 0.85)');
+      coreGrad.addColorStop(0.6, 'rgba(185, 28, 28, 0.25)');
+      coreGrad.addColorStop(1, 'rgba(5, 1, 1, 0)');
       ctx.fillStyle = coreGrad;
       ctx.beginPath();
       ctx.arc(cx, cy, 38 * corePulse, 0, Math.PI * 2);
@@ -493,7 +494,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
       // Pulsing inner ring
       ctx.save();
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 6]);
       ctx.beginPath();
@@ -537,7 +538,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
       // Crystalline Lattice Connections (Front)
       ctx.save();
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.12)';
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.12)';
       ctx.lineWidth = 0.8;
       for (let i = 0; i < sortedAtoms.length; i += 3) {
         const a1 = sortedAtoms[i];
@@ -593,7 +594,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
         // Mini Electron Orbit
         if (!isBack && (a.isPareto || a.isWinner)) {
-          ctx.strokeStyle = a.isWinner ? 'rgba(255, 255, 255, 0.7)' : 'rgba(16, 185, 129, 0.35)';
+          ctx.strokeStyle = a.isWinner ? 'rgba(255, 255, 255, 0.7)' : 'rgba(239, 68, 68, 0.35)';
           ctx.lineWidth = 0.8;
           ctx.beginPath();
           const orbitR = r * 2.4;
@@ -618,16 +619,16 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       const beamY = cy + laserScanY;
       const beamWidth = sphereRadius * 2.2;
       const beamGrad = ctx.createLinearGradient(cx - beamWidth / 2, beamY, cx + beamWidth / 2, beamY);
-      beamGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
-      beamGrad.addColorStop(0.2, 'rgba(16, 185, 129, 0.45)');
+      beamGrad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+      beamGrad.addColorStop(0.2, 'rgba(239, 68, 68, 0.45)');
       beamGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.95)');
-      beamGrad.addColorStop(0.8, 'rgba(16, 185, 129, 0.45)');
-      beamGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+      beamGrad.addColorStop(0.8, 'rgba(239, 68, 68, 0.45)');
+      beamGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
 
       ctx.fillStyle = beamGrad;
       ctx.fillRect(cx - beamWidth / 2, beamY - 1, beamWidth, 2);
 
-      ctx.fillStyle = 'rgba(5, 150, 105, 0.08)';
+      ctx.fillStyle = 'rgba(185, 28, 28, 0.08)';
       ctx.fillRect(cx - beamWidth / 2, beamY - 8, beamWidth, 16);
       ctx.restore();
 
@@ -708,24 +709,24 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative rounded-xl border border-emerald-900/40 bg-slate-950 overflow-hidden shadow-xl transition-all ${
+      className={`relative rounded-xl border border-red-950/50 bg-slate-950 overflow-hidden shadow-xl transition-all ${
         isFullscreen ? 'fixed inset-4 z-50 flex flex-col' : 'w-full h-[450px]'
       }`}
       style={{
-        backgroundImage: `radial-gradient(circle at 50% 50%, #032b1e 0%, #01120c 90%)`,
+        backgroundImage: `radial-gradient(circle at 50% 50%, #2a0808 0%, #140303 90%)`,
       }}
     >
-      {/* Top Bar in Clean Emerald & White */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-4 py-2.5 flex items-center justify-between border-b border-emerald-900/40 bg-slate-950/70 backdrop-blur-xs">
+      {/* Top Bar in Clean Crimson & White */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-4 py-2.5 flex items-center justify-between border-b border-red-950/50 bg-slate-950/70 backdrop-blur-xs">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+          <div className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping" />
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold tracking-widest text-emerald-400">
+              <span className="font-mono text-xs font-bold tracking-widest text-red-400">
                 STARK ATOMIC LATTICE
               </span>
-              <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
-                EMERALD SPHERE
+              <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-800/60">
+                RUBY SPHERE
               </span>
             </div>
             <span className="text-3xs font-mono text-slate-400 tracking-wider">
@@ -740,8 +741,8 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
             disabled={scanSequenceActive}
             className={`px-3 py-1.5 rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer ${
               scanSequenceActive 
-                ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-600 animate-pulse'
-                : 'bg-emerald-600 hover:bg-emerald-500 text-white font-semibold'
+                ? 'bg-red-950/60 text-red-300 border border-red-600 animate-pulse'
+                : 'bg-red-600 hover:bg-red-500 text-white font-semibold'
             }`}
           >
             <Zap className={`w-3.5 h-3.5 ${scanSequenceActive ? 'animate-spin' : ''}`} />
@@ -752,7 +753,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
             onClick={() => setAutoRotate(!autoRotate)}
             className={`p-1.5 rounded-lg border transition cursor-pointer ${
               autoRotate 
-                ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300' 
+                ? 'bg-red-950/80 border-red-700 text-red-300' 
                 : 'bg-slate-900 border-slate-800 text-slate-500'
             }`}
             title={autoRotate ? 'Pause Orbit' : 'Resume Auto Orbit'}
@@ -762,7 +763,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
 
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 rounded-lg border border-emerald-900/60 bg-emerald-950/60 text-emerald-400 hover:text-white transition cursor-pointer"
+            className="p-1.5 rounded-lg border border-red-950/60 bg-red-950/60 text-red-400 hover:text-white transition cursor-pointer"
             title={isFullscreen ? 'Exit Fullscreen' : 'Expand Theater Mode'}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -779,30 +780,30 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         className="w-full h-full cursor-grab active:cursor-grabbing"
       />
 
-      {/* Bottom Legend Bar in Emerald & White */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 py-2 border-t border-emerald-900/30 bg-slate-950/80 backdrop-blur-xs flex flex-wrap items-center justify-between text-2xs font-mono text-slate-400">
+      {/* Bottom Legend Bar in Crimson & White */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 py-2 border-t border-red-950/40 bg-slate-950/80 backdrop-blur-xs flex flex-wrap items-center justify-between text-2xs font-mono text-slate-400">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-white ring-2 ring-emerald-400 shadow-sm shadow-emerald-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-white ring-2 ring-red-400 shadow-sm shadow-red-400" />
             <span className="text-white font-bold">Recommended Decision ({winnerId || 'Locked'})</span>
           </div>
           {selectedCandidateId && selectedCandidateId !== winnerId && (
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 ring-1 ring-emerald-200" />
-              <span className="text-emerald-300 font-semibold">User Selected ({selectedCandidateId})</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-red-300 ring-1 ring-red-200" />
+              <span className="text-red-300 font-semibold">User Selected ({selectedCandidateId})</span>
             </div>
           )}
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-red-400" />
             <span className="text-slate-300">Action Pool ({candidates.length} Candidates)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-900/60" />
+            <span className="w-1.5 h-1.5 rounded-full bg-red-950/60" />
             <span className="text-slate-500">Lattice Point (Decorative)</span>
           </div>
         </div>
 
-        <div className="hidden sm:flex items-center gap-3 text-3xs text-emerald-400/80">
+        <div className="hidden sm:flex items-center gap-3 text-3xs text-red-400/80">
           <span>DRAG TO ORBIT</span>
           <span>•</span>
           <span>CLICK CANDIDATE TO TARGET</span>

@@ -13,12 +13,15 @@ import hashlib
 import json
 import shutil
 import subprocess
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 OUTPUTS_DIR = ROOT / "outputs"
 DATA_DIR = ROOT / "presentation" / "data"
 FRONTEND_DIR = ROOT / "presentation" / "frontend"
@@ -124,6 +127,7 @@ def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, An
 
     steps_data = []
     policy_weights = {"w_hig": 0.8, "w_discovery": 0.8, "w_cost": 2.0}
+    tested_candidates_accum: list[str] = []
 
     for s in sorted(by_step.keys()):
         step_dict = by_step[s]
@@ -171,6 +175,10 @@ def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, An
                 f"Step {s} action mismatch: preregistered ({p_cid}, {p_mod}) vs revealed ({o_cid}, {o_mod})"
             )
 
+        tested_candidates_before = list(tested_candidates_accum)
+        if p_cid and p_cid not in tested_candidates_accum:
+            tested_candidates_accum.append(p_cid)
+
         # Compute step-level normalization extrema
         max_hig = max((e.get("expected_hig_nats", 0.0) for e in scores), default=1e-12)
         max_disc = max((e.get("discovery_utility", 0.0) for e in scores), default=1e-12)
@@ -204,6 +212,11 @@ def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, An
                     f"recomputed({recomputed}) vs recorded({total_score})"
                 )
 
+            act_data = e.get("action", {})
+            act_cid = act_data.get("candidate_id")
+            act_mod = act_data.get("action_type")
+            is_prereg_action = (act_cid == p_cid and act_mod == p_mod)
+
             enriched = dict(e)
             enriched.update({
                 "raw_expected_hig_nats": raw_hig,
@@ -222,6 +235,8 @@ def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, An
                 "step_max_hig": max_hig,
                 "step_max_discovery": max_disc,
                 "step_max_cost": max_cost,
+                "predictive_distribution_available": is_prereg_action,
+                "predictive_distribution_unavailability_reason": None if is_prereg_action else "Predictive distributions were only persisted for the preregistered optimal action in this recorded snapshot.",
             })
             enriched_scores.append(enriched)
 
@@ -239,6 +254,7 @@ def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, An
             "step_max_hig": max_hig,
             "step_max_discovery": max_disc,
             "step_max_cost": max_cost,
+            "tested_candidates_before": tested_candidates_before,
         })
 
     # Candidates pool (controlled-0 through controlled-11)
@@ -422,11 +438,12 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
             "sem_availability_reason": "Archive present in sem.zip (408 MB) but lacks sample-level linkage (precursor-level only).",
             "eds_availability_reason": "Archive present in eds.zip (358 KB) but lacks sample-level linkage (precursor-level only).",
             "refinement_rwp": rwp,
-            "refinement_phases": phases[:4],
+            "refinement_phases": phases,
+            "refinement_phases_preview": phases[:4],
             "source_archive": "data/external/precursor_genome_2026/ledger_precursor_genome.json",
             "source_record_identifier": sid,
-            "extractor_name": "ALabDomainAdapter.canonical_extractor",
-            "extractor_version": "1.0.0",
+            "extractor_name": "ALabSourceLedgerExtractor.direct_v1",
+            "extractor_version": "1.1.0",
         }
         catalog.append(item)
 
@@ -609,6 +626,7 @@ def main() -> None:
         "snapshot_schema_version": SNAPSHOT_SCHEMA_VERSION,
         "generated_at_utc": now_utc,
         "presentation_build_commit": head_commit,
+        "snapshot_generator_commit": head_commit,
         "scientific_source_commit": SCIENTIFIC_SOURCE_COMMIT,
         "source_branch": current_branch,
         "source_artifact_hashes": source_hashes,
@@ -631,6 +649,8 @@ def main() -> None:
         "manifest": manifest,
         "provenance": {
             "head_commit": head_commit,
+            "snapshot_generator_commit": head_commit,
+            "presentation_build_commit": head_commit,
             "scientific_source_commit": SCIENTIFIC_SOURCE_COMMIT,
             "branch": current_branch,
             "total_ledger_events": len(ledger_events),
@@ -658,6 +678,11 @@ def main() -> None:
 
     with MANIFEST_FILE.open("w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
+
+    # Run fail-closed runtime validation on generated snapshot
+    from presentation.scripts.validate_snapshot import validate_snapshot_file
+    validate_snapshot_file(DEST_FILE)
+    print("Runtime schema validation: PASSED (all invariants verified)")
 
     # Automatically synchronize canonical snapshot to frontend public and dist directories
     frontend_public = FRONTEND_DIR / "public"

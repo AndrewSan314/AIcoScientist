@@ -116,15 +116,15 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
   // Exact enriched action record
   const topAction = currentStepData.top_actions?.[0];
   const rawHigNats = topAction?.raw_expected_hig_nats ?? prereg?.expected_hig_nats ?? 0;
-  const normHig = topAction?.normalized_hig ?? (topAction?.step_max_hig ? rawHigNats / topAction.step_max_hig : 0.746);
+  const normHig = topAction?.normalized_hig ?? (topAction?.step_max_hig ? rawHigNats / topAction.step_max_hig : 0);
   const rawDiscUtil = topAction?.raw_discovery_utility ?? prereg?.discovery_utility ?? 0;
-  const normDisc = topAction?.normalized_discovery ?? (topAction?.step_max_discovery ? rawDiscUtil / topAction.step_max_discovery : 0.978);
-  const rawCost = topAction?.raw_estimated_cost ?? action?.estimated_cost ?? 1.0;
-  const normCost = topAction?.normalized_cost ?? (topAction?.step_max_cost ? rawCost / topAction.step_max_cost : 0.5);
+  const normDisc = topAction?.normalized_discovery ?? (topAction?.step_max_discovery ? rawDiscUtil / topAction.step_max_discovery : 0);
+  const rawCost = topAction?.raw_estimated_cost ?? action?.estimated_cost ?? 0;
+  const normCost = topAction?.normalized_cost ?? (topAction?.step_max_cost ? rawCost / topAction.step_max_cost : 0);
 
-  const wHig = topAction?.w_hig ?? 0.8;
-  const wDisc = topAction?.w_discovery ?? 0.8;
-  const wCost = topAction?.w_cost ?? 2.0;
+  const wHig = topAction?.w_hig ?? (data.flagship_campaign?.policy_weights?.w_hig !== undefined ? data.flagship_campaign.policy_weights.w_hig : 0);
+  const wDisc = topAction?.w_discovery ?? (data.flagship_campaign?.policy_weights?.w_discovery !== undefined ? data.flagship_campaign.policy_weights.w_discovery : 0);
+  const wCost = topAction?.w_cost ?? (data.flagship_campaign?.policy_weights?.w_cost !== undefined ? data.flagship_campaign.policy_weights.w_cost : 0);
 
   const wHigContrib = topAction?.weighted_hig_contribution ?? (wHig * normHig);
   const wDiscContrib = topAction?.weighted_discovery_contribution ?? (wDisc * normDisc);
@@ -163,7 +163,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 onClick={() => { setSelectedCampaignType('controlled'); handleStepSelect(1); }}
                 className={`px-3 py-1 rounded-md font-medium transition cursor-pointer ${
                   selectedCampaignType === 'controlled'
-                    ? 'bg-white text-emerald-800 shadow-xs font-semibold'
+                    ? 'bg-white text-red-800 shadow-xs font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -173,7 +173,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 onClick={() => { setSelectedCampaignType('alab_replay'); handleStepSelect(1); }}
                 className={`px-3 py-1 rounded-md font-medium transition cursor-pointer ${
                   selectedCampaignType === 'alab_replay'
-                    ? 'bg-white text-emerald-800 shadow-xs font-semibold'
+                    ? 'bg-white text-red-800 shadow-xs font-semibold'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -190,7 +190,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                   onClick={() => handleStepSelect(s.step)}
                   className={`w-7 h-7 rounded-md font-mono text-xs font-semibold transition cursor-pointer flex items-center justify-center ${
                     currentStepNum === s.step
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-red-600 text-white shadow-xs'
                       : 'text-slate-600 hover:bg-slate-200'
                   }`}
                 >
@@ -218,11 +218,11 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               onClick={() => setRevealState('STATE_A_BEFORE')}
               className={`px-3 py-1.5 rounded-lg border text-left transition cursor-pointer flex items-center gap-2 ${
                 revealState === 'STATE_A_BEFORE'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-2xs'
+                  ? 'bg-red-50 border-red-500 text-red-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
               }`}
             >
-              <span className="w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-3xs font-mono">1</span>
+              <span className="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-3xs font-mono">1</span>
               <span>Candidate Scored</span>
             </button>
 
@@ -233,11 +233,11 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               onClick={() => setRevealState('STATE_B_LOCKED')}
               className={`px-3 py-1.5 rounded-lg border text-left transition cursor-pointer flex items-center gap-2 ${
                 revealState === 'STATE_B_LOCKED'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-2xs'
+                  ? 'bg-red-50 border-red-500 text-red-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
               }`}
             >
-              <Lock className="w-3.5 h-3.5 text-emerald-700" />
+              <Lock className="w-3.5 h-3.5 text-red-700" />
               <span>Preregistration Locked</span>
             </button>
 
@@ -248,11 +248,11 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               onClick={() => setRevealState('STATE_C_REVEAL')}
               className={`px-3 py-1.5 rounded-lg border text-left transition cursor-pointer flex items-center gap-2 ${
                 revealState === 'STATE_C_REVEAL'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-2xs'
+                  ? 'bg-red-50 border-red-500 text-red-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
               }`}
             >
-              <Unlock className="w-3.5 h-3.5 text-emerald-700" />
+              <Unlock className="w-3.5 h-3.5 text-red-700" />
               <span>Evidence Revealed</span>
             </button>
 
@@ -263,11 +263,11 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               onClick={() => setRevealState('STATE_D_UPDATED')}
               className={`px-3 py-1.5 rounded-lg border text-left transition cursor-pointer flex items-center gap-2 ${
                 revealState === 'STATE_D_UPDATED'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-2xs'
+                  ? 'bg-red-50 border-red-500 text-red-900 font-bold shadow-2xs'
                   : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
               }`}
             >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-red-600" />
               <span>Posterior Updated</span>
             </button>
           </div>
@@ -275,7 +275,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
           {/* Primary Action Button */}
           <button
             onClick={stepThroughReveal}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold text-white shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
+            className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-xs font-semibold text-white shadow-xs transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
           >
             {revealState === 'STATE_A_BEFORE' && (
               <>
@@ -312,7 +312,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <FlaskConical className="w-4 h-4 text-emerald-600" />
+                <FlaskConical className="w-4 h-4 text-red-600" />
                 <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Candidate Discovery Space</h2>
               </div>
 
@@ -322,7 +322,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                   onClick={() => setCandidateViewMode('3D_STARK')}
                   className={`px-3 py-1 rounded-md font-mono text-2xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                     candidateViewMode === '3D_STARK'
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-red-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -333,7 +333,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                   onClick={() => setCandidateViewMode('2D_GRID')}
                   className={`px-3 py-1 rounded-md font-mono text-2xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                     candidateViewMode === '2D_GRID'
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-red-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -344,7 +344,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
 
             {/* View Content */}
             {candidateViewMode === '3D_STARK' ? (
-              <div className="rounded-xl overflow-hidden border border-emerald-950/40">
+              <div className="rounded-xl overflow-hidden border border-red-950/40">
                 <StarkHologramSphere
                   candidates={data.flagship_campaign.candidates || []}
                   selectedCandidateId={selectedCandidateId || action?.candidate_id}
@@ -367,7 +367,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                       onClick={() => setSelectedCandidateId(cand.candidate_id)}
                       className={`p-3 rounded-lg border text-left transition cursor-pointer ${
                         isTarget
-                          ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-400'
+                          ? 'border-red-500 bg-red-50/60 ring-2 ring-red-400'
                           : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                     >
@@ -376,7 +376,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                           {cand.candidate_id.replace('controlled-', 'Syn-')}
                         </span>
                         {isTarget && (
-                          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
                         )}
                       </div>
                       <div className="text-2xs text-slate-500 mt-1 truncate">
@@ -389,7 +389,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
             )}
 
             {/* Candidate Metadata Strip */}
-            <div className="p-3.5 rounded-lg bg-emerald-50/40 border border-emerald-100 flex flex-wrap items-center justify-between text-xs gap-3">
+            <div className="p-3.5 rounded-lg bg-red-50/40 border border-red-100 flex flex-wrap items-center justify-between text-xs gap-3">
               <div>
                 <span className="text-slate-500">Selected Formulation: </span>
                 <span className="font-bold text-slate-900 font-mono">
@@ -401,7 +401,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 <span>•</span>
                 <span>Refinement Cost: <strong>1.0 Unit</strong></span>
                 <span>•</span>
-                <span className="text-emerald-700 font-semibold">Feasibility: Satisfied</span>
+                <span className="text-red-700 font-semibold">Feasibility: Satisfied</span>
               </div>
             </div>
           </div>
@@ -411,10 +411,10 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
         <div className="lg:col-span-5 space-y-4">
           {/* Card 1: Hero Recommendation & VoI Score */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-600" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-red-600" />
 
             <div className="flex items-center justify-between">
-              <span className="text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <span className="text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">
                 Recommended Decision
               </span>
               <span className="text-2xs font-mono text-slate-400">
@@ -425,7 +425,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
             <div>
               <div className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-baseline gap-2">
                 <span>{action?.action_type || 'XRD'}</span>
-                <span className="text-sm font-semibold text-emerald-700 font-mono">
+                <span className="text-sm font-semibold text-red-700 font-mono">
                   on {action?.candidate_id || 'PG_0309'}
                 </span>
               </div>
@@ -435,10 +435,10 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
             </div>
 
             {/* Large Dimensionless Score Display */}
-            <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-red-50/50 border border-red-100 flex items-center justify-between">
               <div>
-                <span className="text-2xs font-bold uppercase text-emerald-800 tracking-wider">Net Acquisition Score S(a)</span>
-                <div className="text-2xl font-extrabold text-emerald-700 font-mono">
+                <span className="text-2xs font-bold uppercase text-red-800 tracking-wider">Net Acquisition Score S(a)</span>
+                <div className="text-2xl font-extrabold text-red-700 font-mono">
                   {totalScore >= 0 ? `+${totalScore.toFixed(4)}` : totalScore.toFixed(4)}
                   <span className="text-xs font-normal text-slate-500 ml-1.5 font-sans">(dimensionless score)</span>
                 </div>
@@ -453,7 +453,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
             <div className="space-y-2 pt-1 text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-2xs font-bold uppercase text-slate-500 tracking-wider">Mathematical Decomposition</span>
-                <span className="text-3xs font-mono text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                <span className="text-3xs font-mono text-red-800 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-200">
                   S(a) = w_H·HIG̃ + w_D·D̃ - w_C·C̃
                 </span>
               </div>
@@ -463,14 +463,14 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
                   <div className="flex justify-between text-2xs font-mono">
                     <span className="text-slate-700 font-medium">1. Info Gain: w_H · HIG̃</span>
-                    <span className="font-bold text-emerald-700">+{wHigContrib.toFixed(4)}</span>
+                    <span className="font-bold text-red-700">+{wHigContrib.toFixed(4)}</span>
                   </div>
                   <div className="flex justify-between text-3xs text-slate-500 font-mono">
                     <span>Raw: {rawHigNats.toFixed(4)} nats (norm: {normHig.toFixed(3)})</span>
                     <span>w_H = {wHig}</span>
                   </div>
                   <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normHig * 100))}%` }} />
+                    <div className="bg-red-600 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normHig * 100))}%` }} />
                   </div>
                 </div>
 
@@ -478,14 +478,14 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
                   <div className="flex justify-between text-2xs font-mono">
                     <span className="text-slate-700 font-medium">2. Discovery Yield: w_D · D̃</span>
-                    <span className="font-bold text-emerald-600">+{wDiscContrib.toFixed(4)}</span>
+                    <span className="font-bold text-red-600">+{wDiscContrib.toFixed(4)}</span>
                   </div>
                   <div className="flex justify-between text-3xs text-slate-500 font-mono">
                     <span>Raw: {rawDiscUtil.toFixed(4)} (norm: {normDisc.toFixed(3)})</span>
                     <span>w_D = {wDisc}</span>
                   </div>
                   <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normDisc * 100))}%` }} />
+                    <div className="bg-red-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normDisc * 100))}%` }} />
                   </div>
                 </div>
 
@@ -508,7 +508,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
 
             {/* Preregistration Ledger Status Pill */}
             <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-2xs text-slate-600 flex items-start gap-2">
-              <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+              <Lock className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
               <span>
                 <strong>Preregistration Guarantee:</strong> Observable distribution committed to evidence ledger before physical data unblinding.
               </span>
@@ -519,7 +519,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-600" />
+                <Layers className="w-4 h-4 text-red-600" />
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Hypothesis Observatory</h3>
               </div>
               <span className="text-2xs font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
@@ -536,7 +536,8 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
 
             <div className="space-y-2.5">
               {Object.entries(hypotheses).map(([hid, hdef]) => {
-                const pBefore = beliefsBefore[hid] ?? 0.3333;
+                const initP = data.flagship_campaign?.initial_beliefs?.[hid] ?? 0;
+                const pBefore = beliefsBefore[hid] ?? initP;
                 const pAfter = beliefsAfter[hid] ?? pBefore;
                 const delta = (revealState === 'STATE_D_UPDATED') ? (posteriorDelta[hid] ?? 0) : 0;
                 const isDominant = pAfter > 0.45;
@@ -546,9 +547,9 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-900">{hdef.title}</span>
                       <div className="flex items-center gap-2 font-mono">
-                        <span className="font-bold text-emerald-800">{(pAfter * 100).toFixed(1)}%</span>
+                        <span className="font-bold text-red-800">{(pAfter * 100).toFixed(1)}%</span>
                         {delta !== 0 && (
-                          <span className={`text-2xs font-bold ${delta > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          <span className={`text-2xs font-bold ${delta > 0 ? 'text-red-600' : 'text-slate-400'}`}>
                             {delta > 0 ? `+${(delta * 100).toFixed(1)}%` : `${(delta * 100).toFixed(1)}%`}
                           </span>
                         )}
@@ -559,7 +560,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                     <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-500 ${
-                          isDominant ? 'bg-emerald-600' : 'bg-emerald-400'
+                          isDominant ? 'bg-red-600' : 'bg-red-400'
                         }`} 
                         style={{ width: `${pAfter * 100}%` }} 
                       />
@@ -585,18 +586,18 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               </p>
             </div>
           ) : obs ? (
-            <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 text-xs space-y-2">
+            <div className="bg-red-50/50 p-4 rounded-xl border border-red-200 text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-emerald-900 font-bold">
-                  <Unlock className="w-3.5 h-3.5 text-emerald-700" />
+                <div className="flex items-center gap-1.5 text-red-900 font-bold">
+                  <Unlock className="w-3.5 h-3.5 text-red-700" />
                   <span>Revealed Observable: {obs.action.action_type}</span>
                 </div>
-                <span className="font-mono text-2xs text-emerald-700">
+                <span className="font-mono text-2xs text-red-700">
                   {obs.timestamp?.substring(11, 19)} UTC
                 </span>
               </div>
 
-              <div className="bg-white p-2.5 rounded-lg border border-emerald-100 font-mono text-2xs space-y-1 text-slate-700">
+              <div className="bg-white p-2.5 rounded-lg border border-red-100 font-mono text-2xs space-y-1 text-slate-700">
                 {obs.observed_measurement?.observable_names?.map((name, i) => {
                   const val = Array.isArray(obs.observed_measurement.value) 
                     ? obs.observed_measurement.value[i] 
@@ -610,9 +611,9 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 })}
               </div>
 
-              <div className="flex justify-between text-2xs text-emerald-900 pt-1 font-mono">
+              <div className="flex justify-between text-2xs text-red-900 pt-1 font-mono">
                 <span>Realized Entropy Reduction:</span>
-                <span className="font-bold text-emerald-700">
+                <span className="font-bold text-red-700">
                   {obs.realized_entropy_reduction_nats?.toFixed(4) || '0.0000'} nats
                 </span>
               </div>
@@ -632,22 +633,22 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               Comparing decisions if alternative scientific acquisition strategies were executed on the same candidate pool.
             </p>
           </div>
-          <span className="text-2xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold self-start sm:self-auto">
+          <span className="text-2xs font-mono px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-200 font-semibold self-start sm:self-auto">
             12 Candidates × 2 Modalities
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Hybrid Policy */}
-          <div className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/40 space-y-2">
+          <div className="p-4 rounded-xl border-2 border-red-500 bg-red-50/40 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-900">HYBRID (Selected)</span>
-              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold">WINNER</span>
+              <span className="text-xs font-bold text-red-900">HYBRID (Selected)</span>
+              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-red-600 text-white font-bold">WINNER</span>
             </div>
             <div className="font-mono text-sm font-extrabold text-slate-900">
               {hybridWinner?.action?.candidate_id} [{hybridWinner?.action?.action_type}]
             </div>
-            <div className="text-2xs font-mono text-emerald-700">
+            <div className="text-2xs font-mono text-red-700">
               Score: <strong>+{hybridWinner?.total_action_score?.toFixed(4)}</strong>
             </div>
             <p className="text-3xs text-slate-600 leading-relaxed">
@@ -699,7 +700,7 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               {costWinner?.action?.candidate_id} [{costWinner?.action?.action_type}]
             </div>
             <div className="text-2xs font-mono text-slate-700">
-              Cost: <strong>{(costWinner?.action?.estimated_cost ?? 1.0).toFixed(1)} units</strong>
+              Cost: <strong>{costWinner?.action?.estimated_cost !== undefined ? costWinner.action.estimated_cost.toFixed(1) : (costWinner?.raw_estimated_cost !== undefined ? costWinner.raw_estimated_cost.toFixed(1) : 'N/A')} units</strong>
             </div>
             <p className="text-3xs text-slate-500 leading-relaxed">
               Selects the cheapest feasible measurement regardless of scientific information return.

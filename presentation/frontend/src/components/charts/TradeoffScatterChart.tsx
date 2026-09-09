@@ -33,7 +33,7 @@ export const TradeoffScatterChart: React.FC<Props> = ({
   const points = actions.map((a) => {
     const rawHig = a.raw_expected_hig_nats ?? a.expected_hig_nats ?? 0;
     const disc = a.raw_discovery_utility ?? a.discovery_utility ?? 0;
-    const cost = a.raw_estimated_cost ?? 1.0;
+    const cost = a.raw_estimated_cost ?? a.action?.estimated_cost ?? 0;
     const cId = a.action?.candidate_id || '';
     const mod = a.action?.action_type || '';
     const isWinner = a.action?.action_id === winnerActionId;
@@ -42,51 +42,54 @@ export const TradeoffScatterChart: React.FC<Props> = ({
     return {
       x: parseFloat(rawHig.toFixed(4)),
       y: parseFloat(disc.toFixed(4)),
-      z: cost * 10,
+      z: cost,
       candidateId: cId,
       modality: mod,
-      cost,
       score: a.total_action_score ?? 0,
+      cost,
+      rawHig,
       isWinner,
       isSelected
     };
   });
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <div className="flex items-center justify-between mb-3">
+    <div className="w-full flex flex-col">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3">
         <div>
-          <h4 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Compass className="w-4 h-4 text-emerald-600" />
+          <h4 className="text-xs sm:text-sm font-bold text-[#17201F] tracking-tight flex items-center gap-2">
+            <Compass className="w-4 h-4 text-[#DC2626]" />
             <span>Information–Discovery–Cost Action Trade-off</span>
           </h4>
-          <p className="text-xs text-slate-500">
+          <p className="text-2xs text-[#66706C] mt-0.5">
             Expected HIG (nats) vs Discovery Utility with measurement cost weighting
           </p>
         </div>
-        <div className="text-2xs font-mono text-slate-400">
+        <div className="text-2xs font-mono text-[#8F9995] whitespace-nowrap">
           Click point to inspect candidate
         </div>
       </div>
 
-      <div className="flex-1 w-full min-h-[250px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 12, right: 24, left: -10, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+      <div className="w-full h-[300px]">
+        <ResponsiveContainer width="100%" height={300}>
+          <ScatterChart margin={{ top: 16, right: 30, left: 0, bottom: 24 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
             <XAxis
               type="number"
               dataKey="x"
               name="Expected HIG"
               unit=" nats"
-              tick={{ fill: '#64748b', fontSize: 11 }}
-              tickLine={{ stroke: '#cbd5e1' }}
-              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#334155', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
+              tickLine={false}
+              axisLine={{ stroke: '#D9DFDB' }}
               label={{
                 value: 'Expected Hypothesis Information Gain (nats)',
                 position: 'insideBottom',
                 offset: -12,
-                fill: '#475569',
-                fontSize: 11
+                fill: '#17201F',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
             />
             <YAxis
@@ -94,16 +97,18 @@ export const TradeoffScatterChart: React.FC<Props> = ({
               dataKey="y"
               name="Discovery Utility"
               domain={[0, 1]}
-              tick={{ fill: '#64748b', fontSize: 11 }}
-              tickLine={{ stroke: '#cbd5e1' }}
-              axisLine={{ stroke: '#cbd5e1' }}
+              tick={{ fill: '#475569', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
+              tickLine={false}
+              axisLine={{ stroke: '#D9DFDB' }}
               label={{
                 value: 'Discovery Utility [0, 1]',
                 angle: -90,
                 position: 'insideLeft',
-                offset: 20,
-                fill: '#475569',
-                fontSize: 11
+                offset: 15,
+                fill: '#17201F',
+                fontSize: 12,
+                fontWeight: 600,
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
             />
             <ZAxis type="number" dataKey="z" range={[60, 200]} name="Cost" />
@@ -111,55 +116,43 @@ export const TradeoffScatterChart: React.FC<Props> = ({
               cursor={{ strokeDasharray: '3 3' }}
               contentStyle={{
                 backgroundColor: '#ffffff',
-                borderColor: '#e2e8f0',
+                borderColor: '#D9DFDB',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                fontSize: '12px'
+                fontSize: '12px',
+                fontFamily: "'Montserrat', Arial, sans-serif"
               }}
               formatter={(value: any, name: any, item: any) => {
                 const p = item.payload;
-                return [
-                  `HIG: ${p.x} nats, Discovery: ${p.y}, Cost: ${p.cost}, Net S(a): ${p.score.toFixed(3)}`,
-                  `${p.candidateId} — ${p.modality}${p.isWinner ? ' (Recommendation)' : ''}`
-                ];
+                if (name === 'Expected HIG') return [`${Number(value).toFixed(3)} nats`, name];
+                if (name === 'Discovery Utility') return [Number(value).toFixed(3), name];
+                return [value, name];
               }}
-            />
-            <Legend
-              verticalAlign="top"
-              height={32}
-              formatter={() => (
-                <span className="text-xs font-medium text-slate-700">
-                  Green: XRD (cost: 1.0) | Violet: Refinement (cost: 0.5) | Ring: Selected/Winner
-                </span>
-              )}
+              labelFormatter={() => ''}
             />
             <Scatter
               name="Actions"
               data={points}
-              onClick={(e: any) => {
-                if (e?.candidateId && e?.modality) {
-                  onSelectAction(e.candidateId, e.modality);
+              onClick={(entry: any) => {
+                if (entry && entry.candidateId && entry.modality) {
+                  onSelectAction(entry.candidateId, entry.modality);
                 }
               }}
               className="cursor-pointer"
             >
-              {points.map((entry, index) => {
-                let fill = entry.modality === 'XRD' ? '#059669' : '#7c3aed';
-                if (entry.isWinner) fill = '#10b981';
-                if (entry.isSelected) fill = '#2563eb';
-
-                const stroke = entry.isSelected
-                  ? '#1d4ed8'
-                  : entry.isWinner
-                  ? '#047857'
-                  : '#ffffff';
+              {points.map((p, idx) => {
+                let fill = '#94a3b8';
+                if (p.isWinner) fill = '#DC2626';
+                else if (p.isSelected) fill = '#991B1B';
+                else if (p.modality === 'XRD') fill = '#EF4444';
+                else if (p.modality === 'TEM' || p.modality === 'REFINEMENT') fill = '#8B5CF6';
 
                 return (
                   <Cell
-                    key={`cell-${index}`}
+                    key={idx}
                     fill={fill}
-                    stroke={stroke}
-                    strokeWidth={entry.isSelected || entry.isWinner ? 3 : 1}
+                    stroke={p.isSelected ? '#17201F' : '#ffffff'}
+                    strokeWidth={p.isSelected ? 2.5 : 1}
                   />
                 );
               })}
@@ -168,23 +161,23 @@ export const TradeoffScatterChart: React.FC<Props> = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-2xs font-mono text-slate-500">
+      <div className="mt-3 pt-2.5 border-t border-[#D9DFDB] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-2xs font-mono text-[#66706C]">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block" />
-            <span>XRD Modality</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-violet-600 inline-block" />
-            <span>Refinement Modality</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-            <span>Selected Action</span>
-          </div>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#B91C1C]" />
+            <span>Winner (#1)</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
+            <span>XRD Diagnostic</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
+            <span>Refinement / TEM</span>
+          </span>
         </div>
-        <div className="text-slate-400">
-          Joint Candidate × Modality Optimization
+        <div className="text-[#8F9995] whitespace-nowrap">
+          Circle size indicates characterization cost
         </div>
       </div>
     </div>

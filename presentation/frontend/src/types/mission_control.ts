@@ -6,6 +6,19 @@ export type RevealPhase = 'A_SCORED' | 'B_PREREGISTERED' | 'C_REVEALED' | 'D_UPD
 export type CandidateViewMode = 'heatmap' | 'tradeoff' | 'hologram' | 'table';
 export type HeatmapMetricMode = 'composite' | 'raw_hig' | 'norm_hig' | 'discovery' | 'cost';
 
+export type DiscoveryFlowState = 'setup' | 'running' | 'results';
+export type DatasetOption = 'controlled_synthesis' | 'alab_replay' | 'electrolyte_search';
+
+export interface PresenterSceneState {
+  workspace: WorkspaceTab;
+  discoveryFlowState?: DiscoveryFlowState;
+  datasetOption?: DatasetOption;
+  benchmarkQuestionId?: number;
+  campaignStep?: number;
+  revealPhase?: RevealPhase;
+  subtab?: string;
+}
+
 export interface ScientificWorkspaceState {
   campaignKind: 'flagship_synthetic' | 'alab_replay';
   stepIndex: number;
@@ -109,7 +122,11 @@ export interface ScoredActionRecord {
   step_max_hig?: number;
   step_max_discovery?: number;
   step_max_cost?: number;
+  predictive_distribution_available?: boolean;
+  predictive_distribution_unavailability_reason?: string;
 }
+
+export type HeatmapCellStatus = 'FEASIBLE_SCORED' | 'FEASIBLE_ZERO' | 'INFEASIBLE' | 'UNAVAILABLE';
 
 export interface PreregisteredActionRecord {
   event: string;
@@ -123,8 +140,8 @@ export interface PreregisteredActionRecord {
     hypothesis_id: string;
     candidate_id: string;
     modality: string;
-    mean: number[];
-    variance: number[];
+    mean?: number[];
+    variance?: number[];
     observable_names?: string[];
     distribution_kind?: string;
     categories?: string[];
@@ -183,6 +200,7 @@ export interface BeliefUpdateRecord {
 
 export interface CampaignStep {
   step: number;
+  tested_candidates_before?: string[];
   preregistration: PreregisteredActionRecord | null;
   observation: MeasurementRevealedRecord | null;
   belief_update: BeliefUpdateRecord | null;

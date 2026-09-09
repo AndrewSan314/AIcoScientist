@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SnapshotData, DataMode, WorkspaceTab, LegacyNavTab } from './types/mission_control';
+import { SnapshotData, DataMode, WorkspaceTab, DiscoveryFlowState, DatasetOption, RevealPhase } from './types/mission_control';
 import { Header } from './components/Header';
 import { PresenterMode, SCENES } from './components/PresenterMode';
 import { SpeakerNotesModal } from './components/SpeakerNotesModal';
@@ -7,20 +7,32 @@ import { DiscoveryLabWorkspace } from './views/DiscoveryLabWorkspace';
 import { EvidenceBenchmarksWorkspace } from './views/EvidenceBenchmarksWorkspace';
 import { ResearchSystemWorkspace } from './views/ResearchSystemWorkspace';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { validateSnapshot } from './utils/snapshotValidation';
 
 export const App: React.FC = () => {
   const [data, setData] = useState<SnapshotData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Active Workspace Navigation (3 primary workspaces)
   const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceTab>('discovery');
+  
+  // Discovery Lab Operable Flow State
+  const [discoveryFlowState, setDiscoveryFlowState] = useState<DiscoveryFlowState>('setup');
+  const [discoveryDataset, setDiscoveryDataset] = useState<DatasetOption>('controlled_synthesis');
+  const [cockpitStep, setCockpitStep] = useState<number>(1);
+  const [discoveryRevealPhase, setDiscoveryRevealPhase] = useState<RevealPhase>('A_SCORED');
+
+  // Evidence Benchmarks Question State
+  const [benchmarkQuestion, setBenchmarkQuestion] = useState<number>(1);
+
+  // How It Works Subtab State
+  const [systemSubtab, setSystemSubtab] = useState<'architecture' | 'audit' | 'verification'>('architecture');
+
+  // Presenter Mode State
   const [presenterMode, setPresenterMode] = useState<boolean>(false);
   const [currentScene, setCurrentScene] = useState<number>(0);
   const [notesOpen, setNotesOpen] = useState<boolean>(false);
-
-  // Controlled step for Discovery Lab (synced with Presenter Mode)
-  const [cockpitStep, setCockpitStep] = useState<number>(1);
-  const [benchmarkQuestion, setBenchmarkQuestion] = useState<number>(1);
 
   // Load deterministic snapshot on mount
   useEffect(() => {
@@ -32,6 +44,11 @@ export const App: React.FC = () => {
         return res.json();
       })
       .then((json: SnapshotData) => {
+        const valRes = validateSnapshot(json);
+        if (!valRes.valid) {
+          console.error('Snapshot validation failed:', valRes.errors);
+          throw new Error(`Snapshot integrity failure: ${valRes.errors[0]}`);
+        }
         setData(json);
         setLoading(false);
       })
@@ -42,28 +59,9 @@ export const App: React.FC = () => {
       });
   }, []);
 
-  // Backward-compatible navigation helper for legacy tab IDs
-  const handleLegacyNavigation = (tab: LegacyNavTab) => {
-    if (tab === 'overview' || tab === 'cockpit') {
-      setCurrentWorkspace('discovery');
-    } else if (tab === 'alab') {
-      setCurrentWorkspace('benchmarks');
-      setBenchmarkQuestion(4);
-    } else if (tab === 'benchmarks') {
-      setCurrentWorkspace('benchmarks');
-      setBenchmarkQuestion(1);
-    } else if (tab === 'electrolyte') {
-      setCurrentWorkspace('benchmarks');
-      setBenchmarkQuestion(5);
-    } else if (tab === 'architecture' || tab === 'readiness') {
-      setCurrentWorkspace('system');
-    }
-  };
-
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -76,29 +74,24 @@ export const App: React.FC = () => {
         if (e.key === '1') setCurrentWorkspace('discovery');
         if (e.key === '2') setCurrentWorkspace('benchmarks');
         if (e.key === '3') setCurrentWorkspace('system');
-        // Legacy deep link shortcuts (4-7)
-        if (e.key === '4') handleLegacyNavigation('benchmarks');
-        if (e.key === '5') handleLegacyNavigation('electrolyte');
-        if (e.key === '6') handleLegacyNavigation('architecture');
-        if (e.key === '7') handleLegacyNavigation('readiness');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [presenterMode]);
 
-  // Handle Scene Change in Presenter Mode
+  // Handle Scene Change in Presenter Mode (Synchronizes full workspace state)
   const handleSceneSelect = (sceneIndex: number) => {
     setCurrentScene(sceneIndex);
     const scene = SCENES[sceneIndex];
     if (scene) {
       setCurrentWorkspace(scene.workspace);
-      if (scene.questionId) {
-        setBenchmarkQuestion(scene.questionId);
-      }
-      if (scene.stepIndex !== undefined) {
-        setCockpitStep(scene.stepIndex);
-      }
+      if (scene.flowState) setDiscoveryFlowState(scene.flowState);
+      if (scene.datasetOption) setDiscoveryDataset(scene.datasetOption);
+      if (scene.stepIndex !== undefined) setCockpitStep(scene.stepIndex);
+      if (scene.revealPhase) setDiscoveryRevealPhase(scene.revealPhase);
+      if (scene.questionId) setBenchmarkQuestion(scene.questionId);
+      if (scene.subtab) setSystemSubtab(scene.subtab);
     }
   };
 
@@ -128,24 +121,24 @@ export const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-800">
-        <Loader2 className="w-10 h-10 text-emerald-700 animate-spin mb-4" />
-        <h2 className="text-base font-bold tracking-tight">Initializing AIcoScientist Mission Control...</h2>
-        <p className="text-xs text-slate-500 mt-1 font-mono">Loading deterministic snapshot.json</p>
+      <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center justify-center p-6 text-[#17201F]">
+        <Loader2 className="w-10 h-10 text-[#DC2626] animate-spin mb-4" />
+        <h2 className="text-base font-bold tracking-tight">Initializing AIcoScientist Discovery Console...</h2>
+        <p className="text-xs text-[#66706C] mt-1 font-mono">Loading deterministic scientific snapshot</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-800">
-        <div className="max-w-md w-full bg-white p-6 rounded-xl border border-slate-200 shadow-lg text-center">
-          <AlertCircle className="w-10 h-10 text-crimson-600 mx-auto mb-3" />
-          <h2 className="text-base font-bold text-slate-900">Snapshot Loading Error</h2>
-          <p className="text-xs text-slate-600 mt-2 font-mono break-all">{error}</p>
+      <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center justify-center p-6 text-[#17201F]">
+        <div className="max-w-md w-full bg-[#FCFCFA] p-6 rounded-xl border border-[#D9DFDB] shadow-lg text-center">
+          <AlertCircle className="w-10 h-10 text-[#B91C1C] mx-auto mb-3" />
+          <h2 className="text-base font-bold text-[#17201F]">Snapshot Loading Error</h2>
+          <p className="text-xs text-[#66706C] mt-2 font-mono break-all">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-md text-xs font-semibold hover:bg-slate-800 cursor-pointer"
+            className="mt-4 px-4 py-2 bg-[#17201F] text-white rounded-md text-xs font-semibold hover:bg-[#243331] cursor-pointer"
           >
             Retry Loading
           </button>
@@ -155,7 +148,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col bg-slate-50 text-slate-900 ${presenterMode ? 'pt-14' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-[#F4F3EE] text-[#17201F] ${presenterMode ? 'pt-14' : ''}`}>
       {/* Presenter Mode Top HUD (when active) */}
       {presenterMode && (
         <PresenterMode
@@ -188,37 +181,49 @@ export const App: React.FC = () => {
       />
 
       {/* Main Viewport Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-8 lg:px-12 pt-6">
         {currentWorkspace === 'discovery' && (
           <DiscoveryLabWorkspace
             data={data}
             controlledStepIndex={cockpitStep}
             onStepChange={setCockpitStep}
+            controlledFlowState={discoveryFlowState}
+            onFlowStateChange={setDiscoveryFlowState}
+            controlledDataset={discoveryDataset}
+            onDatasetChange={setDiscoveryDataset}
+            controlledRevealPhase={discoveryRevealPhase}
+            onRevealPhaseChange={setDiscoveryRevealPhase}
           />
         )}
         {currentWorkspace === 'benchmarks' && (
           <EvidenceBenchmarksWorkspace
             data={data}
-            initialQuestionId={benchmarkQuestion}
+            controlledQuestionId={benchmarkQuestion}
+            onQuestionChange={setBenchmarkQuestion}
           />
         )}
         {currentWorkspace === 'system' && (
-          <ResearchSystemWorkspace data={data} />
+          <ResearchSystemWorkspace
+            data={data}
+            initialSubtab={systemSubtab}
+          />
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-slate-700">AIcoScientist Discovery Mission Control</span>
-            <span className="text-slate-300">|</span>
-            <span className="font-mono text-2xs">SHA {data.provenance?.head_commit?.substring(0, 10)}</span>
+      {/* Scientific Editorial Footer */}
+      <footer className="border-t border-[#D9DFDB] bg-[#FCFCFA] py-4 mt-auto">
+        <div className="max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between text-xs text-[#66706C] gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="font-semibold text-[#17201F]">AIcoScientist Discovery Console</span>
+            <span className="text-[#D9DFDB]">|</span>
+            <span className="text-2xs text-[#8F9995]">Controlled & Validated Reproducible Snapshot</span>
           </div>
-          <div className="flex items-center gap-4 text-2xs font-mono">
+          <div className="flex items-center gap-4 text-2xs font-mono text-[#8F9995]">
             <span>5,333 Audit Events</span>
+            <span>•</span>
             <span>180 Trajectories</span>
-            <span>48/50 Gates Passed</span>
+            <span>•</span>
+            <span className="text-[#DC2626] font-semibold">48/50 Gates Passed</span>
           </div>
         </div>
       </footer>
