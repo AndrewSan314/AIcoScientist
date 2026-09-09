@@ -87,7 +87,67 @@ The FastAPI backend (`presentation/backend/server.py`) provides:
 
 ---
 
-## 7. Verification Results
+## 7. Chart-First Scientific Visualization System
+
+The UI was restructured from a fragmented 7-tab interface into **three unified, narrative-driven workspaces**, anchored by publication-quality charts built with **Recharts**:
+
+### 7.1 Unified Three-Workspace Architecture
+1. **Discovery Lab (`WorkspaceTab: discovery_lab` / Hotkey: `1`):**
+   - Default primary landing page.
+   - 7:5 Analytical Grid: sequential Bayesian hypothesis belief trajectory, predictive Gaussian probability densities, HIG vs Discovery vs Cost trade-off scatter, and exact signed score waterfall.
+   - Candidate Space Explorer: tabbed toggle between **Action Matrix Heatmap**, **3D Stark Hologram Sphere**, and **24-Action Counterfactual Table**.
+   - Full 4-State Preregistration Replay flow with real-time belief shifts.
+2. **Evidence & Benchmarks (`WorkspaceTab: evidence_benchmarks` / Hotkey: `2`):**
+   - Organized around **five core research questions**:
+     - *Q1 (Clean Worlds):* 100% MAP recovery rate across 30 trajectories.
+     - *Q2 (Stress Worlds):* Prior misspecification, noise, and likelihood distortion resilience.
+     - *Q3 (Benchmark Trajectories):* 180 trajectory multi-policy comparisons.
+     - *Q4 (A-Lab Real Samples):* 1,035 authentic physical samples catalog, Rietveld $R_{wp}$, and empirical calibration coverage.
+     - *Q5 (333,333 Electrolyte Formulations):* Stage-1 combinatorial screening and honest negative results under ExtraTrees oracle.
+3. **Research System (`WorkspaceTab: research_system` / Hotkey: `3`):**
+   - Core domain-agnostic abstractions (`MaterialDomainAdapter`, `MultimodalDecisionEngine`, `MultimodalEvidenceLedger`).
+   - 5,333-event evidence ledger stream with raw JSON event inspection.
+   - 50-Gate verification matrix (48 PASS, 2 intentional FAILs explained).
+   - Cryptographic SHA-256 provenance manifest inspector.
+
+### 7.2 Publication-Quality Chart Suite
+All charts employ a standardized, scientifically accessible color palette with deep ink typography:
+- $H_1$ Phase Purity Limited: Emerald (`#059669`)
+- $H_2$ Composition Homogeneity Limited: Amber (`#d97706`)
+- $H_3$ Morphology Kinetics Limited: Violet (`#7c3aed`)
+- Observed Evidence: Electric Blue (`#2563eb`)
+- Excluded Counterfactuals: Crimson Red (`#dc2626`)
+
+| Chart Component | Visualization Type | Mathematical & Provenance Source |
+| :--- | :--- | :--- |
+| `HypothesisBeliefTrajectoryChart` | Recharts Multi-line with event markers | Sequential Bayesian posterior probabilities $P(H_i \mid e_{1:t})$ across steps 0–4 |
+| `PredictiveDistributionChart` | Recharts Area / Gaussian curves | Gaussian predictive distributions $p(y \mid a, H_k)$ with pre-reveal blinding firewall and post-reveal vertical marker |
+| `CandidateModalityHeatmap` | 12 Candidates $\times$ 2 Modalities Grid | Interactive metric switching: $S(a)$, Raw HIG (nats), Normalized HIG, Discovery, Cost |
+| `ScoreWaterfallChart` | Dimensionless signed bar waterfall | Exact decomposition: $+w_H \widetilde{HIG} + w_D \widetilde{D} - w_C \widetilde{C} = S(a)$ |
+| `TradeoffScatterChart` | 2D Scatter plot with candidate markers | Pareto trade-off between Expected HIG and Discovery Utility with cost-coded radii |
+| `PolicyTrajectoryChart` | Grouped bar & line comparisons | 6 policies across 6 worlds for 5 metrics (MAP rate, confidence steps, final posterior, entropy, cost) |
+| `CalibrationCoverageChart` | Calibration target vs empirical bars | 50% and 90% empirical credible intervals across XRD and Refinement observables |
+| `ElectrolyteOptimizationChart` | 15-Iteration optimization trajectories | Bayesian Optimization vs Hybrid vs Random on ExtraTrees surrogate oracle |
+
+---
+
+## 8. Visual QA & Multi-Resolution Verification
+
+Automated headless browser visual verification was executed across three target form factors using `puppeteer-core` driving native Edge (`presentation/scripts/capture_screenshots.js`):
+
+| Screenshot File | Resolution | Target View | Verification Status |
+| :--- | :--- | :--- | :--- |
+| `desktop_1920_discovery_lab.png` | 1920 × 1080 | Discovery Lab Workspace (Hero, Beliefs, Waterfall) | **VERIFIED CLEAN** |
+| `desktop_1366_discovery_lab.png` | 1366 × 768 | Discovery Lab Workspace (Standard Projector) | **VERIFIED CLEAN** |
+| `mobile_375_discovery_lab.png` | 375 × 812 | Discovery Lab Workspace (Mobile Responsive) | **VERIFIED CLEAN** |
+| `desktop_1920_predictive_dist.png` | 1920 × 1080 | Predictive Distributions with Observation Blinding Firewall | **VERIFIED CLEAN** |
+| `desktop_1920_evidence_benchmarks.png` | 1920 × 1080 | Evidence & Benchmarks (5 Research Questions) | **VERIFIED CLEAN** |
+| `desktop_1920_research_system.png` | 1920 × 1080 | Research System (Abstractions, Ledger & 50 Gates) | **VERIFIED CLEAN** |
+| `desktop_1920_presenter_mode.png` | 1920 × 1080 | Presenter Mode Overlay & Top Teleprompter Bar | **VERIFIED CLEAN** |
+
+---
+
+## 9. Automated Verification Results
 
 ### Pytest Integrity Suite (`presentation/tests/test_ui_integrity.py`)
 ```text
@@ -100,7 +160,7 @@ presentation/tests/test_ui_integrity.py::test_exact_score_decomposition PASSED  
 presentation/tests/test_ui_integrity.py::test_counterfactual_action_space PASSED[ 80%]
 presentation/tests/test_ui_integrity.py::test_no_forbidden_patterns PASSED      [100%]
 
-============================== 5 passed in 0.42s ==============================
+============================== 5 passed in 0.13s ==============================
 ```
 
 ### Preflight Verification (`presentation/scripts/preflight_check.py`)

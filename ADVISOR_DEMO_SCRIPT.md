@@ -9,21 +9,19 @@
 ## Timeline & Talk Track
 
 ```text
-0:00 — 1:00 | Scene 1: The Research Question
-1:00 — 2:00 | Scene 2: Universal Architecture & Decision Loop
-2:00 — 3:30 | Scene 3: Decision Cockpit & Competing Hypotheses
-3:30 — 5:00 | Scene 4: The Scientific Wow Moment (Preregister → Reveal → Update)
-5:00 — 6:00 | Scene 5: Evaluation Breadth (180 Trajectories)
-6:00 — 7:00 | Scene 6: Real A-Lab Evidence & Scientific Boundaries
-7:00 — 7:45 | Scene 7: Electrolyte Screening Scale & Negative Result
-7:45 — 8:30 | Scene 8: Research Contributions & Prospective Next Steps
+0:00 — 1:15 | Scene 1: The Research Question & Domain-Agnostic Contribution (Workspace 1)
+1:15 — 2:30 | Scene 2: Discovery Lab — Competing Hypotheses & Predictive Distributions (Workspace 1)
+2:30 — 3:45 | Scene 3: Next Experiment — Candidate × Modality Trade-off & Exact Score (Workspace 1)
+3:45 — 5:15 | Scene 4: The Scientific Wow Moment (Preregister → Reveal → Update Loop) (Workspace 1)
+5:15 — 6:30 | Scene 5: Benchmark Validation — 180 Trajectories & Recovery Dynamics (Workspace 2)
+6:30 — 8:00 | Scene 6: Real A-Lab Evidence, Electrolyte Scale & System Governance (Workspace 2 & 3)
 ```
 
 ---
 
-### Scene 1: The Research Question (0:00 – 1:00)
-**On Screen:** *Tab 1: Research Overview (`/overview`)*  
-**Visual Action:** Point to the main headline: *"From property optimization to evidence-driven scientific decisions."*
+### Scene 1: The Research Question & Contribution (0:00 – 1:15)
+**On Screen:** *Workspace 1: Discovery Lab (`/discovery`)*  
+**Visual Action:** Point to the top banner and core manifesto: *"Autonomous Multimodal Decision & Epistemic Inference Loop."*
 
 > "Good morning, Professor.
 > 
@@ -33,135 +31,116 @@
 > 
 > AIcoScientist is an autonomous decision framework that asks: **'Which experiment should we perform next, and why?'**
 > 
-> As you can see on this overview screen, our methodology is built around a 9-stage closed loop, validated across 1,035 real inorganic synthesis samples, 180 controlled policy trajectories, and 5,333 auditable evidence ledger records. Today, I'll walk you through how our system makes these decisions."
+> As you can see on this Mission Control dashboard, our system is structured into three unified workspaces:
+> 1. **Discovery Lab:** The active decision engine and epistemic inference loop.
+> 2. **Evidence & Benchmarks:** 5 core research questions backed by 180 benchmark trajectories, 1,035 real physical experiments, and 333,000 electrolyte candidates.
+> 3. **Research System:** Reusable domain-agnostic abstractions, an immutable 5,333-record audit ledger, and 50 software verification gates.
+> 
+> Today, I will walk you through how our system makes these decisions."
 
 ---
 
-### Scene 2: Universal Architecture (1:00 – 2:00)
-**On Screen:** *Tab 6: Architecture & Ledger (`/architecture`)*  
-**Visual Action:** Hover over `MaterialDomainAdapter` and `MultimodalDecisionEngine`.
+### Scene 2: Discovery Lab: Competing Hypotheses & Predictions (1:15 – 2:30)
+**On Screen:** *Workspace 1: Discovery Lab (`/discovery`) — Analytical Grid*  
+**Visual Action:** Show the **Hypothesis Belief Trajectory** chart, then switch to the **Predictive Distributions** view. Point to the right-hand **Hypothesis Observatory**.
 
-> "The first key research contribution is that this framework is **domain-agnostic**.
+> "Let us look at our primary workspace, the **Discovery Lab**.
 > 
-> Look at the core abstractions: `MaterialDomainAdapter` cleanly separates the candidate chemistry representation from the active inference engine. 
+> In the top-left analytical view, notice the **Hypothesis Belief Trajectory**. Instead of a single black-box property model, AIcoScientist maintains three competing mechanistic hypotheses:
+> 1. $H_1$: Phase Purity Limited (Emerald)
+> 2. $H_2$: Composition Homogeneity Limited (Amber)
+> 3. $H_3$: Morphology Kinetics Limited (Violet)
 > 
-> Whether we are synthesizing solid-state ceramics, screening 333,000 battery electrolyte formulations, or exploring thin-film electrocatalysts, the exact same mathematical core enumerates joint actions, computes Expected Hypothesis Information Gain in nats, locks preregistrations, and executes Bayesian updates.
+> Note our explicit epistemic notice: these belief weights represent *relative explanatory model likelihoods* among simplified competing models, not a physical claim that one theory is absolute truth.
 > 
-> This is a reusable scientific operating system, not a one-off chemistry script."
-
----
-
-### Scene 3: Decision Cockpit & Competing Hypotheses (2:00 – 3:30)
-**On Screen:** *Tab 2: Decision Cockpit (`/cockpit`)*  
-**Visual Action:** Click on the three zones: Left (Hypotheses), Center (3D Iron Man 2 Stark Hologram Sphere & Candidate Space), Right (Hero Recommendation & 24-Action Counterfactual Table).
-
-> "Now let's step into the **Decision Cockpit**.
+> If we toggle the tab to **Predictive Distributions**, you see the Gaussian probability densities $p(y \mid a, H_k)$ that each hypothesis preregisters before any physical evidence is observed.
 > 
-> On the left, notice the **Hypothesis Observatory**. Instead of fitting a single black-box model, AIcoScientist maintains three competing mechanistic hypotheses:
-> 1. $H_1$: Phase Purity Limited
-> 2. $H_2$: Composition Homogeneity Limited
-> 3. $H_3$: Morphology Kinetics Limited
-> 
-> Note our explicit disclaimer: these weights represent *relative explanatory model likelihoods* among simplified competing models, not a physical claim that one simplified theory is absolute truth.
-> 
-> In the center is our **3D Iron Man 2 Stark Hologram Sphere**. Look at the spherical lattice of atomic candidate nodes. The 12 controlled candidates in our decision space are rendered as interactive nodes with authentic metrics, surrounded by an emerald orbital ring highlighting our selected action. Decorative nodes in the lattice are honestly tagged as structural lattice points without fake Pareto or testing flags.
-> 
-> On the right is our **Hero Recommendation**. The engine chose not only candidate `controlled-2`, but specifically selected **XRD characterization**. 
-> 
-> Look at the exact score decomposition:
-> $$S(a) = w_{\text{hig}} \cdot \widetilde{HIG}(a) + w_{\text{disc}} \cdot \widetilde{D}(a) - w_{\text{cost}} \cdot \widetilde{C}(a)$$
-> Here $S(a)$ is a signed dimensionless composite score (-0.2000), where raw HIG yields 0.506 nats at half the cost of an outcome test, maximizing scientific insight per dollar spent.
-> 
-> Below the hero card, our **24-Counterfactual Action Table** ranks all 12 candidate materials across both modalities (XRD and REFINEMENT), proving why alternative actions were deprioritized."
+> Notice the amber banner: **Observation Blinding Firewalled**. Prior to data acquisition, ground truth is strictly locked away."
 
 ---
 
-### Scene 4: The Scientific Wow Moment (3:30 – 5:00)
-**On Screen:** *Tab 2: Decision Cockpit Banner (Preregister → Reveal → Update)*  
-**Visual Action:** Click through the sequence buttons:
-1. State A (Scored) → Click **"Lock Preregistration (State B)"**
-2. State B (Locked) → Click **"Reveal Observation (State C)"**
-3. State C (Reveal) → Click **"Execute Belief Update (State D)"**
+### Scene 3: Next Experiment: Candidate × Modality Trade-off (2:30 – 3:45)
+**On Screen:** *Workspace 1: Discovery Lab — Lower Explorer & Score Decomposition*  
+**Visual Action:** Toggle the Candidate Space Explorer between **[Action Matrix Heatmap]**, **[3D Stark Hologram]**, and **[Counterfactual Table]**. Point to the **Exact Score Decomposition Waterfall** on the right.
 
-> "Now, here is the central interaction that separates AIcoScientist from standard AI demos: **The Preregister → Reveal → Update Loop**.
+> "Now, how does AIcoScientist decide what to test next?
 > 
-> In conventional research, models suffer from hindsight bias. In AIcoScientist:
+> In the lower explorer, we toggle between the **Candidate × Modality Matrix**, our **3D Stark Hologram Sphere**, and the **24-Action Counterfactual Table**.
 > 
-> **State A:** The action is selected and predictions are generated, but the observation is strictly firewalled.
+> Look at the **Exact Score Decomposition Waterfall** on the right:
+> $$S(a) = w_H \cdot \widetilde{HIG}(a) + w_D \cdot \widetilde{D}(a) - w_C \cdot \widetilde{C}(a)$$
 > 
-> *(Click Lock Preregistration)*
-> **State B:** The prediction distributions and falsification criteria are committed to an immutable ledger event with a cryptographic timestamp. The prediction is locked.
+> Notice that $S(a)$ is a **signed dimensionless composite scalar**. Only the raw Expected Hypothesis Information Gain carries the unit of *nats*.
 > 
-> *(Click Reveal Observation)*
-> **State C:** The physical or canonical observation is revealed. Notice we display real canonical descriptors and refinement phase fractions—zero synthesized traces.
+> At Step 1, the engine selected `controlled-2` with **XRD characterization**. Why? Because XRD yields 0.506 nats of information gain at half the cost of a full outcome test. It maximizes scientific discovery per dollar of laboratory budget.
 > 
-> *(Click Execute Belief Update)*
-> **State D:** Watch the belief bars update smoothly. Because the target phase fraction exceeded 0.94, $H_1$ Phase Purity posterior jumps from 33% to 68%. The log Bayes factor confirms strong diagnostic evidence, entropy is reduced by 0.42 nats, and the next action is immediately queued.
-> 
-> Every step of this chain is permanently auditable."
+> If you inspect the 3D Hologram, you see the 12 authentic candidate materials mapped across the discovery sphere, surrounded by an emerald orbital ring highlighting our selected action, while decorative lattice points are honestly marked without fake Pareto flags."
 
 ---
 
-### Scene 5: Evaluation Breadth (5:00 – 6:00)
-**On Screen:** *Tab 4: Policy Benchmark Lab (`/benchmarks`)*  
-**Visual Action:** Switch world to `STRESS_WORLD_H1_PHASE_PURITY`, toggle between `HYBRID` and `PURE_HIG`.
+### Scene 4: The Scientific Wow Moment (Preregister → Reveal → Update) (3:45 – 5:15)
+**On Screen:** *Workspace 1: Discovery Lab — The 4-State Preregistration & Replay Banner*  
+**Visual Action:** Click through the four sequence states:
+1. State A: Scored
+2. State B: Preregistered (Lock Preregistration)
+3. State C: Evidence Reveal (Reveal Observation)
+4. State D: Belief Shift (Execute Belief Update)
 
-> "A common advisor question is: *'Does this actually outperform standard policies?'*
+> "Now, here is the central scientific interaction: **The 4-State Preregistration & Bayesian Loop**.
 > 
-> Here in the Benchmark Laboratory, we evaluated **180 full closed-loop trajectories** across 6 policies, 6 worlds, and 5 random seeds.
+> In traditional machine learning for materials, retrospective evaluations suffer from severe hindsight bias. AIcoScientist enforces a cryptographic protocol:
 > 
-> The scientific story is that different policies optimize distinct objectives:
-> - `Pure HIG` recovers the true hypothesis the fastest (mean 1.2 steps), but completely ignores material utility.
-> - `Discovery Only` acts like standard Bayesian optimization—it finds high-utility materials but struggles to distinguish mechanisms.
-> - `HYBRID` achieves a proven compromise: 100% MAP hypothesis recovery with bounded experimental expenditure.
+> **State A (Scored):** Hypotheses are scored, predictive distributions are generated, but observations are strictly firewalled.
 > 
-> Below, our Monte Carlo sensitivity analysis comparing 12 vs 32 samples explains why we chose MC=32: MC=12 had an 80% rank correlation but introduced action-ranking jitter. We eliminated that jitter with MC=32."
-
----
-
-### Scene 6: Real A-Lab Evidence & Scientific Boundaries (6:00 – 7:00)
-**On Screen:** *Tab 3: A-Lab Evidence Atlas (`/alab`)*  
-**Visual Action:** Use the sample search or click quick selector `PG_0309` (Co3B3H9O13) or `PG_0206` (LiNi0.5Mn1.5O4), point to the Modality Table, then scroll to Calibration.
-
-> "To test real-world fidelity, we evaluated AIcoScientist on the **A-Lab Precursor Genome**—1,035 real solid-state synthesis experiments from Berkeley and Zenodo.
+> *(Click State B: Preregistered)*
+> **State B:** The candidate, modality, and predictive distributions are locked into an immutable evidence ledger event with an exact timestamp. The prediction is sealed.
 > 
-> You can search or select any of the 1,035 physical samples directly. For instance, selecting `PG_0309` loads its true formula `Co3B3H9O13`, precursors $B(OH)_3$ and $Co_3O_4$, heating schedule at 200°C, and Rietveld $R_{wp}$.
+> *(Click State C: Evidence Reveal)*
+> **State C:** The physical measurement is revealed. Notice the vertical blue line on our Predictive Distribution chart: the real observed value is plotted against the firewalled curves.
 > 
-> Here is where our scientific rigor is on full display:
-> - For 1,030 samples, canonical XRD scans and Rietveld refinements are linked and replayable.
-> - But notice rows 4 and 5: SEM and EDS archives exist at the precursor level, but lack candidate sample ID linkage. Rather than faking linkage, our system explicitly flags them as **NOT AVAILABLE** and excludes them from replay.
+> *(Click State D: Belief Shift)*
+> **State D:** The Bayesian posterior update executes. Watch the belief bars shift: $H_1$ Phase Purity jumps from 33.3% to 68.2%, log Bayes factors are recorded, entropy decreases by 0.42 nats, and the next step is queued.
 > 
-> Furthermore, look at our calibration table: Refinement phase fraction coverage is marked **A_LAB_CALIBRATION_PARTIAL** because the 50% interval covers 95.2% of points. The model is conservative and over-dispersed, rather than overconfident.
-> 
-> And our holdout evaluation honestly states that out-of-family elemental generalization is **NOT ESTABLISHED**. We present these boundaries as evidence of genuine scientific integrity."
+> Every transition in this sequence is recorded in our 5,333-event audit ledger."
 
 ---
 
-### Scene 7: Electrolyte Screening Scale & Negative Result (7:00 – 7:45)
-**On Screen:** *Tab 5: Electrolyte Discovery (`/electrolyte`)*  
-**Visual Action:** Trace the 5-stage screening funnel from 333,333 to WS=200.
+### Scene 5: Benchmark Validation: Clean vs Stress Worlds (5:15 – 6:30)
+**On Screen:** *Workspace 2: Evidence & Benchmarks (`/benchmarks`)*  
+**Visual Action:** Click **Q1 (Controlled Clean Worlds)**, then **Q3 (180 Trajectory Benchmark)**. Toggle metrics between MAP Recovery Rate, Final Posterior, and Steps to Posterior > 0.8.
 
-> "At massive scale, we applied this to high-entropy battery electrolytes.
+> "A critical advisor question is: *'Does this active decision framework actually outperform standard policies?'*
 > 
-> Our Stage-1 screening filters a combinatorial space of **333,333 virtual LiFSI candidates** down to a 200-candidate working set in **2.535 seconds**, recovering 100% of the latent maximum with zero screening gap.
+> In our **Evidence & Benchmarks** workspace, we organize results around five fundamental research questions:
 > 
-> In closed-loop surrogate simulation, we report an honest trade-off: BoTorch Expected Improvement achieves lower regret for single-property exploitation (0.0257 vs 0.0788), but Hybrid achieves nearly double the scientific entropy reduction (0.995 vs 0.564 nats). We prioritize learning the system over single-point curve fitting."
+> Under **Q1 (Clean Worlds)**: When observation models match true system physics, AIcoScientist achieves **100% MAP hypothesis recovery** across all 30 clean trajectories, reaching high posterior confidence ($P > 0.8$) on the very first characterization step.
+> 
+> Under **Q3 (180-Trajectory Multi-Policy Benchmark)**: We compared 6 distinct decision policies across 6 simulated worlds and 5 seeds:
+> - `Pure HIG` recovers the true hypothesis fastest (mean 1.2 steps), but completely ignores material utility.
+> - `Discovery Only` behaves like standard Bayesian optimization—finding high-utility materials but failing to disambiguate underlying mechanisms.
+> - `HYBRID` achieves an optimal trade-off: 100% MAP hypothesis recovery while bounding experimental cost.
+> 
+> Under **Q2 (Stress Worlds)**: We subjected the engine to severe noise, prior misspecification, and unmodeled distortion, verifying graceful degradation rather than catastrophic failure."
 
 ---
 
-### Scene 8: Contributions & Research Readiness (7:45 – 8:30)
-**On Screen:** *Tab 7: Research Readiness (`/readiness`)*  
-**Visual Action:** Point to the **48/50 Boolean Validation Gates Passed** header, and show the 2 failing gates.
+### Scene 6: Real A-Lab Evidence, Electrolyte Scale & System Governance (6:30 – 8:00)
+**On Screen:** *Workspace 2 (Q4 & Q5) and Workspace 3: Research System (`/system`)*  
+**Visual Action:** Select **Q4 (1,035 A-Lab Physical Samples)**, click sample `PG_0309`, show calibration coverage. Switch to Workspace 3 (`Research System`), show **48/50 Validation Gates** and **SHA-256 Manifest**.
 
-> "In conclusion:
+> "Finally, let us examine real physical data, massive scalability, and system governance:
 > 
-> Our research readiness screen reports **48 out of 50 Boolean validation gates passed**. 
+> Under **Q4**: We evaluated the framework on the **A-Lab Precursor Genome**—1,035 authentic inorganic synthesis experiments. You can search any sample: selecting `PG_0309` reveals its genuine formula $Co_3B_3H_9O_{13}$, precursor chemistry, 200°C heating schedule, and Rietveld $R_{wp}$.
 > 
-> I want to emphasize that 48/50 is *not* a model accuracy metric. It represents passing 48 strict software and statistical gates, including zero HIG bound violations and 100% pre-reveal preregistration guarantees.
+> Notice our scientific honesty:
+> 1. SEM and EDS modalities lack candidate sample ID linkage in the published dataset. Rather than hallucinating synthetic linkages, we honestly mark them **NOT AVAILABLE**.
+> 2. Our calibration chart displays **A_LAB_CALIBRATION_PARTIAL**: the 50% credible interval covers 95.2% of data points, showing that our model is conservatively over-dispersed rather than falsely overconfident.
 > 
-> The 2 failing gates are not software bugs—they are our documented scientific frontiers: conservative refinement variance and cross-family chemistry transfer.
+> Under **Q5**: At scale, our Stage-1 screening filtered **333,333 virtual electrolyte candidates** down to 200 in **2.535 seconds** with zero latent regret. We report an honest negative result: while standard BoTorch EI achieves lower single-property regret on the ExtraTrees surrogate oracle, our Hybrid policy achieves nearly double the mechanistic entropy reduction.
 > 
-> AIcoScientist proves that we can formalize the scientific method into an autonomous, multi-modal decision loop with complete provenance.
+> In **Workspace 3 (Research System)**, our governance dashboard reports **48 out of 50 Boolean validation gates passed**, backed by complete SHA-256 cryptographic manifest verification. The 2 unpassed gates reflect our documented scientific boundaries: conservative refinement variance and cross-family chemistry transfer.
+> 
+> AIcoScientist demonstrates a complete, principled shift from heuristic trial-and-error to autonomous, evidence-driven scientific discovery.
 > 
 > Thank you, and I look forward to your questions."
 

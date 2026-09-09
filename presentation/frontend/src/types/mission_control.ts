@@ -1,5 +1,24 @@
 export type DataMode = 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY' | 'LIVE_COMPUTED' | 'NOT_AVAILABLE';
 
+export type WorkspaceTab = 'discovery' | 'benchmarks' | 'system';
+export type LegacyNavTab = 'overview' | 'cockpit' | 'alab' | 'benchmarks' | 'electrolyte' | 'architecture' | 'readiness';
+export type RevealPhase = 'A_SCORED' | 'B_PREREGISTERED' | 'C_REVEALED' | 'D_UPDATED';
+export type CandidateViewMode = 'heatmap' | 'tradeoff' | 'hologram' | 'table';
+export type HeatmapMetricMode = 'composite' | 'raw_hig' | 'norm_hig' | 'discovery' | 'cost';
+
+export interface ScientificWorkspaceState {
+  campaignKind: 'flagship_synthetic' | 'alab_replay';
+  stepIndex: number;
+  selectedCandidateId: string;
+  selectedModality: string;
+  recordedRecommendation: ScoredActionRecord | null;
+  revealPhase: RevealPhase;
+  activeMetric: HeatmapMetricMode;
+  comparisonPolicy: string;
+  candidateViewMode: CandidateViewMode;
+  primaryChartMode: 'trajectory' | 'predictive' | 'tradeoff';
+}
+
 export interface ProvenanceInfo {
   head_commit: string;
   branch: string;

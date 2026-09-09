@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { SnapshotData, DataMode } from './types/mission_control';
-import { Header, NavTab } from './components/Header';
+import { SnapshotData, DataMode, WorkspaceTab, LegacyNavTab } from './types/mission_control';
+import { Header } from './components/Header';
 import { PresenterMode, SCENES } from './components/PresenterMode';
 import { SpeakerNotesModal } from './components/SpeakerNotesModal';
-import { OverviewView } from './views/OverviewView';
-import { DecisionCockpitView } from './views/DecisionCockpitView';
-import { ALabAtlasView } from './views/ALabAtlasView';
-import { BenchmarkLabView } from './views/BenchmarkLabView';
-import { ElectrolyteView } from './views/ElectrolyteView';
-import { ArchitectureView } from './views/ArchitectureView';
-import { ReadinessView } from './views/ReadinessView';
+import { DiscoveryLabWorkspace } from './views/DiscoveryLabWorkspace';
+import { EvidenceBenchmarksWorkspace } from './views/EvidenceBenchmarksWorkspace';
+import { ResearchSystemWorkspace } from './views/ResearchSystemWorkspace';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -17,13 +13,14 @@ export const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [currentTab, setCurrentTab] = useState<NavTab>('overview');
+  const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceTab>('discovery');
   const [presenterMode, setPresenterMode] = useState<boolean>(false);
   const [currentScene, setCurrentScene] = useState<number>(0);
   const [notesOpen, setNotesOpen] = useState<boolean>(false);
 
-  // Controlled step for Cockpit (synced with Presenter Mode)
+  // Controlled step for Discovery Lab (synced with Presenter Mode)
   const [cockpitStep, setCockpitStep] = useState<number>(1);
+  const [benchmarkQuestion, setBenchmarkQuestion] = useState<number>(1);
 
   // Load deterministic snapshot on mount
   useEffect(() => {
@@ -45,6 +42,24 @@ export const App: React.FC = () => {
       });
   }, []);
 
+  // Backward-compatible navigation helper for legacy tab IDs
+  const handleLegacyNavigation = (tab: LegacyNavTab) => {
+    if (tab === 'overview' || tab === 'cockpit') {
+      setCurrentWorkspace('discovery');
+    } else if (tab === 'alab') {
+      setCurrentWorkspace('benchmarks');
+      setBenchmarkQuestion(4);
+    } else if (tab === 'benchmarks') {
+      setCurrentWorkspace('benchmarks');
+      setBenchmarkQuestion(1);
+    } else if (tab === 'electrolyte') {
+      setCurrentWorkspace('benchmarks');
+      setBenchmarkQuestion(5);
+    } else if (tab === 'architecture' || tab === 'readiness') {
+      setCurrentWorkspace('system');
+    }
+  };
+
   // Keyboard shortcut listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -58,13 +73,14 @@ export const App: React.FC = () => {
       } else if (e.key === 'n' || e.key === 'N') {
         setNotesOpen((prev) => !prev);
       } else if (!presenterMode) {
-        if (e.key === '1') setCurrentTab('overview');
-        if (e.key === '2') setCurrentTab('cockpit');
-        if (e.key === '3') setCurrentTab('alab');
-        if (e.key === '4') setCurrentTab('benchmarks');
-        if (e.key === '5') setCurrentTab('electrolyte');
-        if (e.key === '6') setCurrentTab('architecture');
-        if (e.key === '7') setCurrentTab('readiness');
+        if (e.key === '1') setCurrentWorkspace('discovery');
+        if (e.key === '2') setCurrentWorkspace('benchmarks');
+        if (e.key === '3') setCurrentWorkspace('system');
+        // Legacy deep link shortcuts (4-7)
+        if (e.key === '4') handleLegacyNavigation('benchmarks');
+        if (e.key === '5') handleLegacyNavigation('electrolyte');
+        if (e.key === '6') handleLegacyNavigation('architecture');
+        if (e.key === '7') handleLegacyNavigation('readiness');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -76,12 +92,12 @@ export const App: React.FC = () => {
     setCurrentScene(sceneIndex);
     const scene = SCENES[sceneIndex];
     if (scene) {
-      setCurrentTab(scene.tab);
-      if (sceneIndex === 3) {
-        // The Wow moment scene -> Step 2 of controlled campaign
-        setCockpitStep(2);
-      } else if (sceneIndex === 2) {
-        setCockpitStep(1);
+      setCurrentWorkspace(scene.workspace);
+      if (scene.questionId) {
+        setBenchmarkQuestion(scene.questionId);
+      }
+      if (scene.stepIndex !== undefined) {
+        setCockpitStep(scene.stepIndex);
       }
     }
   };
@@ -104,14 +120,10 @@ export const App: React.FC = () => {
 
   // Determine active data mode
   const currentMode: DataMode = 
-    currentTab === 'alab' 
-      ? 'HISTORICAL_REPLAY' 
-      : currentTab === 'cockpit' 
-      ? 'CONTROLLED_SYNTHETIC' 
-      : currentTab === 'readiness' 
-      ? 'CONTROLLED_SYNTHETIC' 
-      : currentTab === 'electrolyte' 
-      ? 'CONTROLLED_SYNTHETIC' 
+    currentWorkspace === 'benchmarks' && benchmarkQuestion === 4
+      ? 'HISTORICAL_REPLAY'
+      : currentWorkspace === 'discovery'
+      ? 'CONTROLLED_SYNTHETIC'
       : 'LIVE_COMPUTED';
 
   if (loading) {
@@ -154,14 +166,17 @@ export const App: React.FC = () => {
           onSelectScene={handleSceneSelect}
           onExit={handleExitPresenter}
           onToggleNotes={() => setNotesOpen(true)}
-          onJumpToTab={(tab) => setCurrentTab(tab)}
+          onJumpToWorkspace={(ws, qId) => {
+            setCurrentWorkspace(ws);
+            if (qId) setBenchmarkQuestion(qId);
+          }}
         />
       )}
 
       {/* Main Mission Control Header */}
       <Header
-        currentTab={currentTab}
-        onSelectTab={(tab) => setCurrentTab(tab)}
+        currentWorkspace={currentWorkspace}
+        onSelectWorkspace={(ws) => setCurrentWorkspace(ws)}
         currentMode={currentMode}
         onLaunchPresenter={() => {
           setPresenterMode(true);
@@ -174,19 +189,22 @@ export const App: React.FC = () => {
 
       {/* Main Viewport Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {currentTab === 'overview' && <OverviewView data={data} onNavigate={(tab) => setCurrentTab(tab)} />}
-        {currentTab === 'cockpit' && (
-          <DecisionCockpitView
+        {currentWorkspace === 'discovery' && (
+          <DiscoveryLabWorkspace
             data={data}
-            controlledStep={presenterMode ? cockpitStep : undefined}
+            controlledStepIndex={cockpitStep}
             onStepChange={setCockpitStep}
           />
         )}
-        {currentTab === 'alab' && <ALabAtlasView data={data} />}
-        {currentTab === 'benchmarks' && <BenchmarkLabView data={data} />}
-        {currentTab === 'electrolyte' && <ElectrolyteView data={data} />}
-        {currentTab === 'architecture' && <ArchitectureView data={data} />}
-        {currentTab === 'readiness' && <ReadinessView data={data} />}
+        {currentWorkspace === 'benchmarks' && (
+          <EvidenceBenchmarksWorkspace
+            data={data}
+            initialQuestionId={benchmarkQuestion}
+          />
+        )}
+        {currentWorkspace === 'system' && (
+          <ResearchSystemWorkspace data={data} />
+        )}
       </main>
 
       {/* Footer */}
