@@ -252,3 +252,112 @@ def test_no_synthetic_fabrications_or_fake_constants():
             matches = re.findall(pat, text)
             assert not matches, f"Found forbidden pattern '{desc}' in {fpath.name}: {matches}"
 
+
+def test_dataset_registry_completeness(snapshot):
+    """Verify that the dataset registry is present, complete, and contains only authentic datasets."""
+    registry_file = DATA_DIR / "dataset_registry.json"
+    assert registry_file.exists(), "presentation/data/dataset_registry.json must exist"
+
+    with registry_file.open("r", encoding="utf-8") as f:
+        file_registry = json.load(f)
+
+    snapshot_registry = snapshot.get("dataset_registry")
+    assert snapshot_registry is not None, "snapshot.json must contain dataset_registry"
+    assert file_registry == snapshot_registry, "dataset_registry.json and snapshot.dataset_registry must match exactly"
+
+    datasets_list = snapshot_registry.get("datasets", [])
+    datasets = {d["id"]: d for d in datasets_list}
+    expected_ids = {
+        "controlled_multimodal_alloy",
+        "alab_precursor_genome",
+        "anode_free_electrolyte_screening",
+    }
+    assert set(datasets.keys()) == expected_ids, f"Dataset IDs must be exactly {expected_ids}, got {set(datasets.keys())}"
+
+    # 1. Controlled Multimodal Alloy
+    alloy = datasets["controlled_multimodal_alloy"]
+    assert alloy["candidateCount"] == 12
+    assert alloy["provenance"]["sourceType"] == "IN_SILICO_BENCHMARK"
+    assert alloy["capabilities"]["competingHypotheses"] is True
+    assert alloy["capabilities"]["closedLoopExecution"] is True
+    assert alloy["capabilities"]["preregistrationReplay"] is True
+    alloy_modalities = set(alloy["modalities"].keys())
+    assert {"XRD", "REFINEMENT", "OUTCOME_TEST"}.issubset(alloy_modalities)
+
+    # 2. A-Lab Precursor Genome
+    alab = datasets["alab_precursor_genome"]
+    assert alab["candidateCount"] == 1035
+    assert alab["provenance"]["sourceType"] == "PEER_REVIEWED_BENCHMARK"
+    assert alab["capabilities"]["competingHypotheses"] is False
+    assert alab["capabilities"]["closedLoopExecution"] is False
+    assert alab["capabilities"]["preregistrationReplay"] is True
+    assert alab["provenance"]["doi"] == "10.5281/zenodo.21285546"
+    assert alab["provenance"]["license"] == "CC BY 4.0"
+    alab_modalities = {k: v["available"] for k, v in alab["modalities"].items()}
+    assert alab_modalities.get("XRD") is True
+    assert alab_modalities.get("REFINEMENT") is True
+    assert alab_modalities.get("SEM") is False
+    assert alab_modalities.get("EDS") is False
+
+    # 3. Anode-Free Electrolyte Screening
+    electrolyte = datasets["anode_free_electrolyte_screening"]
+    assert electrolyte["candidateCount"] == 333333
+    assert electrolyte["screenedWorkingSetCount"] == 200
+    assert electrolyte["capabilities"]["surrogateSimulation"] is True
+    assert electrolyte["capabilities"]["competingHypotheses"] is False
+    assert electrolyte["provenance"]["doi"] == "10.1038/s41467-025-63303-7"
+    assert electrolyte["targetObservable"] == "norm_capacity_3"
+    assert "cycle 3" in electrolyte["targetObservableDescription"].lower()
+
+
+def test_dataset_registry_zero_fabrications(snapshot):
+    """Verify registry counts and metadata strictly agree with raw source artifacts."""
+    datasets_list = snapshot["dataset_registry"]["datasets"]
+    datasets = {d["id"]: d for d in datasets_list}
+
+    # Verify A-Lab sample count against raw external ledger
+    raw_alab_path = ROOT / "data" / "external" / "precursor_genome_2026" / "ledger_precursor_genome.json"
+    with raw_alab_path.open("r", encoding="utf-8") as f:
+        raw_alab = json.load(f)
+    assert len(raw_alab["samples"]) == datasets["alab_precursor_genome"]["candidateCount"] == 1035
+
+    # Verify Electrolyte screening metrics against raw diagnostic artifact
+    raw_screening_path = ROOT / "outputs" / "electrolyte" / "benchmark" / "screening_quality_diagnostics.json"
+    with raw_screening_path.open("r", encoding="utf-8") as f:
+        raw_screening = json.load(f)
+    assert raw_screening["search_space_size"] == datasets["anode_free_electrolyte_screening"]["candidateCount"] == 333333
+    assert raw_screening["working_set_trials"]["200"]["screening_latent_gap"] == 0.0
+
+    # Verify Flagship policy matrix runs against raw multimodal artifact
+    raw_matrix_path = ROOT / "outputs" / "alab" / "multimodal" / "full_policy_matrix.json"
+    with raw_matrix_path.open("r", encoding="utf-8") as f:
+        raw_matrix = json.load(f)
+    assert raw_matrix["trajectory_count"] == 180
+
+
+def test_campaign_resolution_isolation(snapshot):
+    """Verify that dataset sample pools and candidate identities remain completely isolated."""
+    # Controlled alloy candidates
+    controlled_cands = snapshot["flagship_campaign"].get("candidates", [])
+    assert len(controlled_cands) == 12
+    for c in controlled_cands:
+        assert c["candidate_id"].startswith("controlled-")
+
+    # A-Lab sample pool
+    samples = snapshot.get("samples", [])
+    assert len(samples) == 1035
+    for s in samples:
+        assert s["sample_id"].startswith("PG_")
+
+    # Electrolyte virtual screening
+    raw_simulation = ROOT / "outputs" / "electrolyte" / "benchmark" / "surrogate_simulation.json"
+    with raw_simulation.open("r", encoding="utf-8") as f:
+        sim_data = json.load(f)
+    hybrid_runs = sim_data["detailed_policy_seed_runs"]["HYBRID_DEFAULT"]
+    assert len(hybrid_runs) >= 1
+    queried_cands = hybrid_runs[0]["queried_candidate_ids"]
+    assert len(queried_cands) == 15
+    for cid in queried_cands:
+        assert cid.startswith("ELEC_")
+
+

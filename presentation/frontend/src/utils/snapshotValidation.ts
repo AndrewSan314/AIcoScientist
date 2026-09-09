@@ -196,6 +196,27 @@ export function validateSnapshot(data: any): ValidationResult {
     }
   }
 
+  // 5. Dataset Registry Invariants
+  const registry = data.dataset_registry;
+  if (!registry) {
+    warnings.push('Snapshot missing dataset_registry (optional in legacy snapshots, required in v1.2+).');
+  } else {
+    const datasets = registry.datasets || [];
+    if (datasets.length !== 3) {
+      errors.push(`Dataset registry must contain exactly 3 datasets, found ${datasets.length}.`);
+    }
+    const ids = datasets.map((d: any) => d.id);
+    if (!ids.includes('controlled_multimodal_alloy')) {
+      errors.push('Dataset registry missing controlled_multimodal_alloy.');
+    }
+    if (!ids.includes('alab_precursor_genome')) {
+      errors.push('Dataset registry missing alab_precursor_genome.');
+    }
+    if (!ids.includes('anode_free_electrolyte_screening')) {
+      errors.push('Dataset registry missing anode_free_electrolyte_screening.');
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,

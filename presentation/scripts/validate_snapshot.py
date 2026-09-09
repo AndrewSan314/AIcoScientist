@@ -258,6 +258,46 @@ def validate_benchmarks(benchmarks: dict[str, Any]) -> None:
                     raise SnapshotValidationError(f"Sentinel value leaked into benchmark metric: {world}/{pol}/{m_key} = {val}")
 
 
+def validate_dataset_registry(registry: dict[str, Any]) -> None:
+    if not registry:
+        raise SnapshotValidationError("Snapshot missing dataset_registry")
+
+    if registry.get("registry_schema_version") != "1.0.0":
+        raise SnapshotValidationError(f"Invalid registry_schema_version: {registry.get('registry_schema_version')}")
+
+    datasets = registry.get("datasets", [])
+    if len(datasets) != 3:
+        raise SnapshotValidationError(f"Expected exactly 3 registered scientific datasets, found {len(datasets)}")
+
+    dataset_ids = {d.get("id") for d in datasets}
+    expected_ids = {
+        "controlled_multimodal_alloy",
+        "alab_precursor_genome",
+        "anode_free_electrolyte_screening",
+    }
+    if dataset_ids != expected_ids:
+        raise SnapshotValidationError(f"Dataset registry IDs mismatch: {dataset_ids} != {expected_ids}")
+
+    for d in datasets:
+        did = d["id"]
+        for req in ["displayName", "domain", "provenance", "candidateCount", "modalities", "capabilities", "summary", "statusBadge"]:
+            if req not in d:
+                raise SnapshotValidationError(f"Dataset {did} missing required field: {req}")
+
+        caps = d["capabilities"]
+        for c_field in ["competingHypotheses", "candidateScreening", "preregistrationReplay", "closedLoopExecution", "surrogateSimulation", "evidenceKind"]:
+            if c_field not in caps:
+                raise SnapshotValidationError(f"Dataset {did} capabilities missing field: {c_field}")
+
+        # Check candidate counts
+        if did == "controlled_multimodal_alloy" and d["candidateCount"] != 12:
+            raise SnapshotValidationError(f"controlled_multimodal_alloy candidateCount must be 12, got {d['candidateCount']}")
+        if did == "alab_precursor_genome" and d["candidateCount"] != 1035:
+            raise SnapshotValidationError(f"alab_precursor_genome candidateCount must be 1035, got {d['candidateCount']}")
+        if did == "anode_free_electrolyte_screening" and d["candidateCount"] != 333333:
+            raise SnapshotValidationError(f"anode_free_electrolyte_screening candidateCount must be 333333, got {d['candidateCount']}")
+
+
 def validate_snapshot_file(path: Path) -> None:
     if not path.exists():
         raise SnapshotValidationError(f"Snapshot file missing: {path}")
@@ -270,6 +310,7 @@ def validate_snapshot_file(path: Path) -> None:
         raise SnapshotValidationError("Snapshot missing embedded manifest")
 
     validate_manifest(manifest)
+    validate_dataset_registry(snapshot.get("dataset_registry", {}))
     validate_flagship_campaign(snapshot.get("flagship_campaign", {}))
     validate_samples(snapshot.get("samples", []))
     validate_benchmarks(snapshot.get("benchmarks", {}))

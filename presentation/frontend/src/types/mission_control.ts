@@ -7,7 +7,91 @@ export type CandidateViewMode = 'heatmap' | 'tradeoff' | 'hologram' | 'table';
 export type HeatmapMetricMode = 'composite' | 'raw_hig' | 'norm_hig' | 'discovery' | 'cost';
 
 export type DiscoveryFlowState = 'setup' | 'running' | 'results';
-export type DatasetOption = 'controlled_synthesis' | 'alab_replay' | 'electrolyte_search';
+
+export type CanonicalDatasetId =
+  | 'controlled_multimodal_alloy'
+  | 'alab_precursor_genome'
+  | 'anode_free_electrolyte_screening';
+
+export type LegacyDatasetId = 'controlled_synthesis' | 'alab_replay' | 'electrolyte_search';
+
+export type DatasetOption = CanonicalDatasetId | LegacyDatasetId;
+
+export interface DatasetModalityInfo {
+  cost: number;
+  diagnostic: boolean;
+  units: string;
+  available: boolean;
+  reason?: string;
+}
+
+export interface DatasetProvenance {
+  sourceType: string;
+  sourcePaths: string[];
+  citation: string;
+  doi: string | null;
+  license: string;
+}
+
+export interface DatasetCapabilities {
+  competingHypotheses: boolean;
+  candidateScreening: boolean;
+  preregistrationReplay: boolean;
+  closedLoopExecution: boolean;
+  surrogateSimulation: boolean;
+  evidenceKind: 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY' | 'SIMULATED_SURROGATE' | 'LIVE_COMPUTED';
+}
+
+export interface ScientificDatasetRegistryEntry {
+  id: CanonicalDatasetId;
+  legacy_id: LegacyDatasetId;
+  displayName: string;
+  domain: string;
+  provenance: DatasetProvenance;
+  candidateCount: number;
+  candidateIds: string[];
+  screenedWorkingSetCount?: number;
+  targetObservable?: string;
+  targetObservableDescription?: string;
+  modalities: Record<string, DatasetModalityInfo>;
+  hypotheses: string[];
+  defaultConfiguration: Record<string, any>;
+  capabilities: DatasetCapabilities;
+  summary: string;
+  statusBadge: string;
+  disclosures: string[];
+}
+
+export interface DatasetRegistry {
+  registry_schema_version: string;
+  datasets: ScientificDatasetRegistryEntry[];
+}
+
+export interface ResolvedCampaignView {
+  datasetId: CanonicalDatasetId;
+  displayName: string;
+  domain: string;
+  statusBadge: string;
+  evidenceKind: string;
+  steps: CampaignStep[];
+  totalSteps: number;
+  candidates: Candidate[];
+  hypotheses: string[];
+  modalities: string[];
+  banner: {
+    title: string;
+    badge: string;
+    description: string;
+    confidenceOrUtilityLabel: string;
+    budgetExpended: number | string;
+    budgetUnits: string;
+  };
+  capabilities: DatasetCapabilities;
+  disclosures: string[];
+  electrolyteSimulationRun?: any;
+  electrolyteScreeningDiagnostics?: any;
+  alabSamples?: SampleItem[];
+}
 
 export interface PresenterSceneState {
   workspace: WorkspaceTab;
@@ -232,6 +316,7 @@ export interface ReplayCampaign {
   policy: string;
   seed: number;
   mode: string;
+  replay_candidate_ids?: string[];
   steps: CampaignStep[];
 }
 
@@ -388,6 +473,7 @@ export interface SnapshotData {
   generated_at: string;
   provenance: ProvenanceInfo;
   manifest?: SnapshotManifest;
+  dataset_registry?: DatasetRegistry;
   flagship_campaign: FlagshipCampaign;
   alab_replay_campaign: ReplayCampaign;
   hypotheses: Record<string, HypothesisDefinition>;

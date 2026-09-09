@@ -18,6 +18,19 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 
 ---
 
+## 1.1 Scientific Dataset Registry & Campaign Resolver
+
+| Registry / UI Feature | Source Implementation / Artifact | Exact Source Key / Field | Behavioral Guarantee |
+| :--- | :--- | :--- | :--- |
+| **Dataset Registry Schema** | `presentation/data/dataset_registry.json` | Top-level `datasets` list (3 authentic entries) | Guaranteed authentic source links; zero fabricated presets |
+| **Controlled Alloy Benchmark** | `outputs/alab/multimodal/clean_controlled_worlds.json` | 12 candidates, 3 physical hypotheses, XRD/Refinement | In-silico benchmark with formal Bayesian bounds |
+| **A-Lab Precursor Genome Replay** | `data/external/precursor_genome_2026/ledger_precursor_genome.json` | 1,035 physical samples (`PG_0102` to `PG_1521`), DOI `10.5281/zenodo.21285546` | Historical laboratory replay; policy selection locked |
+| **Anode-Free Electrolyte Screening** | `outputs/electrolyte/benchmark/screening_quality_diagnostics.json` | 333,333 candidates $\to$ WS=200 in 2.535s; target `norm_capacity_3` | Surrogate screening; univariate ExtraTrees oracle |
+| **Pure Campaign Resolver** | `presentation/frontend/src/utils/campaignResolver.ts` | `resolveCampaign(datasetId, snapshotData)` | Pure functional resolution; fail-closed isolation of candidate pools |
+| **Observation Blinding Firewall** | `presentation/frontend/src/views/DiscoveryLabWorkspace.tsx` | State A $\to$ State B $\to$ State C $\to$ State D | Future sensor measurements blinded until explicit step advance |
+
+---
+
 ## 2. Research Overview (`/overview`)
 
 | UI Metric / Visual Element | Source Artifact Path | Exact Artifact Key / Field |

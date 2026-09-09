@@ -1,0 +1,211 @@
+{
+  "registry_schema_version": "1.0.0",
+  "datasets": [
+    {
+      "id": "controlled_multimodal_alloy",
+      "legacy_id": "controlled_synthesis",
+      "displayName": "Controlled Multimodal Alloy Benchmark",
+      "domain": "In-Silico Controlled Solid-State Worlds",
+      "provenance": {
+        "sourceType": "IN_SILICO_BENCHMARK",
+        "sourcePaths": [
+          "src/science/multimodal/",
+          "outputs/alab/multimodal/clean_controlled_worlds.json",
+          "outputs/alab/multimodal/full_policy_matrix.json"
+        ],
+        "citation": "AIcoScientist In-Silico Multimodal Verification Benchmark (180 trajectories across 6 worlds \u00d7 5 seeds \u00d7 6 policies)",
+        "doi": null,
+        "license": "MIT"
+      },
+      "candidateCount": 12,
+      "candidateIds": [
+        "controlled-0",
+        "controlled-1",
+        "controlled-2",
+        "controlled-3",
+        "controlled-4",
+        "controlled-5",
+        "controlled-6",
+        "controlled-7",
+        "controlled-8",
+        "controlled-9",
+        "controlled-10",
+        "controlled-11"
+      ],
+      "modalities": {
+        "XRD": {
+          "cost": 1.0,
+          "diagnostic": true,
+          "units": "intensity (a.u.)",
+          "available": true
+        },
+        "REFINEMENT": {
+          "cost": 2.0,
+          "diagnostic": true,
+          "units": "phase fraction [0, 1]",
+          "available": true
+        },
+        "OUTCOME_TEST": {
+          "cost": 2.0,
+          "diagnostic": false,
+          "units": "synthesis success binary",
+          "available": true
+        }
+      },
+      "hypotheses": [
+        "H1_PHASE_PURITY_LIMITED",
+        "H2_COMPOSITION_HOMOGENEITY_LIMITED",
+        "H3_MORPHOLOGY_KINETICS_LIMITED"
+      ],
+      "defaultConfiguration": {
+        "world": "WORLD_H1_PHASE_PURITY",
+        "seed": 42,
+        "policy": "HYBRID",
+        "costPenalty": 0.25
+      },
+      "capabilities": {
+        "competingHypotheses": true,
+        "candidateScreening": false,
+        "preregistrationReplay": true,
+        "closedLoopExecution": true,
+        "surrogateSimulation": false,
+        "evidenceKind": "CONTROLLED_SYNTHETIC"
+      },
+      "summary": "12 synthetic candidates evaluated against 3 exhaustive physical hypotheses (phase purity, composition homogeneity, morphology kinetics). Ground truth: known underlying physical world parameters.",
+      "statusBadge": "Controlled Benchmark",
+      "disclosures": [
+        "Synthetic benchmark designed for formal Bayesian inference guarantees and policy comparison bounds."
+      ]
+    },
+    {
+      "id": "alab_precursor_genome",
+      "legacy_id": "alab_replay",
+      "displayName": "A-Lab Precursor Genome Retrospective Replay",
+      "domain": "Autonomous Solid-State Inorganic Synthesis",
+      "provenance": {
+        "sourceType": "PEER_REVIEWED_BENCHMARK",
+        "sourcePaths": [
+          "data/external/precursor_genome_2026/ledger_precursor_genome.json",
+          "outputs/alab/multimodal/evidence_ledger.jsonl"
+        ],
+        "citation": "A-Lab Precursor Genome Dataset (Zenodo DOI: 10.5281/zenodo.21285546, CC BY 4.0)",
+        "doi": "10.5281/zenodo.21285546",
+        "license": "CC BY 4.0"
+      },
+      "candidateCount": 1035,
+      "candidateIds": [
+        "PG_0309",
+        "PG_0214",
+        "PG_0209"
+      ],
+      "modalities": {
+        "XRD": {
+          "cost": 1.0,
+          "diagnostic": true,
+          "units": "intensity (a.u.)",
+          "available": true
+        },
+        "REFINEMENT": {
+          "cost": 2.0,
+          "diagnostic": true,
+          "units": "Rwp and phase distribution",
+          "available": true
+        },
+        "SEM": {
+          "cost": 3.0,
+          "diagnostic": true,
+          "units": "micrograph",
+          "available": false,
+          "reason": "Archive present in sem.zip (408 MB) but precursor-level only (no sample-level linkage)."
+        },
+        "EDS": {
+          "cost": 2.5,
+          "diagnostic": true,
+          "units": "elemental spectra",
+          "available": false,
+          "reason": "Archive present in eds.zip (358 KB) but precursor-level only."
+        }
+      },
+      "hypotheses": [
+        "A_LAB_RETROSPECTIVE_SYNTHESIZABILITY"
+      ],
+      "defaultConfiguration": {
+        "runId": "replay:HYBRID:42:1",
+        "seed": 42,
+        "policy": "HYBRID"
+      },
+      "capabilities": {
+        "competingHypotheses": false,
+        "candidateScreening": false,
+        "preregistrationReplay": true,
+        "closedLoopExecution": false,
+        "surrogateSimulation": false,
+        "evidenceKind": "HISTORICAL_REPLAY"
+      },
+      "summary": "Retrospective decision replay across 1,035 authentic physical laboratory synthesis trials. 6-step recorded landmark sequence evaluates target compounds PG_0309 (Co3B3H9O13), PG_0214, PG_0209.",
+      "statusBadge": "Historical Validation",
+      "disclosures": [
+        "Gate 17 Partial Calibration: 50% interval covers 95.2% due to conservative over-dispersion.",
+        "SEM and EDS data exist in external zip archives but lack sample-level linkage."
+      ]
+    },
+    {
+      "id": "anode_free_electrolyte_screening",
+      "legacy_id": "electrolyte_search",
+      "displayName": "Anode-Free Electrolyte Screening & Surrogate Optimization",
+      "domain": "High-Entropy LiFSI Liquid Battery Electrolytes",
+      "provenance": {
+        "sourceType": "PEER_REVIEWED_EXPERIMENTAL_&_SURROGATE",
+        "sourcePaths": [
+          "data/external/al_anode_free_2025/",
+          "outputs/electrolyte/benchmark/screening_quality_diagnostics.json",
+          "outputs/electrolyte/benchmark/surrogate_simulation.json"
+        ],
+        "citation": "AmanchukwuLab, Nature Communications 2025 (DOI: 10.1038/s41467-025-63303-7)",
+        "doi": "10.1038/s41467-025-63303-7",
+        "license": "CC BY 4.0"
+      },
+      "candidateCount": 333333,
+      "screenedWorkingSetCount": 200,
+      "targetObservable": "norm_capacity_3",
+      "targetObservableDescription": "Normalized discharge capacity at cycle 3 (range [0, 1])",
+      "modalities": {
+        "SURROGATE_ORACLE": {
+          "cost": 1.0,
+          "diagnostic": false,
+          "units": "norm_capacity_3 [0, 1]",
+          "available": true
+        },
+        "SCREENING_FILTER": {
+          "cost": 0.0,
+          "diagnostic": true,
+          "units": "rank ensemble score",
+          "available": true
+        }
+      },
+      "hypotheses": [
+        "SURROGATE_CAPACITY_OPTIMIZATION"
+      ],
+      "defaultConfiguration": {
+        "policy": "HYBRID_DEFAULT",
+        "seed": 42,
+        "queries": 15
+      },
+      "capabilities": {
+        "competingHypotheses": false,
+        "candidateScreening": true,
+        "preregistrationReplay": false,
+        "closedLoopExecution": true,
+        "surrogateSimulation": true,
+        "evidenceKind": "SIMULATED_SURROGATE"
+      },
+      "summary": "333,333 virtual liquid formulations screened to working set of 200 in 2.535s with 0.000 latent gap. 15-iteration sequential closed-loop surrogate optimization using ExtraTrees surrogate oracle.",
+      "statusBadge": "Screening & Surrogate",
+      "disclosures": [
+        "Surrogate oracle is an ExtraTrees in-silico computational approximation only (not live physical battery cycling).",
+        "The surrogate oracle is a frozen univariate target model: it does not model coupling between multiple measured physical modalities or causal process structure.",
+        "BoTorch EI reaches lower simple regret (0.0257 vs 0.0788), but Hybrid achieves 76% greater hypothesis entropy reduction (0.995 vs 0.564 nats)."
+      ]
+    }
+  ]
+}

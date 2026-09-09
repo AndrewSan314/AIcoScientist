@@ -113,6 +113,15 @@ To ensure complete transparency during advisor and peer review, every claim, num
 
 ---
 
+### Claim 11: "Authentic Dataset Registry With Zero Fabricated Numbers or Fake Constants"
+- **Claimed Value:** Exactly 3 authentic datasets (`controlled_multimodal_alloy`, `alab_precursor_genome`, `anode_free_electrolyte_screening`) registered with 100% genuine sample counts (12, 1035, 333,333).
+- **Source Artifact:** `presentation/data/dataset_registry.json`, `presentation/tests/test_ui_integrity.py` (`test_dataset_registry_completeness`, `test_dataset_registry_zero_fabrications`, `test_campaign_resolution_isolation`)
+- **Evidence Mode:** `CONTROLLED_SYNTHETIC`, `RETROSPECTIVE_REPLAY`, `IN_SILICO_APPROXIMATION`
+- **Audit Finding:** **PASS (Zero Fabrications Verified via AST Regex Scans and Integration Tests).**
+- **Presenter Guardrail:** Leaked candidate pools (`controlled-` vs `PG_` vs `ELEC_`) are prohibited. Electrolyte target observable is cycle-3 capacity (`norm_capacity_3`), never conductivity. A-Lab policy selection is locked to `HYBRID` because its synthesis sequence is a fixed historical lab replay.
+
+---
+
 ## 3. Summary of Compliance with User Instructions
 
 | Instruction Requirement | Implementation Status | Verification Document / Screen |
