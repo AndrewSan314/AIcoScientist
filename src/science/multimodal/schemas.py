@@ -69,6 +69,10 @@ class ScientificObservable:
             errors = np.asarray(self.uncertainty, dtype=np.float64)
             if not np.all(np.isfinite(errors)) or np.any(errors < 0):
                 raise ValueError("observable uncertainty must be finite and non-negative")
+        allow_unclipped_controlled_draw = (
+            self.extractor_name == "controlled_world_generator"
+            and self.provenance.get("world_type") == "CLEAN_CORRECTLY_SPECIFIED"
+        )
         for name in names:
             if name in {"test", "controlled_reveal", "canonical_replay_observation"}:
                 continue
@@ -77,7 +81,12 @@ class ScientificObservable:
                 raise ValueError(
                     f"observable {name!r} belongs to {definition.modality}, not {self.modality.upper()}"
                 )
-            validate_observable(name, self.value if len(names) == 1 else np.asarray(self.value)[names.index(name)], self.uncertainty)
+            validate_observable(
+                name,
+                self.value if len(names) == 1 else np.asarray(self.value)[names.index(name)],
+                self.uncertainty,
+                check_range=not allow_unclipped_controlled_draw,
+            )
         object.__setattr__(self, "observable_names", names)
 
     def to_dict(self) -> dict[str, Any]:

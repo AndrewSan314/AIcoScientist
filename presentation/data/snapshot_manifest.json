@@ -1,0 +1,30 @@
+{
+  "snapshot_schema_version": "1.1.0",
+  "generated_at_utc": "2026-09-09T14:22:03.390286+00:00",
+  "presentation_build_commit": "c2ae7dd0b374283369ad76fb49ce776b8abcbd39",
+  "scientific_source_commit": "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e",
+  "source_branch": "integration/multimodal-scientific-engine",
+  "source_artifact_hashes": {
+    "evidence_ledger": "02cd3a2482304e4e7a1f0cb5d407546448d304a5f9af25fb6dd73a25b44ffaed",
+    "precursor_genome_ledger": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac",
+    "multimodal_validation": "6ba95a6cc348c230e3c51476086a4478849223bbd67cf6f3ebc8d78db113c390",
+    "hypothesis_calibration": "415ce5654135637dc77395162ed897c24b36bbe6cc07b4bc6f249d996413964e",
+    "full_policy_matrix": "539590bff923c967ff71c3913c3915205553233d07defd3853f9b7a52b2e2285",
+    "hig_sensitivity": "6eed21cb2789b567326dbfe98632ebe5c3d6b01f918cef018f108b9a9854d33a",
+    "hypothesis_definitions": "2b896333798f9252654ec9f0afa3705237035a14d4869d0bf4e612b88af559f0",
+    "modality_inventory": "17caa8bb3a9a9a64a3e2820be09a8e9864c1d2c020e28de72dd83e3a922982c3",
+    "alab_dataset_audit": "b2bb5f13fd66fb310df05d676482c3e437228a559bab0028a1fba003fde3c7b3",
+    "electrolyte_screening": "05b302fd382b1d40d87fc98668a5fa24be501a321c389c464cf7b01181f8df4e",
+    "electrolyte_simulation": "96228347bd5bfbd33197257b59541b6b3fc63ab046b0a27efd4d601c28add904"
+  },
+  "source_dataset_manifest_hash": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac",
+  "campaign_run_id": "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID",
+  "campaign_world": "CLEAN_WORLD_H1_PHASE_PURITY",
+  "campaign_seed": 42,
+  "campaign_policy": "HYBRID",
+  "campaign_step_count": 4,
+  "total_real_samples": 1035,
+  "total_audit_events": 5333,
+  "validation_gate_pass_count": 48,
+  "validation_gate_total_count": 50
+}

@@ -24,10 +24,10 @@
       "protocol": "REACTION_SIGNATURE_GROUP_HOLDOUT",
       "modality": "XRD",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.4890987791835322,
-      "group_generalization": -0.5340502688835433,
-      "delta": -0.04495148970001117,
-      "relative_degradation": -0.09190677141956906
+      "interpolation": -0.1524618620394693,
+      "group_generalization": -0.2290165478187901,
+      "delta": -0.07655468577932081,
+      "relative_degradation": -0.5021235130888166
     },
     {
       "protocol": "REACTION_SIGNATURE_GROUP_HOLDOUT",
@@ -51,10 +51,10 @@
       "protocol": "REACTION_SIGNATURE_GROUP_HOLDOUT",
       "modality": "REFINEMENT",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.14750974756367538,
-      "group_generalization": -0.34747939297942954,
-      "delta": -0.19996964541575415,
-      "relative_degradation": -1.3556368220983732
+      "interpolation": -0.13166510219573863,
+      "group_generalization": -0.3583164906295163,
+      "delta": -0.2266513884337777,
+      "relative_degradation": -1.7214234041821397
     },
     {
       "protocol": "REACTION_SIGNATURE_GROUP_HOLDOUT",
@@ -78,10 +78,10 @@
       "protocol": "REACTION_SIGNATURE_GROUP_HOLDOUT",
       "modality": "OUTCOME_TEST",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.4396385340650163,
-      "group_generalization": -0.44500773886108047,
-      "delta": -0.005369204796064175,
-      "relative_degradation": -0.012212771129088848
+      "interpolation": -0.43932298083518817,
+      "group_generalization": -0.4449675987378045,
+      "delta": -0.0056446179026163334,
+      "relative_degradation": -0.012848446698339028
     },
     {
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
@@ -105,10 +105,10 @@
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
       "modality": "XRD",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.4890987791835322,
-      "group_generalization": -0.38490144501193324,
-      "delta": 0.10419733417159893,
-      "relative_degradation": 0.21303944848428938
+      "interpolation": -0.1524618620394693,
+      "group_generalization": 0.02947537580979385,
+      "delta": 0.18193723784926313,
+      "relative_degradation": 1.1933295016570324
     },
     {
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
@@ -132,10 +132,10 @@
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
       "modality": "REFINEMENT",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.14750974756367538,
-      "group_generalization": -0.2303420820457012,
-      "delta": -0.08283233448202582,
-      "relative_degradation": -0.56153803968968
+      "interpolation": -0.13166510219573863,
+      "group_generalization": -0.22020254015914822,
+      "delta": -0.0885374379634096,
+      "relative_degradation": -0.6724442277178829
     },
     {
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
@@ -159,10 +159,91 @@
       "protocol": "TARGET_COMPOUND_GROUP_HOLDOUT",
       "modality": "OUTCOME_TEST",
       "metric": "mean_log_predictive_density",
-      "interpolation": -0.4396385340650163,
-      "group_generalization": -0.46452179032623864,
-      "delta": -0.024883256261222342,
-      "relative_degradation": -0.05659935227047787
+      "interpolation": -0.43932298083518817,
+      "group_generalization": -0.4650967689687416,
+      "delta": -0.02577378813355341,
+      "relative_degradation": -0.0586670610414128
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "XRD",
+      "metric": "MAE",
+      "interpolation": 4.299477969932813,
+      "group_generalization": 4.433184351984587,
+      "delta": 0.13370638205177432,
+      "relative_degradation": 0.031098282858247492
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "XRD",
+      "metric": "RMSE",
+      "interpolation": 14.023595700389471,
+      "group_generalization": 14.32690188715779,
+      "delta": 0.3033061867683191,
+      "relative_degradation": 0.021628275176237114
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "XRD",
+      "metric": "mean_log_predictive_density",
+      "interpolation": -0.1524618620394693,
+      "group_generalization": -0.33393229730023166,
+      "delta": -0.18147043526076237,
+      "relative_degradation": -1.1902677353749185
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "REFINEMENT",
+      "metric": "MAE",
+      "interpolation": 0.20781925689953556,
+      "group_generalization": 0.21194347595667576,
+      "delta": 0.004124219057140194,
+      "relative_degradation": 0.019845220884097053
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "REFINEMENT",
+      "metric": "RMSE",
+      "interpolation": 0.28168852156783997,
+      "group_generalization": 0.2884430193890326,
+      "delta": 0.00675449782119264,
+      "relative_degradation": 0.023978605104666758
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "REFINEMENT",
+      "metric": "mean_log_predictive_density",
+      "interpolation": -0.13166510219573863,
+      "group_generalization": -0.18129809126732996,
+      "delta": -0.04963298907159133,
+      "relative_degradation": -0.376963889776996
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "OUTCOME_TEST",
+      "metric": "MAE",
+      "interpolation": 0.3373035855411062,
+      "group_generalization": 0.3447008282956056,
+      "delta": 0.0073972427544994335,
+      "relative_degradation": 0.021930519186840823
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "OUTCOME_TEST",
+      "metric": "RMSE",
+      "interpolation": 0.3749775106487679,
+      "group_generalization": 0.37705502904667554,
+      "delta": 0.0020775183979076517,
+      "relative_degradation": 0.0055403813266380435
+    },
+    {
+      "protocol": "TARGET_ELEMENTAL_SYSTEM_GROUP_HOLDOUT",
+      "modality": "OUTCOME_TEST",
+      "metric": "mean_log_predictive_density",
+      "interpolation": -0.43932298083518817,
+      "group_generalization": -0.4438458251618138,
+      "delta": -0.004522844326625641,
+      "relative_degradation": -0.01029503241106885
     }
   ],
   "interpretation": "performance degradation is evidence about generalization, not a failure of the decision engine"
