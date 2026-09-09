@@ -1,0 +1,320 @@
+export type DataMode = 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY' | 'LIVE_COMPUTED' | 'NOT_AVAILABLE';
+
+export interface ProvenanceInfo {
+  head_commit: string;
+  branch: string;
+  total_ledger_events: number;
+}
+
+export interface HypothesisDefinition {
+  hypothesis_id: string;
+  title: string;
+  assumptions: string[];
+  predicted_observables: Record<string, string[]>;
+  falsification_signature: {
+    strongly_supporting_patterns: string[];
+    strongly_falsifying_patterns: string[];
+    ambiguous_patterns: string[];
+  };
+  training_count?: number;
+}
+
+export interface Candidate {
+  candidate_id: string;
+  x: number;
+  y: number;
+  composition_label: string;
+  characterization_cost: number;
+  outcome_cost: number;
+  target_system?: string;
+  status?: 'unobserved' | 'characterized' | 'outcome_tested' | 'selected';
+}
+
+export interface ActionMetadata {
+  cost_units: string;
+  prerequisites: string[];
+}
+
+export interface ScientificActionItem {
+  action_id: string;
+  candidate_id: string;
+  action_type: string;
+  estimated_cost: number;
+  requested_at_step: number;
+  metadata: ActionMetadata;
+}
+
+export interface HigDiagnostics {
+  raw_hig_mc_nats: number;
+  clipped_hig_nats: number;
+  current_entropy_nats: number;
+  posterior_entropy_mc_mean: number;
+  posterior_entropy_mc_std?: number;
+  hig_mc_standard_error?: number;
+  mc_samples: number;
+  hig_bound_k?: number;
+  hig_numeric_epsilon_nats?: number;
+  hig_bound_epsilon_nats?: number;
+  raw_hig_lower_bound_ok?: boolean;
+  raw_hig_upper_bound_ok?: boolean;
+  predictive_variance_by_hypothesis?: Record<string, number[]>;
+}
+
+export interface ScoredActionRecord {
+  event: string;
+  event_sequence: number;
+  step: number;
+  timestamp: string;
+  action: ScientificActionItem;
+  expected_hig_nats: number;
+  discovery_utility: number;
+  normalized_cost: number;
+  total_action_score: number;
+  policy_name: string;
+  current_hypothesis_entropy_nats: number;
+  dominant_hypothesis_disagreement?: string[];
+  hig_diagnostics?: HigDiagnostics;
+  run_id?: string;
+}
+
+export interface PreregisteredActionRecord {
+  event: string;
+  step: number;
+  event_sequence: number;
+  timestamp: string;
+  measurement_revealed: boolean;
+  action: ScientificActionItem;
+  beliefs_before: Record<string, number>;
+  predictive_distributions: Record<string, {
+    hypothesis_id: string;
+    candidate_id: string;
+    modality: string;
+    mean: number[];
+    variance: number[];
+    observable_names?: string[];
+    distribution_kind?: string;
+    categories?: string[];
+    probabilities?: number[];
+  }>;
+  expected_hig_nats: number;
+  discovery_utility: number;
+  normalized_cost: number;
+  total_action_score: number;
+  current_hypothesis_entropy_nats: number;
+  hig_diagnostics?: HigDiagnostics;
+  falsification_signatures?: Record<string, any>;
+}
+
+export interface ObservedMeasurement {
+  observable_id: string;
+  candidate_id: string;
+  modality: string;
+  name: string;
+  value: number | number[] | string;
+  uncertainty?: number | number[] | null;
+  units?: string | null;
+  timestamp?: string | null;
+  observable_type?: string;
+  observable_names?: string[];
+  raw_artifact_ref?: string | null;
+  extractor_name?: string | null;
+  provenance?: Record<string, any>;
+}
+
+export interface MeasurementRevealedRecord {
+  event: string;
+  step: number;
+  event_sequence: number;
+  timestamp: string;
+  action: ScientificActionItem;
+  observed_measurement: ObservedMeasurement;
+  likelihood_under_hypothesis: Record<string, number>;
+  log_bayes_factor_pairwise: Record<string, number>;
+  beliefs_before: Record<string, number>;
+  beliefs_after: Record<string, number>;
+  posterior_delta: Record<string, number>;
+  realized_entropy_reduction_nats: number;
+}
+
+export interface BeliefUpdateRecord {
+  event: string;
+  step: number;
+  event_sequence: number;
+  timestamp: string;
+  action: ScientificActionItem;
+  beliefs_before: Record<string, number>;
+  beliefs_after: Record<string, number>;
+  likelihood_under_hypothesis: Record<string, number>;
+}
+
+export interface CampaignStep {
+  step: number;
+  preregistration: PreregisteredActionRecord | null;
+  observation: MeasurementRevealedRecord | null;
+  belief_update: BeliefUpdateRecord | null;
+  top_actions: ScoredActionRecord[];
+  total_actions_evaluated: number;
+}
+
+export interface FlagshipCampaign {
+  run_id: string;
+  world: string;
+  seed: number;
+  policy: string;
+  policy_weights: {
+    w_hig: number;
+    w_discovery: number;
+    w_cost: number;
+  };
+  initial_beliefs: Record<string, number>;
+  candidates: Candidate[];
+  steps: CampaignStep[];
+}
+
+export interface ReplayCampaign {
+  run_id: string;
+  policy: string;
+  seed: number;
+  mode: string;
+  steps: CampaignStep[];
+}
+
+export interface ObservableCalibrationMetric {
+  MAE: number;
+  RMSE: number;
+  NLL: number;
+  coverage50: number;
+  coverage90: number;
+  calibration_error: number;
+  NRMSE?: number;
+  normalization?: {
+    method: string;
+    scale: number;
+  };
+}
+
+export interface CalibrationData {
+  acceptance_thresholds: {
+    coverage50_abs_error_max: number;
+    coverage90_abs_error_max: number;
+  };
+  XRD: Record<string, ObservableCalibrationMetric>;
+  REFINEMENT: Record<string, ObservableCalibrationMetric>;
+  interpretation_annotations?: Record<string, any>;
+}
+
+export interface ValidationGateInfo {
+  status: string;
+  scientific_methodology_status: string;
+  release_readiness: string;
+  readiness: Record<string, string>;
+  gates: Record<string, string>;
+  gate_evidence: {
+    ledger_event_count: number;
+    boolean_gate_count: number;
+    boolean_gate_pass_count: number;
+    hig_raw_bound_violation_count: number;
+    controlled_worlds_clean: string[];
+    controlled_worlds_stress: string[];
+    required_seeds: number[];
+    unsupported_retrospective_modalities: string[];
+  };
+}
+
+export interface BenchmarkSummaryData {
+  status: string;
+  trajectory_count: number;
+  world_types: string[];
+  worlds: string[];
+  policies: string[];
+  seeds: number[];
+  design: Record<string, any>;
+  summary_by_world_policy: Record<string, Record<string, any>>;
+  policy_validation?: Record<string, any>;
+}
+
+export interface SensitivityData {
+  status: string;
+  trajectory_count: number;
+  design: Record<string, any>;
+  aggregate_by_world_policy: Record<string, any>;
+}
+
+export interface ElectrolyteScreeningData {
+  search_space_size: number;
+  full_search_space_latent_max: number;
+  evidence_mode: string;
+  historical_observation_count: number;
+  screening_method: string;
+  chosen_default_working_set_size: number;
+  working_set_trials: Record<string, any>;
+  reference_comparison?: Record<string, any>;
+}
+
+export interface ElectrolyteSimulationData {
+  status?: string;
+  search_space_size?: number;
+  working_set_size?: number;
+  oracle_kind?: string;
+  policies?: Record<string, any>;
+  comparison_table?: any[];
+}
+
+export interface SampleItem {
+  sample_id: string;
+  target_formula: string;
+  precursors: string[];
+  heating_temperature_c: number;
+  heating_time_hours: number;
+  reaction_energy_ev_per_atom: number;
+  reaction_category: string;
+  outcome_utility: number;
+  xrd_available: boolean;
+  refinement_available: boolean;
+  sem_available: boolean;
+  eds_available: boolean;
+  canonical_descriptors: Record<string, number>;
+  refinement_observables: Record<string, number>;
+  source_archive: string;
+  extractor_provenance: string;
+}
+
+export interface CoreAbstraction {
+  name: string;
+  role: string;
+  file: string;
+}
+
+export interface DomainItem {
+  domain_id: string;
+  name: string;
+  status: string;
+  candidates_count: number;
+  modalities: string[];
+  purpose: string;
+}
+
+export interface ArchitectureData {
+  core_abstractions: CoreAbstraction[];
+  domains: DomainItem[];
+}
+
+export interface SnapshotData {
+  version: string;
+  generated_at: string;
+  provenance: ProvenanceInfo;
+  flagship_campaign: FlagshipCampaign;
+  alab_replay_campaign: ReplayCampaign;
+  hypotheses: Record<string, HypothesisDefinition>;
+  validation: ValidationGateInfo;
+  calibration: CalibrationData;
+  benchmarks: BenchmarkSummaryData;
+  sensitivity: SensitivityData;
+  electrolyte_screening: ElectrolyteScreeningData;
+  electrolyte_simulation: any;
+  alab_audit: any;
+  modality_inventory: any;
+  samples: SampleItem[];
+  architecture: ArchitectureData;
+  ledger_sample_events: any[];
+}
