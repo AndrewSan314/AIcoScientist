@@ -3,33 +3,21 @@
 :root {
   --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-subtle: #f1f5f9;
+  --surface-subtle: #f0fdf4;
   --border: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --border-emerald: #a7f3d0;
+  
   --ink: #0f172a;
   --ink-secondary: #334155;
   --ink-muted: #64748b;
   --ink-faint: #94a3b8;
   
-  --emerald: #059669;
+  /* Primary Theme: Emerald Green */
+  --emerald-primary: #059669;
+  --emerald-light: #10b981;
+  --emerald-dark: #047857;
   --emerald-bg: #ecfdf5;
   --emerald-border: #a7f3d0;
-  
-  --amber: #d97706;
-  --amber-bg: #fffbeb;
-  --amber-border: #fde68a;
-  
-  --violet: #7c3aed;
-  --violet-bg: #f5f3ff;
-  --violet-border: #ddd6fe;
-  
-  --blue: #2563eb;
-  --blue-bg: #eff6ff;
-  --blue-border: #bfdbfe;
-  
-  --crimson: #dc2626;
-  --crimson-bg: #fef2f2;
-  --crimson-border: #fecaca;
   
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--ink);
@@ -51,57 +39,63 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Scientific Editorial card styles */
+/* Unified Clean White & Emerald Card */
 .sci-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
-  transition: all 0.2s ease;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.sci-card-interactive:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+.sci-card:hover {
+  border-color: #cbd5e1;
+}
+
+.sci-card-emerald {
+  background: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.05);
 }
 
 .sci-panel-header {
-  border-bottom: 1px solid var(--border);
-  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fafafa;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+  background: #ffffff;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
-/* Badge styles */
+/* Clean Pill & Badge Styles in Emerald & Neutrals */
 .badge-controlled {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .badge-replay {
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
+  background: #f0fdf4;
+  color: #047857;
+  border: 1px solid #bbf7d0;
 }
 
 .badge-live {
-  background: #f5f3ff;
-  color: #6d28d9;
-  border: 1px solid #ddd6fe;
+  background: #059669;
+  color: #ffffff;
+  border: 1px solid #047857;
 }
 
 .badge-unavailable {
-  background: #fef2f2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
-/* Tabular data */
+/* Tabular Data */
 .sci-table {
   width: 100%;
   border-collapse: separate;
@@ -110,20 +104,21 @@ body {
 
 .sci-table th {
   background: #f8fafc;
-  color: var(--ink-secondary);
+  color: #475569;
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  border-bottom: 1px solid #e2e8f0;
   text-align: left;
 }
 
 .sci-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
   font-size: 0.85rem;
+  color: #1e293b;
 }
 
 .sci-table tr:last-child td {
@@ -131,26 +126,26 @@ body {
 }
 
 .sci-table tr:hover td {
-  background: #f8fafc;
+  background: #f0fdf4;
 }
 
-/* Progress bar transitions */
+/* Smooth Progress Bar Transitions */
 .belief-bar {
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Custom scrollbars */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 3px;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #10b981;
 }

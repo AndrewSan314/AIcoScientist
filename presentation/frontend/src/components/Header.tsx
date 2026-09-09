@@ -88,9 +88,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={onLaunchPresenter}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-md shadow-xs transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-600 rounded-md shadow-xs transition cursor-pointer"
           >
-            <Presentation className="w-4 h-4 text-emerald-400" />
+            <Presentation className="w-4 h-4 text-emerald-200" />
             <span>Presenter Mode</span>
           </button>
         </div>
