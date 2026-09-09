@@ -31,9 +31,9 @@ export const TradeoffScatterChart: React.FC<Props> = ({
 }) => {
   // Format actions into scatter points
   const points = actions.map((a) => {
-    const rawHig = a.raw_expected_hig_nats ?? a.expected_hig_nats ?? 0;
-    const disc = a.raw_discovery_utility ?? a.discovery_utility ?? 0;
-    const cost = a.raw_estimated_cost ?? a.action?.estimated_cost ?? 0;
+    const rawHig = a.raw_expected_hig_nats ?? a.expected_hig_nats;
+    const disc = a.raw_discovery_utility ?? a.discovery_utility;
+    const cost = a.raw_estimated_cost ?? a.action.estimated_cost;
     const cId = a.action?.candidate_id || '';
     const mod = a.action?.action_type || '';
     const isWinner = a.action?.action_id === winnerActionId;
@@ -45,7 +45,7 @@ export const TradeoffScatterChart: React.FC<Props> = ({
       z: cost,
       candidateId: cId,
       modality: mod,
-      score: a.total_action_score ?? 0,
+      score: a.total_action_score,
       cost,
       rawHig,
       isWinner,

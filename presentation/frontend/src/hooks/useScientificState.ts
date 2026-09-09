@@ -38,8 +38,12 @@ export const useScientificState = (
   const totalSteps = steps.length;
 
   const [stepIndex, setStepIndexState] = useState<number>(1);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string>('controlled-3');
-  const [selectedModality, setSelectedModality] = useState<string>('XRD');
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string>(
+    steps[0]?.preregistration?.action?.candidate_id || ''
+  );
+  const [selectedModality, setSelectedModality] = useState<string>(
+    steps[0]?.preregistration?.action?.action_type || ''
+  );
   const [revealPhase, setRevealPhase] = useState<RevealPhase>('A_SCORED');
   const [activeMetric, setActiveMetric] = useState<HeatmapMetricMode>('composite');
   const [candidateViewMode, setCandidateViewMode] = useState<CandidateViewMode>('heatmap');
@@ -63,7 +67,7 @@ export const useScientificState = (
   // Current recorded recommendation (winner)
   const winnerAction = useMemo(() => {
     if (!currentStep) return null;
-    return currentStep.preregistration as unknown as ScoredActionRecord || currentStep.top_actions?.[0] || null;
+    return currentStep.top_actions?.[0] || null;
   }, [currentStep]);
 
   // Candidate pool (all 24 actions for current step)
@@ -94,9 +98,7 @@ export const useScientificState = (
     }
     const obs = currentStep.observation?.observed_measurement?.observable_names;
     if (obs?.length) return obs;
-    return selectedModality === 'REFINEMENT'
-      ? ['REFINEMENT.target_phase_fraction', 'REFINEMENT.rwp_scaled']
-      : ['XRD.normalized_intensity_std_proxy', 'XRD.spectral_entropy', 'XRD.peak_count_proxy'];
+    return [];
   }, [currentStep, selectedModality]);
 
   const setStepIndex = useCallback((s: number) => {

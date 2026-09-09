@@ -6,8 +6,8 @@ Validates:
 1. Manifest integrity and source artifact hashes.
 2. Flagship campaign event invariants (sequence ordering, action consistency).
 3. Posterior continuity across steps: posterior(t-1) == prior(t).
-4. Predictive distribution mathematics (finite moments, strictly positive variance).
-5. Exact score decomposition identity: S(a) = w_H * norm_hig + w_D * norm_disc - w_C * norm_cost.
+    4. Predictive distribution mathematics (finite moments, strictly positive variance).
+5. Source score fields remain finite and are not recomputed with presentation weights.
 6. Authentic A-Lab sample provenance (1,035 genuine records, no synthetic fallbacks).
 7. Benchmark summary data structure and non-sentinel metric boundaries.
 """
@@ -77,6 +77,7 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         "alab_dataset_audit": ROOT / "outputs" / "alab" / "alab_dataset_audit.json",
         "electrolyte_screening": ROOT / "outputs" / "electrolyte" / "benchmark" / "screening_quality_diagnostics.json",
         "electrolyte_simulation": ROOT / "outputs" / "electrolyte" / "benchmark" / "surrogate_simulation.json",
+        "electrolyte_target_audit": ROOT / "outputs" / "electrolyte" / "audit" / "experimental_identity_audit.json",
     }
 
     for name, expected_hash in hashes.items():
@@ -90,8 +91,8 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             )
 
 
-def validate_flagship_campaign(campaign: dict[str, Any]) -> None:
-    required_keys = ["run_id", "world", "seed", "policy", "policy_weights", "initial_beliefs", "steps", "candidates"]
+def validate_campaign(campaign: dict[str, Any]) -> None:
+    required_keys = ["run_id", "seed", "policy", "initial_beliefs", "steps"]
     for k in required_keys:
         if k not in campaign:
             raise SnapshotValidationError(f"Flagship campaign missing key: {k}")
@@ -104,11 +105,6 @@ def validate_flagship_campaign(campaign: dict[str, Any]) -> None:
     for hid, p in init_beliefs.items():
         if p < 0.0 or math.isnan(p) or math.isinf(p):
             raise SnapshotValidationError(f"Invalid initial probability for {hid}: {p}")
-
-    weights = campaign["policy_weights"]
-    w_h = float(weights["w_hig"])
-    w_d = float(weights["w_discovery"])
-    w_c = float(weights["w_cost"])
 
     steps = campaign["steps"]
     if not steps:
@@ -191,34 +187,41 @@ def validate_flagship_campaign(campaign: dict[str, Any]) -> None:
                 if not probs or abs(sum(probs) - 1.0) > 1e-4:
                     raise SnapshotValidationError(f"Step {s_num} {hid} categorical probabilities invalid")
 
-        # Score normalization verification on all actions
+        # Score records are source fields. Do not synthesize or re-score them.
         if not scores:
             raise SnapshotValidationError(f"Step {s_num} has no scored actions")
 
         for act in scores:
-            total = float(act["total_action_score"])
-            norm_hig = float(act["normalized_hig"])
-            norm_disc = float(act["normalized_discovery"])
-            norm_cost = float(act["normalized_cost"])
+            if not isinstance(act.get("action"), dict) or not act["action"].get("action_id"):
+                raise SnapshotValidationError(f"Step {s_num} score record has no source action identifier")
+            for field in ["expected_hig_nats", "discovery_utility", "normalized_cost", "total_action_score"]:
+                value = act.get(field)
+                if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                    raise SnapshotValidationError(f"Step {s_num} score field {field} is not finite")
 
-            expected_score = w_h * norm_hig + w_d * norm_disc - w_c * norm_cost
-            if abs(expected_score - total) > 1e-4:
-                raise SnapshotValidationError(
-                    f"Step {s_num} action {act.get('action', {}).get('action_id')} score decomposition mismatch: "
-                    f"expected {expected_score:.5f}, got {total:.5f}"
-                )
+    if campaign.get("mode") == "CONTROLLED_SYNTHETIC":
+        candidates = campaign.get("candidates") or []
+        if not candidates or len({candidate.get("candidate_id") for candidate in candidates}) != len(candidates):
+            raise SnapshotValidationError("Controlled campaign candidate catalog is empty or duplicated")
+
+
+def validate_flagship_campaign(campaign: dict[str, Any]) -> None:
+    if campaign.get("mode") != "CONTROLLED_SYNTHETIC":
+        raise SnapshotValidationError("Flagship campaign is not marked CONTROLLED_SYNTHETIC")
+    validate_campaign(campaign)
 
 
 def validate_samples(samples: list[dict[str, Any]]) -> None:
     if len(samples) != 1035:
-        raise SnapshotValidationError(f"Sample catalog count mismatch: expected 1,035, found {len(samples)}")
+        raise SnapshotValidationError(f"Sample catalog count mismatch: expected source count 1,035, found {len(samples)}")
+    if len({sample.get("sample_id") for sample in samples}) != len(samples):
+        raise SnapshotValidationError("Sample catalog contains duplicate sample IDs")
 
     required_sample_keys = [
         "sample_id",
         "target_formula",
         "precursors",
         "reaction_category",
-        "outcome_utility",
         "source_archive",
         "source_record_identifier",
         "extractor_name",
@@ -232,18 +235,11 @@ def validate_samples(samples: list[dict[str, Any]]) -> None:
         if not isinstance(s["precursors"], list):
             raise SnapshotValidationError(f"Sample {s['sample_id']} precursors must be a list")
 
-        # Validate utility mapping when reaction category is known
-        util = s.get("outcome_utility")
-        if util is not None:
-            if util not in {0.0, 0.5, 0.75, 1.0}:
-                raise SnapshotValidationError(f"Sample {s['sample_id']} invalid ordinal outcome utility: {util}")
-
-
 def validate_benchmarks(benchmarks: dict[str, Any]) -> None:
     if benchmarks.get("status") != "METHODOLOGY_VALID":
         raise SnapshotValidationError(f"Benchmark status is not METHODOLOGY_VALID: {benchmarks.get('status')}")
-    if benchmarks.get("trajectory_count") != 180:
-        raise SnapshotValidationError(f"Benchmark trajectory count mismatch: {benchmarks.get('trajectory_count')}")
+    if not isinstance(benchmarks.get("trajectory_count"), int) or benchmarks["trajectory_count"] <= 0:
+        raise SnapshotValidationError(f"Benchmark trajectory count is invalid: {benchmarks.get('trajectory_count')}")
 
     swp = benchmarks.get("summary_by_world_policy", {})
     if not swp:
@@ -289,13 +285,31 @@ def validate_dataset_registry(registry: dict[str, Any]) -> None:
             if c_field not in caps:
                 raise SnapshotValidationError(f"Dataset {did} capabilities missing field: {c_field}")
 
-        # Check candidate counts
-        if did == "controlled_multimodal_alloy" and d["candidateCount"] != 12:
-            raise SnapshotValidationError(f"controlled_multimodal_alloy candidateCount must be 12, got {d['candidateCount']}")
-        if did == "alab_precursor_genome" and d["candidateCount"] != 1035:
-            raise SnapshotValidationError(f"alab_precursor_genome candidateCount must be 1035, got {d['candidateCount']}")
-        if did == "anode_free_electrolyte_screening" and d["candidateCount"] != 333333:
-            raise SnapshotValidationError(f"anode_free_electrolyte_screening candidateCount must be 333333, got {d['candidateCount']}")
+        candidate_ids = d.get("candidateIds")
+        if candidate_ids is not None and len(candidate_ids) != d["candidateCount"]:
+            raise SnapshotValidationError(f"Dataset {did} candidateIds do not match candidateCount")
+        if did == "anode_free_electrolyte_screening" and d.get("targetObservable") != "norm_capacity_3":
+            raise SnapshotValidationError("Electrolyte registry lost the raw source target column")
+        if "cycle 3" in str(d.get("targetObservableDescription", "")).lower():
+            raise SnapshotValidationError("Electrolyte registry contains the incorrect cycle-3 target description")
+
+
+def validate_electrolyte_simulation(simulation: dict[str, Any]) -> None:
+    if simulation.get("oracle_kind") != "SIMULATED_SURROGATE" or simulation.get("physical_synthesis") is not False:
+        raise SnapshotValidationError("Electrolyte simulation is not explicitly marked surrogate-only")
+    runs = simulation.get("detailed_policy_seed_runs")
+    if not isinstance(runs, dict) or not runs:
+        raise SnapshotValidationError("Electrolyte simulation has no detailed policy/seed runs")
+    for policy, seed_runs in runs.items():
+        if not isinstance(seed_runs, list) or not seed_runs:
+            raise SnapshotValidationError(f"Electrolyte policy {policy} has no detailed runs")
+        for run in seed_runs:
+            lengths = [len(run.get(key, [])) for key in ["queried_candidate_ids", "revealed_noisy_values", "selected_latent_values", "best_latent_curve"]]
+            if not all(lengths) or len(set(lengths)) != 1:
+                raise SnapshotValidationError(f"Electrolyte policy {policy} has truncated trajectory arrays")
+            for key in ["revealed_noisy_values", "selected_latent_values", "best_latent_curve"]:
+                if not all(isinstance(value, (int, float)) and math.isfinite(float(value)) for value in run[key]):
+                    raise SnapshotValidationError(f"Electrolyte policy {policy} has non-finite {key}")
 
 
 def validate_snapshot_file(path: Path) -> None:
@@ -312,8 +326,16 @@ def validate_snapshot_file(path: Path) -> None:
     validate_manifest(manifest)
     validate_dataset_registry(snapshot.get("dataset_registry", {}))
     validate_flagship_campaign(snapshot.get("flagship_campaign", {}))
+    campaign_runs = snapshot.get("campaign_runs") or []
+    if len(campaign_runs) < 3:
+        raise SnapshotValidationError("Snapshot has too few source campaign runs")
+    if len({run.get("run_id") for run in campaign_runs}) != len(campaign_runs):
+        raise SnapshotValidationError("Snapshot campaign runs contain duplicate run IDs")
+    for run in campaign_runs:
+        validate_campaign(run)
     validate_samples(snapshot.get("samples", []))
     validate_benchmarks(snapshot.get("benchmarks", {}))
+    validate_electrolyte_simulation(snapshot.get("electrolyte_simulation", {}))
 
 
 def main() -> int:

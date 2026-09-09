@@ -38,8 +38,8 @@ export const CalibrationCoverageChart: React.FC<Props> = ({ calibration }) => {
 
   const chartData = obsKeys.map((k) => {
     const item = modData[k];
-    const cov50 = item.coverage50 ?? 0;
-    const cov90 = item.coverage90 ?? 0;
+    const cov50 = item.coverage50;
+    const cov90 = item.coverage90;
     const rawShortName = k.replace('XRD.', '').replace('REFINEMENT.', '');
     const cleanName = FRIENDLY_NAMES[rawShortName] || rawShortName;
     const isOverdispersed = activeModality === 'REFINEMENT' && k.includes('target_phase_fraction');
@@ -48,9 +48,9 @@ export const CalibrationCoverageChart: React.FC<Props> = ({ calibration }) => {
       fullName: k,
       rawKey: rawShortName,
       name: cleanName,
-      coverage50: parseFloat((cov50 * 100).toFixed(1)),
-      coverage90: parseFloat((cov90 * 100).toFixed(1)),
-      mae: item.MAE ?? 0,
+      coverage50: typeof cov50 === 'number' ? parseFloat((cov50 * 100).toFixed(1)) : null,
+      coverage90: typeof cov90 === 'number' ? parseFloat((cov90 * 100).toFixed(1)) : null,
+      mae: item.MAE,
       isOverdispersed
     };
   });
@@ -105,7 +105,7 @@ export const CalibrationCoverageChart: React.FC<Props> = ({ calibration }) => {
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
               <strong>A_LAB_CALIBRATION_PARTIAL:</strong> Target phase fraction 50% interval covers{' '}
-              <strong>95.2%</strong> of samples (over-dispersed / conservative variance rather than overconfident).
+              <strong>{chartData.find((item) => item.rawKey === 'target_phase_fraction')?.coverage50 ?? 'Not recorded'}%</strong> of linked samples (source calibration behavior; interpretation remains bounded by the artifact).
             </span>
           </div>
           <span className="text-2xs font-mono bg-amber-200/60 px-2 py-0.5 rounded font-bold">FAIL GATE</span>

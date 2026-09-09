@@ -33,9 +33,12 @@ export const HypothesisBeliefTrajectoryChart: React.FC<Props> = ({
   const steps = data.flagship_campaign?.steps || [];
   const initBeliefs = data.flagship_campaign?.initial_beliefs || {};
 
-  const initH1 = initBeliefs['H1_PHASE_PURITY_LIMITED'] ?? 0;
-  const initH2 = initBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'] ?? 0;
-  const initH3 = initBeliefs['H3_MORPHOLOGY_KINETICS_LIMITED'] ?? 0;
+  const initH1 = initBeliefs['H1_PHASE_PURITY_LIMITED'];
+  const initH2 = initBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'];
+  const initH3 = initBeliefs['H3_MORPHOLOGY_KINETICS_LIMITED'];
+  if (![initH1, initH2, initH3].every((value) => typeof value === 'number' && Number.isFinite(value))) {
+    return <div className="h-72 flex items-center justify-center text-sm text-[#66706C]">Belief trajectory unavailable for this source run.</div>;
+  }
   const initEntropy = shannonEntropyNats([initH1, initH2, initH3]);
 
   const chartPoints = [
@@ -52,8 +55,8 @@ export const HypothesisBeliefTrajectoryChart: React.FC<Props> = ({
 
   steps.forEach((s) => {
     const stepNum = s.step;
-    const actionType = s.preregistration?.action?.action_type || 'XRD';
-    const cand = s.preregistration?.action?.candidate_id || '';
+    const actionType = s.preregistration?.action?.action_type || 'Not recorded';
+    const cand = s.preregistration?.action?.candidate_id || 'Not recorded';
     const bu = s.belief_update?.beliefs_after;
     const isPast = stepNum < currentStepIndex;
     const isCurrent = stepNum === currentStepIndex;
@@ -250,7 +253,7 @@ export const HypothesisBeliefTrajectoryChart: React.FC<Props> = ({
           </span>
         </div>
         <div className="text-[#8F9995] whitespace-nowrap">
-          Hypothesis Space: 3 Exhaustive Mutually Exclusive Models
+          Hypothesis Space: Source-registered competing models
         </div>
       </div>
     </div>

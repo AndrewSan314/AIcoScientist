@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ReferenceLine
 } from 'recharts';
 import { Activity, ShieldCheck } from 'lucide-react';
 
@@ -27,14 +26,7 @@ const WORLD_LABELS: Record<string, string> = {
 
 export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) => {
   const aggregate = sensitivity?.aggregate_by_world_policy || {};
-  const worlds = sensitivity?.design?.worlds || [
-    'CLEAN_WORLD_H1_PHASE_PURITY',
-    'CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY',
-    'CLEAN_WORLD_H3_MORPHOLOGY_KINETICS',
-    'STRESS_WORLD_H1_PHASE_PURITY',
-    'STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY',
-    'STRESS_WORLD_H3_MORPHOLOGY_KINETICS'
-  ];
+  const worlds = sensitivity?.design?.worlds || [];
 
   const chartData = worlds.map((worldKey: string) => {
     const pureHigKey = `${worldKey}:PURE_HIG`;
@@ -43,18 +35,19 @@ export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) 
     const pureData = aggregate[pureHigKey] || {};
     const hybridData = aggregate[hybridKey] || {};
 
-    const pureCorr = pureData.HIG_rank_correlation ?? 0;
-    const hybridCorr = hybridData.HIG_rank_correlation ?? 0;
+    const pureCorr = pureData.HIG_rank_correlation;
+    const hybridCorr = hybridData.HIG_rank_correlation;
 
     return {
       worldKey,
       name: WORLD_LABELS[worldKey] || worldKey.replace(/_/g, ' '),
-      pureHig: parseFloat(Number(pureCorr).toFixed(3)),
-      hybrid: parseFloat(Number(hybridCorr).toFixed(3)),
-      pureModalityAgreement: (pureData.modality_sequence_agreement ?? 0) * 100,
-      hybridModalityAgreement: (hybridData.modality_sequence_agreement ?? 0) * 100
+      pureHig: typeof pureCorr === 'number' ? parseFloat(pureCorr.toFixed(3)) : null,
+      hybrid: typeof hybridCorr === 'number' ? parseFloat(hybridCorr.toFixed(3)) : null,
+      pureModalityAgreement: typeof pureData.modality_sequence_agreement === 'number' ? pureData.modality_sequence_agreement * 100 : null,
+      hybridModalityAgreement: typeof hybridData.modality_sequence_agreement === 'number' ? hybridData.modality_sequence_agreement * 100 : null
     };
   });
+  const correlations = chartData.flatMap((row: { pureHig: number | null; hybrid: number | null }) => [row.pureHig, row.hybrid]).filter((value: number | null): value is number => typeof value === 'number');
 
   return (
     <div className="w-full flex flex-col">
@@ -75,7 +68,7 @@ export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) 
         </div>
 
         <div className="text-xs text-[#991B1B] bg-[#FEF2F2] px-3 py-1 rounded-md border border-[#FECACA] font-medium shrink-0">
-          Clean World Range: <strong>0.739 - 0.934</strong>
+          Source range: <strong>{correlations.length ? `${Math.min(...correlations).toFixed(3)} – ${Math.max(...correlations).toFixed(3)}` : 'Not recorded'}</strong>
         </div>
       </div>
 
@@ -122,33 +115,6 @@ export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) 
               )}
             />
 
-            <ReferenceLine
-              y={0.70}
-              stroke="#D97706"
-              strokeDasharray="4 4"
-              strokeWidth={1.5}
-              label={{
-                value: 'Min (0.70)',
-                position: 'right',
-                fill: '#D97706',
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            />
-            <ReferenceLine
-              y={0.85}
-              stroke="#DC2626"
-              strokeDasharray="4 4"
-              strokeWidth={1.5}
-              label={{
-                value: 'High (0.85)',
-                position: 'right',
-                fill: '#DC2626',
-                fontSize: 12,
-                fontWeight: 600,
-              }}
-            />
-
             <Bar dataKey="pureHig" fill="#3B82F6" radius={[4, 4, 0, 0]} maxBarSize={36} />
             <Bar dataKey="hybrid" fill="#B91C1C" radius={[4, 4, 0, 0]} maxBarSize={36} />
           </BarChart>
@@ -158,10 +124,10 @@ export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) 
       <div className="mt-2 pt-2.5 border-t border-[#D9DFDB] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#66706C]">
         <div className="flex items-center gap-2 text-[#991B1B]">
           <ShieldCheck className="w-4 h-4 text-[#DC2626] shrink-0" />
-          <span>Decision Standard: <strong>USE_32_FOR_FULL_MATRIX</strong> (Low sample noise prevents policy inversion)</span>
+          <span>Source design: <strong>{sensitivity?.design?.low_samples ?? 'N/A'} vs {sensitivity?.design?.high_samples ?? 'N/A'} MC samples</strong></span>
         </div>
         <div className="text-[#8F9995]">
-          Design: 60 paired runs across 6 worlds & 5 seeds
+          Design: {sensitivity?.trajectory_count ?? 'N/A'} paired source runs across {worlds.length || 'N/A'} worlds & {sensitivity?.design?.seeds?.length ?? 'N/A'} seeds
         </div>
       </div>
     </div>

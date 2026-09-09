@@ -27,6 +27,10 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
   initialSubtab = 'architecture'
 }) => {
   const [activeSubtab, setActiveSubtab] = useState<'architecture' | 'audit' | 'verification'>(initialSubtab);
+  const registry = data.dataset_registry?.datasets || [];
+  const controlledInfo = registry.find((entry) => entry.id === 'controlled_multimodal_alloy');
+  const electrolyteInfo = registry.find((entry) => entry.id === 'anode_free_electrolyte_screening');
+  const alabInfo = registry.find((entry) => entry.id === 'alab_precursor_genome');
 
   // Audit event search and inspection
   const [eventSearch, setEventSearch] = useState<string>('');
@@ -55,6 +59,9 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
 
   const manifest = data.manifest;
   const artifactHashes = manifest?.source_artifact_hashes || {};
+  const passCount = manifest?.validation_gate_pass_count;
+  const totalCount = manifest?.validation_gate_total_count;
+  const failCount = typeof passCount === 'number' && typeof totalCount === 'number' ? totalCount - passCount : undefined;
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
@@ -72,8 +79,8 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
         <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-xl border border-[#D9DFDB]" role="tablist">
           {[
             { id: 'architecture', label: 'Architecture', icon: <Layers className="w-3.5 h-3.5" /> },
-            { id: 'audit', label: 'Audit Trail (5,333)', icon: <Database className="w-3.5 h-3.5" /> },
-            { id: 'verification', label: 'Verification (48/50)', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+            { id: 'audit', label: `Audit Trail (${data.manifest?.total_audit_events ?? 'N/A'})`, icon: <Database className="w-3.5 h-3.5" /> },
+            { id: 'verification', label: `Verification (${data.manifest?.validation_gate_pass_count ?? 'N/A'}/${data.manifest?.validation_gate_total_count ?? 'N/A'})`, icon: <ShieldCheck className="w-3.5 h-3.5" /> },
           ].map((tab) => {
             const isActive = activeSubtab === tab.id;
             return (
@@ -116,12 +123,12 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
                 {
                   step: '02',
                   title: 'Observation Models',
-                  desc: 'Computes predictive density p(y | a, H) for each characterization modality (XRD, TEM, EIS).'
+                  desc: 'Computes predictive distributions for the modalities supported by the selected domain adapter.'
                 },
                 {
                   step: '03',
                   title: 'HIG Action Evaluator',
-                  desc: 'Scores actions via multi-objective scalar: S(a) = w_H·HIG + w_D·Diversity - w_C·Cost.'
+                  desc: 'Persists source action-score fields when the source run records them; missing score components remain unavailable.'
                 },
                 {
                   step: '04',
@@ -149,7 +156,7 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
           <section className="sci-card p-6 space-y-4">
             <div className="border-b border-[#D9DFDB] pb-3">
               <h2 className="text-base font-bold text-[#17201F]">Plugged-In Scientific Domains</h2>
-              <p className="text-xs text-[#66706C] mt-0.5">Validated physical domains currently registered with the engine</p>
+              <p className="text-xs text-[#66706C] mt-0.5">Source-backed scientific datasets currently registered with the engine</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
@@ -158,13 +165,11 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
                   <h3 className="text-sm font-bold text-[#17201F]">Alloy Synthesis Domain</h3>
                   <span className="sci-badge sci-badge-verified text-3xs">Controlled Flagship</span>
                 </div>
-                <p className="text-2xs text-[#66706C]">
-                  High-entropy alloy phase purity and composition homogeneity identification.
-                </p>
+                <p className="text-2xs text-[#66706C]">{controlledInfo?.summary || 'Source summary unavailable.'}</p>
                 <div className="p-2 rounded bg-[#F4F3EE] font-mono text-2xs space-y-1 text-[#66706C]">
-                  <div>Hypotheses: H₁ (Purity), H₂ (Homogeneity), H₃ (Texture)</div>
-                  <div>Modalities: XRD diagnostic, Rietveld refinement, TEM</div>
-                  <div>Cost Model: 1.0 (XRD) to 3.0 (TEM) credits</div>
+                  <div>Candidates: {controlledInfo?.candidateCount ?? 'N/A'}</div>
+                  <div>Hypotheses: {controlledInfo?.hypotheses?.join(', ') || 'N/A'}</div>
+                  <div>Modalities: {Object.keys(controlledInfo?.modalities || {}).join(', ') || 'N/A'}</div>
                 </div>
               </div>
 
@@ -173,13 +178,11 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
                   <h3 className="text-sm font-bold text-[#17201F]">Solid Electrolyte Domain</h3>
                   <span className="sci-badge sci-badge-surrogate text-3xs">Scale Preview</span>
                 </div>
-                <p className="text-2xs text-[#66706C]">
-                  Fast Li-ion conductor screening over 333k combinatorial formulation space.
-                </p>
+                <p className="text-2xs text-[#66706C]">{electrolyteInfo?.summary || 'Source summary unavailable.'}</p>
                 <div className="p-2 rounded bg-[#F4F3EE] font-mono text-2xs space-y-1 text-[#66706C]">
-                  <div>Hypotheses: Garnet, Argyrodite, Perovskite conductivity</div>
-                  <div>Modalities: Electrochemical Impedance (EIS), solid-state NMR</div>
-                  <div>Cost Model: 2.0 (EIS) to 5.0 (NMR) credits</div>
+                  <div>Candidates: {electrolyteInfo?.candidateCount?.toLocaleString() ?? 'N/A'}; working set: {electrolyteInfo?.screenedWorkingSetCount ?? 'N/A'}</div>
+                  <div>Target: {electrolyteInfo?.scientificTargetName || electrolyteInfo?.targetObservable || 'N/A'}</div>
+                  <div>Modes: {Object.keys(electrolyteInfo?.modalities || {}).join(', ') || 'N/A'}</div>
                 </div>
               </div>
 
@@ -188,13 +191,11 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
                   <h3 className="text-sm font-bold text-[#17201F]">Autonomous A-Lab Domain</h3>
                   <span className="sci-badge sci-badge-historical text-3xs">Historical Replay</span>
                 </div>
-                <p className="text-2xs text-[#66706C]">
-                  Empirical synthesis validation over 1,035 real autonomous laboratory attempts.
-                </p>
+                <p className="text-2xs text-[#66706C]">{alabInfo?.summary || 'Source summary unavailable.'}</p>
                 <div className="p-2 rounded bg-[#F4F3EE] font-mono text-2xs space-y-1 text-[#66706C]">
-                  <div>Hypotheses: Precursor reactivity, thermodynamic stability</div>
-                  <div>Modalities: Automated powder synthesis, in-situ XRD</div>
-                  <div>Cost Model: 5.0 to 10.0 credits per synthesis attempt</div>
+                  <div>Source samples: {alabInfo?.candidateCount ?? 'N/A'}</div>
+                  <div>Available modalities: {Object.entries(alabInfo?.modalities || {}).filter(([, modality]) => modality.available).map(([name]) => name).join(', ') || 'N/A'}</div>
+                  <div>Unavailable linkage: {Object.entries(alabInfo?.modalities || {}).filter(([, modality]) => !modality.available).map(([name]) => name).join(', ') || 'None recorded'}</div>
                 </div>
               </div>
             </div>
@@ -217,19 +218,9 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
 
 class CustomMaterialsDomain(DomainPlugin):
     """Register custom materials hypotheses, characterization modalities, and likelihoods."""
-    
-    def get_hypotheses(self) -> list[Hypothesis]:
-        return [
-            Hypothesis("H1_STABLE_CRYSTAL", prior=0.50),
-            Hypothesis("H2_AMORPHOUS_PHASE", prior=0.50)
-        ]
-        
-    def evaluate_predictive_density(self, action: Action, hypothesis: Hypothesis) -> Distribution:
-        # Return expected measurement distribution given action and mechanism
-        return Distribution.Gaussian(mean=0.85, std=0.04)
-        
-    def get_action_cost(self, action: Action) -> float:
-        return 1.0 if action.type == "XRD" else 3.5`}
+    # Supply domain-specific contracts and source-backed parameters here.
+    # The console does not invent priors, distributions, or costs.
+    ...`}
             </pre>
           </section>
         </div>
@@ -242,7 +233,7 @@ class CustomMaterialsDomain(DomainPlugin):
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D9DFDB] pb-3">
               <div>
                 <h2 className="text-base font-bold text-[#17201F]">Immutable Scientific Audit Trail</h2>
-                <p className="text-xs text-[#66706C] mt-0.5">5,333 cryptographically sealed execution events recorded across all runs</p>
+                <p className="text-xs text-[#66706C] mt-0.5">{data.manifest?.total_audit_events ?? 'N/A'} source events are tracked in the manifest; this table shows the flagship run sample.</p>
               </div>
 
               {/* Search Box */}
@@ -277,10 +268,10 @@ class CustomMaterialsDomain(DomainPlugin):
                         <span className="font-bold text-[#17201F]">#{idx + 1}</span>{' '}
                         <span className="ml-1 text-[#DC2626]">{e.event || 'STEP_PREREGISTERED'}</span>
                       </td>
-                      <td className="p-3 text-[#17201F]">{e.action?.candidate_id || 'controlled-3'}</td>
+                      <td className="p-3 text-[#17201F]">{e.action?.candidate_id || 'Not recorded'}</td>
                       <td className="p-3">
                         <span className="px-1.5 py-0.5 rounded bg-[#FEF2F2] text-[#991B1B] font-semibold">
-                          {e.action?.action_type || 'XRD'}
+                          {e.action?.action_type || 'Not recorded'}
                         </span>
                       </td>
                       <td className="p-3 text-[#8F9995]">{e.run_id?.substring(0, 12) || 'run_alloy_01'}</td>
@@ -315,9 +306,9 @@ class CustomMaterialsDomain(DomainPlugin):
 
             <div className="mt-4 pt-4 border-t border-[#D9DFDB] space-y-3">
               <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] font-mono text-2xs flex flex-wrap items-center justify-between gap-2 text-[#66706C]">
-                <div>Head Commit: <strong className="text-[#17201F]">{data.provenance?.head_commit?.substring(0, 12) || '37b1dee085'}</strong></div>
-                <div>Generated: 2026-09-09T14:15:00Z</div>
-                <div>Data Source: Deterministic Snapshot (v2.4)</div>
+                <div>Head Commit: <strong className="text-[#17201F]">{data.provenance?.head_commit?.substring(0, 12) || 'Not recorded'}</strong></div>
+                <div>Generated: {data.generated_at || data.manifest?.generated_at_utc || 'Not recorded'}</div>
+                <div>Data Source: Snapshot {data.version || 'Not recorded'}</div>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-[#D9DFDB] bg-white">
@@ -353,7 +344,7 @@ class CustomMaterialsDomain(DomainPlugin):
             <div className="sci-card p-5 border-l-4 border-l-[#DC2626] flex items-center justify-between">
               <div>
                 <span className="text-2xs font-mono text-[#8F9995] uppercase">Passing Gates</span>
-                <div className="text-2xl font-bold text-[#DC2626] mt-1">48 Passed</div>
+                <div className="text-2xl font-bold text-[#DC2626] mt-1">{passCount ?? 'N/A'} Passed</div>
               </div>
               <CheckCircle2 className="w-8 h-8 text-[#DC2626]" />
             </div>
@@ -361,7 +352,7 @@ class CustomMaterialsDomain(DomainPlugin):
             <div className="sci-card p-5 border-l-4 border-l-[#D97706] flex items-center justify-between">
               <div>
                 <span className="text-2xs font-mono text-[#8F9995] uppercase">Failing Gates (Honest Boundary)</span>
-                <div className="text-2xl font-bold text-[#D97706] mt-1">2 Failed</div>
+                <div className="text-2xl font-bold text-[#D97706] mt-1">{failCount ?? 'N/A'} Failed</div>
               </div>
               <AlertTriangle className="w-8 h-8 text-[#D97706]" />
             </div>
@@ -369,7 +360,7 @@ class CustomMaterialsDomain(DomainPlugin):
             <div className="sci-card p-5 border-l-4 border-l-[#DC2626] flex items-center justify-between">
               <div>
                 <span className="text-2xs font-mono text-[#8F9995] uppercase">Compliance Rate</span>
-                <div className="text-2xl font-bold text-[#17201F] mt-1">96.0%</div>
+                <div className="text-2xl font-bold text-[#17201F] mt-1">{typeof passCount === 'number' && typeof totalCount === 'number' && totalCount > 0 ? ((passCount / totalCount) * 100).toFixed(1) : 'N/A'}%</div>
               </div>
               <ShieldCheck className="w-8 h-8 text-[#DC2626]" />
             </div>
@@ -379,13 +370,13 @@ class CustomMaterialsDomain(DomainPlugin):
           <section className="sci-card p-5 border border-[#FDE68A] bg-[#FEF3C7] space-y-3">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-[#D97706]" />
-              <h2 className="text-sm font-bold text-[#92400E]">Transparent Boundary Disclosure: 2 Expected Failures</h2>
+              <h2 className="text-sm font-bold text-[#92400E]">Transparent Boundary Disclosure: {failCount} Failed Gates</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-[#92400E]">
               <div className="p-3 bg-white/80 rounded-lg border border-[#FDE68A]">
                 <strong>Gate 17: A_LAB_CALIBRATION_PARTIAL</strong>
                 <p className="mt-1 leading-relaxed text-2xs">
-                  Expected failure in real-world physical synthesis replay due to laboratory batch noise. 95.2% empirical coverage on 50% interval represents conservative over-dispersion rather than overconfidence.
+                  Source calibration and replay limitations are disclosed as recorded; this gate is not converted into a universal physical accuracy claim.
                 </p>
               </div>
               <div className="p-3 bg-white/80 rounded-lg border border-[#FDE68A]">
@@ -401,15 +392,15 @@ class CustomMaterialsDomain(DomainPlugin):
           <section className="sci-card p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D9DFDB] pb-3">
               <div>
-                <h2 className="text-base font-bold text-[#17201F]">Formal 50-Gate Verification Matrix</h2>
+              <h2 className="text-base font-bold text-[#17201F]">Formal {totalCount}-Gate Verification Matrix</h2>
                 <p className="text-xs text-[#66706C] mt-0.5">Automated software and scientific compliance checks</p>
               </div>
 
               <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-lg border border-[#D9DFDB]">
                 {[
-                  { id: 'all', label: 'All (50)' },
-                  { id: 'pass', label: 'Passed (48)' },
-                  { id: 'fail', label: 'Failed (2)' },
+                  { id: 'all', label: `All (${totalCount})` },
+                  { id: 'pass', label: `Passed (${passCount})` },
+                  { id: 'fail', label: `Failed (${failCount})` },
                 ].map((f) => (
                   <button
                     key={f.id}

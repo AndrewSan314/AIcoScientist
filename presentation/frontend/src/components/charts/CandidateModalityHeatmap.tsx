@@ -29,7 +29,7 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
     new Set(actions.map((a) => a.action?.action_type).filter(Boolean) as string[])
   );
   if (modalities.length === 0) {
-    modalities.push('XRD', 'REFINEMENT');
+    return <div className="h-48 flex items-center justify-center text-sm text-[#66706C]">Action matrix unavailable for this source step.</div>;
   }
 
   // Derive genuine costs per modality
@@ -89,8 +89,9 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
     }
   });
 
-  if (minVal === Infinity) minVal = 0;
-  if (maxVal === -Infinity) maxVal = 1;
+  if (minVal === Infinity || maxVal === -Infinity) {
+    return <div className="h-48 flex items-center justify-center text-sm text-[#66706C]">Selected metric unavailable for this source step.</div>;
+  }
   const valRange = maxVal - minVal || 1;
 
   // Background color intensity helper with fail-closed non-feasible handling

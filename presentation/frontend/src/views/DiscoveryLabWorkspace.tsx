@@ -6,7 +6,8 @@ import {
   RevealPhase,
   HeatmapMetricMode,
   DiscoveryFlowState,
-  DatasetOption
+  DatasetOption,
+  SurrogateOptimizationView,
 } from '../types/mission_control';
 import { HypothesisBeliefTrajectoryChart } from '../components/charts/HypothesisBeliefTrajectoryChart';
 import { PredictiveDistributionChart } from '../components/charts/PredictiveDistributionChart';
@@ -15,7 +16,7 @@ import { ScoreWaterfallChart } from '../components/charts/ScoreWaterfallChart';
 import { TradeoffScatterChart } from '../components/charts/TradeoffScatterChart';
 import { StarkHologramSphere } from '../components/StarkHologramSphere';
 import { ElectrolyteOptimizationChart } from '../components/charts/ElectrolyteOptimizationChart';
-import { resolveCampaign } from '../utils/campaignResolver';
+import { resolveCampaign, visibleCampaignStep } from '../utils/campaignResolver';
 import {
   Lock,
   Eye,
@@ -48,6 +49,62 @@ interface Props {
   onRevealPhaseChange?: (phase: RevealPhase) => void;
 }
 
+const sourceNumber = (value: unknown, digits = 4) =>
+  typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : 'Not recorded';
+
+const SurrogateOptimizationPanel: React.FC<{ view: SurrogateOptimizationView; simulation: SnapshotData['electrolyte_simulation'] }> = ({ view, simulation }) => {
+  const run = view.simulationRun;
+  return (
+    <div className="space-y-6 pb-12 animate-fade-in">
+      <section className="sci-card p-6 border-l-4 border-l-[#2563EB]">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div>
+            <span className="sci-badge sci-badge-verified">SIMULATED SURROGATE</span>
+            <h1 className="text-2xl font-bold text-[#17201F] mt-2">{view.displayName}</h1>
+            <p className="text-sm text-[#66706C] mt-1 max-w-3xl">{view.banner.description}</p>
+          </div>
+          <div className="text-right text-xs font-mono text-[#66706C]">
+            <div>Policy: {view.policy}</div>
+            <div>Seed: {view.seed}</div>
+            <div>{view.banner.badge}</div>
+          </div>
+        </div>
+      </section>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          ['Source target', view.scientificTargetName || 'Not recorded'],
+          ['Best selected latent', sourceNumber(run.best_selected_latent_capacity)],
+          ['Latent simple regret', sourceNumber(run.simple_regret_latent)],
+          ['Queries recorded', String(run.queried_candidate_ids.length)],
+        ].map(([label, value]) => (
+          <div key={label} className="sci-card p-4">
+            <div className="text-2xs uppercase tracking-wider text-[#8F9995]">{label}</div>
+            <div className="text-lg font-mono font-semibold text-[#17201F] mt-1">{value}</div>
+          </div>
+        ))}
+      </div>
+      <section className="sci-card p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-[#17201F]">Recorded surrogate trajectory</h2>
+          <span className="text-xs font-mono text-[#66706C]">No physical measurements</span>
+        </div>
+        <ElectrolyteOptimizationChart
+          simulationData={{
+            ...simulation,
+            detailed_policy_seed_runs: { [view.policy]: [view.simulationRun] },
+            screeningDiagnostics: view.screeningDiagnostics,
+          }}
+          selectedPolicy={view.policy}
+          selectedSeed={view.seed}
+        />
+      </section>
+      <section className="sci-card p-5 text-xs text-[#66706C] space-y-2">
+        {view.disclosures.map((disclosure) => <p key={disclosure}>• {disclosure}</p>)}
+      </section>
+    </div>
+  );
+};
+
 export const DiscoveryLabWorkspace: React.FC<Props> = ({
   data,
   controlledStepIndex = 1,
@@ -59,6 +116,11 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   controlledRevealPhase,
   onRevealPhaseChange,
 }) => {
+  const registryEntries = data.dataset_registry?.datasets || [];
+  const controlledInfo = registryEntries.find((entry) => entry.id === 'controlled_multimodal_alloy');
+  const electrolyteInfo = registryEntries.find((entry) => entry.id === 'anode_free_electrolyte_screening');
+  const alabInfo = registryEntries.find((entry) => entry.id === 'alab_precursor_genome');
+
   // Flow state (setup -> running -> results)
   const [internalFlowState, setInternalFlowState] = useState<DiscoveryFlowState>('setup');
   const flowState = controlledFlowState ?? internalFlowState;
@@ -77,18 +139,17 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
 
   // Policy configuration state
   const [selectedPolicy, setSelectedPolicy] = useState<'hig_cost_penalized' | 'greedy_hig' | 'random_baseline'>('hig_cost_penalized');
-  const [costPenaltyFactor, setCostPenaltyFactor] = useState<number>(0.25);
-  const [modalityConstraint, setModalityConstraint] = useState<'all' | 'xrd_only'>('all');
 
   // Running animation state
   const [runningProgress, setRunningProgress] = useState<number>(0);
   const [runningLogIndex, setRunningLogIndex] = useState<number>(0);
   const progressTimerRef = useRef<any>(null);
 
-  // Authentically resolve active campaign view
-  const resolved = resolveCampaign(dataset, data, selectedPolicy);
-  const steps = resolved.steps;
-  const totalSteps = resolved.totalSteps;
+  // Resolve only source-backed views; an unavailable configuration stays unavailable.
+  const resolution = resolveCampaign(dataset, data, selectedPolicy);
+  const resolved = resolution.ok ? resolution.value : null;
+  const steps = resolved && 'steps' in resolved ? resolved.steps : [];
+  const totalSteps = steps.length;
   const [stepIndex, setStepIndex] = useState<number>(controlledStepIndex);
 
   // Reset step index when dataset changes
@@ -119,24 +180,41 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   const [heatmapMetric, setHeatmapMetric] = useState<HeatmapMetricMode>('composite');
 
   // Candidate inspection
-  const currentStep: CampaignStep | null = steps[stepIndex - 1] || steps[0] || null;
-  const winnerAction = (currentStep?.preregistration as unknown as ScoredActionRecord) || currentStep?.top_actions?.[0] || null;
+  const rawCurrentStep: CampaignStep | null = steps[stepIndex - 1] || steps[0] || null;
+  const currentStep: CampaignStep | null = rawCurrentStep ? visibleCampaignStep(rawCurrentStep, revealPhase) : null;
+  const winnerAction: ScoredActionRecord | null = currentStep?.top_actions?.[0] || null;
+  const candidates = resolved && 'candidates' in resolved ? resolved.candidates : [];
+  const modalities = resolved && 'modalities' in resolved ? resolved.modalities : [];
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>(
-    winnerAction?.action?.candidate_id || resolved.candidates[0]?.candidate_id || 'controlled-3'
+    winnerAction?.action?.candidate_id || candidates[0]?.candidate_id || ''
   );
   const [selectedModality, setSelectedModality] = useState<string>(
-    winnerAction?.action?.action_type || resolved.modalities[0] || 'XRD'
+    winnerAction?.action?.action_type || modalities[0] || ''
   );
 
   useEffect(() => {
     if (winnerAction?.action) {
       setSelectedCandidateId(winnerAction.action.candidate_id);
       setSelectedModality(winnerAction.action.action_type);
-    } else if (resolved.candidates.length > 0) {
-      setSelectedCandidateId(resolved.candidates[0].candidate_id);
-      setSelectedModality(resolved.modalities[0] || 'XRD');
+    } else if (candidates.length > 0) {
+      setSelectedCandidateId(candidates[0].candidate_id);
+      setSelectedModality(modalities[0] || '');
     }
-  }, [winnerAction, dataset, stepIndex]);
+  }, [winnerAction, dataset, stepIndex, candidates, modalities]);
+
+  if (!resolved) {
+    if (resolution.ok) return null;
+    return (
+      <section className="sci-card p-6 border-l-4 border-l-[#B91C1C]">
+        <h1 className="text-lg font-bold text-[#17201F]">Campaign unavailable</h1>
+        <p className="text-sm text-[#66706C] mt-2">{resolution.message}</p>
+        {Boolean(resolution.availableOptions) && (
+          <p className="text-xs font-mono text-[#8F9995] mt-3">Available: {String(JSON.stringify(resolution.availableOptions))}</p>
+        )}
+      </section>
+    );
+  }
+  if (resolved.kind === 'surrogate_optimization') return <SurrogateOptimizationPanel view={resolved} simulation={data.electrolyte_simulation} />;
 
   const handleStepSelect = (s: number) => {
     const clamped = Math.max(1, Math.min(s, totalSteps));
@@ -188,38 +266,37 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   const runningLogs =
     dataset === 'alab_replay' || dataset === 'alab_precursor_genome'
       ? [
-          'Connecting to authentic A-Lab precursor genome ledger (1,035 synthesis trials)...',
-          'Verifying cryptographic SHA-256 event hashes for run replay:HYBRID:42:1...',
-          'Loading recorded characterization sequence for PG_0309 (Co3B3H9O13)...',
-          'Extracting Rietveld refinement phases (target compound + side products)...',
-          'Historical replay verified against immutable physical laboratory evidence.'
+          `Loading source-linked A-Lab catalog (${alabInfo?.candidateCount ?? 'not recorded'} samples)...`,
+          `Resolving recorded replay ${alabInfo?.defaultConfiguration?.runId ?? 'not recorded'}...`,
+          `Loading featured samples ${(alabInfo?.featuredCandidateIds || []).join(', ') || 'not recorded'}...`,
+          'Keeping unlinked modalities out of the candidate × modality action space...',
+          'Historical replay ready; original laboratory policy is not inferred.'
         ]
       : dataset === 'electrolyte_search' || dataset === 'anode_free_electrolyte_screening'
       ? [
-          'Loading 333,333 virtual LiFSI electrolyte formulation pool...',
-          'Executing 4-tranche rank ensemble screening (Discovery + Exploration + Diversity + Random)...',
-          'Working set of 200 candidates isolated in 2.535s with 0.000 latent gap...',
-          'Executing 15-iteration sequential closed-loop ExtraTrees surrogate query loop...',
-          'Surrogate optimization complete: Best observed capacity resolved (entropy reduction 0.849 nats).'
+          `Loading ${electrolyteInfo?.candidateCount ?? 'not recorded'} virtual electrolyte candidates...`,
+          'Loading the source screening diagnostic and its tranche metadata...',
+          `Selecting the source working set (${electrolyteInfo?.screenedWorkingSetCount ?? 'not recorded'} candidates)...`,
+          'Loading the exact policy/seed surrogate trajectory...',
+          'Surrogate trajectory ready; no physical battery measurement is implied.'
         ]
       : [
-          'Initializing 3 competing physical hypotheses P(H)...',
-          'Evaluating 12 candidates × 3 modalities under HIG-cost regularized policy...',
-          'Preregistering optimal action (controlled-3 XRD)...',
-          'Revealing synthetic measurement & evaluating likelihood...',
-          'Bayesian posterior update converged to H₁ (Phase Purity Limited).'
+          `Loading ${controlledInfo?.hypotheses?.length ?? 'not recorded'} source hypotheses and ${controlledInfo?.candidateCount ?? 'not recorded'} source candidates...`,
+          'Loading the selected recorded policy trajectory...',
+          'Showing the preregistered action before revealing its observation...',
+          'Revealing the source synthetic measurement...',
+          'Updating the recorded posterior without claiming physical confirmation.'
         ];
 
   const allActions = currentStep?.all_scored_actions || currentStep?.top_actions || [];
-  const inspectedAction = allActions.find(
+  const inspectedAction: ScoredActionRecord | null = allActions.find(
     (a) => a.action?.candidate_id === selectedCandidateId && a.action?.action_type === selectedModality
-  ) || winnerAction;
+  ) || winnerAction || null;
 
-  const initBeliefs = data.flagship_campaign?.initial_beliefs || {
-    H1_PHASE_PURITY_LIMITED: 0.3333,
-    H2_COMPOSITION_HOMOGENEITY_LIMITED: 0.3333,
-    H3_MORPHOLOGY_KINETICS_LIMITED: 0.3334
-  };
+  const initBeliefs = resolved.campaign.initial_beliefs || {};
+  const selectedHistoricalSample = resolved.kind === 'historical_replay'
+    ? resolved.alabSamples.find((sample) => sample.sample_id === selectedCandidateId)
+    : undefined;
 
   const priorBeliefs = currentStep?.preregistration?.beliefs_before || initBeliefs;
   const posteriorBeliefs = currentStep?.belief_update?.beliefs_after || priorBeliefs;
@@ -299,14 +376,14 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                         <span className="sci-badge sci-badge-verified">Controlled Benchmark</span>
                       </div>
                       <p className="text-xs text-[#66706C] mt-1">
-                        12 synthetic candidates evaluated against 3 exhaustive physical hypotheses (phase purity, composition homogeneity, morphology kinetics).
+                        {controlledInfo?.summary || 'Source summary unavailable.'}
                       </p>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-2xs font-mono text-[#8F9995]">
-                        <span>Budget: 6.0 credits</span>
+                        <span>Source candidates: {controlledInfo?.candidateCount ?? 'N/A'}</span>
                         <span>•</span>
                         <span>Ground truth: In-silico underlying world</span>
                         <span>•</span>
-                        <span className="text-[#DC2626] font-semibold">Status: Fully verified (180 runs)</span>
+                        <span className="text-[#DC2626] font-semibold">Status: {controlledInfo?.statusBadge || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -339,14 +416,14 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                         <span className="sci-badge sci-badge-surrogate">Screening & Surrogate</span>
                       </div>
                       <p className="text-xs text-[#66706C] mt-1">
-                        333,333 virtual formulations screened to working set of 200 in 2.535s with 0.000 latent gap. 15-iteration sequential closed-loop ExtraTrees surrogate optimization (Nature Comms 2025).
+                        {electrolyteInfo?.summary || 'Source summary unavailable.'}
                       </p>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-2xs font-mono text-[#8F9995]">
-                        <span>Budget: 15 surrogate queries</span>
+                        <span>Working set: {electrolyteInfo?.screenedWorkingSetCount ?? 'N/A'}</span>
                         <span>•</span>
-                        <span>Target: Cycle-3 capacity (norm_capacity_3)</span>
+                        <span>Target: {electrolyteInfo?.scientificTargetName || electrolyteInfo?.targetObservable || 'N/A'}</span>
                         <span>•</span>
-                        <span className="text-[#DC2626] font-semibold">Status: In-silico surrogate oracle</span>
+                        <span className="text-[#DC2626] font-semibold">Status: {electrolyteInfo?.statusBadge || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -379,14 +456,14 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                         <span className="sci-badge sci-badge-historical">Historical Validation</span>
                       </div>
                       <p className="text-xs text-[#66706C] mt-1">
-                        Autonomous inorganic solid-state synthesis retrospective replay across 1,035 real physical synthesis attempts (Zenodo DOI: 10.5281/zenodo.21285546).
+                        {alabInfo?.summary || 'Source summary unavailable.'}
                       </p>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-2xs font-mono text-[#8F9995]">
-                        <span>Budget: 9.0 credits</span>
+                        <span>Source samples: {alabInfo?.candidateCount ?? 'N/A'}</span>
                         <span>•</span>
-                        <span>Landmark sequence: PG_0309, PG_0214, PG_0209</span>
+                        <span>Featured sequence: {(alabInfo?.featuredCandidateIds || []).join(', ') || 'N/A'}</span>
                         <span>•</span>
-                        <span className="text-[#DC2626] font-semibold">Status: Calibrated on 1,035 lab samples</span>
+                        <span className="text-[#DC2626] font-semibold">Status: {alabInfo?.statusBadge || 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -395,13 +472,13 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             </div>
           </section>
 
-          {/* Right Panel: Policy & Constraint Configuration */}
+          {/* Right Panel: Recorded Policy Configuration */}
           <section className="lg:col-span-5 sci-card p-6 space-y-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between border-b border-[#D9DFDB] pb-3">
                 <div>
-                  <h2 className="text-base font-bold text-[#17201F]">2. Engine Policy & Constraints</h2>
-                  <p className="text-xs text-[#66706C] mt-0.5">Set objective weighting and execution constraints</p>
+                  <h2 className="text-base font-bold text-[#17201F]">2. Recorded Policy Configuration</h2>
+                  <p className="text-xs text-[#66706C] mt-0.5">Choose a recorded source policy; run configuration and modality availability remain source-defined</p>
                 </div>
                 <Sliders className="w-4 h-4 text-[#DC2626]" />
               </div>
@@ -413,12 +490,12 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     <span>Fixed Historical Laboratory Replay</span>
                   </div>
                   <p className="text-xs text-[#66706C] leading-relaxed">
-                    This campaign represents an immutable retrospective replay (<code className="font-mono text-[#DC2626]">replay:HYBRID:42:1</code>) across physical laboratory synthesis samples. Policy weights and cost penalties are locked to the recorded historical sequence.
+                    This campaign represents an immutable retrospective replay (<code className="font-mono text-[#DC2626]">{alabInfo?.defaultConfiguration?.runId || 'N/A'}</code>) across source-linked laboratory samples. The replay policy and seed are fixed to the selected recorded run; weights are not reconstructed when absent from the source.
                   </p>
                   <div className="pt-2 text-2xs font-mono text-[#8F9995] space-y-1">
-                    <div>• Preregistered Policy: HYBRID (w_H=0.5, w_D=0.3, w_C=0.2)</div>
-                    <div>• Available Modalities: XRD (1,035 samples), REFINEMENT (1,030 samples)</div>
-                    <div>• Disclosure: SEM and EDS data are unlinked in archive (precursor-level only)</div>
+                    <div>• Preregistered Policy: {alabInfo?.defaultConfiguration?.policy || 'N/A'} / seed {alabInfo?.defaultConfiguration?.seed ?? 'N/A'}</div>
+                    <div>• Available Modalities: {Object.entries(alabInfo?.modalities || {}).filter(([, modality]) => modality.available).map(([name, modality]) => `${name} (${modality.linkedCandidateCount ?? 'N/A'} linked)`).join(', ') || 'N/A'}</div>
+                    <div>• Disclosure: {alabInfo?.disclosures?.find((text) => text.includes('SEM')) || 'Source linkage limitations unavailable.'}</div>
                   </div>
                 </div>
               ) : dataset === 'electrolyte_search' || dataset === 'anode_free_electrolyte_screening' ? (
@@ -429,9 +506,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     </label>
                     <div className="space-y-1.5">
                       {[
-                        { id: 'hig_cost_penalized', label: 'Hybrid Policy (Entropy + Capacity)', tag: 'Recommended' },
-                        { id: 'greedy_hig', label: 'Pure Falsification (Entropy Focus)', tag: 'Active exploration' },
-                        { id: 'random_baseline', label: 'Random Exploration Baseline', tag: 'Benchmark control' },
+                        { id: 'hig_cost_penalized', label: 'Hybrid Policy (Entropy + Capacity)', tag: 'Recorded source policy' },
+                        { id: 'greedy_hig', label: 'Pure Falsification (Entropy Focus)', tag: 'Recorded source policy' },
+                        { id: 'random_baseline', label: 'Random Exploration Baseline', tag: 'Recorded source policy' },
                       ].map((p) => (
                         <div
                           key={p.id}
@@ -459,8 +536,8 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                   <div className="p-3 rounded-xl bg-[#FCFCFA] border border-[#D9DFDB] text-2xs font-mono text-[#66706C] space-y-1">
                     <div className="text-[#17201F] font-bold">Surrogate Model Invariant:</div>
                     <div>• Model Family: ExtraTreesRegressor (100 trees, max_depth=8)</div>
-                    <div>• Target: Cycle-3 discharge capacity norm_capacity_3</div>
-                    <div>• Search Space: 333,333 virtual formulations screened to WS=200</div>
+                    <div>• Target: {electrolyteInfo?.scientificTargetName || electrolyteInfo?.targetObservable || 'N/A'} — {electrolyteInfo?.targetObservableDescription || 'source semantics unavailable'}</div>
+                    <div>• Search Space: {electrolyteInfo?.candidateCount ?? 'N/A'} virtual candidates screened to WS={electrolyteInfo?.screenedWorkingSetCount ?? 'N/A'}</div>
                   </div>
                 </div>
               ) : (
@@ -472,9 +549,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     </label>
                     <div className="space-y-1.5">
                       {[
-                        { id: 'hig_cost_penalized', label: 'HIG Cost-Penalized (Hybrid)', tag: 'Recommended' },
-                        { id: 'greedy_hig', label: 'Greedy Pure HIG', tag: 'High-cost exploration' },
-                        { id: 'random_baseline', label: 'Random Exploration Baseline', tag: 'Benchmark control' },
+                        { id: 'hig_cost_penalized', label: 'HIG Cost-Penalized (Hybrid)', tag: 'Recorded source policy' },
+                        { id: 'greedy_hig', label: 'Greedy Pure HIG', tag: 'Recorded source policy' },
+                        { id: 'random_baseline', label: 'Random Exploration Baseline', tag: 'Recorded source policy' },
                       ].map((p) => (
                         <div
                           key={p.id}
@@ -500,62 +577,6 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Cost Penalty Factor Slider */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-bold text-[#17201F] mb-1.5">
-                      <span>Cost Penalty Weight (λ)</span>
-                      <span className="font-mono text-[#DC2626]">{costPenaltyFactor.toFixed(2)}</span>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[0.1, 0.25, 0.5, 1.0].map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setCostPenaltyFactor(val)}
-                          className={`py-1.5 text-xs font-mono rounded border transition cursor-pointer ${
-                            costPenaltyFactor === val
-                              ? 'bg-[#B91C1C] text-white border-[#B91C1C] font-bold'
-                              : 'bg-[#FCFCFA] text-[#66706C] border-[#D9DFDB] hover:bg-[#F4F3EE]'
-                          }`}
-                        >
-                          {val === 0.25 ? '0.25 (Def)' : val.toFixed(2)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Modality Constraint */}
-                  <div>
-                    <label className="block text-xs font-bold text-[#17201F] mb-1.5">
-                      Allowed Characterization Modalities
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setModalityConstraint('all')}
-                        className={`py-2 px-3 text-xs rounded border transition cursor-pointer text-left ${
-                          modalityConstraint === 'all'
-                            ? 'border-[#B91C1C] bg-[#FEF2F2] text-[#991B1B] font-semibold'
-                            : 'border-[#D9DFDB] bg-[#FCFCFA] text-[#66706C] hover:bg-[#F4F3EE]'
-                        }`}
-                      >
-                        <div className="font-bold">All Allowed</div>
-                        <div className="text-2xs text-[#8F9995]">XRD + Refinement diagnostic</div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setModalityConstraint('xrd_only')}
-                        className={`py-2 px-3 text-xs rounded border transition cursor-pointer text-left ${
-                          modalityConstraint === 'xrd_only'
-                            ? 'border-[#B91C1C] bg-[#FEF2F2] text-[#991B1B] font-semibold'
-                            : 'border-[#D9DFDB] bg-[#FCFCFA] text-[#66706C] hover:bg-[#F4F3EE]'
-                        }`}
-                      >
-                        <div className="font-bold">XRD Only</div>
-                        <div className="text-2xs text-[#8F9995]">Low-cost screening</div>
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -599,12 +620,12 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
           </div>
 
           <div>
-            <span className="sci-badge sci-badge-verified">Live Campaign Execution</span>
+            <span className="sci-badge sci-badge-verified">Recorded Run Playback</span>
             <h2 className="text-xl font-bold text-[#17201F] mt-2">
-              Running Autonomous Discovery Campaign
+              Loading Source-Backed Research Run
             </h2>
             <p className="text-xs text-[#66706C] mt-1">
-              Evaluating candidate information gains, firewalled observations, and Bayesian updates.
+              Preparing the selected recorded trajectory for inspection; this control does not execute a new experiment.
             </p>
           </div>
 
@@ -729,9 +750,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
           {steps.map((s, idx) => {
             const stepNum = idx + 1;
             const isSelected = stepNum === stepIndex;
-            const winner = s.preregistration?.action?.candidate_id || s.top_actions?.[0]?.action?.candidate_id || 'controlled-3';
-            const modality = s.preregistration?.action?.action_type || s.top_actions?.[0]?.action?.action_type || 'XRD';
-            const score = s.top_actions?.[0]?.total_action_score ?? 0;
+            const winner = s.preregistration?.action?.candidate_id || s.top_actions?.[0]?.action?.candidate_id || 'N/A';
+            const modality = s.preregistration?.action?.action_type || s.top_actions?.[0]?.action?.action_type || 'Not recorded';
+            const score = s.top_actions?.[0]?.total_action_score;
 
             return (
               <button
@@ -753,7 +774,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                 </div>
                 <div className="font-bold text-xs text-[#17201F] mt-1 truncate">{winner}</div>
                 <div className="text-3xs font-mono text-[#66706C] mt-0.5">
-                  Score: {score >= 0 ? `+${score.toFixed(3)}` : score.toFixed(3)}
+                  Score: {typeof score === 'number' ? (score >= 0 ? `+${score.toFixed(3)}` : score.toFixed(3)) : 'Not recorded'}
                 </div>
               </button>
             );
@@ -848,10 +869,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     <span className="sci-badge sci-badge-verified">Multi-Objective HIG</span>
                   </div>
                   <p>
-                    All candidate-modality actions evaluated under dimensionless scalar objective:
-                    <code className="ml-1 font-mono text-2xs bg-white px-1.5 py-0.5 rounded border border-[#D9DFDB] text-[#DC2626]">
-                      S(a) = w_H · HIG + w_D · Diversity - w_C · Cost
-                    </code>
+                    Source action-score records are shown as persisted; no presentation-layer weights or normalized components are reconstructed.
                   </p>
                   <div className="pt-1 grid grid-cols-3 gap-2 font-mono text-2xs">
                     <div className="bg-white p-2 rounded border border-[#D9DFDB]">
@@ -865,12 +883,10 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                       </span>
                     </div>
                     <div className="bg-white p-2 rounded border border-[#D9DFDB]">
-                      <span className="text-[#8F9995] block">Cost Penalty</span>
+                      <span className="text-[#8F9995] block">Recorded Cost</span>
                       <span className="font-bold text-[#B91C1C]">
-                        {inspectedAction?.weighted_cost_contribution !== undefined
-                          ? (-inspectedAction.weighted_cost_contribution).toFixed(3)
-                          : inspectedAction?.normalized_cost !== undefined
-                          ? (-2.0 * inspectedAction.normalized_cost).toFixed(3)
+                        {inspectedAction?.action?.estimated_cost !== undefined
+                          ? inspectedAction.action.estimated_cost.toFixed(3)
                           : 'N/A'}
                       </span>
                     </div>
@@ -896,7 +912,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     Experiment plan committed to immutable audit ledger before sensor acquisition:
                   </p>
                   <div className="p-2.5 rounded bg-white border border-[#D9DFDB] font-mono text-2xs space-y-1">
-                    <div><strong className="text-[#17201F]">Action Target:</strong> {winnerAction?.action?.candidate_id || selectedCandidateId} | {winnerAction?.action?.action_type || selectedModality}</div>
+                    <div><strong className="text-[#17201F]">Action Target:</strong> {currentStep?.preregistration?.action?.candidate_id || selectedCandidateId} | {currentStep?.preregistration?.action?.action_type || selectedModality}</div>
                     <div>
                       <strong className="text-[#17201F]">Prior Shannon Entropy:</strong>{' '}
                       {currentStep?.preregistration?.current_hypothesis_entropy_nats !== undefined
@@ -974,15 +990,15 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[#66706C]">Reaction Category:</span>
-                        <span className="text-[#DC2626] font-bold">Transformed / Reacted</span>
+                        <span className="text-[#DC2626] font-bold">{selectedHistoricalSample?.reaction_category || 'Not recorded'}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[#66706C]">Ordinal Decision Utility:</span>
-                        <span className="text-[#17201F] font-bold">0.75</span>
+                        <span className="text-[#66706C]">Reaction category:</span>
+                        <span className="text-[#17201F] font-bold">{selectedHistoricalSample?.reaction_category || 'Not recorded'}</span>
                       </div>
                       <div className="flex items-center justify-between text-[#8F9995] pt-1 border-t border-[#D9DFDB]">
                         <span>Validation Provenance:</span>
-                        <span>Zenodo DOI: 10.5281/zenodo.21285546</span>
+                        <span>{selectedHistoricalSample?.source_archive || 'Source archive not recorded'}</span>
                       </div>
                     </div>
                   ) : dataset === 'electrolyte_search' || dataset === 'anode_free_electrolyte_screening' ? (
@@ -1014,24 +1030,20 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {[
-                        { name: 'H₁ (Phase Purity Limited)', prior: priorBeliefs['H1_PHASE_PURITY_LIMITED'] ?? initBeliefs['H1_PHASE_PURITY_LIMITED'] ?? 0, post: posteriorBeliefs['H1_PHASE_PURITY_LIMITED'] ?? 0, highlight: true },
-                        { name: 'H₂ (Homogeneity Limited)', prior: priorBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'] ?? initBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'] ?? 0, post: posteriorBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'] ?? 0, highlight: false },
-                        { name: 'H₃ (Morphology Kinetics Limited)', prior: priorBeliefs['H3_MORPHOLOGY_KINETICS_LIMITED'] ?? initBeliefs['H3_MORPHOLOGY_KINETICS_LIMITED'] ?? 0, post: posteriorBeliefs['H3_MORPHOLOGY_KINETICS_LIMITED'] ?? 0, highlight: false },
-                      ].map((item, i) => (
-                        <div key={i} className="bg-white p-2 rounded border border-[#D9DFDB] flex items-center justify-between text-2xs font-mono">
-                          <span className={item.highlight ? 'text-[#DC2626] font-bold' : 'text-[#66706C]'}>
-                            {item.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[#8F9995]">{item.prior.toFixed(3)}</span>
-                            <span className="text-[#8F9995]">→</span>
-                            <span className={item.highlight ? 'text-[#DC2626] font-bold text-xs' : 'text-[#66706C]'}>
-                              {item.post.toFixed(3)}
-                            </span>
+                      {Array.from(new Set([...Object.keys(initBeliefs), ...Object.keys(posteriorBeliefs)])).map((hypothesisId) => {
+                        const prior = priorBeliefs[hypothesisId];
+                        const post = posteriorBeliefs[hypothesisId];
+                        return (
+                          <div key={hypothesisId} className="bg-white p-2 rounded border border-[#D9DFDB] flex items-center justify-between text-2xs font-mono">
+                            <span className="text-[#66706C]">{data.hypotheses[hypothesisId]?.title || hypothesisId}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#8F9995]">{typeof prior === 'number' ? prior.toFixed(3) : 'N/A'}</span>
+                              <span className="text-[#8F9995]">→</span>
+                              <span className="text-[#66706C]">{typeof post === 'number' ? post.toFixed(3) : 'N/A'}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -1089,8 +1101,8 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                       />
                       <p className="text-2xs text-[#8F9995] text-center mt-2 font-mono">
                         {dataset === 'alab_replay' || dataset === 'alab_precursor_genome'
-                          ? 'A-Lab retrospective replay step progression across landmark samples.'
-                          : 'Bayesian posterior evolution across steps. True mechanism is H₁ (Phase Purity Limited).'}
+                          ? 'A-Lab retrospective replay step progression across source-linked samples.'
+                          : 'Bayesian posterior evolution across the recorded controlled trajectory; posterior weight is not physical confirmation.'}
                       </p>
                     </div>
                   )}
@@ -1104,12 +1116,12 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                       <span className="sci-badge sci-badge-surrogate">Univariate Surrogate</span>
                       <h4 className="text-sm font-bold text-[#17201F]">Surrogate Point Estimations</h4>
                       <p className="text-xs text-[#66706C] max-w-sm mx-auto leading-relaxed">
-                        The ExtraTrees surrogate oracle directly outputs point predictions of normalized cycle-3 capacity (<code className="font-mono text-[#DC2626]">norm_capacity_3</code>) without continuous Gaussian density integration across competing physical mechanisms.
+                        The ExtraTrees surrogate oracle outputs point predictions for the audited source target (<code className="font-mono text-[#DC2626]">C_norm^20</code>, raw column <code className="font-mono text-[#DC2626]">norm_capacity_3</code>); this is not a competing-hypothesis measurement model.
                       </p>
                       <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] text-2xs font-mono text-[#66706C] text-left space-y-1">
-                        <div>• Full Virtual Space: 333,333 candidate formulations</div>
-                        <div>• Screened Working Set: 200 candidates (2.535s runtime)</div>
-                        <div>• Screening Latent Gap: 0.000 (100% max percentile recovered)</div>
+                        <div>• Full Virtual Space: {electrolyteInfo?.candidateCount ?? 'N/A'} candidate formulations</div>
+                        <div>• Screened Working Set: {electrolyteInfo?.screenedWorkingSetCount ?? 'N/A'} candidates (source timing stage)</div>
+                        <div>• Screening Latent Gap: {data.electrolyte_simulation?.screening_latent_gap ?? 'N/A'} (source artifact)</div>
                       </div>
                     </div>
                   ) : (
@@ -1180,10 +1192,10 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             <p className="text-xs text-[#66706C] mt-0.5">Signed additive terms for action {selectedCandidateId} / {selectedModality}</p>
           </div>
 
-          <ScoreWaterfallChart action={inspectedAction || undefined} />
+          <ScoreWaterfallChart action={inspectedAction} />
 
           <div className="p-3 rounded-lg bg-[#FCFCFA] border border-[#D9DFDB] text-2xs font-mono text-[#66706C] leading-relaxed">
-            <strong className="text-[#17201F]">Exact Formulation:</strong> S(a) = w_H · HIG + w_D · Diversity - w_C · Cost. Composite score is a dimensionless scalar; only raw HIG is in nats.
+            <strong className="text-[#17201F]">Score provenance:</strong> raw HIG, discovery utility, normalized cost, and total score are shown only when persisted by the source action record; no missing weighting is inferred.
           </div>
         </section>
       </div>
@@ -1253,7 +1265,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             </div>
             <div className="rounded-xl border border-[#D9DFDB] bg-[#17201F] overflow-hidden p-2">
               <StarkHologramSphere
-                candidates={resolved.candidates.length > 0 ? resolved.candidates : data.flagship_campaign?.candidates || []}
+                candidates={resolved.candidates}
                 selectedCandidateId={selectedCandidateId}
                 onSelectCandidate={(candId) => setSelectedCandidateId(candId)}
                 currentStep={currentStep || undefined}

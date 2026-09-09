@@ -49,6 +49,7 @@ def test_manifest_artifact_hashes(manifest):
         "alab_dataset_audit": ROOT / "outputs" / "alab" / "alab_dataset_audit.json",
         "electrolyte_screening": ROOT / "outputs" / "electrolyte" / "benchmark" / "screening_quality_diagnostics.json",
         "electrolyte_simulation": ROOT / "outputs" / "electrolyte" / "benchmark" / "surrogate_simulation.json",
+        "electrolyte_target_audit": ROOT / "outputs" / "electrolyte" / "audit" / "experimental_identity_audit.json",
     }
 
     for name, expected_hash in hashes.items():
@@ -70,7 +71,7 @@ def test_alab_sample_provenance_and_count(snapshot):
     assert "Co3O4" in pg_0309["precursors"], "Co3O4 precursor missing in PG_0309"
     assert pg_0309["heating_temperature_c"] == 200.0
     assert pg_0309["reaction_category"] == "transformed"
-    assert pg_0309["outcome_utility"] == 0.75
+    assert "outcome_utility" not in pg_0309
     assert pg_0309["refinement_rwp"] == 1.17
 
     for s in samples:
@@ -80,55 +81,28 @@ def test_alab_sample_provenance_and_count(snapshot):
         assert isinstance(s.get("precursors"), list)
 
 
-def test_score_decomposition_exact_formula(snapshot):
+def test_source_score_records_are_preserved_without_recomputation(snapshot):
     flagship = snapshot["flagship_campaign"]
-    weights = flagship["policy_weights"]
-    w_h = weights["w_hig"]
-    w_d = weights["w_discovery"]
-    w_c = weights["w_cost"]
-
     for step in flagship["steps"]:
         s_num = step["step"]
-        actions = step.get("all_scored_actions") or step.get("top_actions") or []
+        actions = step.get("all_scored_actions") or []
         assert actions, f"Step {s_num} has no scored actions!"
-
         for act in actions:
-            norm_hig = act["normalized_hig"]
-            norm_disc = act["normalized_discovery"]
-            norm_cost = act["normalized_cost"]
-
-            expected_contrib_h = w_h * norm_hig
-            expected_contrib_d = w_d * norm_disc
-            expected_contrib_c = w_c * norm_cost
-
-            recomputed_score = expected_contrib_h + expected_contrib_d - expected_contrib_c
-            total_score = act["total_action_score"]
-
-            assert abs(recomputed_score - total_score) < 1e-5, f"Step {s_num} action score mismatch: {recomputed_score} vs {total_score}"
+            assert all(isinstance(act[field], (int, float)) for field in ["expected_hig_nats", "discovery_utility", "normalized_cost", "total_action_score"])
+            assert "normalized_hig" not in act
+            assert "normalized_discovery" not in act
+            assert "w_hig" not in act
 
 
-def test_step_1_counterfactual_policy_rankings(snapshot):
+def test_step_1_source_ranking_and_run_identity(snapshot):
     step1 = snapshot["flagship_campaign"]["steps"][0]
     actions = step1["all_scored_actions"]
     assert len(actions) == 24, f"Step 1 action pool must have 24 actions, found {len(actions)}"
 
-    # 1. HYBRID winner
-    hybrid_sorted = sorted(actions, key=lambda x: x["total_action_score"], reverse=True)
-    assert hybrid_sorted[0]["action"]["candidate_id"] == "controlled-3"
-    assert hybrid_sorted[0]["action"]["action_type"] == "XRD"
-    assert abs(hybrid_sorted[0]["total_action_score"] - 0.37938) < 1e-4
-
-    # 2. PURE_HIG winner
-    hig_sorted = sorted(actions, key=lambda x: x["raw_expected_hig_nats"], reverse=True)
-    assert hig_sorted[0]["action"]["candidate_id"] == "controlled-0"
-    assert hig_sorted[0]["action"]["action_type"] == "XRD"
-    assert hig_sorted[0]["normalized_hig"] == 1.0
-
-    # 3. DISCOVERY_ONLY winner
-    disc_sorted = sorted(actions, key=lambda x: x["raw_discovery_utility"], reverse=True)
-    assert disc_sorted[0]["action"]["candidate_id"] == "controlled-9"
-    assert disc_sorted[0]["action"]["action_type"] == "XRD"
-    assert disc_sorted[0]["normalized_discovery"] == 1.0
+    ranked = sorted(actions, key=lambda x: x["total_action_score"], reverse=True)
+    assert ranked[0]["action"]["candidate_id"] == snapshot["flagship_campaign"]["steps"][0]["preregistration"]["action"]["candidate_id"]
+    assert ranked[0]["action"]["action_type"] == snapshot["flagship_campaign"]["steps"][0]["preregistration"]["action"]["action_type"]
+    assert snapshot["flagship_campaign"]["run_id"] == "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID"
 
 
 def test_predictive_distribution_action_binding(snapshot):
@@ -150,15 +124,9 @@ def test_predictive_distribution_action_binding(snapshot):
             for v in dist.get("variance", []):
                 assert v > 0, f"Step {s_num} {hid} non-positive variance: {v}"
 
-        # In all_scored_actions, non-selected actions must be marked unavailable
         for act in step.get("all_scored_actions", []):
-            cid = act["action"]["candidate_id"]
-            mtype = act["action"]["action_type"]
-            if cid == selected_candidate and mtype == selected_modality:
-                assert act.get("predictive_distribution_available") is True
-            else:
-                assert act.get("predictive_distribution_available") is False
-                assert "predictive_distribution_unavailability_reason" in act
+            assert "predictive_distribution_available" not in act
+            assert "predictive_distribution_unavailability_reason" not in act
 
 
 def test_belief_continuity_and_sequence_ordering(snapshot):
@@ -307,7 +275,8 @@ def test_dataset_registry_completeness(snapshot):
     assert electrolyte["capabilities"]["competingHypotheses"] is False
     assert electrolyte["provenance"]["doi"] == "10.1038/s41467-025-63303-7"
     assert electrolyte["targetObservable"] == "norm_capacity_3"
-    assert "cycle 3" in electrolyte["targetObservableDescription"].lower()
+    assert electrolyte["scientificTargetName"] == "C_norm^20"
+    assert "20th cycle" in electrolyte["targetObservableDescription"]
 
 
 def test_dataset_registry_zero_fabrications(snapshot):
@@ -327,6 +296,9 @@ def test_dataset_registry_zero_fabrications(snapshot):
         raw_screening = json.load(f)
     assert raw_screening["search_space_size"] == datasets["anode_free_electrolyte_screening"]["candidateCount"] == 333333
     assert raw_screening["working_set_trials"]["200"]["screening_latent_gap"] == 0.0
+    target_audit = json.load((ROOT / "outputs" / "electrolyte" / "audit" / "experimental_identity_audit.json").open("r", encoding="utf-8"))
+    assert target_audit["target_semantics"]["scientific_target_name"] == "C_norm^20"
+    assert target_audit["target_semantics"]["numerical_alias_validation"]["exceptions_count"] == 0
 
     # Verify Flagship policy matrix runs against raw multimodal artifact
     raw_matrix_path = ROOT / "outputs" / "alab" / "multimodal" / "full_policy_matrix.json"

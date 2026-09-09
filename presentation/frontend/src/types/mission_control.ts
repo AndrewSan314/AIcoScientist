@@ -1,4 +1,11 @@
-export type DataMode = 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY' | 'LIVE_COMPUTED' | 'NOT_AVAILABLE';
+export type EvidenceMode =
+  | 'CONTROLLED_SYNTHETIC'
+  | 'HISTORICAL_REPLAY'
+  | 'SIMULATED_SURROGATE'
+  | 'LIVE_COMPUTED'
+  | 'NOT_AVAILABLE';
+
+export type DataMode = EvidenceMode;
 
 export type WorkspaceTab = 'discovery' | 'benchmarks' | 'system';
 export type LegacyNavTab = 'overview' | 'cockpit' | 'alab' | 'benchmarks' | 'electrolyte' | 'architecture' | 'readiness';
@@ -18,11 +25,16 @@ export type LegacyDatasetId = 'controlled_synthesis' | 'alab_replay' | 'electrol
 export type DatasetOption = CanonicalDatasetId | LegacyDatasetId;
 
 export interface DatasetModalityInfo {
-  cost: number;
-  diagnostic: boolean;
-  units: string;
+  cost?: number | null;
+  diagnostic?: boolean;
+  units?: string;
   available: boolean;
   reason?: string;
+  linkedCandidateCount?: number;
+  coverage?: number;
+  linkageQuality?: string;
+  missingness?: string;
+  source?: string;
 }
 
 export interface DatasetProvenance {
@@ -39,7 +51,7 @@ export interface DatasetCapabilities {
   preregistrationReplay: boolean;
   closedLoopExecution: boolean;
   surrogateSimulation: boolean;
-  evidenceKind: 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY' | 'SIMULATED_SURROGATE' | 'LIVE_COMPUTED';
+  evidenceKind: EvidenceMode;
 }
 
 export interface ScientificDatasetRegistryEntry {
@@ -50,8 +62,14 @@ export interface ScientificDatasetRegistryEntry {
   provenance: DatasetProvenance;
   candidateCount: number;
   candidateIds: string[];
+  featuredCandidateIds?: string[];
+  availableRunIds?: string[];
+  availablePolicies?: string[];
+  availableSeeds?: number[];
+  availableWorlds?: string[];
   screenedWorkingSetCount?: number;
   targetObservable?: string;
+  scientificTargetName?: string;
   targetObservableDescription?: string;
   modalities: Record<string, DatasetModalityInfo>;
   hypotheses: string[];
@@ -60,6 +78,7 @@ export interface ScientificDatasetRegistryEntry {
   summary: string;
   statusBadge: string;
   disclosures: string[];
+  limitations?: string[];
 }
 
 export interface DatasetRegistry {
@@ -67,30 +86,103 @@ export interface DatasetRegistry {
   datasets: ScientificDatasetRegistryEntry[];
 }
 
-export interface ResolvedCampaignView {
+export interface ResolvedViewShell {
+  kind: 'controlled_multimodal' | 'historical_replay' | 'surrogate_optimization';
   datasetId: CanonicalDatasetId;
   displayName: string;
   domain: string;
   statusBadge: string;
-  evidenceKind: string;
-  steps: CampaignStep[];
-  totalSteps: number;
-  candidates: Candidate[];
-  hypotheses: string[];
-  modalities: string[];
+  evidenceKind: EvidenceMode;
+  selectedConfiguration: Record<string, unknown>;
+  sourceManifest: {
+    sourcePaths: string[];
+    sourceArtifactHashes?: Record<string, string>;
+    scientificSourceCommit?: string;
+  };
+  availableViews: string[];
+  limitations: string[];
   banner: {
     title: string;
     badge: string;
     description: string;
     confidenceOrUtilityLabel: string;
-    budgetExpended: number | string;
+    budgetExpended: number | string | null;
     budgetUnits: string;
   };
   capabilities: DatasetCapabilities;
   disclosures: string[];
-  electrolyteSimulationRun?: any;
-  electrolyteScreeningDiagnostics?: any;
-  alabSamples?: SampleItem[];
+}
+
+export interface ControlledMultimodalView extends ResolvedViewShell {
+  kind: 'controlled_multimodal';
+  campaign: FlagshipCampaign;
+  steps: CampaignStep[];
+  totalSteps: number;
+  candidates: Candidate[];
+  hypotheses: string[];
+  modalities: string[];
+}
+
+export interface HistoricalReplayView extends ResolvedViewShell {
+  kind: 'historical_replay';
+  campaign: ReplayCampaign;
+  steps: CampaignStep[];
+  totalSteps: number;
+  candidates: Candidate[];
+  hypotheses: string[];
+  modalities: string[];
+  replaySampleIds: string[];
+  alabSamples: SampleItem[];
+}
+
+export interface SurrogateTrajectoryStep {
+  queryIndex: number;
+  candidateId: string;
+  revealedNoisyValue?: number;
+  selectedLatentValue?: number;
+  bestSelectedLatentValue?: number;
+  bestNoisyObservedValue?: number;
+  simpleRegretLatent?: number;
+  cumulativeRawHigNats?: number;
+  realizedEntropyReductionNats?: number;
+}
+
+export interface SurrogateOptimizationView extends ResolvedViewShell {
+  kind: 'surrogate_optimization';
+  scientificTargetName?: string;
+  trajectory: SurrogateTrajectoryStep[];
+  policy: string;
+  seed: number;
+  simulationRun: SurrogateRun;
+  screeningDiagnostics: ElectrolyteScreeningData;
+}
+
+export type ResolvedResearchView =
+  | ControlledMultimodalView
+  | HistoricalReplayView
+  | SurrogateOptimizationView;
+
+export type ResolvedCampaignView = ResolvedResearchView;
+
+export type ResolutionFailureReason =
+  | 'UNKNOWN_DATASET'
+  | 'UNKNOWN_POLICY'
+  | 'UNKNOWN_SEED'
+  | 'UNKNOWN_WORLD'
+  | 'RUN_NOT_AVAILABLE'
+  | 'SOURCE_ARTIFACT_MISSING'
+  | 'INVALID_SOURCE_DATA'
+  | 'UNSUPPORTED_CONFIGURATION';
+
+export type ResolveResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; reason: ResolutionFailureReason; message: string; availableOptions?: unknown };
+
+export interface CampaignResolutionConfiguration {
+  runId?: string;
+  world?: string;
+  seed?: number;
+  policy?: string;
 }
 
 export interface PresenterSceneState {
@@ -137,11 +229,11 @@ export interface HypothesisDefinition {
 
 export interface Candidate {
   candidate_id: string;
-  x: number;
-  y: number;
   composition_label: string;
-  characterization_cost: number;
-  outcome_cost: number;
+  x?: number;
+  y?: number;
+  characterization_cost?: number;
+  outcome_cost?: number;
   target_system?: string;
   status?: 'unobserved' | 'characterized' | 'outcome_tested' | 'selected';
 }
@@ -301,7 +393,7 @@ export interface FlagshipCampaign {
   world: string;
   seed: number;
   policy: string;
-  policy_weights: {
+  policy_weights?: {
     w_hig: number;
     w_discovery: number;
     w_cost: number;
@@ -316,6 +408,7 @@ export interface ReplayCampaign {
   policy: string;
   seed: number;
   mode: string;
+  initial_beliefs?: Record<string, number>;
   replay_candidate_ids?: string[];
   steps: CampaignStep[];
 }
@@ -399,6 +492,28 @@ export interface ElectrolyteSimulationData {
   oracle_kind?: string;
   policies?: Record<string, any>;
   comparison_table?: any[];
+  detailed_policy_seed_runs?: Record<string, SurrogateRun[]>;
+  simulation_policies?: Record<string, Record<string, number>>;
+  evaluated_seeds?: number[];
+  availablePolicies?: string[];
+  availableSeeds?: number[];
+}
+
+export interface SurrogateRun {
+  seed: number;
+  queried_candidate_ids: string[];
+  revealed_noisy_values: number[];
+  selected_latent_values: number[];
+  best_latent_curve: number[];
+  best_selected_latent_capacity?: number;
+  best_noisy_observed_capacity?: number;
+  simple_regret_latent?: number;
+  simple_regret_vs_full_latent?: number;
+  cumulative_raw_hig_nats?: number;
+  realized_entropy_reduction?: number;
+  queried_count?: number;
+  regret_vs_oracle_max?: number;
+  [key: string]: unknown;
 }
 
 export interface SampleItem {
@@ -411,7 +526,6 @@ export interface SampleItem {
   heating_time_hours?: number | null;
   reaction_energy_ev_per_atom?: number | null;
   reaction_category?: string | null;
-  outcome_utility?: number | null;
   xrd_available: boolean;
   refinement_available: boolean;
   sem_available: boolean;
@@ -466,6 +580,7 @@ export interface SnapshotManifest {
   total_audit_events: number;
   validation_gate_pass_count: number;
   validation_gate_total_count: number;
+  transformation_version?: string;
 }
 
 export interface SnapshotData {
@@ -483,6 +598,7 @@ export interface SnapshotData {
   sensitivity: SensitivityData;
   electrolyte_screening: ElectrolyteScreeningData;
   electrolyte_simulation: any;
+  campaign_runs?: Array<FlagshipCampaign | ReplayCampaign>;
   alab_audit: any;
   modality_inventory: any;
   samples: SampleItem[];

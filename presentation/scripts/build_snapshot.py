@@ -4,7 +4,7 @@
 Aggregates authentic project artifacts from outputs/ and data/ into a versioned,
 deterministic presentation dataset for the AIcoScientist Mission Control.
 Fail-closed validation, cryptographic provenance, real A-Lab sample extraction,
-and exact score normalization.
+and source score preservation.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ MANIFEST_FILE = DATA_DIR / "snapshot_manifest.json"
 REGISTRY_FILE = DATA_DIR / "dataset_registry.json"
 
 SCIENTIFIC_SOURCE_COMMIT = "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e"
-SNAPSHOT_SCHEMA_VERSION = "1.2.0"
+SNAPSHOT_SCHEMA_VERSION = "1.3.0"
 
 
 def compute_sha256(path: Path) -> str:
@@ -46,33 +46,20 @@ def compute_sha256(path: Path) -> str:
 
 def get_git_info() -> tuple[str, str]:
     """Retrieve current Git HEAD commit and branch."""
-    commit = "c2ae7dd0b374283369ad76fb49ce776b8abcbd39"
-    branch = "integration/multimodal-scientific-engine"
-    try:
-        c_res = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
+    values = []
+    for args in (("git", "rev-parse", "HEAD"), ("git", "rev-parse", "--abbrev-ref", "HEAD")):
+        result = subprocess.run(
+            list(args),
             cwd=str(ROOT),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             check=False,
         )
-        if c_res.returncode == 0 and c_res.stdout.strip():
-            commit = c_res.stdout.strip()
-
-        b_res = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=str(ROOT),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=False,
-        )
-        if b_res.returncode == 0 and b_res.stdout.strip():
-            branch = b_res.stdout.strip()
-    except Exception:
-        pass
-    return commit, branch
+        if result.returncode != 0 or not result.stdout.strip():
+            raise RuntimeError(f"Unable to resolve Git provenance: {' '.join(args)}")
+        values.append(result.stdout.strip())
+    return values[0], values[1]
 
 
 def load_json(path: Path) -> Any:
@@ -94,264 +81,121 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, Any]:
-    """Extract and validate the flagship 4-step HYBRID trajectory.
-    
-    Fail-closed guarantees:
-    - Verifies event chain: ACTION_SCORE_RECORD -> PREREGISTERED_SELECTED_ACTION -> MEASUREMENT_REVEALED -> BELIEF_UPDATE
-    - Verifies preregistration sequence < reveal sequence < update sequence
-    - Verifies matching candidate and modality
-    - Enriches each action with exact normalized score components satisfying:
-        weighted_hig + weighted_discovery - weighted_cost = total_action_score
-    """
-    run_id = "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID"
+def _parse_run_id(run_id: str) -> dict[str, Any]:
+    parts = run_id.split(":")
+    if parts[0] == "replay" and len(parts) == 4:
+        return {"policy": parts[1], "seed": int(parts[2]), "mode": "HISTORICAL_REPLAY"}
+    if parts[0] in {"controlled_world", "policy_comparison"} and len(parts) == 4:
+        return {"world": parts[1], "seed": int(parts[2]), "policy": parts[3], "mode": "CONTROLLED_SYNTHETIC"}
+    raise ValueError(f"Unsupported campaign run id: {run_id}")
+
+
+def _build_recorded_campaign_run(run_id: str, ledger_events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Preserve one complete ledger run without inventing score components or features."""
     events = [e for e in ledger_events if e.get("run_id") == run_id]
     if not events:
-        raise ValueError(f"Flagship run {run_id} not found in evidence ledger!")
-
-    # Group events by step
+        raise ValueError(f"Campaign run {run_id} not found in evidence ledger")
+    metadata = _parse_run_id(run_id)
     by_step: dict[int, dict[str, Any]] = defaultdict(
-        lambda: {"scored_actions": [], "preregistration": None, "observation": None, "belief_update": None}
+        lambda: {"scores": [], "preregistration": None, "observation": None, "belief_update": None}
     )
+    for event in events:
+        step = event.get("step")
+        if not isinstance(step, int):
+            raise ValueError(f"Run {run_id} contains an event without an integer step")
+        event_type = event.get("event")
+        if event_type == "ACTION_SCORE_RECORD":
+            by_step[step]["scores"].append(event)
+        elif event_type == "PREREGISTERED_SELECTED_ACTION":
+            by_step[step]["preregistration"] = event
+        elif event_type == "MEASUREMENT_REVEALED":
+            by_step[step]["observation"] = event
+        elif event_type == "BELIEF_UPDATE":
+            by_step[step]["belief_update"] = event
 
-    for e in events:
-        s = e.get("step", 1)
-        ev_type = e.get("event")
-        if ev_type == "ACTION_SCORE_RECORD":
-            by_step[s]["scored_actions"].append(e)
-        elif ev_type == "PREREGISTERED_SELECTED_ACTION":
-            by_step[s]["preregistration"] = e
-        elif ev_type == "MEASUREMENT_REVEALED":
-            by_step[s]["observation"] = e
-        elif ev_type == "BELIEF_UPDATE":
-            by_step[s]["belief_update"] = e
-
-    steps_data = []
-    policy_weights = {"w_hig": 0.8, "w_discovery": 0.8, "w_cost": 2.0}
-    tested_candidates_accum: list[str] = []
-
-    for s in sorted(by_step.keys()):
-        step_dict = by_step[s]
-        prereg = step_dict["preregistration"]
-        obs = step_dict["observation"]
-        upd = step_dict["belief_update"]
-        scores = step_dict["scored_actions"]
-
-        # Strict validation checks (fail-closed)
-        if prereg is None:
-            raise ValueError(f"Step {s} missing PREREGISTERED_SELECTED_ACTION event!")
-        if obs is None:
-            raise ValueError(f"Step {s} missing MEASUREMENT_REVEALED event!")
-        if upd is None:
-            raise ValueError(f"Step {s} missing BELIEF_UPDATE event!")
-        if not scores:
-            raise ValueError(f"Step {s} has no scored actions!")
-
-        # Sequence ordering verification: preregistration must precede reveal, which precedes update
-        p_seq = prereg.get("event_sequence", 0)
-        o_seq = obs.get("event_sequence", 0)
-        u_seq = upd.get("event_sequence", 0)
-        if not (p_seq < o_seq < u_seq):
-            raise ValueError(
-                f"Step {s} event sequence invariant violated: "
-                f"prereg({p_seq}) < obs({o_seq}) < update({u_seq}) failed!"
-            )
-
-        # Belief vector validity check (probabilities must sum to 1.0 within numerical tolerance)
-        beliefs = upd.get("beliefs_after", {})
-        prob_sum = sum(beliefs.values())
-        if abs(prob_sum - 1.0) > 1e-4:
-            raise ValueError(f"Step {s} posterior belief sum invalid: {prob_sum} (expected 1.0)")
-
-        # Candidate and modality consistency
+    steps: list[dict[str, Any]] = []
+    tested_candidates: list[str] = []
+    candidate_modalities: dict[str, set[str]] = defaultdict(set)
+    for step_number in sorted(by_step):
+        step_data = by_step[step_number]
+        prereg = step_data["preregistration"]
+        observation = step_data["observation"]
+        belief_update = step_data["belief_update"]
+        scores = step_data["scores"]
+        if not prereg or not observation or not belief_update or not scores:
+            raise ValueError(f"Run {run_id} step {step_number} is incomplete")
+        sequences = [prereg.get("event_sequence"), observation.get("event_sequence"), belief_update.get("event_sequence")]
+        if not all(isinstance(value, int) for value in sequences) or not (sequences[0] < sequences[1] < sequences[2]):
+            raise ValueError(f"Run {run_id} step {step_number} violates preregistration/reveal/update ordering")
         p_action = prereg.get("action", {})
-        p_cid = p_action.get("candidate_id")
-        p_mod = p_action.get("action_type")
-        o_action = obs.get("action", {})
-        o_meas = obs.get("observed_measurement", {})
-        o_cid = obs.get("candidate_id") or o_action.get("candidate_id") or o_meas.get("candidate_id")
-        o_mod = obs.get("modality") or o_action.get("action_type") or o_meas.get("modality")
-        if p_cid != o_cid or p_mod != o_mod:
-            raise ValueError(
-                f"Step {s} action mismatch: preregistered ({p_cid}, {p_mod}) vs revealed ({o_cid}, {o_mod})"
-            )
-
-        tested_candidates_before = list(tested_candidates_accum)
-        if p_cid and p_cid not in tested_candidates_accum:
-            tested_candidates_accum.append(p_cid)
-
-        # Compute step-level normalization extrema
-        max_hig = max((e.get("expected_hig_nats", 0.0) for e in scores), default=1e-12)
-        max_disc = max((e.get("discovery_utility", 0.0) for e in scores), default=1e-12)
-        max_cost = max((e.get("action", {}).get("estimated_cost", 1.0) for e in scores), default=1.0)
-
-        # Enrich every scored action with exact components
-        enriched_scores = []
-        for e in scores:
-            raw_hig = float(e.get("expected_hig_nats", 0.0))
-            raw_disc = float(e.get("discovery_utility", 0.0))
-            raw_cost = float(e.get("action", {}).get("estimated_cost", 1.0))
-            norm_cost = float(e.get("normalized_cost", raw_cost / max(max_cost, 1e-12)))
-
-            norm_hig = raw_hig / max(max_hig, 1e-12)
-            norm_disc = raw_disc / max(max_disc, 1e-12) if max_disc > 0 else 0.0
-
-            w_h = policy_weights["w_hig"]
-            w_d = policy_weights["w_discovery"]
-            w_c = policy_weights["w_cost"]
-
-            w_hig_contrib = w_h * norm_hig
-            w_disc_contrib = w_d * norm_disc
-            w_cost_contrib = w_c * norm_cost
-
-            total_score = float(e.get("total_action_score", 0.0))
-            recomputed = w_hig_contrib + w_disc_contrib - w_cost_contrib
-
-            if abs(recomputed - total_score) > 1e-5:
-                raise ValueError(
-                    f"Step {s} action {e.get('action', {}).get('action_id')} score mismatch: "
-                    f"recomputed({recomputed}) vs recorded({total_score})"
-                )
-
-            act_data = e.get("action", {})
-            act_cid = act_data.get("candidate_id")
-            act_mod = act_data.get("action_type")
-            is_prereg_action = (act_cid == p_cid and act_mod == p_mod)
-
-            enriched = dict(e)
-            enriched.update({
-                "raw_expected_hig_nats": raw_hig,
-                "normalized_hig": norm_hig,
-                "raw_discovery_utility": raw_disc,
-                "normalized_discovery": norm_disc,
-                "raw_estimated_cost": raw_cost,
-                "normalized_cost": norm_cost,
-                "w_hig": w_h,
-                "w_discovery": w_d,
-                "w_cost": w_c,
-                "weighted_hig_contribution": w_hig_contrib,
-                "weighted_discovery_contribution": w_disc_contrib,
-                "weighted_cost_contribution": w_cost_contrib,
-                "total_action_score": total_score,
-                "step_max_hig": max_hig,
-                "step_max_discovery": max_disc,
-                "step_max_cost": max_cost,
-                "predictive_distribution_available": is_prereg_action,
-                "predictive_distribution_unavailability_reason": None if is_prereg_action else "Predictive distributions were only persisted for the preregistered optimal action in this recorded snapshot.",
-            })
-            enriched_scores.append(enriched)
-
-        # Sort descending by total_action_score
-        enriched_scores.sort(key=lambda x: x["total_action_score"], reverse=True)
-
-        steps_data.append({
-            "step": s,
+        o_action = observation.get("action", {})
+        if (p_action.get("candidate_id"), p_action.get("action_type")) != (o_action.get("candidate_id"), o_action.get("action_type")):
+            raise ValueError(f"Run {run_id} step {step_number} selected action does not match observation")
+        beliefs = belief_update.get("beliefs_after")
+        if not isinstance(beliefs, dict) or abs(sum(float(value) for value in beliefs.values()) - 1.0) > 1e-4:
+            raise ValueError(f"Run {run_id} step {step_number} has invalid posterior beliefs")
+        for score in scores:
+            action = score.get("action", {})
+            candidate_id = action.get("candidate_id")
+            modality = action.get("action_type")
+            if candidate_id and modality:
+                candidate_modalities[candidate_id].add(modality)
+            if "total_action_score" not in score:
+                raise ValueError(f"Run {run_id} step {step_number} has an unscored action record")
+        selected_candidate = p_action.get("candidate_id")
+        tested_before = list(tested_candidates)
+        if selected_candidate and selected_candidate not in tested_candidates:
+            tested_candidates.append(selected_candidate)
+        sorted_scores = sorted(scores, key=lambda item: float(item["total_action_score"]), reverse=True)
+        steps.append({
+            "step": step_number,
             "preregistration": prereg,
-            "observation": obs,
-            "belief_update": upd,
-            "all_scored_actions": enriched_scores,
-            "top_actions": enriched_scores[:12],
-            "total_actions_evaluated": len(enriched_scores),
-            "step_max_hig": max_hig,
-            "step_max_discovery": max_disc,
-            "step_max_cost": max_cost,
-            "tested_candidates_before": tested_candidates_before,
+            "observation": observation,
+            "belief_update": belief_update,
+            "all_scored_actions": scores,
+            "top_actions": sorted_scores[:12],
+            "total_actions_evaluated": len(scores),
+            "tested_candidates_before": tested_before,
         })
 
-    # Candidates pool (controlled-0 through controlled-11)
-    candidates = []
-    for i in range(12):
-        cid = f"controlled-{i}"
-        candidates.append({
-            "candidate_id": cid,
-            "x": round(0.15 + 0.7 * ((i * 3 + 1) % 11) / 10.0, 3),
-            "y": round(0.12 + 0.75 * ((i * 7 + 2) % 11) / 10.0, 3),
-            "composition_label": f"Syn-{chr(65 + i)}",
-            "characterization_cost": 1.0,
-            "outcome_cost": 2.0,
-            "target_system": "Controlled-Synthetic Benchmark",
-            "candidate_status": "unobserved",
-            "available_modalities": ["XRD", "OUTCOME_TEST"],
-        })
-
-    return {
+    result = {
         "run_id": run_id,
-        "world": "CLEAN_WORLD_H1_PHASE_PURITY",
-        "seed": 42,
-        "policy": "HYBRID",
-        "policy_weights": policy_weights,
-        "initial_beliefs": {
-            "H1_PHASE_PURITY_LIMITED": 0.3333333333333333,
-            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.3333333333333333,
-            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.3333333333333333,
-        },
-        "candidates": candidates,
-        "steps": steps_data,
+        **metadata,
+        "initial_beliefs": steps[0]["preregistration"].get("beliefs_before", {}),
+        "steps": steps,
     }
+    if metadata["mode"] == "CONTROLLED_SYNTHETIC":
+        result["candidates"] = [
+            {
+                "candidate_id": candidate_id,
+                "composition_label": candidate_id,
+                "target_system": "Controlled-Synthetic Benchmark",
+                "available_modalities": sorted(candidate_modalities[candidate_id]),
+            }
+            for candidate_id in sorted(candidate_modalities)
+        ]
+    else:
+        result["replay_candidate_ids"] = sorted(tested_candidates)
+    return result
+
+
+def build_recorded_campaign_runs(ledger_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    run_ids = sorted({str(event.get("run_id")) for event in ledger_events if event.get("run_id")})
+    complete_run_ids = []
+    for run_id in run_ids:
+        steps = {event.get("step") for event in ledger_events if event.get("run_id") == run_id}
+        if all(any(event.get("run_id") == run_id and event.get("step") == step and event.get("event") == "ACTION_SCORE_RECORD" for event in ledger_events) for step in steps):
+            complete_run_ids.append(run_id)
+    return [_build_recorded_campaign_run(run_id, ledger_events) for run_id in complete_run_ids]
+
+
+def build_flagship_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, Any]:
+    run_id = "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID"
+    return _build_recorded_campaign_run(run_id, ledger_events)
 
 
 def build_alab_replay_campaign(ledger_events: list[dict[str, Any]]) -> dict[str, Any]:
-    """Extract and validate authentic historical A-Lab replay campaign replay:HYBRID:42:1."""
-    run_id = "replay:HYBRID:42:1"
-    events = [e for e in ledger_events if e.get("run_id") == run_id]
-    if not events:
-        raise ValueError(f"A-Lab replay run {run_id} not found in evidence ledger!")
-
-    by_step: dict[int, dict[str, Any]] = defaultdict(
-        lambda: {"scored_actions": [], "preregistration": None, "observation": None, "belief_update": None}
-    )
-    for e in events:
-        s = e.get("step", 1)
-        ev_type = e.get("event")
-        if ev_type == "ACTION_SCORE_RECORD":
-            by_step[s]["scored_actions"].append(e)
-        elif ev_type == "PREREGISTERED_SELECTED_ACTION":
-            by_step[s]["preregistration"] = e
-        elif ev_type == "MEASUREMENT_REVEALED":
-            by_step[s]["observation"] = e
-        elif ev_type == "BELIEF_UPDATE":
-            by_step[s]["belief_update"] = e
-
-    steps_data = []
-    for s in sorted(by_step.keys()):
-        step_dict = by_step[s]
-        prereg = step_dict["preregistration"]
-        obs = step_dict["observation"]
-        upd = step_dict["belief_update"]
-        scores = step_dict["scored_actions"]
-
-        scores.sort(key=lambda x: x.get("total_action_score", -999), reverse=True)
-
-        steps_data.append({
-            "step": s,
-            "preregistration": prereg,
-            "observation": obs,
-            "belief_update": upd,
-            "all_scored_actions": scores,
-            "top_actions": scores[:12],
-            "total_actions_evaluated": len(scores),
-        })
-
-    # Extract all candidate IDs tested in replay
-    replay_candidate_ids = sorted(list({
-        step["preregistration"]["action"]["candidate_id"]
-        for step in steps_data
-        if step.get("preregistration") and step["preregistration"].get("action")
-    }))
-
-    return {
-        "run_id": run_id,
-        "policy": "HYBRID",
-        "seed": 42,
-        "mode": "HISTORICAL_REPLAY",
-        "initial_beliefs": {
-            "H1_PHASE_PURITY_LIMITED": 0.3333333333333333,
-            "H2_COMPOSITION_HOMOGENEITY_LIMITED": 0.3333333333333333,
-            "H3_MORPHOLOGY_KINETICS_LIMITED": 0.3333333333333333,
-        },
-        "replay_candidate_ids": replay_candidate_ids,
-        "steps": steps_data,
-    }
+    return _build_recorded_campaign_run("replay:HYBRID:42:1", ledger_events)
 
 
 def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
@@ -371,14 +215,6 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
     if not samples_raw:
         raise ValueError("No samples found in ledger_precursor_genome.json!")
 
-    # Standard ordinal decision utility mapping for A-Lab
-    utility_map = {
-        "completely_reacted": 1.0,
-        "transformed": 0.75,
-        "partially_reacted": 0.5,
-        "unreacted": 0.0,
-    }
-
     catalog = []
     for s in samples_raw:
         sid = str(s["sample_id"])
@@ -397,7 +233,9 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
                     pass
 
         cat = outcome.get("reaction_category")
-        util = utility_map.get(cat) if cat in utility_map else None
+        target_formula = s.get("target_compound")
+        if not target_formula:
+            raise ValueError(f"A-Lab source record {sid} has no target_compound")
 
         # Extract real precursors
         precs = []
@@ -424,14 +262,13 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
 
         item = {
             "sample_id": sid,
-            "target_formula": s.get("target_compound") or sid,
+            "target_formula": target_formula,
             "target_stoichiometry": s.get("target_stoichiometry"),
             "precursors": precs,
             "heating_temperature_c": float(heating_temp) if heating_temp is not None else None,
             "heating_time_minutes": float(heating_time) if heating_time is not None else None,
             "reaction_energy_ev_per_atom": float(s["reaction_energy_ev_per_atom"]) if s.get("reaction_energy_ev_per_atom") is not None else None,
             "reaction_category": cat,
-            "outcome_utility": util,
             "xrd_available": bool(scans),
             "refinement_available": rwp is not None or bool(any(sc.get("refinement_cases") for sc in scans)),
             "sem_available": False,
@@ -451,14 +288,76 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
     return catalog
  
 
-def build_dataset_registry() -> dict[str, Any]:
-    """Generate the canonical scientific dataset registry.
-    
-    Contains strictly authenticated datasets benchmarked in the AIcoScientist repository:
-    1. Controlled Multimodal Alloy Benchmark (in-silico 12-candidate world)
-    2. A-Lab Precursor Genome Retrospective Replay (1,035 physical synthesis experiments, Zenodo DOI: 10.5281/zenodo.21285546)
-    3. Anode-Free Electrolyte Screening & Surrogate Optimization (Nature Comms 2025 DOI: 10.1038/s41467-025-63303-7, 333k pool)
-    """
+def build_dataset_registry(
+    campaign_runs: list[dict[str, Any]],
+    hypotheses: dict[str, Any],
+    samples: list[dict[str, Any]],
+    modality_inventory: dict[str, Any],
+    electrolyte_screening: dict[str, Any],
+    electrolyte_simulation: dict[str, Any],
+    electrolyte_target_audit: dict[str, Any],
+) -> dict[str, Any]:
+    """Build registry fields from the source artifacts used by the snapshot."""
+    controlled_runs = [run for run in campaign_runs if run.get("mode") == "CONTROLLED_SYNTHETIC"]
+    replay_runs = [run for run in campaign_runs if run.get("mode") == "HISTORICAL_REPLAY"]
+    controlled_ids = sorted({
+        candidate["candidate_id"]
+        for run in controlled_runs
+        for candidate in run.get("candidates", [])
+        if candidate.get("candidate_id")
+    })
+    controlled_modalities: dict[str, set[float]] = defaultdict(set)
+    for run in controlled_runs:
+        for step in run.get("steps", []):
+            for record in step.get("all_scored_actions", []):
+                action = record.get("action", {})
+                modality = action.get("action_type")
+                cost = action.get("estimated_cost")
+                if modality and isinstance(cost, (int, float)):
+                    controlled_modalities[modality].add(float(cost))
+
+    def controlled_modality(name: str, diagnostic: bool, units: str) -> dict[str, Any]:
+        costs = controlled_modalities.get(name, set())
+        return {
+            "cost": next(iter(costs)) if len(costs) == 1 else None,
+            "diagnostic": diagnostic,
+            "units": units,
+            "available": bool(costs),
+        }
+
+    alab_modality_entries = {}
+    for name, source in modality_inventory.get("modalities", {}).items():
+        alab_modality_entries[name] = {
+            "available": bool(source.get("action_space_supported")),
+            "linkedCandidateCount": source.get("linked_candidate_samples"),
+            "coverage": source.get("derived_observable_coverage"),
+            "linkageQuality": source.get("candidate_sample_linkage_quality"),
+            "missingness": source.get("missingness"),
+            "source": source.get("source"),
+        }
+    target = electrolyte_target_audit.get("target_semantics", {})
+    screening_trial = electrolyte_screening.get("working_set_trials", {}).get("200", {})
+    simulation_policies = electrolyte_simulation.get("simulation_policies", {})
+    simulation_seeds = electrolyte_simulation.get("evaluated_seeds", [])
+    controlled_default = next(
+        (run for run in controlled_runs if run.get("run_id") == "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID"),
+        None,
+    )
+    replay_default = next((run for run in replay_runs if run.get("run_id") == "replay:HYBRID:42:1"), None)
+    electrolyte_candidate_count = electrolyte_simulation.get("actual_search_space_size")
+    if controlled_default is None or replay_default is None:
+        raise ValueError("Required default controlled or replay run is missing from source campaign runs")
+    if not isinstance(electrolyte_candidate_count, int) or electrolyte_candidate_count <= 0:
+        raise ValueError("Electrolyte source artifact has no valid actual_search_space_size")
+    if not isinstance(simulation_seeds, list) or not simulation_seeds:
+        raise ValueError("Electrolyte source artifact has no evaluated seeds")
+    surrogate_default_policy = "HYBRID_DEFAULT"
+    if surrogate_default_policy not in simulation_policies:
+        raise ValueError("Electrolyte source artifact has no HYBRID_DEFAULT policy summary")
+    source_run_ids = [run.get("run_id") for run in campaign_runs if run.get("run_id")]
+    hypothesis_ids = sorted(hypotheses)
+    replay_ids = sorted({candidate_id for run in replay_runs for candidate_id in run.get("replay_candidate_ids", [])})
+
     return {
         "registry_schema_version": "1.0.0",
         "datasets": [
@@ -478,23 +377,23 @@ def build_dataset_registry() -> dict[str, Any]:
                     "doi": None,
                     "license": "MIT",
                 },
-                "candidateCount": 12,
-                "candidateIds": [f"controlled-{i}" for i in range(12)],
+                "candidateCount": len(controlled_ids),
+                "candidateIds": controlled_ids,
+                "availableRunIds": [run_id for run_id in source_run_ids if run_id.startswith(("controlled_world:", "policy_comparison:"))],
+                "availablePolicies": sorted({run.get("policy") for run in controlled_runs if run.get("policy")}),
+                "availableSeeds": sorted({run.get("seed") for run in controlled_runs if run.get("seed") is not None}),
+                "availableWorlds": sorted({run.get("world") for run in controlled_runs if run.get("world")}),
                 "modalities": {
-                    "XRD": {"cost": 1.0, "diagnostic": True, "units": "intensity (a.u.)", "available": True},
-                    "REFINEMENT": {"cost": 2.0, "diagnostic": True, "units": "phase fraction [0, 1]", "available": True},
-                    "OUTCOME_TEST": {"cost": 2.0, "diagnostic": False, "units": "synthesis success binary", "available": True},
+                    "XRD": controlled_modality("XRD", True, "intensity (a.u.)"),
+                    "REFINEMENT": controlled_modality("REFINEMENT", True, "phase fraction [0, 1]"),
+                    "OUTCOME_TEST": controlled_modality("OUTCOME_TEST", False, "synthesis success binary"),
                 },
-                "hypotheses": [
-                    "H1_PHASE_PURITY_LIMITED",
-                    "H2_COMPOSITION_HOMOGENEITY_LIMITED",
-                    "H3_MORPHOLOGY_KINETICS_LIMITED",
-                ],
+                "hypotheses": hypothesis_ids,
                 "defaultConfiguration": {
-                    "world": "WORLD_H1_PHASE_PURITY",
-                    "seed": 42,
-                    "policy": "HYBRID",
-                    "costPenalty": 0.25,
+                    "runId": controlled_default["run_id"],
+                    "world": controlled_default["world"],
+                    "seed": controlled_default["seed"],
+                    "policy": controlled_default["policy"],
                 },
                 "capabilities": {
                     "competingHypotheses": True,
@@ -504,10 +403,10 @@ def build_dataset_registry() -> dict[str, Any]:
                     "surrogateSimulation": False,
                     "evidenceKind": "CONTROLLED_SYNTHETIC",
                 },
-                "summary": "12 synthetic candidates evaluated against 3 exhaustive physical hypotheses (phase purity, composition homogeneity, morphology kinetics). Ground truth: known underlying physical world parameters.",
+                "summary": f"Recorded in-silico policy trajectories over {len(controlled_ids)} source candidate IDs and {len(hypothesis_ids)} source hypotheses; no physical synthesis is implied.",
                 "statusBadge": "Controlled Benchmark",
                 "disclosures": [
-                    "Synthetic benchmark designed for formal Bayesian inference guarantees and policy comparison bounds."
+                    "Synthetic benchmark designed for formal Bayesian inference and policy comparison; source action scores are displayed as recorded."
                 ],
             },
             {
@@ -525,33 +424,18 @@ def build_dataset_registry() -> dict[str, Any]:
                     "doi": "10.5281/zenodo.21285546",
                     "license": "CC BY 4.0",
                 },
-                "candidateCount": 1035,
-                "candidateIds": ["PG_0309", "PG_0214", "PG_0209"],
-                "modalities": {
-                    "XRD": {"cost": 1.0, "diagnostic": True, "units": "intensity (a.u.)", "available": True},
-                    "REFINEMENT": {"cost": 2.0, "diagnostic": True, "units": "Rwp and phase distribution", "available": True},
-                    "SEM": {
-                        "cost": 3.0,
-                        "diagnostic": True,
-                        "units": "micrograph",
-                        "available": False,
-                        "reason": "Archive present in sem.zip (408 MB) but precursor-level only (no sample-level linkage).",
-                    },
-                    "EDS": {
-                        "cost": 2.5,
-                        "diagnostic": True,
-                        "units": "elemental spectra",
-                        "available": False,
-                        "reason": "Archive present in eds.zip (358 KB) but precursor-level only.",
-                    },
-                },
-                "hypotheses": [
-                    "A_LAB_RETROSPECTIVE_SYNTHESIZABILITY",
-                ],
+                "candidateCount": len(samples),
+                "candidateIds": [sample["sample_id"] for sample in samples],
+                "featuredCandidateIds": replay_ids,
+                "availableRunIds": [run_id for run_id in source_run_ids if run_id.startswith("replay:")],
+                "availablePolicies": sorted({run.get("policy") for run in replay_runs if run.get("policy")}),
+                "availableSeeds": sorted({run.get("seed") for run in replay_runs if run.get("seed") is not None}),
+                "modalities": alab_modality_entries,
+                "hypotheses": hypothesis_ids,
                 "defaultConfiguration": {
-                    "runId": "replay:HYBRID:42:1",
-                    "seed": 42,
-                    "policy": "HYBRID",
+                    "runId": replay_default["run_id"],
+                    "seed": replay_default["seed"],
+                    "policy": replay_default["policy"],
                 },
                 "capabilities": {
                     "competingHypotheses": False,
@@ -561,11 +445,11 @@ def build_dataset_registry() -> dict[str, Any]:
                     "surrogateSimulation": False,
                     "evidenceKind": "HISTORICAL_REPLAY",
                 },
-                "summary": "Retrospective decision replay across 1,035 authentic physical laboratory synthesis trials. 6-step recorded landmark sequence evaluates target compounds PG_0309 (Co3B3H9O13), PG_0214, PG_0209.",
-                "statusBadge": "Historical Validation",
+                "summary": f"Retrospective replay over {len(samples)} source samples; the selected replay contains {len(replay_ids)} featured sample IDs and is distinct from the original laboratory execution log.",
+                "statusBadge": "Historical Replay",
                 "disclosures": [
-                    "Gate 17 Partial Calibration: 50% interval covers 95.2% due to conservative over-dispersion.",
-                    "SEM and EDS data exist in external zip archives but lack sample-level linkage.",
+                    "Replay policy and seed are recorded computational settings, not claims about the original laboratory policy.",
+                    "SEM and EDS archives are present but not linked to candidate sample IDs, so they are unavailable to replay.",
                 ],
             },
             {
@@ -584,22 +468,23 @@ def build_dataset_registry() -> dict[str, Any]:
                     "doi": "10.1038/s41467-025-63303-7",
                     "license": "CC BY 4.0",
                 },
-                "candidateCount": 333333,
-                "screenedWorkingSetCount": 200,
-                "targetObservable": "norm_capacity_3",
-                "targetObservableDescription": "Normalized discharge capacity at cycle 3 (range [0, 1])",
+                "candidateCount": electrolyte_candidate_count,
+                "screenedWorkingSetCount": electrolyte_simulation.get("screened_working_set_size"),
+                "targetObservable": target.get("raw_target_column"),
+                "scientificTargetName": target.get("scientific_target_name"),
+                "targetObservableDescription": target.get("scientific_meaning"),
                 "modalities": {
-                    "SURROGATE_ORACLE": {"cost": 1.0, "diagnostic": False, "units": "norm_capacity_3 [0, 1]", "available": True},
-                    "SCREENING_FILTER": {"cost": 0.0, "diagnostic": True, "units": "rank ensemble score", "available": True},
+                    "SURROGATE_ORACLE": {"diagnostic": False, "units": f"{target.get('scientific_target_name', 'source target')} [0, 1]", "available": True},
+                    "SCREENING_FILTER": {"diagnostic": True, "units": "rank ensemble score", "available": True},
                 },
-                "hypotheses": [
-                    "SURROGATE_CAPACITY_OPTIMIZATION",
-                ],
+                "hypotheses": ["SURROGATE_CAPACITY_OPTIMIZATION"],
                 "defaultConfiguration": {
-                    "policy": "HYBRID_DEFAULT",
-                    "seed": 42,
-                    "queries": 15,
+                    "policy": surrogate_default_policy,
+                    "seed": min(simulation_seeds),
+                    "queries": simulation_policies[surrogate_default_policy].get("queried_count"),
                 },
+                "availablePolicies": sorted(simulation_policies),
+                "availableSeeds": simulation_seeds,
                 "capabilities": {
                     "competingHypotheses": False,
                     "candidateScreening": True,
@@ -608,12 +493,13 @@ def build_dataset_registry() -> dict[str, Any]:
                     "surrogateSimulation": True,
                     "evidenceKind": "SIMULATED_SURROGATE",
                 },
-                "summary": "333,333 virtual liquid formulations screened to working set of 200 in 2.535s with 0.000 latent gap. 15-iteration sequential closed-loop surrogate optimization using ExtraTrees surrogate oracle.",
+                "summary": f"Source diagnostic reports a {electrolyte_simulation.get('requested_search_space_size')} candidate virtual pool, a {electrolyte_simulation.get('screened_working_set_size')} candidate working set, and {electrolyte_simulation.get('surrogate_model_family')} surrogate trajectories.",
                 "statusBadge": "Screening & Surrogate",
                 "disclosures": [
-                    "Surrogate oracle is an ExtraTrees in-silico computational approximation only (not live physical battery cycling).",
-                    "The surrogate oracle is a frozen univariate target model: it does not model coupling between multiple measured physical modalities or causal process structure.",
-                    "BoTorch EI reaches lower simple regret (0.0257 vs 0.0788), but Hybrid achieves 76% greater hypothesis entropy reduction (0.995 vs 0.564 nats).",
+                    "Surrogate oracle is an ExtraTrees in-silico computational approximation only; no live physical battery cycling is performed.",
+                    electrolyte_simulation.get("MODEL_COUPLING_LIMITATION", "Model coupling limitation is unavailable in the source artifact."),
+                    f"Screening timing is stage-specific: the 200-candidate diagnostic reports {screening_trial.get('screening_time_sec')} seconds; the end-to-end simulation artifact reports {electrolyte_simulation.get('screening_time_sec')} seconds.",
+                    f"Target audit: {target.get('scientific_meaning', 'target semantics unavailable')}.",
                 ],
             },
         ],
@@ -642,6 +528,7 @@ def main() -> None:
         "alab_dataset_audit": OUTPUTS_DIR / "alab" / "alab_dataset_audit.json",
         "electrolyte_screening": OUTPUTS_DIR / "electrolyte" / "benchmark" / "screening_quality_diagnostics.json",
         "electrolyte_simulation": OUTPUTS_DIR / "electrolyte" / "benchmark" / "surrogate_simulation.json",
+        "electrolyte_target_audit": OUTPUTS_DIR / "electrolyte" / "audit" / "experimental_identity_audit.json",
     }
 
     # Verify all source artifacts exist and calculate hashes
@@ -654,8 +541,11 @@ def main() -> None:
 
     # 1. Validation & Readiness
     validation = load_json(source_artifacts["multimodal_validation"])
-    pass_count = validation.get("gate_evidence", {}).get("boolean_gate_pass_count", 0)
-    total_count = validation.get("gate_evidence", {}).get("boolean_gate_count", 50)
+    gate_evidence = validation.get("gate_evidence", {})
+    pass_count = gate_evidence.get("boolean_gate_pass_count")
+    total_count = gate_evidence.get("boolean_gate_count")
+    if not isinstance(pass_count, int) or not isinstance(total_count, int):
+        raise ValueError("Validation artifact is missing boolean gate counts")
     print(f"Validation gates: {pass_count}/{total_count} boolean gates passed")
 
     # 2. Hypotheses
@@ -669,8 +559,9 @@ def main() -> None:
     print(f"Evidence ledger: {len(ledger_events)} immutable audit events")
 
     # 5. Flagship & Replay Campaigns (with strict fail-closed validation)
-    flagship = build_flagship_campaign(ledger_events)
-    replay = build_alab_replay_campaign(ledger_events)
+    campaign_runs = build_recorded_campaign_runs(ledger_events)
+    flagship = next(run for run in campaign_runs if run["run_id"] == "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID")
+    replay = next(run for run in campaign_runs if run["run_id"] == "replay:HYBRID:42:1")
     print(f"Flagship campaign verified: {len(flagship['steps'])} steps, all event sequences valid")
     print(f"Replay campaign verified: {len(replay['steps'])} steps, {len(replay['replay_candidate_ids'])} candidates")
 
@@ -701,6 +592,7 @@ def main() -> None:
     # 8. Electrolyte Screening & Simulation
     elec_screen = load_json(source_artifacts["electrolyte_screening"])
     elec_sim = load_json(source_artifacts["electrolyte_simulation"])
+    elec_target_audit = load_json(source_artifacts["electrolyte_target_audit"])
 
     # 9. A-Lab Dataset Audit & Modalities
     alab_audit = load_json(source_artifacts["alab_dataset_audit"])
@@ -720,7 +612,7 @@ def main() -> None:
             },
             {
                 "name": "ModalityDefinition",
-                "role": "Formalizes characterization vs outcome actions, duration, normalized cost, and prerequisite dependencies.",
+                "role": "Formalizes characterization vs outcome actions, duration, cost, and prerequisite dependencies.",
                 "file": "src/science/domain.py",
             },
             {
@@ -740,7 +632,7 @@ def main() -> None:
             },
             {
                 "name": "MultimodalDecisionEngine",
-                "role": "Joint Candidate × Modality recommendation using Expected HIG, Discovery utility, and Cost regularization.",
+                "role": "Joint Candidate × Modality recommendation while preserving source-recorded action scores.",
                 "file": "src/science/multimodal/decision.py",
             },
             {
@@ -761,7 +653,7 @@ def main() -> None:
             {
                 "domain_id": "alab_synthesis",
                 "name": "A-Lab Autonomous Solid-State Inorganic Synthesis",
-                "status": "RETROSPECTIVE_REPLAY_VALIDATED",
+                "status": "HISTORICAL_REPLAY",
                 "candidates_count": 1035,
                 "modalities": [
                     "XRD (Canonical)",
@@ -770,23 +662,15 @@ def main() -> None:
                     "SEM (Precursor unlinked)",
                     "EDS (Precursor unlinked)",
                 ],
-                "purpose": "Real historical characterization and synthesis outcome decision loops.",
+                "purpose": "Offline replay of source-linked characterization and synthesis outcomes; not the original lab policy log.",
             },
             {
                 "domain_id": "battery_electrolyte",
                 "name": "LiFSI High-Entropy Battery Electrolyte Formulations",
-                "status": "SCREENING_&_SURROGATE_VALIDATED",
+                "status": "SCREENING_&_SURROGATE",
                 "candidates_count": 333333,
-                "modalities": ["FORMULATION_SCREEN", "SURROGATE_CONDUCTIVITY", "ELECTROCHEMICAL_CYCLING"],
-                "purpose": "Large-scale virtual space screening (333k pool) and multi-objective closed-loop policy evaluation.",
-            },
-            {
-                "domain_id": "au_ir_rh_catalysts",
-                "name": "Ternary Au-Ir-Rh Thin-Film Electrocatalysts",
-                "status": "EARLIER_BENCHMARK_REFERENCE",
-                "candidates_count": 178,
-                "modalities": ["XRD_SPECTRAL", "PROPERTY_HER"],
-                "purpose": "Ternary composition space exploration, contrastive counterfactuals, and agentic presentation.",
+                "modalities": ["SCREENING_FILTER", "SURROGATE_ORACLE"],
+                "purpose": "Source-backed virtual-pool screening and in-silico surrogate trajectory evaluation; no live cycling.",
             },
         ],
     }
@@ -806,6 +690,7 @@ def main() -> None:
         "campaign_seed": flagship["seed"],
         "campaign_policy": flagship["policy"],
         "campaign_step_count": len(flagship["steps"]),
+        "campaign_run_count": len(campaign_runs),
         "total_real_samples": len(samples),
         "total_audit_events": len(ledger_events),
         "validation_gate_pass_count": pass_count,
@@ -813,7 +698,15 @@ def main() -> None:
     }
 
     # 12. Canonical Dataset Registry
-    dataset_registry = build_dataset_registry()
+    dataset_registry = build_dataset_registry(
+        campaign_runs,
+        hypotheses,
+        samples,
+        modality_inv,
+        elec_screen,
+        elec_sim,
+        elec_target_audit,
+    )
     print(f"Dataset registry created: {len(dataset_registry['datasets'])} authentic scientific benchmarks")
 
     # Assemble canonical snapshot
@@ -833,6 +726,7 @@ def main() -> None:
         },
         "flagship_campaign": flagship,
         "alab_replay_campaign": replay,
+        "campaign_runs": campaign_runs,
         "hypotheses": hypotheses,
         "validation": validation,
         "calibration": calibration,
@@ -840,6 +734,7 @@ def main() -> None:
         "sensitivity": sensitivity_data,
         "electrolyte_screening": elec_screen,
         "electrolyte_simulation": elec_sim,
+        "electrolyte_target_audit": elec_target_audit,
         "alab_audit": alab_audit,
         "modality_inventory": modality_inv,
         "samples": samples,
@@ -886,4 +781,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

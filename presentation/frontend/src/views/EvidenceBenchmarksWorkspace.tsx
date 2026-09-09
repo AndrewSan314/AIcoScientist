@@ -51,41 +51,59 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
   const selectedSample: SampleItem | undefined =
     samples.find((s) => s.sample_id === selectedSampleId) || samples[0];
 
+  const summaryByWorldPolicy = data.benchmarks?.summary_by_world_policy || {};
+  const cleanH1 = summaryByWorldPolicy.CLEAN_WORLD_H1_PHASE_PURITY || {};
+  const cleanH2 = summaryByWorldPolicy.CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY || {};
+  const sensitivityValues = Object.values<any>(data.sensitivity?.aggregate_by_world_policy || {})
+    .map((record) => record.HIG_rank_correlation)
+    .filter((value) => typeof value === 'number');
+  const xrdCalibration = data.calibration?.XRD?.['XRD.normalized_intensity_std_proxy'] || {};
+  const electrolyteRegistry = data.dataset_registry?.datasets.find((dataset) => dataset.id === 'anode_free_electrolyte_screening');
+  const electrolyteDiagnostic = data.electrolyte_screening?.working_set_trials?.['200'] || {};
+  const cleanH1PureCost = cleanH1.PURE_HIG?.mean_measurement_cost;
+  const cleanH1HybridCost = cleanH1.HYBRID?.mean_measurement_cost;
+  const cleanH1CostReduction = typeof cleanH1PureCost === 'number' && cleanH1PureCost
+    ? ((cleanH1PureCost - cleanH1HybridCost) / cleanH1PureCost) * 100
+    : undefined;
+  const hybridSimulation = data.electrolyte_simulation?.simulation_policies?.HYBRID_DEFAULT || {};
+
   const questions = [
     {
       id: 1,
       title: 'Q1: Controlled Inference',
-      badge: '100% (Clean H1)',
+      badge: typeof cleanH1.HYBRID?.recovery_rate_MAP === 'number' ? `${(cleanH1.HYBRID.recovery_rate_MAP * 100).toFixed(0)}% (Clean H1)` : 'MAP recovery not recorded',
       badgeClass: 'sci-badge-verified',
-      whatThisProves: 'The Bayesian update achieves 100% MAP hypothesis recovery in Clean World H1 (90% in Clean H2) under non-degenerate observations.'
+      whatThisProves: typeof cleanH1.HYBRID?.recovery_rate_MAP === 'number' && typeof cleanH2.HYBRID?.recovery_rate_MAP === 'number'
+        ? `The source benchmark reports ${(cleanH1.HYBRID.recovery_rate_MAP * 100).toFixed(1)}% MAP recovery in Clean H1 and ${(cleanH2.HYBRID.recovery_rate_MAP * 100).toFixed(1)}% in Clean H2.`
+        : 'Source MAP-recovery values are unavailable for the requested benchmark.',
     },
     {
       id: 2,
       title: 'Q2: Stress Robustness',
-      badge: 'ρ = 0.74–0.93',
+      badge: sensitivityValues.length ? `ρ = ${Math.min(...sensitivityValues).toFixed(2)}–${Math.max(...sensitivityValues).toFixed(2)}` : 'ρ not recorded',
       badgeClass: 'sci-badge-verified',
-      whatThisProves: 'Inference ranking correlation between MC12 and MC32 ranges from 0.739 to 0.934 across worlds, supporting MC32 for the full matrix.'
+      whatThisProves: sensitivityValues.length ? `Source rank correlation ranges from ${Math.min(...sensitivityValues).toFixed(3)} to ${Math.max(...sensitivityValues).toFixed(3)} across the recorded sensitivity matrix.` : 'Source rank-correlation summary is unavailable.'
     },
     {
       id: 3,
       title: 'Q3: Policy Efficiency',
-      badge: '10.8% Cost Cut',
+      badge: cleanH1CostReduction !== undefined ? `${cleanH1CostReduction.toFixed(1)}% H1 cost change` : 'Cost not recorded',
       badgeClass: 'sci-badge-verified',
-      whatThisProves: 'Hybrid policy maintains identical 100% MAP recovery in Clean H1 while cutting measurement cost by 20.5% (10.8% overall across all 180 trajectories).'
+      whatThisProves: cleanH1CostReduction !== undefined ? `In the source Clean H1 summary, HYBRID and PURE_HIG are compared at ${cleanH1CostReduction.toFixed(1)}% relative measurement-cost change; MAP recovery is shown separately.` : 'Source policy-cost summary is unavailable.'
     },
     {
       id: 4,
       title: 'Q4: Physical A-Lab Replay',
-      badge: '1,035 Samples',
+      badge: `${samples.length.toLocaleString()} Samples`,
       badgeClass: 'sci-badge-historical',
-      whatThisProves: 'Retrospective calibration on 1,035 real A-Lab physical experiments yields 60.1% coverage at nominal 50% interval and 91.4% at nominal 90% interval.'
+      whatThisProves: `The source-linked A-Lab catalog contains ${samples.length.toLocaleString()} samples; the displayed interval coverage comes from the calibration artifact.`
     },
     {
       id: 5,
       title: 'Q5: Combinatorial Scale',
-      badge: '333k Formulations',
+      badge: `${electrolyteRegistry?.candidateCount?.toLocaleString() ?? 'N/A'} Formulations`,
       badgeClass: 'sci-badge-surrogate',
-      whatThisProves: 'Screening 333,333 candidate electrolyte formulations down to working set 200 completes in 2.5s with zero latent gap before surrogate optimization.'
+      whatThisProves: `The source screening diagnostic reports ${electrolyteRegistry?.candidateCount?.toLocaleString() ?? 'not recorded'} candidates, a ${electrolyteDiagnostic.working_set_size ?? electrolyteRegistry?.screenedWorkingSetCount ?? 'not recorded'}-candidate working set, and latent gap ${electrolyteDiagnostic.screening_latent_gap ?? 'not recorded'}.`
     }
   ];
 
@@ -151,12 +169,12 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
             <h2 className="text-base font-bold text-[#17201F]">
               {activeQuestion === 1 && 'Controlled Inference: Posterior Convergence'}
               {activeQuestion === 2 && 'Sensitivity: MC12 vs MC32 Rank Agreement'}
-              {activeQuestion === 3 && 'Policy Benchmark: Information Gain vs Cost (180 Runs)'}
-              {activeQuestion === 4 && 'A-Lab Empirical Calibration Coverage (1,035 Physical Runs)'}
-              {activeQuestion === 5 && 'Electrolyte Pareto Frontier (Conductivity vs Window)'}
+              {activeQuestion === 3 && `Policy Benchmark: Information Gain vs Cost (${data.benchmarks?.trajectory_count ?? 'N/A'} Runs)`}
+              {activeQuestion === 4 && `A-Lab Empirical Calibration Coverage (${samples.length.toLocaleString()} Source Samples)`}
+              {activeQuestion === 5 && `Electrolyte Surrogate Trajectories (${electrolyteRegistry?.candidateCount?.toLocaleString() ?? 'N/A'} Candidate Pool)`}
             </h2>
             <span className="text-2xs font-mono text-[#8F9995]">
-              {activeQuestion === 4 ? '1,035 samples' : activeQuestion === 5 ? '333,333 candidates' : 'Controlled benchmark'}
+              {activeQuestion === 4 ? `${samples.length.toLocaleString()} samples` : activeQuestion === 5 ? `${electrolyteRegistry?.candidateCount?.toLocaleString() ?? 'N/A'} candidates` : 'Controlled benchmark'}
             </span>
           </div>
 
@@ -165,7 +183,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <PolicyTrajectoryChart benchmarks={data.benchmarks} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Posterior mass of true hypothesis H₁ rapidly converges to 1.0 across all tested clean worlds.
+                  Posterior mass across the source controlled trajectories; no physical mechanism confirmation is implied.
                 </p>
               </div>
             )}
@@ -174,7 +192,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <SensitivityRankAgreementChart sensitivity={data.sensitivity} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Monte Carlo rank correlation across 32 sample draws shows high Spearman rank stability (ρ = 0.739 – 0.934).
+                  Monte Carlo rank correlation across the source sensitivity design: ρ = {sensitivityValues.length ? `${Math.min(...sensitivityValues).toFixed(3)} – ${Math.max(...sensitivityValues).toFixed(3)}` : 'not recorded'}.
                 </p>
               </div>
             )}
@@ -183,7 +201,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <PolicyTrajectoryChart benchmarks={data.benchmarks} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  180 full closed-loop trajectories comparing Pure HIG, Hybrid, Discovery Only, and Random.
+                  {data.benchmarks?.trajectory_count ?? 'N/A'} source trajectories across the recorded policy matrix.
                 </p>
               </div>
             )}
@@ -192,7 +210,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <CalibrationCoverageChart calibration={data.calibration} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  A-Lab retrospective replay: 95.2% empirical coverage at 50% confidence band (conservative over-dispersion).
+                  A-Lab calibration coverage from the source calibration artifact; the selected observable is shown in the panel.
                 </p>
               </div>
             )}
@@ -201,7 +219,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <ElectrolyteOptimizationChart simulationData={data.electrolyte_simulation} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Screened 333,333 virtual formulations down to top-20 candidate set on Pareto frontier in 2.5s.
+                  Source-backed screening and surrogate data for the recorded virtual candidate pool; no Pareto claim is added here.
                 </p>
               </div>
             )}
@@ -222,24 +240,24 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                 <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] space-y-2 font-mono text-2xs">
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Sample size:</span>
-                    <strong className="text-[#17201F]">30 clean synthetic worlds</strong>
+                    <strong className="text-[#17201F]">{data.benchmarks?.trajectory_count ?? 'N/A'} source trajectories</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Recovery rate:</span>
-                    <strong className="text-[#DC2626]">100.0% MAP accuracy</strong>
+                    <strong className="text-[#DC2626]">{cleanH1.HYBRID?.recovery_rate_MAP !== undefined ? `${(cleanH1.HYBRID.recovery_rate_MAP * 100).toFixed(1)}% MAP recovery` : 'Not recorded'}</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Mean steps to converge:</span>
-                    <strong className="text-[#17201F]">1.4 steps (threshold &gt; 0.85)</strong>
+                    <strong className="text-[#17201F]">{cleanH1.HYBRID?.['mean_steps_to_posterior_gt_0.8'] ?? 'Not recorded'} steps (&gt; 0.8)</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Ground truth firewall:</span>
-                    <strong className="text-[#DC2626]">Cryptographically enforced</strong>
+                    <strong className="text-[#DC2626]">Source artifact boundary</strong>
                   </div>
                 </div>
 
                 <p className="leading-relaxed">
-                  Under correctly specified observational likelihoods, Bayesian belief updating is guaranteed to converge to the true explanatory mechanism without bias.
+                    This is an inference-method benchmark over controlled source worlds; its results do not establish physical-world validity by themselves.
                 </p>
               </div>
             )}
@@ -250,15 +268,15 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                 <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] space-y-2 font-mono text-2xs">
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Spearman correlation:</span>
-                    <strong className="text-[#DC2626]">ρ ∈ [0.739, 0.934]</strong>
+                    <strong className="text-[#DC2626]">ρ ∈ [{sensitivityValues.length ? Math.min(...sensitivityValues).toFixed(3) : 'N/A'}, {sensitivityValues.length ? Math.max(...sensitivityValues).toFixed(3) : 'N/A'}]</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Monte Carlo samples:</span>
-                    <strong className="text-[#17201F]">12 vs 32 particles</strong>
+                    <strong className="text-[#17201F]">{data.sensitivity?.design?.low_samples ?? 'N/A'} vs {data.sensitivity?.design?.high_samples ?? 'N/A'} samples</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Stability decision:</span>
-                    <strong className="text-[#17201F]">USE_32_FOR_FULL_MATRIX</strong>
+                    <strong className="text-[#17201F]">{data.sensitivity?.design?.high_samples ? `USE_${data.sensitivity.design.high_samples}_FOR_FULL_MATRIX` : 'Not recorded'}</strong>
                   </div>
                 </div>
 
@@ -268,7 +286,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                     <span>Boundary Disclosure</span>
                   </div>
                   <p>
-                    Rankings exhibit sensitivity at MC12 (down to ρ=0.739 under stress noise), leading to the architectural decision to standardize on MC32 for the complete benchmark matrix.
+                    Rankings and the selected Monte Carlo sample counts are reported by the source sensitivity artifact; this panel does not infer a stronger guarantee.
                   </p>
                 </div>
               </div>
@@ -283,36 +301,23 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                       <tr>
                         <th className="p-2">Policy</th>
                         <th className="p-2">Clean H1 Rec</th>
-                        <th className="p-2">Cost (H1 / All)</th>
+                        <th className="p-2">Mean Cost (H1)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#D9DFDB] font-mono">
-                      <tr className="bg-[#FEF2F2] font-bold text-[#991B1B]">
-                        <td className="p-2">Hybrid (w_C=2.0)</td>
-                        <td className="p-2">100%</td>
-                        <td className="p-2">2.45 / 2.21 cr</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2">Pure HIG</td>
-                        <td className="p-2">100%</td>
-                        <td className="p-2 text-[#B91C1C]">3.08 / 2.48 cr</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2">Discovery Only</td>
-                        <td className="p-2 text-[#B91C1C]">70%</td>
-                        <td className="p-2">2.15 cr</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2">Random Control</td>
-                        <td className="p-2 text-[#8F9995]">30%</td>
-                        <td className="p-2">2.40 cr</td>
-                      </tr>
+                      {Object.entries<any>(cleanH1).map(([policy, stats]) => (
+                        <tr key={policy} className={policy === 'HYBRID' ? 'bg-[#FEF2F2] font-bold text-[#991B1B]' : ''}>
+                          <td className="p-2">{policy}</td>
+                          <td className="p-2">{typeof stats.recovery_rate_MAP === 'number' ? `${(stats.recovery_rate_MAP * 100).toFixed(1)}%` : 'N/A'}</td>
+                          <td className="p-2">{typeof stats.mean_measurement_cost === 'number' ? stats.mean_measurement_cost.toFixed(3) : 'N/A'}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-2xs text-[#991B1B]">
-                  <strong>Core Conclusion:</strong> The Hybrid policy delivers identical 100% hypothesis discrimination as Pure HIG in Clean World H1 while cutting measurement cost by 20.5% (10.8% mean reduction across all 180 benchmark trajectories).
+                  <strong>Source comparison:</strong> The table reports the source Clean H1 policy summaries. Cost and recovery are separate recorded metrics; no weighting or causal trade-off is inferred here.
                 </div>
               </div>
             )}
@@ -327,11 +332,11 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Total physical trials:</span>
-                    <strong className="text-[#17201F]">1,035 real experiments</strong>
+                    <strong className="text-[#17201F]">{samples.length.toLocaleString()} source records</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">XRD Coverage (50% / 90%):</span>
-                    <strong className="text-[#DC2626]">60.1% / 91.4%</strong>
+                    <strong className="text-[#DC2626]">{xrdCalibration.coverage50 !== undefined ? `${(xrdCalibration.coverage50 * 100).toFixed(1)}%` : 'N/A'} / {xrdCalibration.coverage90 !== undefined ? `${(xrdCalibration.coverage90 * 100).toFixed(1)}%` : 'N/A'}</strong>
                   </div>
                 </div>
 
@@ -342,7 +347,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                     <span>A_LAB_CALIBRATION_PARTIAL</span>
                   </div>
                   <p>
-                    Empirical coverage is 60.1% for nominal 50% intervals and 91.4% for nominal 90% intervals. The proxy model exhibits conservative over-dispersion rather than overconfidence, capturing physical synthesis batch noise.
+                    Empirical coverage is {xrdCalibration.coverage50 !== undefined ? `${(xrdCalibration.coverage50 * 100).toFixed(1)}%` : 'not recorded'} for nominal 50% intervals and {xrdCalibration.coverage90 !== undefined ? `${(xrdCalibration.coverage90 * 100).toFixed(1)}%` : 'not recorded'} for nominal 90% intervals. Interpretation remains bounded by the source calibration artifact.
                   </p>
                 </div>
 
@@ -350,19 +355,12 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-2xs font-bold text-[#17201F]">
                     <span>Landmark Sample:</span>
-                    <span className="font-mono text-[#DC2626]">{selectedSample?.sample_id || 'PG_0309'}</span>
+                    <span className="font-mono text-[#DC2626]">{selectedSample?.sample_id || 'Not recorded'}</span>
                   </div>
                   <div className="p-2.5 rounded bg-[#FCFCFA] border border-[#D9DFDB] font-mono text-2xs space-y-1">
-                    <div>Target: <strong className="text-[#17201F]">{selectedSample?.target_formula || 'Co3B3H9O13'}</strong></div>
-                    <div>Precursors: {selectedSample?.precursors?.join(', ') || 'Co(NO3)2, H3BO3'}</div>
-                    <div>
-                      Utility:{' '}
-                      <span className="text-[#DC2626] font-bold">
-                        {selectedSample?.outcome_utility !== undefined && selectedSample?.outcome_utility !== null
-                          ? selectedSample.outcome_utility.toFixed(2)
-                          : 'N/A'}
-                      </span>
-                    </div>
+                    <div>Target: <strong className="text-[#17201F]">{selectedSample?.target_formula || 'Not recorded'}</strong></div>
+                    <div>Precursors: {selectedSample?.precursors?.join(', ') || 'Not recorded'}</div>
+                    <div>Reaction category: <strong className="text-[#DC2626]">{selectedSample?.reaction_category || 'Not recorded'}</strong></div>
                   </div>
                 </div>
               </div>
@@ -374,15 +372,15 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                 <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] space-y-2 font-mono text-2xs">
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Virtual candidate space:</span>
-                    <strong className="text-[#17201F]">333,333 formulations</strong>
+                    <strong className="text-[#17201F]">{electrolyteRegistry?.candidateCount?.toLocaleString() ?? 'N/A'} formulations</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Screening latency:</span>
-                    <strong className="text-[#DC2626]">2.535 seconds</strong>
+                    <strong className="text-[#DC2626]">{electrolyteDiagnostic.screening_time_sec ?? 'Not recorded'} seconds</strong>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#8F9995]">Downstream candidates:</span>
-                    <strong className="text-[#17201F]">Top 20 Pareto set</strong>
+                    <strong className="text-[#17201F]">{electrolyteRegistry?.screenedWorkingSetCount ?? 'Not recorded'} working-set candidates</strong>
                   </div>
                 </div>
 
@@ -393,7 +391,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
                     <span>OUT_OF_FAMILY_GENERALIZATION: NOT ESTABLISHED</span>
                   </div>
                   <p>
-                    Surrogate simulations are validated for sulfide and halide electrolyte families. Generalization to unseen ionic liquid systems is not established.
+                    The source artifact describes a frozen surrogate approximation; physical generalization beyond its documented scope is not established.
                   </p>
                 </div>
               </div>

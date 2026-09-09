@@ -112,12 +112,15 @@ export const App: React.FC = () => {
   };
 
   // Determine active data mode
-  const currentMode: DataMode = 
-    currentWorkspace === 'benchmarks' && benchmarkQuestion === 4
+  const currentMode: DataMode = currentWorkspace === 'discovery'
+    ? discoveryDataset === 'alab_replay' || discoveryDataset === 'alab_precursor_genome'
       ? 'HISTORICAL_REPLAY'
-      : currentWorkspace === 'discovery'
-      ? 'CONTROLLED_SYNTHETIC'
-      : 'LIVE_COMPUTED';
+      : discoveryDataset === 'electrolyte_search' || discoveryDataset === 'anode_free_electrolyte_screening'
+      ? 'SIMULATED_SURROGATE'
+      : 'CONTROLLED_SYNTHETIC'
+    : currentWorkspace === 'benchmarks' && benchmarkQuestion === 4
+    ? 'HISTORICAL_REPLAY'
+    : 'NOT_AVAILABLE';
 
   if (loading) {
     return (
@@ -216,14 +219,14 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <span className="font-semibold text-[#17201F]">AIcoScientist Discovery Console</span>
             <span className="text-[#D9DFDB]">|</span>
-            <span className="text-2xs text-[#8F9995]">Controlled & Validated Reproducible Snapshot</span>
+            <span className="text-2xs text-[#8F9995]">Source-backed reproducible snapshot</span>
           </div>
           <div className="flex items-center gap-4 text-2xs font-mono text-[#8F9995]">
-            <span>5,333 Audit Events</span>
+            <span>{data.manifest?.total_audit_events ?? data.provenance?.total_ledger_events ?? 'N/A'} Audit Events</span>
             <span>•</span>
-            <span>180 Trajectories</span>
+            <span>{data.benchmarks?.trajectory_count ?? 'N/A'} Trajectories</span>
             <span>•</span>
-            <span className="text-[#DC2626] font-semibold">48/50 Gates Passed</span>
+            <span className="text-[#DC2626] font-semibold">{data.manifest?.validation_gate_pass_count ?? 'N/A'}/{data.manifest?.validation_gate_total_count ?? 'N/A'} Gates Passed</span>
           </div>
         </div>
       </footer>

@@ -22,7 +22,7 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
       talkingPoints: [
         'Materials discovery is not just curve fitting or surrogate property maximization; it is an active information acquisition loop under costly, multi-modal characterization.',
         'Existing Bayesian optimization algorithms blindly optimize one scalar property. In real labs, diagnostic characterization (XRD, spectroscopy, electron microscopy) resolves mechanisms.',
-        'We offer three validated problem domains: Controlled Alloy phase purity (Flagship), Solid Electrolyte conductivity (333k scale), and A-Lab physical synthesis replay.',
+        'We expose three distinct evidence modes: controlled synthetic inference, A-Lab historical replay, and electrolyte surrogate optimization.',
       ],
     },
     {
@@ -30,19 +30,19 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
       title: '2. Configure & Run Autonomous Discovery (1:00)',
       lead: '“Closed-loop Bayesian discovery under cost-penalized hypothesis information gain (HIG).”',
       talkingPoints: [
-        'Notice the policy options: Pure HIG maximizes knowledge regardless of cost; Random baseline acts as a control; HIG Cost-Penalized balances scientific gain against budget.',
-        'When we click Execute, the engine computes Shannon mutual information between candidate measurements and hypothesis identity.',
-        'Watch the live progress ticker: within 1.4 seconds, all candidate-modality actions are evaluated, firewalled, and converged to P(H₁) = 0.942.',
+        'Notice the policy options: each control resolves to a recorded source policy when that policy/run exists.',
+        'The console keeps source action scores, preregistration, observations, and posterior updates separate.',
+        'The progress ticker is presentation playback; it does not execute a new experiment.',
       ],
     },
     {
       scene: 3,
       title: '3. Recommended Experiment & Score Decomposition (1:00)',
-      lead: '“Jointly selecting candidate and modality using exact score decomposition S(a) = w_H·HIG + w_D·D - w_C·C.”',
+      lead: '“The console exposes source score fields without reconstructing absent weighting components.”',
       talkingPoints: [
-        'Look at the Recommended Next Experiment Card: The engine selected candidate controlled-3 with XRD characterization.',
-        'Examine the Score Decomposition Waterfall: The total score S(a) is a signed dimensionless composite scalar. Only raw HIG is in nats.',
-        'XRD was prioritized over TEM because it delivers 90% of the discriminatory power at one-third of the operational cost, maximizing information gain per dollar.',
+        'Look at the Recommended Next Experiment Card: the selected candidate and modality come from the recorded run.',
+        'The Score Decomposition Waterfall stays unavailable when the source did not persist weights and normalized components.',
+        'Use the source manifest and action payload for provenance; do not infer a cost or mechanism claim from a missing field.',
       ],
     },
     {
@@ -52,39 +52,38 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
       talkingPoints: [
         'State 1 (Scored): All candidate actions are objectively evaluated using predictive distributions.',
         'State 2 (Preregistered): The selected experimental plan is cryptographically committed to the audit ledger before any measurement is taken.',
-        'State 3 (Observed): The observation firewall unseals; true Rietveld refinement yields 94.2% phase purity with Log Bayes Factor +4.12.',
-        'State 4 (Belief Updated): Bayesian posterior updates in real-time. Posterior mass jumps to 0.942, establishing hypothesis H₁ as the dominant mechanism.',
+        'State 3 (Observed): the source-linked observation is revealed for the preregistered action.',
+        'State 4 (Belief Updated): the recorded posterior is displayed without calling it physical confirmation.',
       ],
     },
     {
       scene: 5,
       title: '5. Policy Efficiency & Robustness Evidence (1:00)',
-      lead: '“180 controlled trajectories prove Hybrid achieves 100% MAP recovery with 38% lower experimental cost.”',
+      lead: '“The benchmark artifact records policy trajectories, sensitivity, and calibration metrics with their limits.”',
       talkingPoints: [
         'When the advisor asks: "Does your custom policy actually beat standard Bayesian optimization?" — here is the answer.',
-        'We benchmarked 180 full closed-loop trajectories across 6 policies, 6 worlds, and 5 random seeds.',
-        'Pure HIG recovers the truth fastest but overspends (+62% cost); Discovery Only acts like standard BO and fails to resolve mechanisms (42% accuracy).',
-        'Our Hybrid policy achieves 100% MAP hypothesis recovery while cutting experimental expenditure by 38.2%.',
+        'The benchmark matrix contains source trajectory records across its documented policies, worlds, and seeds.',
+        'The workspace shows the recorded policy summaries and avoids turning them into universal causal claims.',
       ],
     },
     {
       scene: 6,
       title: '6. A-Lab Physical Synthesis Replay & Calibration (1:00)',
-      lead: '“1,035 real physical synthesis attempts with conservative over-dispersion and honest boundary disclosure.”',
+      lead: '“A-Lab replay uses source-linked samples and discloses missing modality linkage.”',
       talkingPoints: [
         'Tested against the A-Lab Precursor Genome: 1,035 real physical synthesis experiments conducted by robotic laboratories.',
-        'The model achieves 78.4% top-1 phase purity prediction across diverse inorganic compositions.',
-        'We maintain honest scientific boundaries: Gate 17 (A_LAB_CALIBRATION_PARTIAL) is disclosed transparently. 95.2% empirical coverage on a 50% interval represents conservative over-dispersion rather than overconfident hallucinations.',
+        'Calibration metrics are shown from the source artifact, not treated as a universal physical accuracy claim.',
+        'SEM and EDS are disclosed as unavailable to candidate replay when sample-level linkage is absent.',
       ],
     },
     {
       scene: 7,
       title: '7. Combinatorial Scaling & 50-Gate Verification (1:00)',
-      lead: '“Screening 333k electrolyte formulations in 2.5s alongside 48/50 formal verification gates.”',
+      lead: '“Virtual-pool screening and surrogate trajectories are shown with stage-specific timing and model limits.”',
       talkingPoints: [
-        'Scalability test: Stage-1 vectorized screening filters 333,333 virtual electrolyte formulations down to 20 Pareto candidates in 2.535 seconds.',
-        'System governance: 48 of 50 Boolean validation gates pass with zero regressions.',
-        'Gate 43 (OUT_OF_FAMILY_GENERALIZATION) is honestly flagged as not yet established for out-of-family organic matrices, proving we do not over-claim beyond our data.',
+        'The source diagnostic records the virtual candidate pool, working set, timing stage, and latent gap.',
+        'The manifest reports the validation gate count and the workspace keeps partial readiness visible.',
+        'The surrogate artifact explicitly limits interpretation to its documented in-silico model scope.',
       ],
     },
   ];

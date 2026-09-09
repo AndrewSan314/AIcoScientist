@@ -48,8 +48,8 @@ export const SCENES: SceneMeta[] = [
     title: '2. Configure & Run Autonomous Discovery',
     workspace: 'discovery',
     flowState: 'running',
-    tagline: '“Closed-loop Bayesian discovery under cost-penalized hypothesis information gain (HIG).”',
-    keyMetric: 'Multi-Objective S(a) Optimization',
+    tagline: '“Recorded scientific decision trajectories keep hypotheses, observations, and provenance explicit.”',
+    keyMetric: 'Source-Backed Decision Trajectories',
   },
   {
     index: 2,
@@ -58,8 +58,8 @@ export const SCENES: SceneMeta[] = [
     flowState: 'results',
     stepIndex: 1,
     revealPhase: 'A_SCORED',
-    tagline: '“Jointly selecting candidate and modality using exact score decomposition S(a) = w_H·HIG + w_D·D - w_C·C.”',
-    keyMetric: 'Dimensionless Scalar S(a)',
+    tagline: '“The console exposes the source score fields and keeps absent weighting components unavailable.”',
+    keyMetric: 'Source Score Provenance',
   },
   {
     index: 3,
@@ -76,16 +76,16 @@ export const SCENES: SceneMeta[] = [
     title: '5. Policy Efficiency & Robustness Evidence',
     workspace: 'benchmarks',
     questionId: 3,
-    tagline: '“180 controlled trajectories prove Hybrid achieves 100% MAP recovery with 38% lower experimental cost.”',
-    keyMetric: '180 Full Trajectories • 38% Cost Cut',
+    tagline: '“The benchmark workspace reports recorded policy summaries, sensitivity, and calibration boundaries.”',
+    keyMetric: 'Recorded Benchmark Evidence',
   },
   {
     index: 5,
     title: '6. A-Lab Physical Synthesis Replay & Calibration',
     workspace: 'benchmarks',
     questionId: 4,
-    tagline: '“1,035 real physical synthesis attempts with conservative over-dispersion and honest boundary disclosure.”',
-    keyMetric: '1,035 Real Samples • 78.4% Top-1 Phase Acc',
+    tagline: '“A-Lab records are source-linked for retrospective replay, with missing modality linkage disclosed.”',
+    keyMetric: 'Source Sample Catalog & Limits',
   },
   {
     index: 6,
@@ -93,8 +93,8 @@ export const SCENES: SceneMeta[] = [
     workspace: 'benchmarks',
     questionId: 5,
     subtab: 'verification',
-    tagline: '“Screening 333k electrolyte formulations in 2.5s alongside 48/50 formal verification gates.”',
-    keyMetric: '333k Formulations • 48/50 Gates Passed',
+    tagline: '“Virtual-pool screening and surrogate trajectories are shown with stage-specific timing and explicit model limits.”',
+    keyMetric: 'Surrogate Scope & Verification',
   },
 ];
 

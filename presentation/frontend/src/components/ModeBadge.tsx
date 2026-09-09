@@ -22,6 +22,12 @@ export const ModeBadge: React.FC<ModeBadgeProps> = ({ mode, tooltip, size = 'md'
       className: 'badge-replay',
       icon: <Database className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />,
     },
+    SIMULATED_SURROGATE: {
+      label: 'SIMULATED SURROGATE',
+      desc: 'Uses an explicitly in-silico surrogate trajectory; no physical measurement is implied.',
+      className: 'badge-live',
+      icon: <Cpu className={size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'} />,
+    },
     LIVE_COMPUTED: {
       label: 'LIVE COMPUTED',
       desc: 'Computed directly by MultimodalDecisionEngine instance in current session.',

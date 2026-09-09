@@ -1,8 +1,8 @@
 {
-  "snapshot_schema_version": "1.2.0",
-  "generated_at_utc": "2026-09-09T17:48:14.749391+00:00",
-  "presentation_build_commit": "42039bb06ddc38c1c848488d35a49ecdc77d7ff6",
-  "snapshot_generator_commit": "42039bb06ddc38c1c848488d35a49ecdc77d7ff6",
+  "snapshot_schema_version": "1.3.0",
+  "generated_at_utc": "2026-09-09T19:06:36.944466+00:00",
+  "presentation_build_commit": "b4405e8baeec243a23ace4f9fa2243670ab562df",
+  "snapshot_generator_commit": "b4405e8baeec243a23ace4f9fa2243670ab562df",
   "scientific_source_commit": "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e",
   "source_branch": "integration/multimodal-scientific-engine",
   "source_artifact_hashes": {
@@ -16,14 +16,16 @@
     "modality_inventory": "17caa8bb3a9a9a64a3e2820be09a8e9864c1d2c020e28de72dd83e3a922982c3",
     "alab_dataset_audit": "b2bb5f13fd66fb310df05d676482c3e437228a559bab0028a1fba003fde3c7b3",
     "electrolyte_screening": "05b302fd382b1d40d87fc98668a5fa24be501a321c389c464cf7b01181f8df4e",
-    "electrolyte_simulation": "96228347bd5bfbd33197257b59541b6b3fc63ab046b0a27efd4d601c28add904"
+    "electrolyte_simulation": "96228347bd5bfbd33197257b59541b6b3fc63ab046b0a27efd4d601c28add904",
+    "electrolyte_target_audit": "dfb9876dd93a39d833f3aae983795518554da37c0acf9869867e8bc818ed5b15"
   },
   "source_dataset_manifest_hash": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac",
   "campaign_run_id": "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID",
-  "campaign_world": "CLEAN_WORLD_H1_PHASE_PURITY",
+  "campaign_world": "WORLD_H1_PHASE_PURITY",
   "campaign_seed": 42,
   "campaign_policy": "HYBRID",
   "campaign_step_count": 4,
+  "campaign_run_count": 36,
   "total_real_samples": 1035,
   "total_audit_events": 5333,
   "validation_gate_pass_count": 48,

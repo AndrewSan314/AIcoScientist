@@ -43,9 +43,9 @@ const WORLD_DISPLAY_NAMES: Record<string, string> = {
 };
 
 export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
-  const worlds = benchmarks.worlds || Object.keys(benchmarks.summary_by_world_policy || {});
+  const worlds = benchmarks.worlds || [];
   const [selectedWorld, setSelectedWorld] = useState<string>(
-    worlds.find((w) => w.includes('CLEAN')) || worlds[0] || 'CLEAN_WORLD_H1_PHASE_PURITY'
+    worlds.find((w) => w.includes('CLEAN')) || worlds[0] || ''
   );
   const [selectedMetric, setSelectedMetric] = useState<BenchmarkMetricKey>('recovery_rate_MAP');
 
@@ -62,11 +62,11 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
 
   const chartData = policies.map((p) => {
     const stats = worldData[p] || {};
-    let val = 0;
+    let val: number | null = null;
     if (selectedMetric === 'steps_to_posterior_gt_0.8') {
-      val = stats['steps_to_posterior_gt_0.8'] ?? stats['mean_steps_to_posterior_gt_0.8'] ?? 0;
+      val = stats['steps_to_posterior_gt_0.8'] ?? stats['mean_steps_to_posterior_gt_0.8'] ?? null;
     } else {
-      val = stats[selectedMetric] ?? 0;
+      val = stats[selectedMetric] ?? null;
     }
 
     const shortKey = p.replace('_ACTION', '').replace('_DEFAULT', '');
@@ -74,7 +74,7 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
     return {
       policy: POLICY_DISPLAY_NAMES[shortKey] || shortKey,
       fullName: p,
-      value: parseFloat(Number(val).toFixed(4)),
+      value: typeof val === 'number' ? parseFloat(val.toFixed(4)) : null,
       isHybrid: p.includes('HYBRID'),
       isHig: p.includes('PURE_HIG')
     };
@@ -182,10 +182,10 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
       </div>
 
       <div className="mt-2 pt-2.5 border-t border-[#D9DFDB] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#66706C]">
-        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded bg-[#B91C1C] inline-block" />
-            <span className="font-bold text-[#991B1B]">HYBRID Policy (Recommended)</span>
+            <span className="font-bold text-[#991B1B]">HYBRID Policy</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded bg-[#7C3AED] inline-block" />
@@ -197,7 +197,7 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
           </div>
         </div>
         <div className="text-[#8F9995]">
-          Evaluated across 180 controlled closed-loop trajectories (5 seeds per policy)
+          Evaluated across {benchmarks.trajectory_count ?? 'N/A'} source trajectories ({benchmarks.seeds?.length ?? 'N/A'} seeds per policy)
         </div>
       </div>
     </div>

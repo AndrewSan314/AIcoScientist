@@ -96,7 +96,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         scoredLookup.set(cid, {
           score: act.total_action_score,
           actionType: act.action?.action_type || 'XRD',
-          rawHig: act.raw_expected_hig_nats ?? act.expected_hig_nats ?? 0,
+          rawHig: act.raw_expected_hig_nats ?? act.expected_hig_nats,
         });
       }
     }
@@ -220,7 +220,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       if (progress < 0.45) {
         setScanStatusText(`// PHASE I: CRIMSON LASER SWEEP [${Math.round(progress * 220)}%] //`);
       } else if (progress < 0.8) {
-        setScanStatusText('// PHASE II: CONVERGING w_H·HIG + w_D·ΔU - w_C·C //');
+        setScanStatusText('// PHASE II: DISPLAYING SOURCE-BACKED ACTION RANKING //');
         velocityRef.current.x *= 0.94;
         velocityRef.current.y *= 0.94;
       } else if (progress < 0.95) {

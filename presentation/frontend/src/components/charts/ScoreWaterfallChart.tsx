@@ -33,6 +33,9 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
     action.normalized_hig === undefined ||
     action.normalized_discovery === undefined ||
     action.normalized_cost === undefined ||
+    action.weighted_hig_contribution === undefined ||
+    action.weighted_discovery_contribution === undefined ||
+    action.weighted_cost_contribution === undefined ||
     action.total_action_score === undefined
   ) {
     return (
@@ -50,9 +53,9 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
   const normDisc = action.normalized_discovery;
   const normCost = action.normalized_cost;
 
-  const higContrib = action.weighted_hig_contribution ?? (wHig * normHig);
-  const discContrib = action.weighted_discovery_contribution ?? (wDisc * normDisc);
-  const costContrib = -(action.weighted_cost_contribution ?? (wCost * normCost));
+  const higContrib = action.weighted_hig_contribution;
+  const discContrib = action.weighted_discovery_contribution;
+  const costContrib = -action.weighted_cost_contribution;
   const totalScore = action.total_action_score;
 
   const rawHigNats = action.raw_expected_hig_nats ?? action.expected_hig_nats;
@@ -66,7 +69,7 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
       shortName: '+w_H · HIG',
       value: parseFloat(higContrib.toFixed(4)),
       raw: rawHigStr,
-      formula: `+${wHig} × ${normHig.toFixed(3)}`,
+      formula: 'Source-recorded component',
       color: '#DC2626', // Emerald
       isPenalty: false
     },
@@ -75,7 +78,7 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
       shortName: '+w_D · D',
       value: parseFloat(discContrib.toFixed(4)),
       raw: `Utility: ${normDisc.toFixed(3)}`,
-      formula: `+${wDisc} × ${normDisc.toFixed(3)}`,
+      formula: 'Source-recorded component',
       color: '#d97706', // Amber
       isPenalty: false
     },
@@ -84,7 +87,7 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
       shortName: '-w_C · C',
       value: parseFloat(costContrib.toFixed(4)),
       raw: `Cost: ${normCost.toFixed(3)}`,
-      formula: `-${wCost} × ${normCost.toFixed(3)}`,
+      formula: 'Source-recorded component',
       color: '#e11d48', // Rose / Red
       isPenalty: true
     },
@@ -158,7 +161,7 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
       {/* Formula breakdown footer */}
       <div className="mt-1 pt-2 border-t border-slate-100 flex flex-col gap-1 text-2xs font-mono text-slate-600">
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">S(a) = w_H · HIG + w_D · D - w_C · C</span>
+          <span className="text-slate-500">Source-recorded score components</span>
           <span className="font-bold text-slate-900">
             {totalScore >= 0 ? `+${totalScore.toFixed(4)}` : totalScore.toFixed(4)}
           </span>
