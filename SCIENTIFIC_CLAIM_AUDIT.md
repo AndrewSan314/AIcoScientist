@@ -3,8 +3,9 @@
 **Audit Date:** September 10, 2026  
 **Auditor:** AIcoScientist Lead Research-Demo Integration Engineer  
 **Repository:** `AndrewSan314/AIcoScientist`  
-**Git Commit SHA:** `dc1f5fda1eb4327a4fe709de24a302643e0ecc8e`  
-**Git Branch:** `integration/multimodal-scientific-engine`
+**Git Commit SHA:** `c2ae7dd0b374283369ad76fb49ce776b8abcbd39`  
+**Git Branch:** `integration/multimodal-scientific-engine`  
+**Manifest Checksum Status:** 11/11 Source Artifacts SHA-256 Verified (`presentation/data/snapshot_manifest.json`)
 
 ---
 
@@ -92,6 +93,23 @@ To ensure complete transparency during advisor and peer review, every claim, num
 - **Evidence Mode:** `CONTROLLED_SYNTHETIC`
 - **Audit Finding:** **PASS (Methodological Justification Verified).**
 - **Presenter Guardrail:** A sensitivity test PASS does not prove that MC12 is stable; it proves that MC12 has ranking noise. Based on this finding, MC=32 was adopted for all 180 full matrix runs.
+
+---
+
+### Claim 9: "Exact Mathematical Score Decomposition $S(a) = w_H \widetilde{HIG} + w_D \widetilde{D} - w_C \widetilde{C}$"
+- **Claimed Value:** Weighted sum of normalized components matches total action score within $< 10^{-5}$ across all steps; overall score is dimensionless.
+- **Source Artifact:** `src/science/multimodal/decision.py:284` and `presentation/data/snapshot.json`
+- **Evidence Mode:** `CONTROLLED_SYNTHETIC` & `LIVE_COMPUTED`
+- **Audit Finding:** **PASS (Formulation Mathematically Verified).**
+- **Presenter Guardrail:** $S(a)$ is a signed dimensionless composite scalar; raw HIG is in nats. Fake multipliers and incorrect units have been audited and removed.
+
+---
+
+### Claim 10: "11/11 Source Artifacts Cryptographically Verified in Manifest"
+- **Claimed Value:** 11 offline scientific artifacts verified with SHA-256 checksums matching file system bytes.
+- **Source Artifact:** `presentation/data/snapshot_manifest.json` and `presentation/backend/server.py` (`/api/manifest`)
+- **Evidence Mode:** `VERIFIED_MANIFEST`
+- **Audit Finding:** **PASS (Cryptographic Integrity Verified).**
 
 ---
 

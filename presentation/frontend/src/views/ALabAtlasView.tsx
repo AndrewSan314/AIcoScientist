@@ -17,8 +17,20 @@ interface ALabAtlasViewProps {
 
 export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
   const [selectedSampleId, setSelectedSampleId] = useState<string>('PG_0309');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const samples = data.samples || [];
-  const currentSample = samples.find(s => s.sample_id === selectedSampleId) || samples[0];
+
+  const filteredSamples = searchQuery.trim() === ''
+    ? samples
+    : samples.filter(s => 
+        s.sample_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.target_formula.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.target_stoichiometry && s.target_stoichiometry.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        s.precursors.some(p => String(p).toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+
+  const currentSample = samples.find(s => s.sample_id === selectedSampleId) || filteredSamples[0] || samples[0];
+  const prominentSampleIds = ['PG_0102', 'PG_0206', 'PG_0309', 'PG_0001', 'PG_0050', 'PG_0100', 'PG_0500', 'PG_1000'];
 
   return (
     <div className="space-y-8 pb-16 animate-fadeIn max-w-7xl mx-auto">
@@ -195,22 +207,48 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
             </div>
           </div>
 
-          {/* Sample Switcher Pills */}
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-            {samples.map((s) => (
-              <button
-                key={s.sample_id}
-                onClick={() => setSelectedSampleId(s.sample_id)}
-                className={`px-3 py-1 rounded-md text-xs font-mono font-semibold transition cursor-pointer ${
-                  selectedSampleId === s.sample_id
-                    ? 'bg-white text-emerald-800 shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {s.sample_id}
-              </button>
-            ))}
+          {/* Sample Selector & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search 1,035 samples (e.g. PG_0309, Co3O4)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 w-56"
+            />
+            <select
+              value={selectedSampleId}
+              onChange={(e) => setSelectedSampleId(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs bg-white text-slate-900 font-mono font-semibold focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+            >
+              {filteredSamples.slice(0, 100).map((s) => (
+                <option key={s.sample_id} value={s.sample_id}>
+                  {s.sample_id} — {s.target_formula}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
+
+        {/* Quick Prominent Sample Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 pb-1">
+          <span className="text-3xs font-mono font-bold text-slate-400 uppercase mr-1">Prominent Benchmarks:</span>
+          {prominentSampleIds.map((pid) => (
+            <button
+              key={pid}
+              onClick={() => setSelectedSampleId(pid)}
+              className={`px-2.5 py-1 rounded-md text-2xs font-mono font-semibold transition cursor-pointer ${
+                selectedSampleId === pid
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-emerald-400'
+              }`}
+            >
+              {pid}
+            </button>
+          ))}
+          <span className="text-3xs text-slate-400 font-mono ml-auto">
+            Showing {filteredSamples.length} of {samples.length} cataloged samples
+          </span>
         </div>
 
         {currentSample && (
@@ -230,34 +268,77 @@ export const ALabAtlasView: React.FC<ALabAtlasViewProps> = ({ data }) => {
                     <span className="text-slate-500">Nominal Formula: </span>
                     <span className="font-semibold text-slate-900">{currentSample.target_formula}</span>
                   </div>
+                  {currentSample.target_stoichiometry && (
+                    <div>
+                      <span className="text-slate-500">Stoichiometry: </span>
+                      <span className="font-mono text-2xs text-slate-800">{currentSample.target_stoichiometry}</span>
+                    </div>
+                  )}
                   <div>
-                    <span className="text-slate-500">Synthesis Outcome: </span>
-                    <span className={`font-bold font-mono ${currentSample.outcome_utility > 0.5 ? 'text-emerald-700' : 'text-slate-600'}`}>
-                      {currentSample.outcome_utility > 0.5 ? 'Target Phase Reaction' : 'Partial / Multi-Phase'}
+                    <span className="text-slate-500">Heating Synthesis: </span>
+                    <span className="font-mono font-semibold text-slate-900">
+                      {currentSample.heating_temperature_c !== null && currentSample.heating_temperature_c !== undefined
+                        ? `${currentSample.heating_temperature_c} °C`
+                        : 'Unspecified'}
+                      {currentSample.heating_time_minutes ? ` (${currentSample.heating_time_minutes} min)` : ''}
                     </span>
                   </div>
                   <div>
+                    <span className="text-slate-500">Reaction Outcome: </span>
+                    <span className={`font-bold font-mono capitalize ${(currentSample.outcome_utility ?? 0) >= 0.75 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                      {currentSample.reaction_category?.replace('_', ' ') || 'Observed'}
+                    </span>
+                  </div>
+                  {currentSample.reaction_energy_ev_per_atom !== null && currentSample.reaction_energy_ev_per_atom !== undefined && (
+                    <div>
+                      <span className="text-slate-500">Reaction Energy: </span>
+                      <span className="font-mono font-semibold text-slate-800">{currentSample.reaction_energy_ev_per_atom} eV/atom</span>
+                    </div>
+                  )}
+                  <div>
                     <span className="text-slate-500">Refinement Rwp: </span>
                     <span className="font-mono font-bold text-emerald-800">
-                      {currentSample.refinement_observables?.['REFINEMENT.rwp_scaled'] !== undefined
-                        ? currentSample.refinement_observables['REFINEMENT.rwp_scaled'].toFixed(4)
-                        : '0.0842'}
+                      {currentSample.refinement_rwp !== null && currentSample.refinement_rwp !== undefined
+                        ? currentSample.refinement_rwp.toFixed(4)
+                        : (currentSample.refinement_available ? 'Available in scan' : 'N/A')}
                     </span>
                   </div>
                 </div>
 
                 {/* Precursor Ingredients */}
                 <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                  <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Precursor Composition</span>
+                  <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Precursor Reagents</span>
                   <div className="space-y-1 text-2xs font-mono">
-                    {currentSample.precursors?.map((p: any, i: number) => (
-                      <div key={i} className="flex justify-between p-1.5 rounded bg-slate-50 border border-slate-100">
-                        <span className="font-semibold text-slate-800">{p.material}</span>
-                        <span className="text-slate-500">{p.amount} {p.unit}</span>
-                      </div>
-                    ))}
+                    {currentSample.precursors?.map((p: any, i: number) => {
+                      const name = typeof p === 'string' ? p : p.material || p.name || p.formula || String(p);
+                      return (
+                        <div key={i} className="flex justify-between p-1.5 rounded bg-slate-50 border border-slate-100">
+                          <span className="font-semibold text-slate-800">{name}</span>
+                          <span className="text-emerald-700 font-medium">Reagent #{i + 1}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+
+                {/* Rietveld Refined Phases */}
+                {currentSample.refinement_phases && currentSample.refinement_phases.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <span className="text-2xs font-bold uppercase tracking-wider text-slate-400">Refined Phases</span>
+                    <div className="space-y-1 text-2xs font-mono">
+                      {currentSample.refinement_phases.map((ph: any, i: number) => (
+                        <div key={i} className="flex justify-between p-1.5 rounded bg-emerald-50/40 border border-emerald-100">
+                          <span className="font-semibold text-slate-800 truncate max-w-[160px]" title={ph.name}>{ph.name}</span>
+                          <span className="font-bold text-emerald-800">
+                            {ph.weight_percent !== null && ph.weight_percent !== undefined
+                              ? `${(ph.weight_percent * 100).toFixed(1)}%`
+                              : 'Present'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

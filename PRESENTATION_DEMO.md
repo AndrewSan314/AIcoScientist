@@ -4,7 +4,8 @@
 *Date: September 10, 2026*  
 *Repository: `AndrewSan314/AIcoScientist`*  
 *Target Branch: `integration/multimodal-scientific-engine`*  
-*Snapshot Hash: `dc1f5fda1eb4327a4fe709de24a302643e0ecc8e`*
+*Integration Commit: `c2ae7dd0b374283369ad76fb49ce776b8abcbd39`*  
+*Manifest Integrity: 11/11 Source Artifacts SHA-256 Verified (`snapshot_manifest.json`)*
 
 ---
 
@@ -69,34 +70,43 @@ The flagship interactive demonstration of active inference:
   - Three formal competing hypotheses: $H_1$ Phase Purity Limited, $H_2$ Composition Homogeneity Limited, $H_3$ Morphology Kinetics Limited.
   - Dynamic belief bars showing prior-to-posterior updates.
   - Epistemic disclaimer: *"Relative explanatory model weights among simplified competing models."*
-- **Candidate Space Landscape (Center):**
+- **Candidate Space Landscape & 3D Stark Hologram (Center):**
+  - **3D Iron Man 2 Hologram Sphere:** Interactive orbital discovery lattice rendering atomic candidate nodes. The 12 controlled candidate materials are mapped to authentic nodes with exact scores; decorative lattice points are explicitly marked as lattice nodes without fake tested/pareto flags. Fully respects `prefers-reduced-motion`.
   - Interactive candidate selector with characterization vs outcome testing feasibility.
   - Live observation reveal card displaying canonical spectral descriptors and refinement observables.
 - **Next Best Experiment Hero Card (Right):**
   - Selects both **which material** and **which measurement modality**.
-  - Horizontal Waterfall Score Breakdown:
-    $$\text{Total Score} = w_{\text{hig}} \cdot \text{HIG} + w_{\text{disc}} \cdot \text{Discovery} - w_{\text{cost}} \cdot \text{Cost}$$
+  - **Exact Signed Composite Score:**
+    $$S(a) = w_{\text{hig}} \cdot \widetilde{HIG}(a) + w_{\text{disc}} \cdot \widetilde{D}(a) - w_{\text{cost}} \cdot \widetilde{C}(a)$$
+    Displayed as a signed dimensionless scalar (raw HIG retains nats; overall score is dimensionless).
   - Scientific rationale and falsification signatures.
-  - "Why not another experiment?" comparison table showing score gaps across alternative actions.
+  - **Full 24-Counterfactual Action Table:** Ranks all 12 candidate materials across both modalities (XRD and REFINEMENT) by score gap $\Delta S = S(a^*) - S(a)$.
 - **The 4-State Wow Interaction:**
   1. *State A:* Action selected, predictive distributions modeled, observation firewalled.
   2. *State B:* Preregistration locked in immutable evidence ledger.
-  3. *State C:* Actual canonical measurement revealed.
-  4. *State D:* Bayesian update animated; posterior shifts, log Bayes factors computed, and next action queued.
+  3. *State C:* Actual canonical measurement revealed with Bayesian update alert.
+  4. *State D:* Bayesian update executed; posterior shifts, log Bayes factors computed, and next action queued.
 
 ### Tab 3: A-Lab Evidence Atlas (`/alab`)
 - **Dataset Provenance:** Precursor Genome 2026 dataset (Zenodo DOI: `10.5281/zenodo.21285546`, CC BY 4.0).
+- **Authentic 1,035 Sample Catalog:** Directly extracted from `ledger_precursor_genome.json` (PG_0102 to PG_1521). Includes live text search and quick selectors for landmark samples (`PG_0102`, `PG_0206`, `PG_0309`, `PG_0841`, `PG_1521`).
 - **Modality Linkage Audit:**
   - XRD: 1,030 / 1,035 samples linked (99.5%).
   - Refinement: 1,030 / 1,035 samples linked (99.5%).
   - Outcome Tests: 1,009 / 1,035 samples classified (97.5%).
   - SEM / EDS: **NOT AVAILABLE** for candidate replay (archive present at precursor level only; honestly excluded).
-- **Real Sample Inspector:** Explore raw synthesis parameters, canonical descriptors, and Rietveld observables for representative solid-state samples (e.g., `PG_0309`, `PG_0214`, `PG_0209`, `PG_0841`, `PG_1521`).
+- **Real Sample Inspector:** Explore raw synthesis parameters, chemical formulas (`Co3B3H9O13`), precursor lists, heating schedules, and Rietveld observables ($R_{wp}$, phase fractions).
 - **Model Calibration:** Displays per-observable RMSE, MAE, 50% and 90% predictive interval coverage. Transparently highlights `A_LAB_CALIBRATION_PARTIAL` due to conservative over-dispersion on refined phase fractions.
 - **Generalization Limits:** Transparently surfaces that elemental-system cross-family generalization is `NOT ESTABLISHED`.
 
 ### Tab 4: Policy Benchmark Lab (`/benchmarks`)
 - **Full Policy Matrix:** 180 controlled trajectories across 6 policies, 6 worlds, and 5 seeds.
+- **5 Authentic Metric Columns:** Direct mapping from `full_policy_matrix.json`:
+  1. MAP Recovery Rate (`recovery_rate_MAP`)
+  2. Final True Hypothesis Prob (`mean_final_true_hypothesis_probability`)
+  3. Entropy Reduction (`mean_entropy_reduction`)
+  4. Mean Measurement Cost (`mean_measurement_cost`)
+  5. Steps to Confident Posterior (`steps_to_posterior_gt_0.8`)
 - **Clean vs Stress Worlds:** Tests policy resilience under misspecified priors and observation noise.
 - **6 Benchmarked Policies:** Pure HIG, Hybrid, Discovery Only, Uncertainty Only, Fixed-Modality Random, and Random Action.
 - **HIG Monte Carlo Sensitivity Analysis:** Compares MC12 vs MC32 across 60 paired trajectories. Documents why MC32 was selected to eliminate ranking jitter.

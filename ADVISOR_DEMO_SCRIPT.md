@@ -53,7 +53,7 @@
 
 ### Scene 3: Decision Cockpit & Competing Hypotheses (2:00 – 3:30)
 **On Screen:** *Tab 2: Decision Cockpit (`/cockpit`)*  
-**Visual Action:** Click on the three zones: Left (Hypotheses), Center (Candidate Space), Right (Hero Recommendation).
+**Visual Action:** Click on the three zones: Left (Hypotheses), Center (3D Iron Man 2 Stark Hologram Sphere & Candidate Space), Right (Hero Recommendation & 24-Action Counterfactual Table).
 
 > "Now let's step into the **Decision Cockpit**.
 > 
@@ -64,13 +64,15 @@
 > 
 > Note our explicit disclaimer: these weights represent *relative explanatory model likelihoods* among simplified competing models, not a physical claim that one simplified theory is absolute truth.
 > 
-> In the center is the candidate space. Notice that measurements have physical costs and dependencies: Rietveld refinement requires a prior XRD scan, and synthesis outcome testing consumes the physical specimen.
+> In the center is our **3D Iron Man 2 Stark Hologram Sphere**. Look at the spherical lattice of atomic candidate nodes. The 12 controlled candidates in our decision space are rendered as interactive nodes with authentic metrics, surrounded by an emerald orbital ring highlighting our selected action. Decorative nodes in the lattice are honestly tagged as structural lattice points without fake Pareto or testing flags.
 > 
-> On the right is our **Hero Recommendation**. The engine chose not only candidate `Syn-C`, but specifically selected **XRD characterization**. 
+> On the right is our **Hero Recommendation**. The engine chose not only candidate `controlled-2`, but specifically selected **XRD characterization**. 
 > 
-> Look at the waterfall score breakdown:
-> $$\text{Score} = w_{\text{hig}} \cdot \text{HIG} + w_{\text{disc}} \cdot \text{Discovery} - w_{\text{cost}} \cdot \text{Cost}$$
-> It chose XRD because it yields 0.506 nats of expected information gain at half the cost of an outcome test, maximizing scientific insight per dollar spent."
+> Look at the exact score decomposition:
+> $$S(a) = w_{\text{hig}} \cdot \widetilde{HIG}(a) + w_{\text{disc}} \cdot \widetilde{D}(a) - w_{\text{cost}} \cdot \widetilde{C}(a)$$
+> Here $S(a)$ is a signed dimensionless composite score (-0.2000), where raw HIG yields 0.506 nats at half the cost of an outcome test, maximizing scientific insight per dollar spent.
+> 
+> Below the hero card, our **24-Counterfactual Action Table** ranks all 12 candidate materials across both modalities (XRD and REFINEMENT), proving why alternative actions were deprioritized."
 
 ---
 
@@ -119,9 +121,11 @@
 
 ### Scene 6: Real A-Lab Evidence & Scientific Boundaries (6:00 – 7:00)
 **On Screen:** *Tab 3: A-Lab Evidence Atlas (`/alab`)*  
-**Visual Action:** Select `PG_0309` (LiNi0.5Mn1.5O4), point to the Modality Table, then scroll to Calibration.
+**Visual Action:** Use the sample search or click quick selector `PG_0309` (Co3B3H9O13) or `PG_0206` (LiNi0.5Mn1.5O4), point to the Modality Table, then scroll to Calibration.
 
 > "To test real-world fidelity, we evaluated AIcoScientist on the **A-Lab Precursor Genome**—1,035 real solid-state synthesis experiments from Berkeley and Zenodo.
+> 
+> You can search or select any of the 1,035 physical samples directly. For instance, selecting `PG_0309` loads its true formula `Co3B3H9O13`, precursors $B(OH)_3$ and $Co_3O_4$, heating schedule at 200°C, and Rietveld $R_{wp}$.
 > 
 > Here is where our scientific rigor is on full display:
 > - For 1,030 samples, canonical XRD scans and Rietveld refinements are linked and replayable.

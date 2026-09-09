@@ -6,10 +6,11 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 
 ## 1. Global Navigation & Badges
 
-| UI Element / Feature | Source File / Artifact | Exact Source Symbol or Key | Evidence Mode |
+| UI Element / Feature | Source File / Artifact | Exact Source Key / Hash | Evidence Mode |
 | :--- | :--- | :--- | :--- |
-| **Commit SHA (`dc1f5fda...`)** | Git HEAD / repository state | `git rev-parse HEAD` | Verified Git Hash |
+| **Integration Commit SHA** | Git repository state | `c2ae7dd0b374283369ad76fb49ce776b8abcbd39` | Verified Git Hash |
 | **Active Branch** | Git branch state | `integration/multimodal-scientific-engine` | Verified Git Branch |
+| **Cryptographic Manifest** | `presentation/data/snapshot_manifest.json` | 11 source artifacts SHA-256 verified | Verified Manifest |
 | **`CONTROLLED_SYNTHETIC` Badge** | `src/science/multimodal/decision.py` | `CLEAN_CORRECTLY_SPECIFIED` / controlled world | Controlled Synthetic |
 | **`HISTORICAL_REPLAY` Badge** | `src/science/multimodal/retrospective.py` | `RetrospectiveObservationSet` / A-Lab Replay | Historical Replay |
 | **`LIVE_COMPUTED` Badge** | `presentation/backend/server.py` | `MultimodalDecisionEngine.recommend()` | Live Computed |
@@ -40,12 +41,13 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 | **Initial Beliefs (33.3% each)** | `src/science/multimodal/decision.py:54` | `self.beliefs = self._normalize(prior_beliefs or {hid: 1.0 ...})` |
 | **Flagship Run Selection** | `outputs/alab/multimodal/evidence_ledger.jsonl` | `run_id: "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID"` |
 | **Candidate Action Space** | `src/science/multimodal/decision.py:99` | `MultimodalDecisionEngine.enumerate_actions()` |
+| **3D Stark Hologram Sphere** | `presentation/frontend/src/components/StarkHologramSphere.tsx` | 12 candidate nodes + decorative lattice nodes; reduced motion support |
 | **Expected HIG (nats)** | `src/science/multimodal/decision.py:141` | `expected_hypothesis_information_gain_diagnostics()` |
 | **Discovery Utility** | `src/science/multimodal/decision.py:203` | `_discovery_value(action)` |
 | **Normalized Cost** | `src/science/multimodal/decision.py:277` | `cost / max_cost` |
 | **Hybrid Policy Weights** | `scripts/run_alab_multimodal_benchmark.py:50` | `w_hig: 0.8, w_discovery: 0.8, w_cost: 2.0` |
-| **Net Decision Score** | `src/science/multimodal/decision.py:284` | `w_hig * normalized_hig + w_discovery * normalized_discovery - w_cost * normalized_cost` |
-| **Why Not Alternatives Table** | `src/science/multimodal/decision.py:435` | `why_not: [{action, reason, expected_hig_nats, score_gap}]` |
+| **Net Decision Score $S(a)$** | `src/science/multimodal/decision.py:284` | `w_hig * normalized_hig + w_discovery * normalized_discovery - w_cost * normalized_cost` |
+| **Full 24-Action Counterfactual Table** | `presentation/data/snapshot.json` | `step.all_scored_actions` (12 candidates $\times$ 2 modalities) ranked by score gap |
 | **Preregistration Event (State B)** | `src/science/multimodal/decision.py:286` | `event: "PREREGISTERED_SELECTED_ACTION"`, `measurement_revealed: False` |
 | **Revealed Measurement (State C)** | `outputs/alab/multimodal/evidence_ledger.jsonl` | `event: "MEASUREMENT_REVEALED"`, `observed_measurement` |
 | **Posterior Delta (State D)** | `src/science/multimodal/evidence.py:16` | `bayesian_update()`, `posterior_delta = after - before` |
@@ -58,9 +60,11 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 | UI Component | Source File / Artifact | Exact Source Key / Code |
 | :--- | :--- | :--- |
 | **Precursor Genome Provenance** | `outputs/alab/alab_dataset_audit.json` | `dataset_identity.zenodo: "https://doi.org/10.5281/zenodo.21285546"` |
+| **1,035 Physical Sample Catalog** | `data/raw/precursor_genome/ledger_precursor_genome.json` | 1,035 authentic physical samples (`PG_0102` to `PG_1521`) |
+| **Sample Search & Quick Selectors** | `presentation/frontend/src/views/ALabAtlasView.tsx` | Interactive search + buttons (`PG_0102`, `PG_0206`, `PG_0309`, `PG_0841`, `PG_1521`) |
 | **Modality Linkage Table** | `outputs/alab/multimodal/modality_inventory.json` | `modalities.XRD`, `modalities.REFINEMENT`, `modalities.SEM`, `modalities.EDS` |
 | **SEM/EDS "NOT AVAILABLE" Status** | `src/domains/alab/multimodal_inventory.py:65` | `linked_candidate_samples: 0`, `action_space_supported: False` |
-| **Real Sample Record (`PG_0309`)** | `outputs/alab/multimodal/replay_split_manifest.json` | Sample `PG_0309` features, precursors, heating schedule |
+| **Real Sample Record (`PG_0309`)** | `data/raw/precursor_genome/ledger_precursor_genome.json` | Target: `Co3B3H9O13`, Precursors: `B(OH)3, Co3O4`, 200°C heating |
 | **Canonical XRD Descriptors** | `src/science/multimodal/ontology.py:65` | `XRD.normalized_intensity_std_proxy`, `XRD.spectral_entropy`, `XRD.peak_count_proxy` |
 | **Rietveld Observables** | `src/science/multimodal/ontology.py:73` | `REFINEMENT.target_phase_fraction`, `REFINEMENT.rwp_scaled` |
 | **Per-Observable Calibration Table** | `outputs/alab/multimodal/per_observable_calibration.json` | `XRD` and `REFINEMENT` MAE, RMSE, NLL, coverage50, coverage90 |
@@ -78,8 +82,7 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 | **180 Trajectory Design** | `outputs/alab/multimodal/full_policy_matrix.json:4` | 6 policies × 6 worlds × 5 seeds = 180 trajectories |
 | **Clean vs Stress Worlds** | `outputs/alab/multimodal/full_policy_matrix.json:5` | `world_types: ["CLEAN_CORRECTLY_SPECIFIED", "STRESS_MISSPECIFIED"]` |
 | **6 Policies** | `outputs/alab/multimodal/full_policy_matrix.json:7` | `RANDOM_ACTION`, `RANDOM_CANDIDATE_FIXED_MODALITY`, `UNCERTAINTY_ONLY`, `DISCOVERY_ONLY`, `PURE_HIG`, `HYBRID` |
-| **MAP Recovery Rates** | `outputs/alab/multimodal/full_policy_matrix.json` | `summary_by_world_policy[world][policy].recovery_rate_MAP` |
-| **Mean Steps to MAP** | `outputs/alab/multimodal/full_policy_matrix.json` | `summary_by_world_policy[world][policy].mean_steps_to_MAP` |
+| **5 Authentic Metric Columns** | `outputs/alab/multimodal/full_policy_matrix.json` | `recovery_rate_MAP`, `mean_final_true_hypothesis_probability`, `mean_entropy_reduction`, `mean_measurement_cost`, `steps_to_posterior_gt_0.8` |
 | **HIG Sensitivity (MC12 vs MC32)** | `outputs/alab/multimodal/hig_trajectory_sensitivity.json` | `aggregate_by_world_policy[world:policy].action_sequence_agreement` |
 | **HIG Rank Correlation** | `outputs/alab/multimodal/hig_trajectory_sensitivity.json` | `HIG_rank_correlation: 0.833 to 0.934` |
 | **MC32 Justification** | `outputs/alab/multimodal/multimodal_validation.json:15` | `HIG_trajectory_sensitivity_status: "USE_32_FOR_FULL_MATRIX"` |
@@ -114,3 +117,14 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 | **Raw HIG Bound Violations (0)** | `outputs/alab/multimodal/multimodal_validation.json:103` | `hig_raw_bound_violation_count: 0` |
 | **Software Methodology Status** | `outputs/alab/multimodal/multimodal_validation.json:3` | `CONTROLLED_CLEAN_AND_STRESS_METHODOLOGY_VALIDATED` |
 | **Release Status** | `outputs/alab/multimodal/multimodal_validation.json:7` | `release_readiness: "PENDING_EXTERNAL_CI"` |
+
+---
+
+## 8. Backend Integrity & Diagnostic Endpoints
+
+| Endpoint | File Location | Purpose & Guarantee |
+| :--- | :--- | :--- |
+| `GET /api/manifest` | `presentation/backend/server.py` | Serves SHA-256 hashes of all 11 source artifacts and dataset commit hashes |
+| `GET /api/health` | `presentation/backend/server.py` | Verifies presence of snapshot, manifest, and frontend production dist |
+| `GET /api/snapshot` | `presentation/backend/server.py` | Delivers verified 3.68 MB offline discovery snapshot |
+| `POST /api/diagnostic/smoke-recommend` | `presentation/backend/server.py` | Responsiveness diagnostic test endpoint; returns `mode: "DIAGNOSTIC_SMOKE_TEST"` |

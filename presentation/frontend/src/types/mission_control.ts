@@ -75,6 +75,21 @@ export interface ScoredActionRecord {
   dominant_hypothesis_disagreement?: string[];
   hig_diagnostics?: HigDiagnostics;
   run_id?: string;
+  // Exact decomposition and extrema fields
+  raw_expected_hig_nats?: number;
+  normalized_hig?: number;
+  raw_discovery_utility?: number;
+  normalized_discovery?: number;
+  raw_estimated_cost?: number;
+  w_hig?: number;
+  w_discovery?: number;
+  w_cost?: number;
+  weighted_hig_contribution?: number;
+  weighted_discovery_contribution?: number;
+  weighted_cost_contribution?: number;
+  step_max_hig?: number;
+  step_max_discovery?: number;
+  step_max_cost?: number;
 }
 
 export interface PreregisteredActionRecord {
@@ -152,8 +167,12 @@ export interface CampaignStep {
   preregistration: PreregisteredActionRecord | null;
   observation: MeasurementRevealedRecord | null;
   belief_update: BeliefUpdateRecord | null;
+  all_scored_actions?: ScoredActionRecord[];
   top_actions: ScoredActionRecord[];
   total_actions_evaluated: number;
+  step_max_hig?: number;
+  step_max_discovery?: number;
+  step_max_cost?: number;
 }
 
 export interface FlagshipCampaign {
@@ -263,20 +282,29 @@ export interface ElectrolyteSimulationData {
 export interface SampleItem {
   sample_id: string;
   target_formula: string;
+  target_stoichiometry?: string | null;
   precursors: string[];
-  heating_temperature_c: number;
-  heating_time_hours: number;
-  reaction_energy_ev_per_atom: number;
-  reaction_category: string;
-  outcome_utility: number;
+  heating_temperature_c?: number | null;
+  heating_time_minutes?: number | null;
+  heating_time_hours?: number | null;
+  reaction_energy_ev_per_atom?: number | null;
+  reaction_category?: string | null;
+  outcome_utility?: number | null;
   xrd_available: boolean;
   refinement_available: boolean;
   sem_available: boolean;
   eds_available: boolean;
-  canonical_descriptors: Record<string, number>;
-  refinement_observables: Record<string, number>;
+  sem_availability_reason?: string;
+  eds_availability_reason?: string;
+  refinement_rwp?: number | null;
+  refinement_phases?: Array<{ name: string; weight_percent?: number | null }>;
+  canonical_descriptors?: Record<string, number>;
+  refinement_observables?: Record<string, number>;
   source_archive: string;
-  extractor_provenance: string;
+  source_record_identifier?: string;
+  extractor_name?: string;
+  extractor_version?: string;
+  extractor_provenance?: string;
 }
 
 export interface CoreAbstraction {
@@ -299,10 +327,30 @@ export interface ArchitectureData {
   domains: DomainItem[];
 }
 
+export interface SnapshotManifest {
+  snapshot_schema_version: string;
+  generated_at_utc: string;
+  presentation_build_commit: string;
+  scientific_source_commit: string;
+  source_branch: string;
+  source_artifact_hashes: Record<string, string>;
+  source_dataset_manifest_hash: string;
+  campaign_run_id: string;
+  campaign_world: string;
+  campaign_seed: number;
+  campaign_policy: string;
+  campaign_step_count: number;
+  total_real_samples: number;
+  total_audit_events: number;
+  validation_gate_pass_count: number;
+  validation_gate_total_count: number;
+}
+
 export interface SnapshotData {
   version: string;
   generated_at: string;
   provenance: ProvenanceInfo;
+  manifest?: SnapshotManifest;
   flagship_campaign: FlagshipCampaign;
   alab_replay_campaign: ReplayCampaign;
   hypotheses: Record<string, HypothesisDefinition>;

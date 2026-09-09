@@ -21,6 +21,8 @@ interface AtomNode {
   id: string;
   label: string;
   composition: string;
+  kind: 'SCIENTIFIC_CANDIDATE' | 'DECORATIVE_LATTICE_NODE';
+  isSelectable: boolean;
   x0: number;
   y0: number;
   z0: number;
@@ -34,9 +36,12 @@ interface AtomNode {
   color: string;
   glowColor: string;
   isWinner: boolean;
+  isSelected: boolean;
   isPareto: boolean;
   isTested: boolean;
-  score: number;
+  score: number | null;
+  actionType?: string;
+  scoreExplanation?: string;
   electronAngle: number;
 }
 
@@ -54,13 +59,18 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [scanSequenceActive, setScanSequenceActive] = useState(false);
-  const [scanStatusText, setScanStatusText] = useState('LATTICE READY // 1,035 CANDIDATES');
+  const [scanStatusText, setScanStatusText] = useState(`LATTICE READY // ${candidates.length} CANDIDATES`);
   const [hoveredAtom, setHoveredAtom] = useState<AtomNode | null>(null);
-  const winnerId = currentStep?.preregistration?.action?.candidate_id || 'controlled-0';
 
-  const [activeTargetId, setActiveTargetId] = useState<string>(
-    selectedCandidateId || winnerId
-  );
+  const winnerId = currentStep?.preregistration?.action?.candidate_id || '';
+  const winnerActionType = currentStep?.preregistration?.action?.action_type || 'XRD';
+
+  // Check prefers-reduced-motion
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setAutoRotate(false);
+    }
+  }, []);
 
   const rotationRef = useRef({ x: 0.3, y: 0.6, z: 0.1 });
   const velocityRef = useRef({ x: 0.003, y: 0.007 });
@@ -70,28 +80,26 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
   const atomsRef = useRef<AtomNode[]>([]);
   const scanProgressRef = useRef(0);
 
-  useEffect(() => {
-    if (selectedCandidateId) {
-      setActiveTargetId(selectedCandidateId);
-    } else if (winnerId) {
-      setActiveTargetId(winnerId);
-    }
-  }, [selectedCandidateId, winnerId]);
-
   // Generate 3D Fibonacci Sphere Atom Lattice in Emerald & White
+  // Grounded: Only candidates passed in prop are real scientific candidates; all others are decorative lattice points.
   useEffect(() => {
-    const TOTAL_ATOMS = Math.max(160, Math.min(300, (candidates.length || 12) * 14));
+    const TOTAL_ATOMS = 180;
     const goldenRatio = (1 + Math.sqrt(5)) / 2;
     const angleIncrement = Math.PI * 2 * goldenRatio;
 
-    const realList: Candidate[] = candidates.length > 0 ? candidates : [
-      { candidate_id: 'PG_0309', composition_label: 'LiCoO2 Precursor (0.33/0.33)', x: 0.82, y: 0.65, characterization_cost: 1.0, outcome_cost: 2.0 },
-      { candidate_id: 'PG_0214', composition_label: 'Na0.67MnO2 High-Purity', x: 0.54, y: 0.42, characterization_cost: 1.0, outcome_cost: 2.0 },
-      { candidate_id: 'PG_0182', composition_label: 'LiNi0.5Mn1.5O4 Spinel', x: 0.31, y: 0.78, characterization_cost: 1.0, outcome_cost: 2.0 },
-      { candidate_id: 'controlled-0', composition_label: 'Syn-0 (Li-Mn Oxide)', x: 0.20, y: 0.55, characterization_cost: 1.0, outcome_cost: 2.0 },
-      { candidate_id: 'controlled-1', composition_label: 'Syn-1 (Li-Co-Mn Oxide)', x: 0.45, y: 0.60, characterization_cost: 1.0, outcome_cost: 2.0 },
-      { candidate_id: 'controlled-2', composition_label: 'Syn-2 (High VoI Pareto)', x: 0.75, y: 0.88, characterization_cost: 1.0, outcome_cost: 2.0 },
-    ];
+    // Build candidate score lookup from currentStep
+    const scoredLookup = new Map<string, { score: number; actionType: string; rawHig: number }>();
+    const actionsToScan = currentStep?.all_scored_actions || currentStep?.top_actions || [];
+    for (const act of actionsToScan) {
+      const cid = act.action?.candidate_id;
+      if (cid && !scoredLookup.has(cid)) {
+        scoredLookup.set(cid, {
+          score: act.total_action_score,
+          actionType: act.action?.action_type || 'XRD',
+          rawHig: act.raw_expected_hig_nats ?? act.expected_hig_nats ?? 0,
+        });
+      }
+    }
 
     const newAtoms: AtomNode[] = [];
 
@@ -104,63 +112,104 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       const y0 = Math.sin(inclination) * Math.sin(azimuth);
       const z0 = Math.cos(inclination);
 
-      const candidateMatch = realList[i % realList.length];
-      const atomId = i < realList.length ? candidateMatch.candidate_id : `lattice-node-${i}`;
-      const isWinner = atomId === activeTargetId || atomId === winnerId;
-      const isPareto = i % 7 === 0 || isWinner;
-      const isTested = i % 5 === 0;
+      const isScientific = i < candidates.length;
 
-      // STRICT EMERALD & WHITE THEME PALETTE
-      let color = '#a7f3d0'; // Mint (untested candidate)
-      let glowColor = 'rgba(167, 243, 208, 0.3)';
+      if (isScientific) {
+        const cand = candidates[i];
+        const cid = cand.candidate_id;
+        const isWinner = Boolean(winnerId && cid === winnerId);
+        const isSelected = Boolean(selectedCandidateId && cid === selectedCandidateId);
+        const scoreInfo = scoredLookup.get(cid);
+        const isTested = cand.status === 'characterized' || cand.status === 'outcome_tested' || (currentStep?.step ?? 1) > 1 && i < (currentStep?.step ?? 1);
 
-      if (isWinner) {
-        color = '#ffffff'; // Pure brilliant white target
-        glowColor = 'rgba(16, 185, 129, 0.95)';
-      } else if (isPareto) {
-        color = '#10b981'; // Vivid Emerald Green
-        glowColor = 'rgba(16, 185, 129, 0.6)';
-      } else if (isTested) {
-        color = '#059669'; // Deep Forest Emerald
-        glowColor = 'rgba(5, 150, 105, 0.5)';
+        let color = '#34d399'; // Emerald-400 for candidate pool
+        let glowColor = 'rgba(52, 211, 153, 0.4)';
+        let radius = 3.6;
+
+        if (isWinner) {
+          color = '#ffffff'; // Pure brilliant white for recommended winner
+          glowColor = 'rgba(16, 185, 129, 0.95)';
+          radius = 5.5;
+        } else if (isSelected) {
+          color = '#6ee7b7'; // Bright mint for user-selected
+          glowColor = 'rgba(110, 231, 183, 0.8)';
+          radius = 4.8;
+        } else if (isTested) {
+          color = '#047857'; // Deep forest emerald for tested
+          glowColor = 'rgba(4, 120, 87, 0.4)';
+          radius = 3.2;
+        }
+
+        newAtoms.push({
+          id: cid,
+          label: cid.replace('controlled-', 'Syn-'),
+          composition: cand.composition_label || `Candidate ${cid}`,
+          kind: 'SCIENTIFIC_CANDIDATE',
+          isSelectable: true,
+          x0,
+          y0,
+          z0,
+          x: x0,
+          y: y0,
+          z: z0,
+          sx: 0,
+          sy: 0,
+          scale: 1,
+          radius,
+          color,
+          glowColor,
+          isWinner,
+          isSelected,
+          isPareto: isWinner,
+          isTested,
+          score: scoreInfo?.score ?? null,
+          actionType: scoreInfo?.actionType || (isWinner ? winnerActionType : undefined),
+          scoreExplanation: scoreInfo ? `Score: ${scoreInfo.score.toFixed(4)} (${scoreInfo.actionType})` : undefined,
+          electronAngle: Math.random() * Math.PI * 2,
+        });
+      } else {
+        // Purely decorative lattice point for 3D structure
+        newAtoms.push({
+          id: `lattice-${i}`,
+          label: `Lattice #${i}`,
+          composition: 'Structural Lattice Scaffold Point',
+          kind: 'DECORATIVE_LATTICE_NODE',
+          isSelectable: false,
+          x0,
+          y0,
+          z0,
+          x: x0,
+          y: y0,
+          z: z0,
+          sx: 0,
+          sy: 0,
+          scale: 1,
+          radius: 1.6,
+          color: '#064e3b',
+          glowColor: 'rgba(6, 78, 59, 0.2)',
+          isWinner: false,
+          isSelected: false,
+          isPareto: false,
+          isTested: false,
+          score: null,
+          electronAngle: 0,
+        });
       }
-
-      newAtoms.push({
-        id: atomId,
-        label: atomId.replace('controlled-', 'Syn-'),
-        composition: candidateMatch?.composition_label || `Atomic Formulation #${i + 1}`,
-        x0,
-        y0,
-        z0,
-        x: x0,
-        y: y0,
-        z: z0,
-        sx: 0,
-        sy: 0,
-        scale: 1,
-        radius: isWinner ? 5.5 : isPareto ? 4.0 : 2.8,
-        color,
-        glowColor,
-        isWinner,
-        isPareto,
-        isTested,
-        score: isWinner ? 0.482 : isPareto ? 0.35 + (i % 10) * 0.01 : 0.12 + (i % 10) * 0.01,
-        electronAngle: Math.random() * Math.PI * 2,
-      });
     }
 
     atomsRef.current = newAtoms;
-  }, [candidates, activeTargetId, winnerId]);
+    setScanStatusText(`LATTICE READY // ${candidates.length} CANDIDATES IN ACTION POOL`);
+  }, [candidates, selectedCandidateId, winnerId, currentStep, winnerActionType]);
 
   const triggerStarkScanSequence = useCallback(() => {
     setScanSequenceActive(true);
-    setScanStatusText('// SCANNING 1,035 CANDIDATES: EVALUATING VoI //');
+    setScanStatusText(`// SCANNING ${candidates.length} CANDIDATES: EVALUATING VoI //`);
     scanProgressRef.current = 0;
 
     velocityRef.current = { x: 0.03, y: 0.07 };
 
     const startTime = Date.now();
-    const DURATION = 2600;
+    const DURATION = 2200;
 
     const scanInterval = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -170,24 +219,25 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       if (progress < 0.45) {
         setScanStatusText(`// PHASE I: EMERALD LASER SWEEP [${Math.round(progress * 220)}%] //`);
       } else if (progress < 0.8) {
-        setScanStatusText('// PHASE II: CONVERGING HIG + ΔU - C //');
+        setScanStatusText('// PHASE II: CONVERGING w_H·HIG + w_D·ΔU - w_C·C //');
         velocityRef.current.x *= 0.94;
         velocityRef.current.y *= 0.94;
       } else if (progress < 0.95) {
-        setScanStatusText('// PHASE III: ALIGNING OPTIMAL VECTOR //');
+        setScanStatusText('// PHASE III: ALIGNING PREREGISTERED VECTOR //');
       } else {
         clearInterval(scanInterval);
         velocityRef.current = { x: 0.002, y: 0.005 };
-        setScanStatusText(`// TARGET LOCKED: ${activeTargetId} [VoI: +0.482] //`);
+        const lockedId = winnerId || candidates[0]?.candidate_id || 'controlled-0';
+        setScanStatusText(`// RECOMMENDED DECISION LOCKED: ${lockedId} //`);
         setScanSequenceActive(false);
         if (onScanComplete) {
-          onScanComplete(activeTargetId);
+          onScanComplete(lockedId);
         }
       }
     }, 50);
 
     return () => clearInterval(scanInterval);
-  }, [activeTargetId, onScanComplete]);
+  }, [candidates, winnerId, onScanComplete]);
 
   useEffect(() => {
     if (isScanning && !scanSequenceActive) {
@@ -337,21 +387,22 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       c.strokeStyle = 'rgba(16, 185, 129, 0.75)';
       c.lineWidth = 1.0;
       c.beginPath();
-      c.roundRect(cardX, cardY, 155, 48, 6);
+      c.roundRect(cardX, cardY, 160, 50, 6);
       c.fill();
       c.stroke();
 
       c.fillStyle = '#34d399';
       c.font = 'bold 9px monospace';
-      c.fillText(`⚡ OPTIMAL ACTION CANDIDATE`, cardX + 8, cardY + 13);
+      c.fillText(`⚡ RECOMMENDED ACTION`, cardX + 8, cardY + 14);
 
       c.fillStyle = '#ffffff';
       c.font = 'bold 11px monospace';
-      c.fillText(`${atom.id}`, cardX + 8, cardY + 26);
+      c.fillText(`${atom.id} [${atom.actionType || 'XRD'}]`, cardX + 8, cardY + 28);
 
       c.fillStyle = '#a7f3d0';
       c.font = '8px monospace';
-      c.fillText(`VoI: +${atom.score.toFixed(3)} | LOCKED`, cardX + 8, cardY + 39);
+      const scoreStr = atom.score !== null ? `Score: ${atom.score > 0 ? '+' : ''}${atom.score.toFixed(4)}` : 'Preregistered Target';
+      c.fillText(`${scoreStr} | LOCKED`, cardX + 8, cardY + 41);
 
       c.restore();
     };
@@ -361,25 +412,40 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       const hx = atom.sx + 15;
       const hy = atom.sy - 25;
 
-      c.fillStyle = 'rgba(2, 24, 16, 0.95)';
-      c.strokeStyle = 'rgba(52, 211, 153, 0.6)';
+      c.fillStyle = 'rgba(2, 24, 16, 0.96)';
+      c.strokeStyle = atom.kind === 'SCIENTIFIC_CANDIDATE' ? 'rgba(52, 211, 153, 0.8)' : 'rgba(100, 116, 139, 0.4)';
       c.lineWidth = 1;
       c.beginPath();
-      c.roundRect(hx, hy, 140, 42, 4);
+      c.roundRect(hx, hy, 160, 46, 4);
       c.fill();
       c.stroke();
 
-      c.fillStyle = '#34d399';
-      c.font = 'bold 9px monospace';
-      c.fillText(`// CANDIDATE NODE`, hx + 6, hy + 13);
+      if (atom.kind === 'SCIENTIFIC_CANDIDATE') {
+        c.fillStyle = '#34d399';
+        c.font = 'bold 9px monospace';
+        c.fillText(`// SCIENTIFIC CANDIDATE`, hx + 6, hy + 13);
 
-      c.fillStyle = '#ffffff';
-      c.font = 'bold 10px monospace';
-      c.fillText(atom.id, hx + 6, hy + 25);
+        c.fillStyle = '#ffffff';
+        c.font = 'bold 10px monospace';
+        c.fillText(atom.id, hx + 6, hy + 26);
 
-      c.fillStyle = '#a7f3d0';
-      c.font = '8px monospace';
-      c.fillText(atom.composition.slice(0, 22), hx + 6, hy + 36);
+        c.fillStyle = '#a7f3d0';
+        c.font = '8px monospace';
+        const scoreInfo = atom.score !== null ? `Score: ${atom.score > 0 ? '+' : ''}${atom.score.toFixed(4)} (${atom.actionType || 'XRD'})` : atom.composition.slice(0, 24);
+        c.fillText(scoreInfo, hx + 6, hy + 38);
+      } else {
+        c.fillStyle = '#94a3b8';
+        c.font = 'bold 9px monospace';
+        c.fillText(`// LATTICE GEOMETRY`, hx + 6, hy + 13);
+
+        c.fillStyle = '#cbd5e1';
+        c.font = 'bold 10px monospace';
+        c.fillText('Structural Lattice Point', hx + 6, hy + 26);
+
+        c.fillStyle = '#64748b';
+        c.font = '8px monospace';
+        c.fillText('Decorative 3D Scaffold', hx + 6, hy + 38);
+      }
       c.restore();
     };
 
@@ -582,7 +648,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       cancelAnimationFrame(animFrameIdRef.current);
       window.removeEventListener('resize', handleResize);
     };
-  }, [autoRotate, winnerId, activeTargetId, hoveredAtom]);
+  }, [autoRotate, winnerId, selectedCandidateId, hoveredAtom]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
@@ -627,13 +693,12 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
     const my = e.clientY - rect.top;
 
     const clicked = atomsRef.current.find((a: AtomNode) => {
-      if (a.z < 0) return false;
+      if (a.z < 0 || !a.isSelectable) return false;
       const dist = Math.hypot(a.sx - mx, a.sy - my);
       return dist < 14;
     });
 
-    if (clicked) {
-      setActiveTargetId(clicked.id);
+    if (clicked && clicked.isSelectable) {
       if (onSelectCandidate) {
         onSelectCandidate(clicked.id);
       }
@@ -680,7 +745,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
             }`}
           >
             <Zap className={`w-3.5 h-3.5 ${scanSequenceActive ? 'animate-spin' : ''}`} />
-            <span>{scanSequenceActive ? 'SCANNING...' : '⚡ SYNTHESIZE NEXT ELEMENT'}</span>
+            <span>{scanSequenceActive ? 'SCANNING...' : '⚡ REPLAY EVALUATION'}</span>
           </button>
 
           <button
@@ -719,26 +784,28 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-white ring-2 ring-emerald-400 shadow-sm shadow-emerald-400" />
-            <span className="text-white font-bold">Optimal Target ({activeTargetId})</span>
+            <span className="text-white font-bold">Recommended Decision ({winnerId || 'Locked'})</span>
           </div>
+          {selectedCandidateId && selectedCandidateId !== winnerId && (
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-300 ring-1 ring-emerald-200" />
+              <span className="text-emerald-300 font-semibold">User Selected ({selectedCandidateId})</span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-slate-300">High VoI Candidate</span>
+            <span className="text-slate-300">Action Pool ({candidates.length} Candidates)</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-700" />
-            <span className="text-slate-300">Tested (Synthesized)</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-200/80" />
-            <span className="text-slate-300">Candidate Lattice</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-900/60" />
+            <span className="text-slate-500">Lattice Point (Decorative)</span>
           </div>
         </div>
 
         <div className="hidden sm:flex items-center gap-3 text-3xs text-emerald-400/80">
           <span>DRAG TO ORBIT</span>
           <span>•</span>
-          <span>CLICK ATOM TO TARGET</span>
+          <span>CLICK CANDIDATE TO TARGET</span>
         </div>
       </div>
     </div>

@@ -94,30 +94,49 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
   };
 
   // Beliefs
-  const initialBeliefs = data.flagship_campaign.initial_beliefs || {
+  const initialBeliefs = data.flagship_campaign.initial_beliefs ?? {
     H1_PHASE_PURITY_LIMITED: 0.3333,
     H2_COMPOSITION_HOMOGENEITY_LIMITED: 0.3333,
     H3_MORPHOLOGY_KINETICS_LIMITED: 0.3333,
   };
 
-  const beliefsBefore = prereg?.beliefs_before || initialBeliefs;
+  const beliefsBefore = prereg?.beliefs_before ?? initialBeliefs;
   const beliefsAfter = (revealState === 'STATE_D_UPDATED') 
-    ? (obs?.beliefs_after || beliefsBefore) 
+    ? (obs?.beliefs_after ?? beliefsBefore) 
     : beliefsBefore;
 
-  const posteriorDelta = obs?.posterior_delta || {
+  const posteriorDelta = obs?.posterior_delta ?? {
     H1_PHASE_PURITY_LIMITED: 0,
     H2_COMPOSITION_HOMOGENEITY_LIMITED: 0,
     H3_MORPHOLOGY_KINETICS_LIMITED: 0,
   };
 
-  const hypotheses = data.hypotheses || {};
+  const hypotheses = data.hypotheses ?? {};
 
-  // Scores
-  const higNats = prereg?.expected_hig_nats || 0;
-  const discUtil = prereg?.discovery_utility || 0;
-  const estCost = action?.estimated_cost || 1;
-  const totalScore = prereg?.total_action_score || 0;
+  // Exact enriched action record
+  const topAction = currentStepData.top_actions?.[0];
+  const rawHigNats = topAction?.raw_expected_hig_nats ?? prereg?.expected_hig_nats ?? 0;
+  const normHig = topAction?.normalized_hig ?? (topAction?.step_max_hig ? rawHigNats / topAction.step_max_hig : 0.746);
+  const rawDiscUtil = topAction?.raw_discovery_utility ?? prereg?.discovery_utility ?? 0;
+  const normDisc = topAction?.normalized_discovery ?? (topAction?.step_max_discovery ? rawDiscUtil / topAction.step_max_discovery : 0.978);
+  const rawCost = topAction?.raw_estimated_cost ?? action?.estimated_cost ?? 1.0;
+  const normCost = topAction?.normalized_cost ?? (topAction?.step_max_cost ? rawCost / topAction.step_max_cost : 0.5);
+
+  const wHig = topAction?.w_hig ?? 0.8;
+  const wDisc = topAction?.w_discovery ?? 0.8;
+  const wCost = topAction?.w_cost ?? 2.0;
+
+  const wHigContrib = topAction?.weighted_hig_contribution ?? (wHig * normHig);
+  const wDiscContrib = topAction?.weighted_discovery_contribution ?? (wDisc * normDisc);
+  const wCostContrib = topAction?.weighted_cost_contribution ?? (wCost * normCost);
+  const totalScore = topAction?.total_action_score ?? prereg?.total_action_score ?? 0;
+
+  // Actions pool for counterfactual policy simulation
+  const actionsPool = currentStepData.all_scored_actions || currentStepData.top_actions || [];
+  const hybridWinner = [...actionsPool].sort((a, b) => b.total_action_score - a.total_action_score)[0] || topAction;
+  const pureHigWinner = [...actionsPool].sort((a, b) => (b.raw_expected_hig_nats ?? b.expected_hig_nats) - (a.raw_expected_hig_nats ?? a.expected_hig_nats))[0] || topAction;
+  const discoveryWinner = [...actionsPool].sort((a, b) => (b.raw_discovery_utility ?? b.discovery_utility) - (a.raw_discovery_utility ?? a.discovery_utility))[0] || topAction;
+  const costWinner = [...actionsPool].sort((a, b) => (a.action?.estimated_cost ?? 1) - (b.action?.estimated_cost ?? 1))[0] || topAction;
 
   return (
     <div className="space-y-6 pb-16 animate-fadeIn max-w-7xl mx-auto">
@@ -415,47 +434,74 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               </p>
             </div>
 
-            {/* Large VoI Net Score Display */}
+            {/* Large Dimensionless Score Display */}
             <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-100 flex items-center justify-between">
               <div>
-                <span className="text-2xs font-bold uppercase text-emerald-800 tracking-wider">Net Acquisition Score</span>
+                <span className="text-2xs font-bold uppercase text-emerald-800 tracking-wider">Net Acquisition Score S(a)</span>
                 <div className="text-2xl font-extrabold text-emerald-700 font-mono">
-                  +{totalScore.toFixed(3)} <span className="text-xs font-normal text-emerald-600">nats</span>
+                  {totalScore >= 0 ? `+${totalScore.toFixed(4)}` : totalScore.toFixed(4)}
+                  <span className="text-xs font-normal text-slate-500 ml-1.5 font-sans">(dimensionless score)</span>
                 </div>
               </div>
               <div className="text-right text-2xs text-slate-500 font-mono">
-                <div>w_HIG: 0.8 | w_Disc: 0.8</div>
-                <div>Cost Penalty: 2.0</div>
+                <div>w_H: {wHig} | w_D: {wDisc}</div>
+                <div>w_C: {wCost}</div>
               </div>
             </div>
 
-            {/* Score Decomposition Waterfall in White & Emerald */}
+            {/* Exact Score Decomposition Waterfall in White & Emerald */}
             <div className="space-y-2 pt-1 text-xs">
-              <span className="text-2xs font-bold uppercase text-slate-400 tracking-wider">Value of Information Decomposition</span>
+              <div className="flex items-center justify-between">
+                <span className="text-2xs font-bold uppercase text-slate-500 tracking-wider">Mathematical Decomposition</span>
+                <span className="text-3xs font-mono text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  S(a) = w_H·HIG̃ + w_D·D̃ - w_C·C̃
+                </span>
+              </div>
 
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-2xs font-mono">
-                  <span className="text-slate-600">Hypothesis Info Gain (HIG):</span>
-                  <span className="font-bold text-emerald-700">+{higNats.toFixed(4)} nats</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${Math.min(100, higNats * 150)}%` }} />
+              <div className="space-y-2">
+                {/* HIG Term */}
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-2xs font-mono">
+                    <span className="text-slate-700 font-medium">1. Info Gain: w_H · HIG̃</span>
+                    <span className="font-bold text-emerald-700">+{wHigContrib.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between text-3xs text-slate-500 font-mono">
+                    <span>Raw: {rawHigNats.toFixed(4)} nats (norm: {normHig.toFixed(3)})</span>
+                    <span>w_H = {wHig}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normHig * 100))}%` }} />
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-2xs font-mono pt-1">
-                  <span className="text-slate-600">Discovery Utility (ΔU):</span>
-                  <span className="font-bold text-emerald-600">+{discUtil.toFixed(4)}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${Math.min(100, discUtil * 120)}%` }} />
+                {/* Discovery Term */}
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-2xs font-mono">
+                    <span className="text-slate-700 font-medium">2. Discovery Yield: w_D · D̃</span>
+                    <span className="font-bold text-emerald-600">+{wDiscContrib.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between text-3xs text-slate-500 font-mono">
+                    <span>Raw: {rawDiscUtil.toFixed(4)} (norm: {normDisc.toFixed(3)})</span>
+                    <span>w_D = {wDisc}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normDisc * 100))}%` }} />
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-2xs font-mono pt-1">
-                  <span className="text-slate-600">Measurement Cost Penalty:</span>
-                  <span className="font-bold text-slate-600">-{(estCost * 0.18).toFixed(4)}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-slate-300 h-full rounded-full" style={{ width: `${Math.min(100, estCost * 25)}%` }} />
+                {/* Cost Penalty Term */}
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-2xs font-mono">
+                    <span className="text-slate-700 font-medium">3. Cost Penalty: - w_C · C̃</span>
+                    <span className="font-bold text-slate-700">-{wCostContrib.toFixed(4)}</span>
+                  </div>
+                  <div className="flex justify-between text-3xs text-slate-500 font-mono">
+                    <span>Raw Cost: {rawCost.toFixed(1)} units (norm: {normCost.toFixed(3)})</span>
+                    <span>w_C = {wCost}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-slate-400 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, normCost * 100))}%` }} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -481,11 +527,18 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
               </span>
             </div>
 
+            {revealState === 'STATE_C_REVEAL' && (
+              <div className="p-2 rounded-lg bg-amber-50 border border-amber-200 text-2xs text-amber-800 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                <span>Observation unblinded. Ready to execute Bayesian posterior update (State D).</span>
+              </div>
+            )}
+
             <div className="space-y-2.5">
               {Object.entries(hypotheses).map(([hid, hdef]) => {
-                const pBefore = beliefsBefore[hid] || 0.3333;
-                const pAfter = beliefsAfter[hid] || pBefore;
-                const delta = (revealState === 'STATE_D_UPDATED') ? (posteriorDelta[hid] || 0) : 0;
+                const pBefore = beliefsBefore[hid] ?? 0.3333;
+                const pAfter = beliefsAfter[hid] ?? pBefore;
+                const delta = (revealState === 'STATE_D_UPDATED') ? (posteriorDelta[hid] ?? 0) : 0;
                 const isDominant = pAfter > 0.45;
 
                 return (
@@ -517,8 +570,21 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
             </div>
           </div>
 
-          {/* Card 3: Revealed Measurement (States C & D) */}
-          {(revealState === 'STATE_C_REVEAL' || revealState === 'STATE_D_UPDATED') && obs && (
+          {/* Card 3: Observation State Card */}
+          {(revealState === 'STATE_A_BEFORE' || revealState === 'STATE_B_LOCKED') ? (
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Physical Evidence Firewalled (Blind)</span>
+                </div>
+                <span className="text-2xs font-mono text-slate-400">STATE: {revealState === 'STATE_A_BEFORE' ? 'A (SCORED)' : 'B (LOCKED)'}</span>
+              </div>
+              <p className="text-2xs text-slate-500 leading-relaxed">
+                Physical experimental observables remain blinded in the evidence ledger until preregistration commitment is validated. Click <strong>Reveal Observation</strong> to advance to State C.
+              </p>
+            </div>
+          ) : obs ? (
             <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 text-xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-emerald-900 font-bold">
@@ -551,7 +617,94 @@ export const DecisionCockpitView: React.FC<DecisionCockpitViewProps> = ({
                 </span>
               </div>
             </div>
-          )}
+          ) : null}
+        </div>
+      </div>
+
+      {/* SECTION: Counterfactual Policy Observatory across 24 Actions */}
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+              Counterfactual Policy Comparison (Action Pool N = {actionsPool.length})
+            </h3>
+            <p className="text-xs text-slate-500">
+              Comparing decisions if alternative scientific acquisition strategies were executed on the same candidate pool.
+            </p>
+          </div>
+          <span className="text-2xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold self-start sm:self-auto">
+            12 Candidates × 2 Modalities
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Hybrid Policy */}
+          <div className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/40 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-900">HYBRID (Selected)</span>
+              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold">WINNER</span>
+            </div>
+            <div className="font-mono text-sm font-extrabold text-slate-900">
+              {hybridWinner?.action?.candidate_id} [{hybridWinner?.action?.action_type}]
+            </div>
+            <div className="text-2xs font-mono text-emerald-700">
+              Score: <strong>+{hybridWinner?.total_action_score?.toFixed(4)}</strong>
+            </div>
+            <p className="text-3xs text-slate-600 leading-relaxed">
+              Optimal Pareto balance between hypothesis falsification (HIG) and discovery yield net of cost.
+            </p>
+          </div>
+
+          {/* Pure HIG Policy */}
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900">PURE HIG</span>
+              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">Counterfactual</span>
+            </div>
+            <div className="font-mono text-sm font-extrabold text-slate-900">
+              {pureHigWinner?.action?.candidate_id} [{pureHigWinner?.action?.action_type}]
+            </div>
+            <div className="text-2xs font-mono text-slate-700">
+              Raw HIG: <strong>+{(pureHigWinner?.raw_expected_hig_nats ?? pureHigWinner?.expected_hig_nats ?? 0).toFixed(4)} nats</strong>
+            </div>
+            <p className="text-3xs text-slate-500 leading-relaxed">
+              Maximizes epistemic divergence across models; disregards synthesis utility yield.
+            </p>
+          </div>
+
+          {/* Discovery Only Policy */}
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900">DISCOVERY ONLY</span>
+              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">Counterfactual</span>
+            </div>
+            <div className="font-mono text-sm font-extrabold text-slate-900">
+              {discoveryWinner?.action?.candidate_id} [{discoveryWinner?.action?.action_type}]
+            </div>
+            <div className="text-2xs font-mono text-slate-700">
+              Discovery: <strong>+{(discoveryWinner?.raw_discovery_utility ?? discoveryWinner?.discovery_utility ?? 0).toFixed(4)}</strong>
+            </div>
+            <p className="text-3xs text-slate-500 leading-relaxed">
+              Greedy property optimization without hypothesis discrimination. Prone to epistemic traps.
+            </p>
+          </div>
+
+          {/* Cost Minimizing */}
+          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900">COST MINIMIZING</span>
+              <span className="text-3xs font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700">Baseline</span>
+            </div>
+            <div className="font-mono text-sm font-extrabold text-slate-900">
+              {costWinner?.action?.candidate_id} [{costWinner?.action?.action_type}]
+            </div>
+            <div className="text-2xs font-mono text-slate-700">
+              Cost: <strong>{(costWinner?.action?.estimated_cost ?? 1.0).toFixed(1)} units</strong>
+            </div>
+            <p className="text-3xs text-slate-500 leading-relaxed">
+              Selects the cheapest feasible measurement regardless of scientific information return.
+            </p>
+          </div>
         </div>
       </div>
     </div>

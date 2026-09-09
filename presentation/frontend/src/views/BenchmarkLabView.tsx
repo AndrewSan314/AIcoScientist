@@ -126,20 +126,35 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
                 <tr>
                   <th>Decision Policy</th>
                   <th>Theoretical Role</th>
-                  <th>Discovery Yield</th>
-                  <th>Cumulative HIG</th>
-                  <th>Entropy Reduction</th>
-                  <th>Cost Efficiency</th>
+                  <th>MAP Recovery Rate</th>
+                  <th>Final True Hypo Prob</th>
+                  <th>Entropy Reduction (ΔH)</th>
+                  <th>Mean Measurement Cost</th>
+                  <th>Steps to Confident (P&gt;0.8)</th>
                 </tr>
               </thead>
               <tbody>
                 {policies.map((p) => {
-                  const pData = currentSummary[p.id] || {
-                    discovery_yield: 0.72,
-                    cum_hig_nats: 1.58,
-                    entropy_reduction_nats: 0.94,
-                    cost_efficiency: 0.48,
-                  };
+                  const pData = currentSummary[p.id];
+                  if (!pData) {
+                    return (
+                      <tr key={p.id}>
+                        <td className="font-semibold text-slate-900">{p.name}</td>
+                        <td className="text-slate-500 text-2xs">{p.role}</td>
+                        <td colSpan={5} className="text-slate-400 italic">Data pending in matrix</td>
+                      </tr>
+                    );
+                  }
+
+                  const mapRate = pData.recovery_rate_MAP !== undefined ? `${(pData.recovery_rate_MAP * 100).toFixed(1)}%` : 'N/A';
+                  const finalProb = pData.mean_final_true_hypothesis_probability !== undefined ? `${(pData.mean_final_true_hypothesis_probability * 100).toFixed(1)}%` : 'N/A';
+                  const entRed = pData.mean_entropy_reduction !== undefined ? `-${pData.mean_entropy_reduction.toFixed(3)} nats` : 'N/A';
+                  const meanCost = pData.mean_measurement_cost !== undefined ? `${pData.mean_measurement_cost.toFixed(2)} units` : 'N/A';
+                  const stepsToP8 = pData['mean_steps_to_posterior_gt_0.8'] !== undefined 
+                    ? `${Number(pData['mean_steps_to_posterior_gt_0.8']).toFixed(1)} steps` 
+                    : (pData.threshold_metrics?.['P>0.8']?.mean_steps_conditional_on_crossing !== undefined 
+                        ? `${Number(pData.threshold_metrics['P>0.8'].mean_steps_conditional_on_crossing).toFixed(1)} steps` 
+                        : 'N/A');
 
                   return (
                     <tr 
@@ -151,17 +166,20 @@ export const BenchmarkLabView: React.FC<BenchmarkLabViewProps> = ({ data }) => {
                         <span>{p.name}</span>
                       </td>
                       <td className="text-slate-500 text-2xs">{p.role}</td>
-                      <td className="font-mono text-emerald-700 font-bold">
-                        {((pData.discovery_yield || 0.7) * 100).toFixed(1)}%
+                      <td className={`font-mono font-bold ${pData.recovery_rate_MAP !== undefined && pData.recovery_rate_MAP >= 0.8 ? 'text-emerald-700' : 'text-slate-700'}`}>
+                        {mapRate}
                       </td>
                       <td className="font-mono text-slate-800">
-                        +{(pData.cum_hig_nats || 1.5).toFixed(3)} nats
+                        {finalProb}
                       </td>
                       <td className="font-mono text-emerald-800 font-bold">
-                        -{(pData.entropy_reduction_nats || 0.9).toFixed(3)} nats
+                        {entRed}
                       </td>
                       <td className="font-mono text-slate-700">
-                        {(pData.cost_efficiency || 0.45).toFixed(3)} / unit
+                        {meanCost}
+                      </td>
+                      <td className="font-mono text-slate-600">
+                        {stepsToP8}
                       </td>
                     </tr>
                   );

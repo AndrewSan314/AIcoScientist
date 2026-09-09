@@ -34,16 +34,25 @@ def run_tests():
             assert data["frontend_built"] is True
             print("[PASS] /api/health passed")
 
-        # 2. Snapshot
+        # 2. Manifest
+        with urllib.request.urlopen("http://127.0.0.1:8502/api/manifest") as res:
+            assert res.status == 200
+            manifest = json.loads(res.read())
+            assert manifest["snapshot_schema_version"] == "1.1.0"
+            assert manifest["total_real_samples"] == 1035
+            print("[PASS] /api/manifest passed (1,035 real samples declared)")
+
+        # 3. Snapshot
         with urllib.request.urlopen("http://127.0.0.1:8502/api/snapshot") as res:
             assert res.status == 200
             snap = json.loads(res.read())
             assert "flagship_campaign" in snap
             assert len(snap["flagship_campaign"]["steps"]) == 4
             assert snap["validation"]["gate_evidence"]["boolean_gate_pass_count"] == 48
-            print("[PASS] /api/snapshot passed (4 steps, 48/50 gates verified)")
+            assert len(snap["samples"]) == 1035
+            print("[PASS] /api/snapshot passed (4 steps, 1,035 real samples, 48/50 gates verified)")
 
-        # 3. Static SPA
+        # 4. Static SPA
         with urllib.request.urlopen("http://127.0.0.1:8502/") as res:
             assert res.status == 200
             html = res.read().decode("utf-8")
@@ -51,9 +60,9 @@ def run_tests():
             assert "assets/index-" in html
             print("[PASS] / (SPA index.html) passed")
 
-        # 4. Live recommend API
+        # 5. Diagnostic recommend API
         req = urllib.request.Request(
-            "http://127.0.0.1:8502/api/live/recommend",
+            "http://127.0.0.1:8502/api/diagnostic/smoke-recommend",
             data=json.dumps({"policy": "HYBRID", "seed": 42}).encode("utf-8"),
             headers={"Content-Type": "application/json"},
             method="POST",
@@ -61,11 +70,11 @@ def run_tests():
         with urllib.request.urlopen(req) as res:
             assert res.status == 200
             rec = json.loads(res.read())
-            assert rec["mode"] == "LIVE_COMPUTED"
+            assert rec["mode"] == "DIAGNOSTIC_SMOKE_TEST"
             assert "action" in rec
-            print(f"[PASS] /api/live/recommend passed -> candidate {rec['action']['candidate_id']}, score: {rec['score']:.4f}")
+            print(f"[PASS] /api/diagnostic/smoke-recommend passed -> candidate {rec['action']['candidate_id']}, score: {rec['score']:.4f}")
 
-        print("\nALL 4 AUTOMATED SMOKE TESTS PASSED SUCCESSFULLY.")
+        print("\nALL 5 AUTOMATED SMOKE TESTS PASSED SUCCESSFULLY.")
     finally:
         proc.terminate()
         proc.wait(timeout=5)

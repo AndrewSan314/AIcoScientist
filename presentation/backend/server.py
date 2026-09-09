@@ -29,11 +29,12 @@ if str(ROOT) not in sys.path:
 
 FRONTEND_DIST = ROOT / "presentation" / "frontend" / "dist"
 SNAPSHOT_PATH = ROOT / "presentation" / "data" / "snapshot.json"
+MANIFEST_PATH = ROOT / "presentation" / "data" / "snapshot_manifest.json"
 
 app = FastAPI(
     title="AIcoScientist Discovery Mission Control API",
-    description="Deterministic artifact adapter & live MultimodalDecisionEngine controller",
-    version="2.4.0",
+    description="Deterministic artifact adapter & diagnostic MultimodalDecisionEngine controller",
+    version="2.5.0",
 )
 
 app.add_middleware(
@@ -51,8 +52,17 @@ def health() -> dict[str, Any]:
         "status": "healthy",
         "mode": "PRESENTATION_MISSION_CONTROL",
         "snapshot_available": SNAPSHOT_PATH.exists(),
+        "manifest_available": MANIFEST_PATH.exists(),
         "frontend_built": (FRONTEND_DIST / "index.html").exists(),
     }
+
+
+@app.get("/api/manifest")
+def get_manifest() -> Any:
+    if not MANIFEST_PATH.exists():
+        raise HTTPException(status_code=404, detail="snapshot_manifest.json not generated. Run build_snapshot.py first.")
+    with MANIFEST_PATH.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 @app.get("/api/snapshot")
@@ -63,9 +73,14 @@ def get_snapshot() -> Any:
         return json.load(f)
 
 
+@app.post("/api/diagnostic/smoke-recommend")
 @app.post("/api/live/recommend")
-def live_recommend(payload: dict[str, Any]) -> dict[str, Any]:
-    """Execute live MultimodalDecisionEngine if dependencies exist, else return documented fallback."""
+def diagnostic_smoke_recommend(payload: dict[str, Any]) -> dict[str, Any]:
+    """Diagnostic smoke test for live MultimodalDecisionEngine wiring.
+    
+    Uses lightweight in-memory hypotheses to verify engine decision pipeline execution.
+    Official advisor presentation data is served through deterministic snapshot APIs.
+    """
     try:
         from src.science.actions import ScientificAction
         from src.science.domain import ModalityDefinition
@@ -124,7 +139,8 @@ def live_recommend(payload: dict[str, Any]) -> dict[str, Any]:
         rec = engine.recommend(samples=32)
 
         return {
-            "mode": "LIVE_COMPUTED",
+            "mode": "DIAGNOSTIC_SMOKE_TEST",
+            "note": "Diagnostic smoke test using toy in-memory hypothesis instances to verify live decision engine wiring; official presentation runs use deterministic snapshot.",
             "action": rec.action.to_dict(),
             "score": rec.score,
             "why": rec.why,
