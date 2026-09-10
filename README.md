@@ -26,8 +26,8 @@ REAL + PHYSICS-SIMULATED STRESS SUITE
 
 1. **Stage-aware process workflow**: Typed ordered stages keep controllable settings, observations, final KPIs, provenance, and missing modalities distinct.
 2. **True Joint-Posterior Monte Carlo NEI**: Canonical Noisy Expected Improvement drawing joint Gaussian fantasy realizations $\mathbf{f}_{\text{obs}} \sim \mathcal{N}(\boldsymbol{\mu}_{\text{obs}}, \mathbf{\Sigma}_{\text{obs}})$, handling observation noise and correlated posterior incumbents via Rao-Blackwellized Monte Carlo.
-3. **TuRBO Engine in Normalized Coordinates**: Trust Region Bayesian Optimization operating in normalized $[0, 1]^d$ hypercube space with dynamic expansion/contraction state machines, noise-tolerant improvement thresholds, and deterministic global escape exploration.
-4. **Adaptive Bayesian Optimization Controller**: Epistemic uncertainty-aware controller dynamically shifting between UCB exploration, True NEI exploitation, and uncertainty reduction based on convergence rate and budget horizon.
+3. **Process Recipe Search**: Source-identified finite recipe pools, exact controls, manufacturability constraints, and no silent optimizer fallback.
+4. **Multi-objective Process Optimization**: Official BoTorch qNEHVI supports Pareto process proposals when the required dependency and source-backed outputs are available.
 5. **Supervised Regression Suite**: Random Forest baseline, XGBoost challenger, and Gaussian Process surrogate with empirical uncertainty calibration (50%, 80%, 90%, 95% predictive interval coverage, Gaussian NLL, and standardized residuals).
 6. **Firewalled Closed-Loop Architecture**: Strict separation between optimization policies and evaluation oracles; zero leakage of latent simulator truths or regret into search algorithms.
 7. **Structured Explainability & Serialization**: Every proposed candidate includes structured reason codes (`reason_code`), human-interpretable rationales (`recommendation_reason`), feature distances to previous experiments, and full JSON state checkpointing (`save_state` / `load_state`).

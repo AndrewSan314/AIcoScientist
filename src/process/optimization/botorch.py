@@ -158,6 +158,10 @@ class OfficialMultiObjectiveBoTorch:
                     functions.extend([lambda Y, i=index, v=low: v - Y[..., i], lambda Y, i=index, v=high: Y[..., i] - v])
                 else:
                     functions.extend([lambda Y, i=index, v=low: Y[..., i] + v, lambda Y, i=index, v=high: -v - Y[..., i]])
+            elif constraint.type == "feasibility":
+                if direction != "maximize":
+                    raise UnsupportedProcessOptimizationError("feasibility outcomes must be maximized probabilities")
+                functions.append(lambda Y, i=index, t=threshold: t - Y[..., i])
         return functions
 
     @staticmethod
