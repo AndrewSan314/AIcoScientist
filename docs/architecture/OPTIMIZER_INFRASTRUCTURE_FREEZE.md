@@ -60,6 +60,10 @@ The backend supports exactly 6 canonical strategies. Any unmapped or retired str
 - **No Fake TuRBO Labels**: `turbo_nei`, `turbo_ei`, `turbo`, and `adaptive` are retired and rejected with `UnsupportedStrategyError`.
 - **No Silent Fallback**: If `noisy_expected_improvement` fails during evaluation, it **MUST NOT** silently fall back to `ei`. It raises `AcquisitionEvaluationError`.
 
+### Battery process extension
+
+The default battery-process path composes the scalar backend through `src.process.coordinator.ProcessOptimizationCoordinator`. Its finite recipe pool preserves source `recipe_id` identity and validates feasibility before selection. True multi-objective process work is isolated in `src.process.optimization.botorch.OfficialMultiObjectiveBoTorch`, which uses official `ModelListGP` and `qNoisyExpectedHypervolumeImprovement` (qNEHVI); unsupported dependency or acquisition failures raise rather than silently scalarizing. The historical `src/legacy/native_optimizer` code is a legacy research reference, not a production fallback.
+
 ---
 
 ## 3. Strict Candidate Identity & Finite Pool Semantics
