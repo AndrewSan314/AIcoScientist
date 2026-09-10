@@ -5,24 +5,73 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
+from sklearn.model_selection import GroupShuffleSplit
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosGraphiteAdapter, NaIonHTEAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter
+from src.datasets.battery_process.base import ProcessPredictionTask
+from src.process.models.flat_baseline import TreeEnsembleBaseline
+from src.process.models.uncertainty import conformal_interval
+from src.process.stages import ProcessStage
 
 
 ADAPTERS = [DrakopoulosGraphiteAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter, NaIonHTEAdapter, ArtisticSimulationAdapter]
+
+
+def _metrics(actual: np.ndarray, predicted: np.ndarray) -> dict[str, float | None]:
+    residual = actual - predicted
+    variance = float(np.sum((actual - actual.mean()) ** 2))
+    return {
+        "mae": float(np.mean(np.abs(residual))),
+        "rmse": float(np.sqrt(np.mean(residual ** 2))),
+        "r2": float(1 - np.sum(residual ** 2) / variance) if len(actual) > 1 and variance else None,
+    }
+
+
+def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
+    targets = sorted({name for run in adapter.load_runs() for name, value in run.final_kpis.items() if isinstance(value.value, (int, float))})
+    reports: list[dict[str, object]] = []
+    for target in targets:
+        try:
+            frame = adapter.build_training_view(ProcessPredictionTask(target, ProcessStage.FINAL_CHARACTERIZATION))
+        except ValueError as exc:
+            reports.append({"target": target, "status": "SKIPPED", "reason": str(exc)})
+            continue
+        X, y, groups = frame.features.to_numpy(), frame.targets.to_numpy(), frame.groups.to_numpy()
+        if len(X) < 8 or len(set(groups)) < 4:
+            reports.append({"target": target, "status": "SKIPPED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
+            continue
+        outer = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed)
+        train_calibration, test = next(outer.split(X, y, groups))
+        inner = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed + 1)
+        train_relative, calibration_relative = next(inner.split(X[train_calibration], y[train_calibration], groups[train_calibration]))
+        train, calibration = train_calibration[train_relative], train_calibration[calibration_relative]
+        model = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train])
+        calibration_mean, _ = model.predict_distribution(X[calibration])
+        test_mean, _ = model.predict_distribution(X[test])
+        lower, upper = conformal_interval(test_mean, y[calibration] - calibration_mean)
+        reports.append({
+            "target": target, "status": "EVALUATED", "model": "ExtraTreesRegressor", "split": "grouped holdout with disjoint grouped calibration",
+            "rows": len(X), "groups": len(set(groups)), "train_rows": len(train), "calibration_rows": len(calibration), "test_rows": len(test),
+            "metrics": _metrics(y[test], test_mean), "interval": {"nominal_coverage": 0.9, "empirical_coverage": float(np.mean((y[test] >= lower) & (y[test] <= upper))), "calibration_residual_count": len(calibration)},
+        })
+    return reports
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a source-backed BPSS benchmark manifest.")
     parser.add_argument("--output", type=Path, default=Path("outputs/process_benchmark"))
     parser.add_argument("--allow-unavailable", action="store_true", help="Write an audit-only manifest when raw source data have not been acquired.")
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     root = args.output
     for directory in ("dataset_audits", "prediction", "calibration", "multimodal_ablations", "missing_modality", "stage_ablations", "optimization", "stress", "figures"):
         (root / directory).mkdir(parents=True, exist_ok=True)
     audits = []
     unavailable = []
+    evaluated = []
     for adapter_class in ADAPTERS:
         adapter = adapter_class()
         report = adapter.validate()
@@ -32,10 +81,16 @@ def main() -> None:
         audits.append(audit)
         if not report.valid:
             unavailable.append(dataset_id)
-    manifest = {"suite": "BPSS", "datasets": audits, "status": "AUDIT_ONLY" if unavailable else "READY", "unavailable": unavailable}
+            continue
+        predictions = _grouped_prediction(adapter, seed=args.seed)
+        prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
+        (root / "prediction" / f"{dataset_id}.json").write_text(json.dumps(prediction_report, indent=2), encoding="utf-8")
+        (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval")} for item in predictions]}, indent=2), encoding="utf-8")
+        evaluated.append(dataset_id)
+    manifest = {"suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable, "evaluated": evaluated, "seed": args.seed}
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
-        "# Battery Process Stress Suite\n\n" + ("Raw source data are not yet auditable: " + ", ".join(unavailable) if unavailable else "All registered adapters passed source validation."),
+        "# Battery Process Stress Suite\n\n" + "Grouped ExtraTrees baseline and split-conformal coverage are written for source-backed scalar tasks. " + ("Unavailable sources: " + ", ".join(unavailable) if unavailable else "All registered adapters passed source validation."),
         encoding="utf-8",
     )
     if unavailable and not args.allow_unavailable:
