@@ -52,7 +52,11 @@ interface Props {
 const sourceNumber = (value: unknown, digits = 4) =>
   typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : 'Not recorded';
 
-const SurrogateOptimizationPanel: React.FC<{ view: SurrogateOptimizationView; simulation: SnapshotData['electrolyte_simulation'] }> = ({ view, simulation }) => {
+const SurrogateOptimizationPanel: React.FC<{
+  view: SurrogateOptimizationView;
+  simulation: SnapshotData['electrolyte_simulation'];
+  onBackToSetup?: () => void;
+}> = ({ view, simulation, onBackToSetup }) => {
   const run = view.simulationRun;
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
@@ -63,9 +67,20 @@ const SurrogateOptimizationPanel: React.FC<{ view: SurrogateOptimizationView; si
             <h1 className="text-2xl font-bold text-[#17201F] mt-2">{view.displayName}</h1>
             <p className="text-sm text-[#66706C] mt-1 max-w-3xl">{view.banner.description}</p>
           </div>
-          <div className="text-right text-xs font-mono text-[#66706C]">
-            <div>Policy: {view.policy === 'HYBRID_DEFAULT' ? 'Hybrid Policy' : view.policy}</div>
-            <div className="text-[#DC2626] font-semibold">{view.banner.badge}</div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="text-right text-xs font-mono text-[#66706C]">
+              <div>Policy: {view.policy === 'HYBRID_DEFAULT' ? 'Hybrid Policy' : view.policy}</div>
+              <div className="text-[#DC2626] font-semibold">{view.banner.badge}</div>
+            </div>
+            {onBackToSetup && (
+              <button
+                onClick={onBackToSetup}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FCFCFA] hover:bg-[#F4F3EE] text-[#17201F] border border-[#D9DFDB] rounded-lg text-xs font-semibold shadow-2xs transition cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-[#DC2626]" />
+                <span>Change configuration</span>
+              </button>
+            )}
           </div>
         </div>
       </section>
@@ -120,14 +135,14 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   const electrolyteInfo = registryEntries.find((entry) => entry.id === 'anode_free_electrolyte_screening');
   const alabInfo = registryEntries.find((entry) => entry.id === 'alab_precursor_genome');
   const controlledPolicyOptions = [
-    { id: 'hig_cost_penalized', sourceId: 'HYBRID', label: 'Hybrid policy', tag: 'HYBRID' },
-    { id: 'greedy_hig', sourceId: 'PURE_HIG', label: 'Pure HIG policy', tag: 'PURE_HIG' },
-    { id: 'discovery_only', sourceId: 'DISCOVERY_ONLY', label: 'Discovery-only policy', tag: 'DISCOVERY_ONLY' },
+    { id: 'HYBRID', sourceId: 'HYBRID', label: 'Hybrid policy (HIG + Cost + Discovery)', tag: 'HYBRID' },
+    { id: 'PURE_HIG', sourceId: 'PURE_HIG', label: 'Pure HIG policy (Information Gain Only)', tag: 'PURE_HIG' },
+    { id: 'DISCOVERY_ONLY', sourceId: 'DISCOVERY_ONLY', label: 'Discovery-only policy (Exploitation)', tag: 'DISCOVERY_ONLY' },
   ].filter((option) => (controlledInfo?.availableConfigurations || []).some((configuration) => configuration.policy === option.sourceId));
   const surrogatePolicyOptions = [
-    { id: 'hig_cost_penalized', sourceId: 'HYBRID_DEFAULT', label: 'Hybrid surrogate policy', tag: 'HYBRID_DEFAULT' },
-    { id: 'greedy_hig', sourceId: 'PURE_FALSIFICATION', label: 'Pure falsification policy', tag: 'PURE_FALSIFICATION' },
-    { id: 'random_baseline', sourceId: 'RANDOM', label: 'Random surrogate policy', tag: 'RANDOM' },
+    { id: 'HYBRID_DEFAULT', sourceId: 'HYBRID_DEFAULT', label: 'Hybrid surrogate policy (Uncertainty + Target)', tag: 'HYBRID_DEFAULT' },
+    { id: 'PURE_FALSIFICATION', sourceId: 'PURE_FALSIFICATION', label: 'Pure falsification policy', tag: 'PURE_FALSIFICATION' },
+    { id: 'RANDOM', sourceId: 'RANDOM', label: 'Random surrogate policy', tag: 'RANDOM' },
   ].filter((option) => (electrolyteInfo?.availableConfigurations || []).some((configuration) => configuration.policy === option.sourceId));
 
   // Flow state (setup -> running -> results)
@@ -138,16 +153,23 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
     onFlowStateChange?.(s);
   };
 
+  // Policy configuration state - reset on dataset change to prevent cross-domain leakage
+  const [selectedPolicy, setSelectedPolicy] = useState<string>('HYBRID');
+
   // Dataset / Research question option
   const [internalDataset, setInternalDataset] = useState<DatasetOption>('controlled_synthesis');
   const dataset = controlledDataset ?? internalDataset;
   const updateDataset = (d: DatasetOption) => {
     setInternalDataset(d);
     onDatasetChange?.(d);
+    if (d === 'electrolyte_search' || d === 'anode_free_electrolyte_screening') {
+      setSelectedPolicy('HYBRID_DEFAULT');
+    } else if (d === 'alab_replay' || d === 'alab_precursor_genome') {
+      setSelectedPolicy(String(alabInfo?.defaultConfiguration?.policy || 'HYBRID'));
+    } else {
+      setSelectedPolicy('HYBRID');
+    }
   };
-
-  // Policy configuration state
-  const [selectedPolicy, setSelectedPolicy] = useState<'hig_cost_penalized' | 'greedy_hig' | 'random_baseline'>('hig_cost_penalized');
 
   // Running animation state
   const [runningProgress, setRunningProgress] = useState<number>(0);
@@ -161,10 +183,21 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   const totalSteps = steps.length;
   const [stepIndex, setStepIndex] = useState<number>(controlledStepIndex);
 
-  // Reset step index when dataset changes
+  // Reset step index and ensure correct policy domain when dataset changes
   useEffect(() => {
     setStepIndex(1);
     updateRevealPhase('A_SCORED');
+    if (dataset === 'electrolyte_search' || dataset === 'anode_free_electrolyte_screening') {
+      if (selectedPolicy !== 'HYBRID_DEFAULT' && selectedPolicy !== 'PURE_FALSIFICATION' && selectedPolicy !== 'RANDOM') {
+        setSelectedPolicy('HYBRID_DEFAULT');
+      }
+    } else if (dataset === 'alab_replay' || dataset === 'alab_precursor_genome') {
+      // alab fixed replay
+    } else {
+      if (selectedPolicy !== 'HYBRID' && selectedPolicy !== 'PURE_HIG' && selectedPolicy !== 'DISCOVERY_ONLY') {
+        setSelectedPolicy('HYBRID');
+      }
+    }
   }, [dataset]);
 
   // Sync controlledStepIndex
@@ -223,7 +256,6 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
       </section>
     );
   }
-  if (resolved.kind === 'surrogate_optimization') return <SurrogateOptimizationPanel view={resolved} simulation={data.electrolyte_simulation} />;
 
   const handleStepSelect = (s: number) => {
     const clamped = Math.max(1, Math.min(s, totalSteps));
@@ -300,9 +332,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   const allActions = currentStep?.all_scored_actions || currentStep?.top_actions || [];
   const inspectedAction: ScoredActionRecord | null = allActions.find(
     (a) => a.action?.candidate_id === selectedCandidateId && a.action?.action_type === selectedModality
-  ) || winnerAction || null;
+  ) || null;
 
-  const initBeliefs = resolved.campaign.initial_beliefs || {};
+  const initBeliefs = ('campaign' in resolved ? resolved.campaign.initial_beliefs : {}) || {};
   const selectedHistoricalSample = resolved.kind === 'historical_replay'
     ? resolved.alabSamples.find((sample) => sample.sample_id === selectedCandidateId)
     : undefined;
@@ -470,7 +502,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-2xs font-mono text-[#8F9995]">
                         <span>Source samples: {alabInfo?.candidateCount ?? 'N/A'}</span>
                         <span>•</span>
-                        <span>Featured targets: {alabInfo?.featuredCandidateIds?.length ?? 9} characterized benchmarks</span>
+                        <span>Featured targets: {alabInfo?.featuredCandidateIds?.length ?? 'Not recorded'} characterized benchmarks</span>
                         <span>•</span>
                         <span className="text-[#DC2626] font-semibold">Status: {alabInfo?.statusBadge || 'N/A'}</span>
                       </div>
@@ -543,8 +575,8 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                   <div className="p-3 rounded-xl bg-[#FCFCFA] border border-[#D9DFDB] text-2xs text-[#66706C] space-y-1">
                     <div className="text-[#17201F] font-bold">Surrogate Optimization Framework:</div>
                     <div>• Optimization Model: Ensemble Surrogate Regressor</div>
-                    <div>• Target Property: {electrolyteInfo?.scientificTargetName || 'Capacity Retention (Cycle 20)'}</div>
-                    <div>• Candidate Search Space: {electrolyteInfo?.candidateCount ? electrolyteInfo.candidateCount.toLocaleString() : '333,333'} virtual candidates (Screened: {electrolyteInfo?.screenedWorkingSetCount ?? 200})</div>
+                    <div>• Target Property: {electrolyteInfo?.scientificTargetName || 'Not recorded'}</div>
+                    <div>• Candidate Search Space: {electrolyteInfo?.candidateCount ? electrolyteInfo.candidateCount.toLocaleString() : 'Not recorded'} virtual candidates (Screened: {electrolyteInfo?.screenedWorkingSetCount ?? 'Not recorded'})</div>
                   </div>
                 </div>
               ) : (
@@ -697,6 +729,16 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   }
 
   // STATE 3: RESULTS
+  if (resolved.kind === 'surrogate_optimization') {
+    return (
+      <SurrogateOptimizationPanel
+        view={resolved}
+        simulation={data.electrolyte_simulation}
+        onBackToSetup={() => updateFlowState('setup')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
       {/* Top Banner with Reset Option */}
@@ -799,38 +841,50 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             </div>
 
             {/* Candidate & Modality Summary */}
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                 <span className="text-2xs font-mono text-[#8F9995] block">Recorded Candidate</span>
-                <span className="text-sm font-bold font-mono text-[#17201F]">{selectedCandidateId}</span>
-              </div>
-              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                <span className="text-2xs font-mono text-[#8F9995] block">Modality</span>
-                 <span className="text-sm font-bold text-[#DC2626]">{selectedModality}</span>
-              </div>
-              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                <span className="text-2xs font-mono text-[#8F9995] block">Composite Score</span>
-                <span className="text-sm font-bold font-mono text-[#17201F]">
-                  {inspectedAction?.total_action_score !== undefined
-                    ? `${inspectedAction.total_action_score >= 0 ? '+' : ''}${inspectedAction.total_action_score.toFixed(4)}`
-                    : 'N/A'}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                <span className="text-2xs font-mono text-[#8F9995] block">Information Gain</span>
-                <span className="text-sm font-bold font-mono text-[#DC2626]">
-                  {inspectedAction?.raw_expected_hig_nats !== undefined
-                    ? `${inspectedAction.raw_expected_hig_nats.toFixed(3)} nats`
-                    : inspectedAction?.expected_hig_nats !== undefined
-                    ? `${inspectedAction.expected_hig_nats.toFixed(3)} nats`
-                    : 'N/A'}
-                </span>
-              </div>
-            </div>
+            {inspectedAction ? (
+              <>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
+                    <span className="text-2xs font-mono text-[#8F9995] block">Recorded Candidate</span>
+                    <span className="text-sm font-bold font-mono text-[#17201F]">{selectedCandidateId}</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
+                    <span className="text-2xs font-mono text-[#8F9995] block">Modality</span>
+                    <span className="text-sm font-bold text-[#DC2626]">{selectedModality}</span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
+                    <span className="text-2xs font-mono text-[#8F9995] block">Composite Score</span>
+                    <span className="text-sm font-bold font-mono text-[#17201F]">
+                      {inspectedAction.total_action_score !== undefined
+                        ? `${inspectedAction.total_action_score >= 0 ? '+' : ''}${inspectedAction.total_action_score.toFixed(4)}`
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
+                    <span className="text-2xs font-mono text-[#8F9995] block">Information Gain</span>
+                    <span className="text-sm font-bold font-mono text-[#DC2626]">
+                      {(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats) !== undefined
+                        ? `${(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats)?.toFixed(3)} nats`
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="mt-3 p-3 rounded-lg bg-[#FCFCFA] border border-[#D9DFDB] text-xs text-[#66706C]">
-               <strong>Recorded score context:</strong> {inspectedAction ? `${inspectedAction.action.action_type} on ${inspectedAction.action.candidate_id} has source score ${sourceNumber(inspectedAction.total_action_score)} and recorded cost ${sourceNumber(inspectedAction.action.estimated_cost)}.` : 'Source action record unavailable.'}
-            </div>
+                <div className="mt-3 p-3 rounded-lg bg-[#FCFCFA] border border-[#D9DFDB] text-xs text-[#66706C]">
+                  <strong>Recorded score context:</strong> {inspectedAction.action.action_type} on {inspectedAction.action.candidate_id} has source score {sourceNumber(inspectedAction.total_action_score)} and recorded cost {sourceNumber(inspectedAction.action.estimated_cost)}.
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 p-4 rounded-xl border border-[#D9DFDB] bg-[#F4F3EE] text-xs text-[#66706C] flex items-center gap-3">
+                <Info className="w-5 h-5 text-[#8F9995] shrink-0" />
+                <div>
+                  <div className="font-bold text-[#17201F]">Action not scored in this recorded step</div>
+                  <div className="mt-0.5 text-[#66706C]">
+                    Unavailable / infeasible action: {selectedCandidateId} × {selectedModality} was not evaluated in step {stepIndex}.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Interactive 4-State Scientific Loop Bar */}
             <div className="mt-5">
@@ -871,37 +925,43 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     <span>State A: Objective Scoring Matrix</span>
                     <span className="sci-badge sci-badge-verified">Multi-Objective HIG</span>
                   </div>
-                  <p>
-                    Source action-score records are shown as persisted; no presentation-layer weights or normalized components are reconstructed.
-                  </p>
-                  <div className="pt-1 grid grid-cols-3 gap-2 font-mono text-2xs">
-                    <div className="bg-white p-2 rounded border border-[#D9DFDB]">
-                      <span className="text-[#8F9995] block">Raw HIG</span>
-                      <span className="font-bold text-[#17201F]">
-                        {inspectedAction?.raw_expected_hig_nats !== undefined
-                          ? `${inspectedAction.raw_expected_hig_nats.toFixed(3)} nats`
-                          : inspectedAction?.expected_hig_nats !== undefined
-                          ? `${inspectedAction.expected_hig_nats.toFixed(3)} nats`
-                          : 'N/A'}
-                      </span>
+                  {inspectedAction ? (
+                    <>
+                      <p>
+                        Source action-score records are shown as persisted; no presentation-layer weights or normalized components are reconstructed.
+                      </p>
+                      <div className="pt-1 grid grid-cols-3 gap-2 font-mono text-2xs">
+                        <div className="bg-white p-2 rounded border border-[#D9DFDB]">
+                          <span className="text-[#8F9995] block">Raw HIG</span>
+                          <span className="font-bold text-[#17201F]">
+                            {(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats) !== undefined
+                              ? `${(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats)?.toFixed(3)} nats`
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="bg-white p-2 rounded border border-[#D9DFDB]">
+                          <span className="text-[#8F9995] block">Recorded Cost</span>
+                          <span className="font-bold text-[#B91C1C]">
+                            {inspectedAction.action?.estimated_cost !== undefined
+                              ? inspectedAction.action.estimated_cost.toFixed(3)
+                              : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="bg-white p-2 rounded border border-[#D9DFDB]">
+                          <span className="text-[#8F9995] block">Net Score</span>
+                          <span className="font-bold text-[#DC2626]">
+                            {inspectedAction.total_action_score !== undefined
+                              ? `${inspectedAction.total_action_score >= 0 ? '+' : ''}${inspectedAction.total_action_score.toFixed(4)}`
+                              : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-3 bg-white rounded border border-[#D9DFDB] text-[#66706C]">
+                      Action not scored in this recorded step. No source HIG, cost, or net score was evaluated for {selectedCandidateId} × {selectedModality}.
                     </div>
-                    <div className="bg-white p-2 rounded border border-[#D9DFDB]">
-                      <span className="text-[#8F9995] block">Recorded Cost</span>
-                      <span className="font-bold text-[#B91C1C]">
-                        {inspectedAction?.action?.estimated_cost !== undefined
-                          ? inspectedAction.action.estimated_cost.toFixed(3)
-                          : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="bg-white p-2 rounded border border-[#D9DFDB]">
-                      <span className="text-[#8F9995] block">Net Score</span>
-                      <span className="font-bold text-[#DC2626]">
-                        {inspectedAction?.total_action_score !== undefined
-                          ? `${inspectedAction.total_action_score >= 0 ? '+' : ''}${inspectedAction.total_action_score.toFixed(4)}`
-                          : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1094,7 +1154,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                   ) : (
                     <div>
                       <HypothesisBeliefTrajectoryChart
-                        data={data}
+                        campaign={'campaign' in resolved ? resolved.campaign : null}
                         currentStepIndex={stepIndex}
                         revealPhase={revealPhase}
                         onSelectStep={handleStepSelect}
@@ -1188,7 +1248,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
         {/* Score Decomposition Waterfall (33%) */}
         <section className="lg:col-span-4 sci-card p-6 space-y-4">
           <div className="border-b border-[#D9DFDB] pb-3">
-            <h2 className="text-base font-bold text-[#17201F]">Score Decomposition</h2>
+            <h2 className="text-base font-bold text-[#17201F]">Recorded Decision Score</h2>
             <p className="text-xs text-[#66706C] mt-0.5">Signed additive terms for action {selectedCandidateId} / {selectedModality}</p>
           </div>
 
@@ -1200,12 +1260,12 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
         </section>
       </div>
 
-      {/* Tertiary Collapsible Drawer: Counterfactuals & 3D Stark Hologram */}
+      {/* Tertiary Collapsible Drawer: Alternative Actions & Candidate-Space Hologram */}
       <details className="sci-card p-6 transition-all group">
         <summary className="font-bold text-sm text-[#17201F] cursor-pointer flex items-center justify-between select-none list-none">
           <div className="flex items-center gap-2">
             <Atom className="w-4 h-4 text-[#DC2626]" />
-            <span>Advanced Inspection: Counterfactual Actions & 3D Atomic Structure</span>
+            <span>Advanced Inspection: Recorded Alternative Actions & Candidate-Space Hologram</span>
             <span className="sci-badge sci-badge-surrogate">Optional Deep-Dive</span>
           </div>
           <span className="text-xs font-mono text-[#DC2626] underline group-open:hidden">Expand inspection drawer</span>
@@ -1213,9 +1273,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
         </summary>
 
         <div className="mt-6 pt-6 border-t border-[#D9DFDB] grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Counterfactuals Table */}
+          {/* Recorded Alternative Actions Table */}
           <div className="lg:col-span-7 space-y-3">
-            <h3 className="text-sm font-bold text-[#17201F]">Alternative Actions & Counterfactual Regret</h3>
+            <h3 className="text-sm font-bold text-[#17201F]">Recorded Alternative Actions</h3>
             <p className="text-xs text-[#66706C]">Why was this action chosen over high-information alternatives?</p>
 
             <div className="overflow-x-auto rounded-xl border border-[#D9DFDB] bg-white">
@@ -1231,8 +1291,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D9DFDB]">
-                  {allActions.slice(0, 4).map((a, idx) => {
-                    const isWinner = idx === 0;
+                  {([...allActions].sort((a, b) => (b.total_action_score ?? 0) - (a.total_action_score ?? 0))).slice(0, 4).map((a, idx) => {
+                    const winningActionId = currentStep?.preregistration?.action?.action_id || winnerAction?.action?.action_id;
+                    const isWinner = Boolean(winningActionId && a.action?.action_id === winningActionId);
                     return (
                       <tr key={idx} className={isWinner ? 'bg-[#FEF2F2]/60 font-semibold' : 'hover:bg-[#F4F3EE]/50'}>
                         <td className="p-2.5 font-mono">#{idx + 1}</td>
@@ -1247,7 +1308,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                             : 'N/A'}
                         </td>
                         <td className="p-2.5 text-2xs text-[#66706C]">
-                          {isWinner ? 'Optimal HIG-to-cost ratio' : 'High cost penalty suppresses net score'}
+                          {(a as any).rationale || 'No source rationale recorded'}
                         </td>
                       </tr>
                     );
@@ -1257,11 +1318,11 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 3D Stark Hologram Sphere */}
+          {/* 3D Candidate-Space Hologram Sphere */}
           <div className="lg:col-span-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#17201F]">3D Stark Hologram</h3>
-              <span className="text-2xs font-mono text-[#8F9995]">Atomic Lattice Visualizer</span>
+              <h3 className="text-sm font-bold text-[#17201F]">Candidate-Space Hologram</h3>
+              <span className="text-2xs font-mono text-[#8F9995]">Candidate Geometry</span>
             </div>
             <div className="rounded-xl border border-[#D9DFDB] bg-[#17201F] overflow-hidden p-2">
               <StarkHologramSphere
@@ -1272,7 +1333,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               />
             </div>
             <p className="text-2xs text-[#8F9995] text-center font-mono">
-              Interactive 3D representation of simulated candidate crystal structure.
+              Presentation-only candidate layout. Spatial position and distance do not represent crystallographic or chemical similarity.
             </p>
           </div>
         </div>

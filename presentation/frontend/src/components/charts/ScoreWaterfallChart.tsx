@@ -11,7 +11,7 @@ import {
   ReferenceLine
 } from 'recharts';
 import { ScoredActionRecord } from '../../types/mission_control';
-import { Calculator, Check } from 'lucide-react';
+import { Calculator, AlertCircle } from 'lucide-react';
 
 interface Props {
   action: ScoredActionRecord | null;
@@ -20,102 +20,66 @@ interface Props {
 export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
   if (!action) {
     return (
-      <div className="w-full h-48 flex items-center justify-center text-xs text-[#8F9995] font-mono">
-        No candidate action selected for score decomposition
+      <div className="w-full h-56 flex flex-col items-center justify-center text-xs text-[#8F9995] font-mono p-4 text-center border border-dashed border-[#D9DFDB] rounded-xl bg-[#FCFCFA]">
+        <AlertCircle className="w-5 h-5 text-[#8F9995] mb-2" />
+        <span className="font-semibold text-[#17201F]">Action not scored in this recorded step</span>
+        <span className="text-2xs text-[#8F9995] mt-1">This candidate × modality combination was not evaluated by the decision policy.</span>
       </div>
     );
   }
-
-  if (
-    action.w_hig === undefined ||
-    action.w_discovery === undefined ||
-    action.w_cost === undefined ||
-    action.normalized_hig === undefined ||
-    action.normalized_discovery === undefined ||
-    action.normalized_cost === undefined ||
-    action.weighted_hig_contribution === undefined ||
-    action.weighted_discovery_contribution === undefined ||
-    action.weighted_cost_contribution === undefined ||
-    action.total_action_score === undefined
-  ) {
-    return (
-      <div className="w-full h-48 flex flex-col items-center justify-center text-xs text-[#8F9995] font-mono p-4 text-center">
-        <span>Score decomposition unavailable for this action record</span>
-      </div>
-    );
-  }
-
-  const wHig = action.w_hig;
-  const wDisc = action.w_discovery;
-  const wCost = action.w_cost;
-
-  const normHig = action.normalized_hig;
-  const normDisc = action.normalized_discovery;
-  const normCost = action.normalized_cost;
-
-  const higContrib = action.weighted_hig_contribution;
-  const discContrib = action.weighted_discovery_contribution;
-  const costContrib = -action.weighted_cost_contribution;
-  const totalScore = action.total_action_score;
 
   const rawHigNats = action.raw_expected_hig_nats ?? action.expected_hig_nats;
-  const rawHigStr = rawHigNats !== undefined
-    ? `${rawHigNats.toFixed(3)} nats (norm: ${normHig.toFixed(3)})`
-    : `norm: ${normHig.toFixed(3)}`;
+  const rawDisc = action.raw_discovery_utility ?? action.discovery_utility;
+  const cost = action.normalized_cost ?? action.action?.estimated_cost;
+  const totalScore = action.total_action_score;
 
   const chartData = [
     {
       name: 'Expected HIG',
-      shortName: '+w_H · HIG',
-      value: parseFloat(higContrib.toFixed(4)),
-      raw: rawHigStr,
-      formula: 'Source-recorded component',
-      color: '#DC2626', // Emerald
-      isPenalty: false
+      shortName: 'Expected HIG',
+      value: rawHigNats !== undefined ? parseFloat(rawHigNats.toFixed(4)) : 0,
+      displayVal: rawHigNats !== undefined ? `${rawHigNats.toFixed(3)} nats` : 'Not recorded',
+      description: 'Mutual information / entropy reduction',
+      color: '#DC2626',
     },
     {
       name: 'Discovery Utility',
-      shortName: '+w_D · D',
-      value: parseFloat(discContrib.toFixed(4)),
-      raw: `Utility: ${normDisc.toFixed(3)}`,
-      formula: 'Source-recorded component',
-      color: '#d97706', // Amber
-      isPenalty: false
+      shortName: 'Discovery Utility',
+      value: rawDisc !== undefined ? parseFloat(rawDisc.toFixed(4)) : 0,
+      displayVal: rawDisc !== undefined ? rawDisc.toFixed(4) : 'Not recorded',
+      description: 'Exploitation utility value',
+      color: '#D97706',
     },
     {
-      name: 'Cost Penalty',
-      shortName: '-w_C · C',
-      value: parseFloat(costContrib.toFixed(4)),
-      raw: `Cost: ${normCost.toFixed(3)}`,
-      formula: 'Source-recorded component',
-      color: '#e11d48', // Rose / Red
-      isPenalty: true
+      name: 'Recorded Cost',
+      shortName: 'Cost Metric',
+      value: cost !== undefined ? parseFloat(cost.toFixed(4)) : 0,
+      displayVal: cost !== undefined ? cost.toFixed(3) : 'Not recorded',
+      description: 'Normalized measurement cost',
+      color: '#64748B',
     },
     {
-      name: 'Net Score S(a)',
-      shortName: '= Net Score',
-      value: parseFloat(totalScore.toFixed(4)),
-      raw: 'Signed Dimensionless',
-      formula: 'Sum of components',
-      color: totalScore >= 0 ? '#991B1B' : '#0f172a', // Dark Slate or deep emerald
+      name: 'Total Score',
+      shortName: 'Net Score S(a)',
+      value: totalScore !== undefined ? parseFloat(totalScore.toFixed(4)) : 0,
+      displayVal: totalScore !== undefined ? `${totalScore >= 0 ? '+' : ''}${totalScore.toFixed(4)}` : 'Not recorded',
+      description: 'Recorded decision score',
+      color: (totalScore ?? 0) >= 0 ? '#991B1B' : '#0F172A',
       isTotal: true
     }
   ];
-
-  const sumCheck = Math.abs(higContrib + discContrib + costContrib - totalScore) < 1e-4;
 
   return (
     <div className="w-full flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Calculator className="w-4 h-4 text-red-600" />
-          <h4 className="text-sm font-bold text-slate-900 tracking-tight">
-            Exact Score Decomposition
+          <Calculator className="w-4 h-4 text-[#DC2626]" />
+          <h4 className="text-sm font-bold text-[#17201F] tracking-tight">
+            Recorded Decision Score
           </h4>
         </div>
-        <div className="flex items-center gap-1.5 text-2xs font-mono text-red-800 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
-          <Check className="w-3 h-3 text-red-600" />
-          <span>Dimensionless Scalar</span>
+        <div className="flex items-center gap-1.5 text-2xs font-mono text-[#991B1B] bg-[#FEF2F2] px-2 py-0.5 rounded-full border border-[#FECACA]">
+          <span>{action.policy_name ? `Policy: ${action.policy_name}` : 'Recorded Action'}</span>
         </div>
       </div>
 
@@ -125,12 +89,12 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
             <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
             <XAxis
               dataKey="shortName"
-              tick={{ fill: '#334155', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
+              tick={{ fill: '#334155', fontSize: 11, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
               tickLine={false}
               axisLine={{ stroke: '#D9DFDB' }}
             />
             <YAxis
-              tick={{ fill: '#475569', fontSize: 12, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
+              tick={{ fill: '#475569', fontSize: 11, fontWeight: 500, fontFamily: "'Montserrat', Arial, sans-serif" }}
               tickLine={false}
               axisLine={{ stroke: '#D9DFDB' }}
             />
@@ -145,7 +109,7 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
                 fontFamily: "'Montserrat', Arial, sans-serif"
               }}
               formatter={(value: any, name: any, item: any) => [
-                `${Number(value).toFixed(4)} (${item.payload.formula})`,
+                `${item.payload.displayVal} (${item.payload.description})`,
                 item.payload.name
               ]}
             />
@@ -158,19 +122,16 @@ export const ScoreWaterfallChart: React.FC<Props> = ({ action }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Formula breakdown footer */}
-      <div className="mt-1 pt-2 border-t border-slate-100 flex flex-col gap-1 text-2xs font-mono text-slate-600">
+      {/* Honest disclosure footer */}
+      <div className="mt-1 pt-2 border-t border-[#D9DFDB] flex flex-col gap-1 text-2xs font-mono text-[#66706C]">
         <div className="flex items-center justify-between">
-          <span className="text-slate-500">Source-recorded score components</span>
-          <span className="font-bold text-slate-900">
-            {totalScore >= 0 ? `+${totalScore.toFixed(4)}` : totalScore.toFixed(4)}
+          <span className="text-[#8F9995]">Total Action Score S(a)</span>
+          <span className="font-bold text-[#17201F]">
+            {totalScore !== undefined ? `${totalScore >= 0 ? '+' : ''}${totalScore.toFixed(4)}` : 'Not recorded'}
           </span>
         </div>
-        <div className="flex items-center justify-between text-3xs text-slate-400">
-          <span>Weights: w_H={wHig}, w_D={wDisc}, w_C={wCost}</span>
-          <span className={sumCheck ? 'text-red-600 font-semibold' : 'text-rose-600'}>
-            {sumCheck ? '✓ Additive consistency verified' : '⚠ Component mismatch'}
-          </span>
+        <div className="text-3xs text-[#8F9995] mt-0.5">
+          Full weighted decomposition is not persisted in the source record.
         </div>
       </div>
     </div>

@@ -363,7 +363,11 @@ export function resolveCampaign(
     if (configuration.runId !== undefined || configuration.world !== undefined) {
       return failure('UNSUPPORTED_CONFIGURATION', 'Surrogate trajectories accept only an exact source policy and seed tuple.');
     }
-    const requestedPolicy = configuration.policy ?? selectedPolicyId ?? String(entry.defaultConfiguration.policy);
+    const requestedPolicyRaw = configuration.policy ?? selectedPolicyId;
+    if (requestedPolicyRaw && ['HYBRID', 'PURE_HIG', 'DISCOVERY_ONLY', 'RANDOM_ACTION'].includes(requestedPolicyRaw)) {
+      return failure('UNKNOWN_POLICY', `Policy ${requestedPolicyRaw} is a controlled multimodal policy and cannot be applied to electrolyte surrogate screening.`, availableAlternatives(entry, 'SIMULATED_SURROGATE'));
+    }
+    const requestedPolicy = requestedPolicyRaw ?? String(entry.defaultConfiguration.policy);
     const policy = SURROGATE_POLICY_ALIASES[requestedPolicy] || requestedPolicy;
     if (!Object.prototype.hasOwnProperty.call(runs, policy)) {
       return failure('UNKNOWN_POLICY', `No surrogate policy is recorded as ${requestedPolicy}.`, availableAlternatives(entry, 'SIMULATED_SURROGATE'));
@@ -378,6 +382,9 @@ export function resolveCampaign(
   }
 
   const policyInput = configuration.policy ?? selectedPolicyId;
+  if (policyInput && ['HYBRID_DEFAULT', 'PURE_FALSIFICATION', 'RANDOM'].includes(policyInput)) {
+    return failure('UNKNOWN_POLICY', `Policy ${policyInput} is an electrolyte surrogate policy and cannot be applied to ${canonicalId}.`, availableAlternatives(entry, canonicalId === 'alab_precursor_genome' ? 'HISTORICAL_REPLAY' : 'CONTROLLED_SYNTHETIC'));
+  }
   const requestedPolicy = policyInput ? POLICY_ALIASES[policyInput] || policyInput : undefined;
   const expectedMode = canonicalId === 'alab_precursor_genome' ? 'HISTORICAL_REPLAY' : 'CONTROLLED_SYNTHETIC';
   const runResult = recordedRun(snapshot, entry, { ...configuration, policy: requestedPolicy }, entry.defaultConfiguration, expectedMode);

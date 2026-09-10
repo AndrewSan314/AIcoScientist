@@ -22,7 +22,8 @@ type BenchmarkMetricKey =
   | 'mean_final_true_hypothesis_probability'
   | 'mean_entropy_reduction'
   | 'mean_measurement_cost'
-  | 'steps_to_posterior_gt_0.8';
+  | 'crossing_rate_p08'
+  | 'mean_steps_conditional_on_crossing';
 
 const POLICY_DISPLAY_NAMES: Record<string, string> = {
   RANDOM: 'Random',
@@ -54,7 +55,8 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
     mean_final_true_hypothesis_probability: { label: 'Final True H Probability', unit: '%', maxVal: 1.0 },
     mean_entropy_reduction: { label: 'Mean Entropy Reduction', unit: ' nats' },
     mean_measurement_cost: { label: 'Mean Measurement Cost', unit: ' cost units' },
-    'steps_to_posterior_gt_0.8': { label: 'Steps to Posterior > 0.8', unit: ' steps' }
+    crossing_rate_p08: { label: 'P > 0.8 Crossing Rate', unit: '%', maxVal: 1.0 },
+    mean_steps_conditional_on_crossing: { label: 'Steps to P > 0.8 (Conditional Mean)', unit: ' steps' }
   };
 
   const worldData = benchmarks.summary_by_world_policy?.[selectedWorld] || {};
@@ -63,8 +65,10 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
   const chartData = policies.map((p) => {
     const stats = worldData[p] || {};
     let val: number | null = null;
-    if (selectedMetric === 'steps_to_posterior_gt_0.8') {
-      val = stats['steps_to_posterior_gt_0.8'] ?? stats['mean_steps_to_posterior_gt_0.8'] ?? null;
+    if (selectedMetric === 'crossing_rate_p08') {
+      val = stats.threshold_metrics?.['P>0.8']?.crossing_rate ?? stats['recovery_rate_posterior_gt_0.8'] ?? null;
+    } else if (selectedMetric === 'mean_steps_conditional_on_crossing') {
+      val = stats.threshold_metrics?.['P>0.8']?.mean_steps_conditional_on_crossing ?? stats['mean_steps_to_posterior_gt_0.8'] ?? null;
     } else {
       val = stats[selectedMetric] ?? null;
     }
@@ -82,7 +86,8 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
 
   const isPercentage =
     selectedMetric === 'recovery_rate_MAP' ||
-    selectedMetric === 'mean_final_true_hypothesis_probability';
+    selectedMetric === 'mean_final_true_hypothesis_probability' ||
+    selectedMetric === 'crossing_rate_p08';
 
   return (
     <div className="w-full flex flex-col">
@@ -199,6 +204,9 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
         <div className="text-[#8F9995]">
           Evaluated across {benchmarks.trajectory_count ?? 'N/A'} source trajectories ({benchmarks.seeds?.length ?? 'N/A'} independent trials per policy)
         </div>
+      </div>
+      <div className="mt-1 text-3xs text-[#8F9995] font-mono">
+        Note: Runs not crossing P &gt; 0.8 within budget are censored and excluded from the conditional mean step count.
       </div>
     </div>
   );

@@ -10,13 +10,13 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { SnapshotData, RevealPhase } from '../../types/mission_control';
+import { FlagshipCampaign, ReplayCampaign, RevealPhase } from '../../types/mission_control';
 
 interface Props {
-  data: SnapshotData;
+  campaign?: FlagshipCampaign | ReplayCampaign | null;
   currentStepIndex: number;
   revealPhase: RevealPhase;
-  onSelectStep: (step: number) => void;
+  onSelectStep?: (step: number) => void;
 }
 
 // Calculate Shannon entropy in nats: H(p) = -sum(p * ln(p))
@@ -25,13 +25,13 @@ function shannonEntropyNats(probs: number[]): number {
 }
 
 export const HypothesisBeliefTrajectoryChart: React.FC<Props> = ({
-  data,
+  campaign,
   currentStepIndex,
   revealPhase,
   onSelectStep
 }) => {
-  const steps = data.flagship_campaign?.steps || [];
-  const initBeliefs = data.flagship_campaign?.initial_beliefs || {};
+  const steps = campaign?.steps || [];
+  const initBeliefs = campaign?.initial_beliefs || {};
 
   const initH1 = initBeliefs['H1_PHASE_PURITY_LIMITED'];
   const initH2 = initBeliefs['H2_COMPOSITION_HOMOGENEITY_LIMITED'];
@@ -117,7 +117,7 @@ export const HypothesisBeliefTrajectoryChart: React.FC<Props> = ({
           {steps.map((s) => (
             <button
               key={s.step}
-              onClick={() => onSelectStep(s.step)}
+              onClick={() => onSelectStep?.(s.step)}
               className={`px-2 py-0.5 rounded font-bold transition-colors cursor-pointer text-2xs ${
                 currentStepIndex === s.step
                   ? 'bg-[#B91C1C] text-white shadow-xs'

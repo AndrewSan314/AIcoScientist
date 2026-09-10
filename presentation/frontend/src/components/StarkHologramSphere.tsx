@@ -60,7 +60,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [scanSequenceActive, setScanSequenceActive] = useState(false);
-  const [scanStatusText, setScanStatusText] = useState(`LATTICE READY // ${candidates.length} CANDIDATES`);
+  const [scanStatusText, setScanStatusText] = useState(`HOLOGRAM READY // ${candidates.length} CANDIDATES`);
   const [hoveredAtom, setHoveredAtom] = useState<AtomNode | null>(null);
 
   const winnerId = currentStep?.preregistration?.action?.candidate_id || '';
@@ -171,11 +171,11 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           electronAngle: Math.random() * Math.PI * 2,
         });
       } else {
-        // Purely decorative lattice point for 3D structure
+        // Purely decorative guide node for 3D layout
         newAtoms.push({
-          id: `lattice-${i}`,
-          label: `Lattice #${i}`,
-          composition: 'Structural Lattice Scaffold Point',
+          id: `scaffold-${i}`,
+          label: `Scaffold #${i}`,
+          composition: 'Candidate-Space Scaffold Guide Node',
           kind: 'DECORATIVE_LATTICE_NODE',
            isSelectable: false,
            layout: { kind: 'PRESENTATION_ONLY', algorithm: 'FIBONACCI_SPHERE', x: x0, y: y0, z: z0 },
@@ -202,7 +202,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
     }
 
     atomsRef.current = newAtoms;
-    setScanStatusText(`LATTICE READY // ${candidates.length} CANDIDATES IN ACTION POOL`);
+    setScanStatusText(`HOLOGRAM READY // ${candidates.length} CANDIDATES IN ACTION POOL`);
   }, [candidates, selectedCandidateId, winnerId, currentStep, winnerActionType]);
 
   const triggerStarkScanSequence = useCallback(() => {
@@ -440,15 +440,15 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
       } else {
         c.fillStyle = '#94a3b8';
         c.font = 'bold 9px monospace';
-        c.fillText(`// LATTICE GEOMETRY`, hx + 6, hy + 13);
+        c.fillText(`// SCAFFOLD GEOMETRY`, hx + 6, hy + 13);
 
         c.fillStyle = '#cbd5e1';
         c.font = 'bold 10px monospace';
-        c.fillText('Structural Lattice Point', hx + 6, hy + 26);
+        c.fillText('Scaffold Guide Node', hx + 6, hy + 26);
 
         c.fillStyle = '#64748b';
         c.font = '8px monospace';
-        c.fillText('Decorative 3D Scaffold', hx + 6, hy + 38);
+        c.fillText('Presentation-only 3D Scaffold', hx + 6, hy + 38);
       }
       c.restore();
     };
@@ -726,7 +726,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-mono text-xs font-bold tracking-widest text-red-400">
-                STARK ATOMIC LATTICE
+                CANDIDATE-SPACE HOLOGRAM
               </span>
               <span className="text-2xs font-mono px-1.5 py-0.5 rounded bg-red-950/80 text-red-300 border border-red-800/60">
                 RUBY SPHERE
@@ -802,7 +802,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-red-950/60" />
-            <span className="text-slate-500">Lattice Point (Decorative)</span>
+            <span className="text-slate-500">Scaffold Guide Node (Non-physical)</span>
           </div>
         </div>
 
