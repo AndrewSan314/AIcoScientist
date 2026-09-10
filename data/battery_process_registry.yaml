@@ -1,0 +1,116 @@
+datasets:
+  - id: drakopoulos_graphite
+    display_name: Graphite Process-15
+    chemistry: graphite Li-ion electrode
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.17632/4dh2h3tsf4.1
+    version: "1"
+    license: CC BY 4.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [FORMULATION, MIXING, COATING, DRYING, CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY]
+    control_variables: null
+    intermediate_targets: null
+    final_targets: null
+    grouping_keys: null
+    known_missingness: null
+    known_leakage_fields: null
+    recommended_splits: [GROUP_BY_PROCESS_RECIPE, OOD_FACTOR_EXTREME]
+    optimization_capable: true
+    multimodal_capable: false
+    limitations: Raw files and schema must be audited before use.
+  - id: warwick_nmc622
+    display_name: Warwick NMC622 Pilot Multimodal
+    chemistry: NMC622 Li-ion electrode/cell
+    evidence_kind: PILOT_LINE_HISTORICAL
+    source_doi: 10.17632/wwhm2frfmy.1
+    version: "1"
+    license: CC0 1.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY, EIS_SPECTRUM, CYCLING_CURVE]
+    control_variables: null
+    intermediate_targets: null
+    final_targets: null
+    grouping_keys: DOE condition (to be verified in raw data)
+    known_missingness: null
+    known_leakage_fields: null
+    recommended_splits: [GROUP_BY_DOE_CONDITION]
+    optimization_capable: true
+    multimodal_capable: true
+    limitations: Source assets and field mapping must be audited before use.
+  - id: warwick_ultrasound
+    display_name: Warwick Ultrasonic Inline QC
+    chemistry: graphite anode / NMC622 cathode
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.17632/c62yn37d9h.1
+    version: "1"
+    license: CC BY 4.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [CALENDERING]
+    modalities: [ULTRASOUND_SIGNAL, ULTRASOUND_SPECTRUM, PROCESS_TABULAR]
+    control_variables: null
+    intermediate_targets: [thickness]
+    final_targets: []
+    grouping_keys: null
+    known_missingness: null
+    known_leakage_fields: post-calendering signals are unavailable before a calendering decision
+    recommended_splits: [LEAVE_ONE_PROCESS_SETTING_OUT]
+    optimization_capable: false
+    multimodal_capable: true
+    limitations: Source assets and field mapping must be audited before use.
+  - id: naion_hte
+    display_name: Na-ion High-Throughput Process Chain
+    chemistry: sodium-ion
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.5281/zenodo.7981011
+    version: unverified
+    license: unverified
+    source_paths: []
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [FORMULATION, COATING, ASSEMBLY, FORMATION, FINAL_CHARACTERIZATION]
+    modalities: [PROCESS_TABULAR, FORMATION_CURVE, CYCLING_CURVE]
+    control_variables: null
+    intermediate_targets: null
+    final_targets: null
+    grouping_keys: batch/run identity to be audited
+    known_missingness: null
+    known_leakage_fields: null
+    recommended_splits: [GROUP_BY_BATCH, LATER_RUN_HOLDOUT]
+    optimization_capable: false
+    multimodal_capable: true
+    limitations: 660 MB archive; field mapping and license must be audited before use.
+  - id: artistic
+    display_name: ARTISTIC Physics Stress
+    chemistry: lithium-ion electrode simulation
+    evidence_kind: SIMULATED_PHYSICS
+    source_doi: 10.5281/zenodo.5956128
+    version: unverified
+    license: CC BY-NC-SA 4.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [MIXING, DRYING, CALENDERING]
+    modalities: [PROCESS_TABULAR, XCT_VOLUME]
+    control_variables: null
+    intermediate_targets: null
+    final_targets: null
+    grouping_keys: simulation manifest
+    known_missingness: null
+    known_leakage_fields: null
+    recommended_splits: [OOD_FACTOR_EXTREME]
+    optimization_capable: true
+    multimodal_capable: true
+    limitations: Restricted source files; simulated evidence only.
