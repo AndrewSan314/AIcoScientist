@@ -11,13 +11,20 @@ from sklearn.model_selection import GroupShuffleSplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosGraphiteAdapter, NaIonHTEAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter
-from src.datasets.battery_process.base import ProcessPredictionTask
+from src.datasets.battery_process.base import ProcessOptimizationTask, ProcessPredictionTask
+from src.process.coordinator import ProcessOptimizationCoordinator
+from src.process.evaluation import reveal_one
 from src.process.models.flat_baseline import TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
+from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.stages import ProcessStage
 
 
 ADAPTERS = [DrakopoulosGraphiteAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter, NaIonHTEAdapter, ArtisticSimulationAdapter]
+REPLAY_TASKS = {
+    "drakopoulos_graphite": ("cell_capacity_mah", ProcessStage.COATING),
+    "warwick_nmc622": ("calendered_density_g_cm3", ProcessStage.CALENDERING),
+}
 
 
 def _metrics(actual: np.ndarray, predicted: np.ndarray) -> dict[str, float | None]:
@@ -60,11 +67,37 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
     return reports
 
 
+def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
+    task_definition = REPLAY_TASKS.get(adapter.metadata().dataset_id)
+    if task_definition is None:
+        return {"status": "SKIPPED", "reason": "no audited recipe-level replay target"}
+    target, stage = task_definition
+    task = ProcessOptimizationTask(target, stage)
+    replay = adapter.build_replay_frame(task)
+    if len(replay) <= 3:
+        return {"status": "SKIPPED", "reason": "fewer than four source recipes"}
+    observed, hidden = replay.iloc[:3].copy(), replay.iloc[3:].copy()
+    try:
+        proposal = ProcessOptimizationCoordinator().propose_recipes(
+            observed, adapter.build_optimization_space(task), ProcessOptimizationObjective([ObjectiveSpec(target, "maximize")]), seed=seed,
+        )[0]
+    except RuntimeError as exc:
+        return {"status": "SKIPPED_DEPENDENCY", "reason": str(exc)}
+    observed, hidden, revealed = reveal_one(observed, hidden, recipe_id=proposal.source_recipe_id or "", id_column="recipe_id", target=target)
+    return {
+        "status": "REVEALED", "target": target, "stage": stage.value, "seed": seed,
+        "proposal_recipe_id": proposal.source_recipe_id, "proposal_controls": proposal.controls,
+        "revealed_recipe_id": revealed.recipe_id, "revealed_target": revealed.revealed_target,
+        "best_so_far": float(observed[target].max()), "remaining_hidden": len(hidden),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a source-backed BPSS benchmark manifest.")
     parser.add_argument("--output", type=Path, default=Path("outputs/process_benchmark"))
     parser.add_argument("--allow-unavailable", action="store_true", help="Write an audit-only manifest when raw source data have not been acquired.")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--replay-seeds", type=int, default=3)
     args = parser.parse_args()
     root = args.output
     for directory in ("dataset_audits", "prediction", "calibration", "multimodal_ablations", "missing_modality", "stage_ablations", "optimization", "stress", "figures"):
@@ -72,6 +105,7 @@ def main() -> None:
     audits = []
     unavailable = []
     evaluated = []
+    replayed = []
     for adapter_class in ADAPTERS:
         adapter = adapter_class()
         report = adapter.validate()
@@ -86,11 +120,15 @@ def main() -> None:
         prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
         (root / "prediction" / f"{dataset_id}.json").write_text(json.dumps(prediction_report, indent=2), encoding="utf-8")
         (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval")} for item in predictions]}, indent=2), encoding="utf-8")
+        replays = [_offline_replay(adapter, seed=args.seed + offset) for offset in range(args.replay_seeds)]
+        (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
-    manifest = {"suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable, "evaluated": evaluated, "seed": args.seed}
+        if any(replay["status"] == "REVEALED" for replay in replays):
+            replayed.append(dataset_id)
+    manifest = {"suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable, "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds}
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
-        "# Battery Process Stress Suite\n\n" + "Grouped ExtraTrees baseline and split-conformal coverage are written for source-backed scalar tasks. " + ("Unavailable sources: " + ", ".join(unavailable) if unavailable else "All registered adapters passed source validation."),
+        "# Battery Process Stress Suite\n\n" + "Grouped ExtraTrees/split-conformal artifacts and no-lookahead recipe replays are written for supported source-backed tasks. " + ("Unavailable sources: " + ", ".join(unavailable) if unavailable else "All registered adapters passed source validation."),
         encoding="utf-8",
     )
     if unavailable and not args.allow_unavailable:
