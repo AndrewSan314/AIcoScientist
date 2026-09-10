@@ -73,6 +73,7 @@ def main():
         "alab_dataset_audit": ROOT / "outputs" / "alab" / "alab_dataset_audit.json",
         "electrolyte_screening": ROOT / "outputs" / "electrolyte" / "benchmark" / "screening_quality_diagnostics.json",
         "electrolyte_simulation": ROOT / "outputs" / "electrolyte" / "benchmark" / "surrogate_simulation.json",
+        "electrolyte_target_audit": ROOT / "outputs" / "electrolyte" / "audit" / "experimental_identity_audit.json",
     }
     for k, expected_hash in hashes.items():
         p = artifact_paths.get(k)

@@ -58,6 +58,11 @@ const SurrogateOptimizationPanel: React.FC<{
   onBackToSetup?: () => void;
 }> = ({ view, simulation, onBackToSetup }) => {
   const run = view.simulationRun;
+  const bestQuery = view.trajectory.reduce((best, step) =>
+    (step.bestSelectedLatentValue ?? Number.NEGATIVE_INFINITY) > (best.bestSelectedLatentValue ?? Number.NEGATIVE_INFINITY)
+      ? step
+      : best,
+  );
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
       <section className="sci-card p-6 border-l-4 border-l-[#2563EB]">
@@ -84,12 +89,33 @@ const SurrogateOptimizationPanel: React.FC<{
           </div>
         </div>
       </section>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <section className="sci-card p-5 border-l-4 border-l-[#DC2626]">
+        <div className="text-2xs font-mono uppercase tracking-wider text-[#DC2626] font-bold">BEST CANDIDATE FOUND SO FAR</div>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div>
+            <div className="text-2xs uppercase tracking-wider text-[#8F9995]">Candidate</div>
+            <div className="mt-1 font-mono text-sm font-bold text-[#17201F]">{bestQuery.candidateId}</div>
+          </div>
+          <div>
+            <div className="text-2xs uppercase tracking-wider text-[#8F9995]">Best selected latent</div>
+            <div className="mt-1 font-mono text-sm font-bold text-[#17201F]">{sourceNumber(run.best_selected_latent_capacity)}</div>
+          </div>
+          <div>
+            <div className="text-2xs uppercase tracking-wider text-[#8F9995]">Query index</div>
+            <div className="mt-1 font-mono text-sm font-bold text-[#17201F]">{bestQuery.queryIndex} of {run.queried_candidate_ids.length}</div>
+          </div>
+          <div>
+            <div className="text-2xs uppercase tracking-wider text-[#8F9995]">Latent regret</div>
+            <div className="mt-1 font-mono text-sm font-bold text-[#17201F]">{sourceNumber(run.simple_regret_latent)}</div>
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-[#66706C]">Best according to the frozen surrogate benchmark, not an experimentally confirmed physical optimum. Composition metadata is not recorded for this display.</p>
+      </section>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           ['Source target', view.scientificTargetName || 'Not recorded'],
-          ['Best selected latent', sourceNumber(run.best_selected_latent_capacity)],
-          ['Latent simple regret', sourceNumber(run.simple_regret_latent)],
           ['Queries recorded', String(run.queried_candidate_ids.length)],
+          ['Evidence mode', 'Frozen surrogate benchmark'],
         ].map(([label, value]) => (
           <div key={label} className="sci-card p-4">
             <div className="text-2xs uppercase tracking-wider text-[#8F9995]">{label}</div>
@@ -359,10 +385,10 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                 <span className="text-2xs font-mono text-[#66706C]">Closed-Loop Scientific Engine</span>
               </div>
               <h1 className="text-2xl font-bold text-[#17201F] tracking-tight">
-                 Explore Source-Backed Scientific Workflows
+                 Choose the next experiment—not just the next material
               </h1>
               <p className="text-sm text-[#66706C] mt-1 max-w-3xl leading-relaxed">
-                 Explore recorded scientific decision workflows across controlled, retrospective, and surrogate evidence regimes.
+                 AIcoScientist selects a candidate × measurement action that is expected to be scientifically useful while accounting for recorded measurement cost. Choose an evidence regime, then inspect the recorded decision loop.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -376,6 +402,19 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               </button>
             </div>
           </div>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            ['What it selects', 'The next candidate × measurement experiment.'],
+            ['Why it selects it', 'Recorded information value, discovery value, and measurement cost.'],
+            ['What happens next', 'Lock prediction → reveal evidence → update model support.'],
+          ].map(([label, detail]) => (
+            <div key={label} className="sci-card p-4">
+              <div className="text-2xs font-mono uppercase tracking-wider text-[#DC2626] font-bold">{label}</div>
+              <p className="mt-1 text-xs font-semibold text-[#17201F]">{detail}</p>
+            </div>
+          ))}
         </section>
 
         {/* Two-Panel Configuration Grid */}
@@ -740,9 +779,9 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
   }
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in">
+    <div className="flex flex-col gap-6 pb-12 animate-fade-in">
       {/* Top Banner with Reset Option */}
-      <section className="sci-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-l-4 border-l-[#DC2626]">
+      <section className="order-1 sci-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-l-4 border-l-[#DC2626]">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-center text-[#DC2626]">
             <CheckCircle2 className="w-5 h-5" />
@@ -750,7 +789,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-bold text-[#17201F]">
-                {resolved.banner.title}
+                STEP 1 — NEXT EXPERIMENT: {winnerAction?.action?.candidate_id || 'Recorded candidate'} × {winnerAction?.action?.action_type || 'recorded measurement'}
               </h1>
               <span className="sci-badge sci-badge-verified">{resolved.banner.badge}</span>
             </div>
@@ -770,7 +809,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
       </section>
 
       {/* Campaign Step Selector */}
-      <section className="sci-card p-4">
+      <section className="order-2 sci-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-[#17201F]">
@@ -782,7 +821,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
           </div>
           <span className="text-xs text-[#66706C]">
             {dataset === 'controlled_synthesis' || dataset === 'controlled_multimodal_alloy' ? (
-               <>True Mechanism: <strong className="text-[#DC2626]">H₁ (Phase Purity Limited)</strong></>
+               <>Controlled benchmark ground truth: <strong className="text-[#DC2626]">H₁ (Phase Purity Limited)</strong></>
             ) : dataset === 'alab_replay' || dataset === 'alab_precursor_genome' ? (
                <>Benchmark: <strong className="text-[#DC2626]">A-Lab Solid-State Synthesis</strong></>
             ) : (
@@ -828,16 +867,16 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
       </section>
 
        {/* Primary Hero Row: recorded action + charts container */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-         {/* Recorded action card */}
+      <div className="order-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Step 1: recorded next experiment */}
         <section className="lg:col-span-6 sci-card p-6 flex flex-col justify-between space-y-5">
           <div>
             <div className="flex items-center justify-between border-b border-[#D9DFDB] pb-3">
               <div className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-[#DC2626]" />
-                 <h2 className="text-base font-bold text-[#17201F]">Recorded Action Under Inspection</h2>
+                 <h2 className="text-base font-bold text-[#17201F]">STEP 1 — NEXT EXPERIMENT</h2>
               </div>
-               <span className="sci-badge sci-badge-verified">Source-ranked action</span>
+               <span className="sci-badge sci-badge-verified">Recorded selected action</span>
             </div>
 
             {/* Candidate & Modality Summary */}
@@ -845,15 +884,15 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               <>
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                    <span className="text-2xs font-mono text-[#8F9995] block">Recorded Candidate</span>
+                    <span className="text-2xs font-mono text-[#8F9995] block">Candidate</span>
                     <span className="text-sm font-bold font-mono text-[#17201F]">{selectedCandidateId}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                    <span className="text-2xs font-mono text-[#8F9995] block">Modality</span>
+                    <span className="text-2xs font-mono text-[#8F9995] block">Measurement</span>
                     <span className="text-sm font-bold text-[#DC2626]">{selectedModality}</span>
                   </div>
                   <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                    <span className="text-2xs font-mono text-[#8F9995] block">Composite Score</span>
+                    <span className="text-2xs font-mono text-[#8F9995] block">Recorded decision score</span>
                     <span className="text-sm font-bold font-mono text-[#17201F]">
                       {inspectedAction.total_action_score !== undefined
                         ? `${inspectedAction.total_action_score >= 0 ? '+' : ''}${inspectedAction.total_action_score.toFixed(4)}`
@@ -861,7 +900,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     </span>
                   </div>
                   <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB]">
-                    <span className="text-2xs font-mono text-[#8F9995] block">Information Gain</span>
+                    <span className="text-2xs font-mono text-[#8F9995] block">Information gain</span>
                     <span className="text-sm font-bold font-mono text-[#DC2626]">
                       {(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats) !== undefined
                         ? `${(inspectedAction.raw_expected_hig_nats ?? inspectedAction.expected_hig_nats)?.toFixed(3)} nats`
@@ -871,7 +910,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                 </div>
 
                 <div className="mt-3 p-3 rounded-lg bg-[#FCFCFA] border border-[#D9DFDB] text-xs text-[#66706C]">
-                  <strong>Recorded score context:</strong> {inspectedAction.action.action_type} on {inspectedAction.action.candidate_id} has source score {sourceNumber(inspectedAction.total_action_score)} and recorded cost {sourceNumber(inspectedAction.action.estimated_cost)}.
+                  <strong>What this means:</strong> this is the highest-priority recorded candidate × measurement action under the selected policy—not a claim that {inspectedAction.action.candidate_id} is the best material. The policy balances information and discovery value against recorded measurement cost ({sourceNumber(inspectedAction.action.estimated_cost)}).
                 </div>
               </>
             ) : (
@@ -889,14 +928,14 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             {/* Interactive 4-State Scientific Loop Bar */}
             <div className="mt-5">
               <div className="text-xs font-bold text-[#17201F] mb-2">
-                Scientific Verification Loop (Click to Inspect Evidence)
+                STEP 4 — WHAT DID THE SYSTEM LEARN? (click through the recorded loop)
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { id: 'A_SCORED', label: '1. Scored', icon: <Activity className="w-3.5 h-3.5" /> },
-                  { id: 'B_PREREGISTERED', label: '2. Preregistered', icon: <Lock className="w-3.5 h-3.5" /> },
-                  { id: 'C_REVEALED', label: '3. Observed', icon: <Eye className="w-3.5 h-3.5" /> },
-                  { id: 'D_UPDATED', label: '4. Belief Updated', icon: <RefreshCw className="w-3.5 h-3.5" /> },
+                  { id: 'A_SCORED', label: '1. Choose', icon: <Activity className="w-3.5 h-3.5" /> },
+                  { id: 'B_PREREGISTERED', label: '2. Lock prediction', icon: <Lock className="w-3.5 h-3.5" /> },
+                  { id: 'C_REVEALED', label: '3. Reveal evidence', icon: <Eye className="w-3.5 h-3.5" /> },
+                  { id: 'D_UPDATED', label: '4. Update model support', icon: <RefreshCw className="w-3.5 h-3.5" /> },
                 ].map((ph) => {
                   const isActive = revealPhase === ph.id;
                   return (
@@ -922,13 +961,13 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               {revealPhase === 'A_SCORED' && (
                 <div className="space-y-2 text-xs text-[#66706C]">
                   <div className="flex items-center justify-between text-[#17201F] font-bold">
-                    <span>State A: Objective Scoring Matrix</span>
+                    <span>State 1 — Choose: which experiment looks most valuable before seeing its outcome?</span>
                     <span className="sci-badge sci-badge-verified">Multi-Objective HIG</span>
                   </div>
                   {inspectedAction ? (
                     <>
                       <p>
-                        Source action-score records are shown as persisted; no presentation-layer weights or normalized components are reconstructed.
+                        Information gain estimates how much a measurement could reduce uncertainty about which model best explains the system. The persisted score fields are shown without inventing missing weights.
                       </p>
                       <div className="pt-1 grid grid-cols-3 gap-2 font-mono text-2xs">
                         <div className="bg-white p-2 rounded border border-[#D9DFDB]">
@@ -968,11 +1007,11 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               {revealPhase === 'B_PREREGISTERED' && (
                 <div className="space-y-2 text-xs text-[#66706C]">
                   <div className="flex items-center justify-between text-[#17201F] font-bold">
-                    <span>State B: Cryptographic Preregistration Certificate</span>
+                    <span>State 2 — Lock prediction: record expectations before revealing the measurement.</span>
                     <span className="sci-badge sci-badge-verified">OBSERVATIONS FIREWALLED</span>
                   </div>
                   <p>
-                    Recorded plan appears before the source observation reveal:
+                    This recorded plan appears before the source observation reveal:
                   </p>
                   <div className="p-2.5 rounded bg-white border border-[#D9DFDB] font-mono text-2xs space-y-1">
                     <div><strong className="text-[#17201F]">Action Target:</strong> {currentStep?.preregistration?.action?.candidate_id || selectedCandidateId} | {currentStep?.preregistration?.action?.action_type || selectedModality}</div>
@@ -993,13 +1032,13 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               {revealPhase === 'C_REVEALED' && (
                 <div className="space-y-2 text-xs text-[#66706C]">
                   <div className="flex items-center justify-between text-[#17201F] font-bold">
-                    <span>State C: Source Observation Revealed</span>
+                    <span>State 3 — Reveal evidence: show the source-linked result for the locked action.</span>
                     <span className="sci-badge sci-badge-verified">Recorded Observation</span>
                   </div>
                   {selectedCandidateId === winnerAction?.action?.candidate_id && selectedModality === winnerAction?.action?.action_type ? (
                     <>
                       <p>
-                         Source observation revealed:
+                         The source observation is now visible:
                       </p>
                       <div className="p-2.5 rounded bg-white border border-[#D9DFDB] font-mono text-2xs space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -1037,7 +1076,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
               {revealPhase === 'D_UPDATED' && (
                 <div className="space-y-2 text-xs text-[#66706C]">
                   <div className="flex items-center justify-between text-[#17201F] font-bold">
-                    <span>State D: Bayesian Posterior Distribution Update</span>
+                    <span>State 4 — Update model support: evidence changes which model is most supported.</span>
                     <span className="sci-badge sci-badge-verified">
                       {dataset === 'alab_replay' || dataset === 'alab_precursor_genome'
                         ? 'Historical Telemetry'
@@ -1118,7 +1157,22 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
             <div className="flex items-center justify-between border-b border-[#D9DFDB] pb-3">
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-[#DC2626]" />
-                <h2 className="text-base font-bold text-[#17201F]">Scientific Trajectory</h2>
+                <div>
+                  <h2 className="text-base font-bold text-[#17201F]">
+                    {primaryChartTab === 'predictive'
+                      ? 'STEP 3 — WHAT WAS EXPECTED BEFORE MEASUREMENT?'
+                      : primaryChartTab === 'trajectory'
+                      ? 'STEP 4 — WHAT DID THE SYSTEM LEARN?'
+                      : 'Supporting comparison — information value versus cost'}
+                  </h2>
+                  <p className="text-xs text-[#66706C] mt-1">
+                    {primaryChartTab === 'predictive'
+                      ? 'Different models can predict different outcomes. A measurement is useful when those predictions are distinguishable.'
+                      : primaryChartTab === 'trajectory'
+                      ? 'Evidence changes model support over time; posterior model weight is not proof of a physical mechanism.'
+                      : 'This optional view helps researchers inspect the information-versus-cost trade-off behind the recorded selection.'}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-1 bg-[#F4F3EE] p-1 rounded-lg border border-[#D9DFDB]">
                 {[
@@ -1193,7 +1247,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                         selectedModality={selectedModality}
                       />
                       <p className="text-2xs text-[#8F9995] text-center mt-2 font-mono">
-                        Gaussian density estimates per hypothesis for candidate {selectedCandidateId}.
+                        What it shows: what each scientific model expected before the observation was revealed for {selectedCandidateId}. Why it matters: disagreement makes a measurement more informative.
                       </p>
                     </div>
                   )}
@@ -1213,7 +1267,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
                     }}
                   />
                   <p className="text-2xs text-[#8F9995] text-center mt-2 font-mono">
-                    Expected Information Gain vs Experimental Cost. Selected action highlighted in emerald/red.
+                    What it shows: expected information gain versus recorded experimental cost. The outlined point is the recorded selected action.
                   </p>
                 </div>
               )}
@@ -1222,13 +1276,12 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
         </section>
       </div>
 
-      {/* Secondary Explorer Row: Heatmap + Score Waterfall */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Candidate-Modality Score Heatmap (67%) */}
-        <section className="lg:col-span-8 sci-card p-6 space-y-4">
+      {/* Step 2: the primary comparison across feasible experiments */}
+      <div className="order-3 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <section className="lg:col-span-12 sci-card p-6 space-y-4 border-t-4 border-t-[#DC2626]">
           <div className="border-b border-[#D9DFDB] pb-3">
-            <h2 className="text-base font-bold text-[#17201F]">Candidate × Modality Decision Matrix</h2>
-            <p className="text-xs text-[#66706C] mt-0.5">Inspect trade-off values across all candidates and experimental modalities</p>
+            <h2 className="text-base font-bold text-[#17201F]">STEP 2 — WHY THIS EXPERIMENT? Candidate × Measurement Decision Matrix</h2>
+            <p className="text-xs text-[#66706C] mt-1"><strong>What it shows:</strong> every feasible candidate × measurement choice scored at this decision step. <strong>Why it matters:</strong> AIcoScientist selects both what to study and how to measure it; the highlighted cell is the recorded selected action.</p>
           </div>
 
           <CandidateModalityHeatmap
@@ -1245,11 +1298,10 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
           />
         </section>
 
-        {/* Score Decomposition Waterfall (33%) */}
-        <section className="lg:col-span-4 sci-card p-6 space-y-4">
+        <section className="lg:col-span-12 sci-card p-5 space-y-3">
           <div className="border-b border-[#D9DFDB] pb-3">
-            <h2 className="text-base font-bold text-[#17201F]">Recorded Decision Score</h2>
-            <p className="text-xs text-[#66706C] mt-0.5">Signed additive terms for action {selectedCandidateId} / {selectedModality}</p>
+            <h2 className="text-sm font-bold text-[#17201F]">Why this action? Recorded decision score</h2>
+            <p className="text-xs text-[#66706C] mt-0.5">The policy favors experiments that are informative and scientifically useful while penalizing costly measurements. Only source-recorded score fields are shown.</p>
           </div>
 
           <ScoreWaterfallChart action={inspectedAction} />
@@ -1261,7 +1313,7 @@ export const DiscoveryLabWorkspace: React.FC<Props> = ({
       </div>
 
       {/* Tertiary Collapsible Drawer: Alternative Actions & Candidate-Space Hologram */}
-      <details className="sci-card p-6 transition-all group">
+      <details className="order-5 sci-card p-6 transition-all group">
         <summary className="font-bold text-sm text-[#17201F] cursor-pointer flex items-center justify-between select-none list-none">
           <div className="flex items-center gap-2">
             <Atom className="w-4 h-4 text-[#DC2626]" />

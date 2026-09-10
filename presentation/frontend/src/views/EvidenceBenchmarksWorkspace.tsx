@@ -111,6 +111,12 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in">
+      <section className="sci-card p-5 border-l-4 border-l-[#DC2626]">
+        <div className="text-2xs font-mono uppercase tracking-wider text-[#DC2626] font-bold">STEP 5 — DOES THE STRATEGY WORK?</div>
+        <h1 className="mt-1 text-lg font-bold text-[#17201F]">Evidence comes after the scientific loop</h1>
+        <p className="mt-1 text-xs text-[#66706C] max-w-3xl">These views test different claims: controlled inference, robustness, policy efficiency, historical replay, and large-space surrogate optimization. They are not interchangeable evidence modes.</p>
+      </section>
+
       {/* Compact Horizontal Question Rail (Q1 - Q5) */}
       <section className="sci-card p-2 bg-[#FCFCFA]">
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-2" role="tablist">
@@ -152,7 +158,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
           </div>
           <div>
             <div className="text-2xs font-mono uppercase tracking-wider text-[#DC2626] font-bold">
-              What This Proves
+              What this evidence answers
             </div>
             <p className="text-sm font-semibold text-[#17201F] mt-0.5">
               {currentQ.whatThisProves}
@@ -183,7 +189,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <PolicyTrajectoryChart benchmarks={data.benchmarks} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Posterior mass across the source controlled trajectories; no physical mechanism confirmation is implied.
+              What it shows: model support across controlled trajectories. Why it matters: controlled ground truth lets this benchmark test the decision-and-update loop; it does not prove a physical mechanism.
                 </p>
               </div>
             )}
@@ -192,7 +198,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <SensitivityRankAgreementChart sensitivity={data.sensitivity} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Monte Carlo rank correlation across the source sensitivity design: ρ = {sensitivityValues.length ? `${Math.min(...sensitivityValues).toFixed(3)} – ${Math.max(...sensitivityValues).toFixed(3)}` : 'not recorded'}.
+                  What it shows: whether approximate information-gain rankings stay stable when Monte Carlo sample count changes (ρ = {sensitivityValues.length ? `${Math.min(...sensitivityValues).toFixed(3)} – ${Math.max(...sensitivityValues).toFixed(3)}` : 'not recorded'}).
                 </p>
               </div>
             )}
@@ -201,7 +207,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <PolicyTrajectoryChart benchmarks={data.benchmarks} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  {data.benchmarks?.trajectory_count ?? 'N/A'} source trajectories across the recorded policy matrix.
+                  What it shows: how decision strategies perform under the same controlled benchmark ({data.benchmarks?.trajectory_count ?? 'N/A'} recorded trajectories).
                 </p>
               </div>
             )}
@@ -210,7 +216,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <CalibrationCoverageChart calibration={data.calibration} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  A-Lab calibration coverage from the source calibration artifact; the selected observable is shown in the panel.
+                  What it shows: whether stated uncertainty intervals match observed historical outcomes. This is calibration evidence for the source-linked A-Lab replay.
                 </p>
               </div>
             )}
@@ -219,7 +225,7 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
               <div className="w-full">
                 <ElectrolyteOptimizationChart simulationData={data.electrolyte_simulation} />
                 <p className="text-xs text-[#8F9995] text-center mt-3 font-medium">
-                  Source-backed screening and surrogate data for the recorded virtual candidate pool; no Pareto claim is added here.
+                  What it shows: best-found value over recorded surrogate queries after virtual-pool screening. It is a computational benchmark, not physical battery-cycling evidence.
                 </p>
               </div>
             )}
@@ -230,8 +236,8 @@ export const EvidenceBenchmarksWorkspace: React.FC<Props> = ({
         <section className="lg:col-span-5 sci-card p-6 flex flex-col justify-between space-y-5">
           <div className="space-y-4">
             <div className="border-b border-[#D9DFDB] pb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#17201F]">Statistical Provenance</h3>
-              <span className="sci-badge sci-badge-verified text-3xs">Formal Audit</span>
+              <h3 className="text-sm font-bold text-[#17201F]">Source details</h3>
+              <span className="sci-badge sci-badge-verified text-3xs">Advanced evidence</span>
             </div>
 
             {/* Q1 Provenance */}

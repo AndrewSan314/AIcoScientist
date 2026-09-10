@@ -17,73 +17,83 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
   const scriptScenes = [
     {
       scene: 1,
-      title: '1. Research Question & Dataset Selection (1:00)',
-      lead: '“Traditional materials optimization asks which material performs best. We ask which experiment should be performed next, and why.”',
+      title: '1. What problem does AIcoScientist solve? (0:30)',
+      lead: '“AIcoScientist does not only rank materials. It decides which candidate × measurement experiment is most valuable to inspect next.”',
       talkingPoints: [
-        'Materials discovery is not just curve fitting or surrogate property maximization; it is an active information acquisition loop under costly, multi-modal characterization.',
-        'Existing Bayesian optimization algorithms blindly optimize one scalar property. In real labs, diagnostic characterization (XRD, spectroscopy, electron microscopy) resolves mechanisms.',
-        'We expose three distinct evidence modes: controlled synthetic inference, A-Lab historical replay, and electrolyte surrogate optimization.',
+        'Keep the distinction explicit: Next Experiment is not Best Material Found.',
+        'The project has three evidence regimes: controlled inference, A-Lab historical replay, and electrolyte surrogate optimization.',
       ],
     },
     {
       scene: 2,
-      title: '2. Configure & Run Autonomous Discovery (1:00)',
-      lead: '“Closed-loop Bayesian discovery under cost-penalized hypothesis information gain (HIG).”',
+      title: '2. What should we test next? (0:40)',
+      lead: '“This card is a recorded candidate × measurement action under the selected source policy.”',
       talkingPoints: [
-        'Notice the policy options: each control resolves to a recorded source policy when that policy/run exists.',
-        'The console keeps source action scores, preregistration, observations, and posterior updates separate.',
-        'The progress ticker is presentation playback; it does not execute a new experiment.',
+        'Read candidate, measurement, recorded score, information gain, and cost first.',
+        'It means highest-priority recorded experiment—not that the candidate is the best material.',
       ],
     },
     {
       scene: 3,
-      title: '3. Recorded Action & Score Decomposition (1:00)',
-      lead: '“The console exposes source score fields without reconstructing absent weighting components.”',
+      title: '3. Why this experiment? (0:45)',
+      lead: '“Each decision-matrix cell is one possible experiment; the highlighted cell is the recorded selected action.”',
       talkingPoints: [
-        'Look at the Recorded Action Card: the selected candidate and modality come from the recorded run.',
-        'The Score Decomposition Waterfall stays unavailable when the source did not persist weights and normalized components.',
-        'Use the source manifest and action payload for provenance; do not infer a cost or mechanism claim from a missing field.',
+        'The policy balances scientific information, discovery value, and recorded measurement cost.',
+        'Information gain means expected reduction in uncertainty about which model best explains the system.',
       ],
     },
     {
       scene: 4,
-      title: '4. Scientific Wow Moment: Preregister → Reveal → Update (1:00)',
-      lead: '“Preregistration before reveal strictly firewalls observations, preventing hindsight bias with immutable audit logging.”',
+      title: '4. Lock prediction → reveal evidence → update model support (0:50)',
+      lead: '“The prediction is recorded before the observation is revealed, so the update can be inspected without hindsight.”',
       talkingPoints: [
-        'State 1 (Scored): All candidate actions are objectively evaluated using predictive distributions.',
-        'State 2 (Preregistered): The source-recorded plan is shown before the observation reveal.',
-        'State 3 (Observed): the source-linked observation is revealed for the preregistered action.',
-        'State 4 (Belief Updated): the recorded posterior is displayed without calling it physical confirmation.',
+        'Different models predict different outcomes; that disagreement makes a measurement informative.',
+        'Posterior model weight is model support from the evidence, not proof of a physical mechanism.',
       ],
     },
     {
       scene: 5,
-      title: '5. Policy Efficiency & Robustness Evidence (1:00)',
-      lead: '“The benchmark artifact records policy trajectories, sensitivity, and calibration metrics with their limits.”',
+      title: '5. Best candidate found in an optimization task (0:40)',
+      lead: '“Optimization has a separate Best Found result. It is not the same thing as the next-experiment recommendation.”',
       talkingPoints: [
-        'When the advisor asks: "Does your custom policy actually beat standard Bayesian optimization?" — here is the answer.',
-        'The benchmark matrix contains source trajectory records across its documented policies, worlds, and seeds.',
-        'The workspace shows the recorded policy summaries and avoids turning them into universal causal claims.',
+        'The electrolyte result is a frozen in-silico surrogate trajectory, not a new physical battery measurement.',
+        'The card exposes candidate ID, query index, best selected latent value, and regret when recorded.',
       ],
     },
     {
       scene: 6,
-      title: '6. A-Lab Physical Synthesis Replay & Calibration (1:00)',
-      lead: '“A-Lab replay uses source-linked samples and discloses missing modality linkage.”',
+      title: '6. Controlled benchmark evidence (0:40)',
+      lead: '“Controlled worlds answer whether the decision strategy and belief updates work when benchmark ground truth is known.”',
       talkingPoints: [
-        'Tested against the A-Lab Precursor Genome: 1,035 real physical synthesis experiments conducted by robotic laboratories.',
-        'Calibration metrics are shown from the source artifact, not treated as a universal physical accuracy claim.',
-        'SEM and EDS are disclosed as unavailable to candidate replay when sample-level linkage is absent.',
+        'Policy comparison, calibration, and sensitivity are supporting evidence after the core loop is understood.',
+        'Controlled success does not independently establish prospective physical-world validity.',
       ],
     },
     {
       scene: 7,
-      title: '7. Combinatorial Scaling & 50-Gate Verification (1:00)',
-      lead: '“Virtual-pool screening and surrogate trajectories are shown with stage-specific timing and model limits.”',
+      title: '7. A-Lab historical physical-data replay (0:40)',
+      lead: '“A-Lab replays real historical synthesis and characterization records; it is not live autonomous laboratory execution.”',
       talkingPoints: [
-        'The source diagnostic records the virtual candidate pool, working set, timing stage, and latent gap.',
-        'The manifest reports the validation gate count and the workspace keeps partial readiness visible.',
-        'The surrogate artifact explicitly limits interpretation to its documented in-silico model scope.',
+        'Source sample metadata stays prominent and unlinked modalities remain unavailable to the replay.',
+        'Calibration is a source artifact and its scope remains explicitly bounded.',
+      ],
+    },
+    {
+      scene: 8,
+      title: '8. Large-space surrogate optimization (0:40)',
+      lead: '“333,333 virtual formulations are screened to a 200-candidate working set before sequential recorded surrogate queries.”',
+      talkingPoints: [
+        'Use this evidence to discuss scalability, not physical validation or causal mechanism discovery.',
+        'Attia and FeCoNi remain additional simulator/dataset benchmark evidence outside this primary scientific loop.',
+      ],
+    },
+    {
+      scene: 9,
+      title: '9. Evidence boundaries and next research step (0:30)',
+      lead: '“The current evidence is controlled validation, historical replay, and simulation—not a prospectively validated autonomous physical laboratory.”',
+      talkingPoints: [
+        'End by naming the evidence mode for every claim.',
+        'The next research step is prospective physical validation with pre-specified success criteria.',
       ],
     },
   ];
@@ -154,7 +164,7 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
 
         {/* Modal Footer */}
         <div className="px-6 py-3 border-t border-[#D9DFDB] bg-[#F4F3EE] flex items-center justify-between text-2xs text-[#66706C]">
-          <span>Total presentation duration: ~7 minutes</span>
+          <span>Total presentation duration: ~6 minutes</span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white rounded-lg font-semibold transition cursor-pointer"

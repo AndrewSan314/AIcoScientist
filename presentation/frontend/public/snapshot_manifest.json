@@ -1,8 +1,8 @@
 {
   "snapshot_schema_version": "1.3.0",
-  "generated_at_utc": "2026-09-10T09:05:56.724586+00:00",
-  "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-  "snapshot_generator_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+  "generated_at_utc": "2026-09-10T10:12:23.896991+00:00",
+  "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+  "snapshot_generator_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
   "scientific_source_commit": null,
   "scientific_source_commit_status": "UNVERIFIED",
   "scientific_source_provenance_manifest": "presentation/data/scientific_source_provenance.json",

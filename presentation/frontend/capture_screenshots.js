@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
 
-const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const BROWSER_PATH = process.env.SCREENSHOT_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const SCREENSHOT_DIR = path.resolve('../screenshots');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
@@ -12,9 +12,9 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
 }
 
 async function run() {
-  console.log('Launching Edge for Visual QA at ' + EDGE_PATH);
+  console.log('Launching browser for Visual QA at ' + BROWSER_PATH);
   const browser = await puppeteer.launch({
-    executablePath: EDGE_PATH,
+    executablePath: BROWSER_PATH,
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu']
   });
@@ -49,6 +49,24 @@ async function run() {
   await new Promise((r) => setTimeout(r, 1600));
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_discovery_results.png') });
 
+  // 3a. Record the three source-evidence states in the plain-language loop.
+  for (const [label, filename] of [
+    ['2. Lock prediction', 'desktop_discovery_preregistered.png'],
+    ['3. Reveal evidence', 'desktop_discovery_observation.png'],
+    ['4. Update model support', 'desktop_discovery_belief_update.png'],
+  ]) {
+    const stateButtons = await page.$$('button');
+    for (const button of stateButtons) {
+      const text = await page.evaluate((el) => el.textContent, button);
+      if (text && text.includes(label)) {
+        await button.click();
+        break;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 500));
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, filename) });
+  }
+
   // 3b. Click Predictive Distribution Tab
   console.log('Capturing: desktop_discovery_predictive_chart.png');
   const chartButtons = await page.$$('button');
@@ -68,6 +86,56 @@ async function run() {
   await new Promise((r) => setTimeout(r, 600));
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_discovery_decision_matrix.png') });
   await page.evaluate(() => window.scrollTo(0, 0));
+
+  // 3d. Capture the evidence regimes that have different semantics.
+  const changeConfig = async () => {
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0', timeout: 15000 });
+    await new Promise((r) => setTimeout(r, 700));
+  };
+
+  await changeConfig();
+  let datasetInputs = await page.$$('input[name="dataset"]');
+  await datasetInputs[2].click();
+  await new Promise((r) => setTimeout(r, 300));
+  const replayControls = await page.$$('button');
+  for (const control of replayControls) {
+    const text = await page.evaluate((el) => el.textContent, control);
+    if (text && text.includes('Replay recorded decision sequence')) {
+      await control.click();
+      break;
+    }
+  }
+  await new Promise((r) => setTimeout(r, 2200));
+  await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_alab_replay.png') });
+
+  await changeConfig();
+  datasetInputs = await page.$$('input[name="dataset"]');
+  await datasetInputs[1].click();
+  await new Promise((r) => setTimeout(r, 300));
+  const surrogateControls = await page.$$('button');
+  for (const control of surrogateControls) {
+    const text = await page.evaluate((el) => el.textContent, control);
+    if (text && text.includes('Open surrogate trajectory')) {
+      await control.click();
+      break;
+    }
+  }
+  await new Promise((r) => setTimeout(r, 2200));
+  await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_electrolyte_best_found.png') });
+
+  await changeConfig();
+  datasetInputs = await page.$$('input[name="dataset"]');
+  await datasetInputs[0].click();
+  await new Promise((r) => setTimeout(r, 300));
+  const resetControls = await page.$$('button');
+  for (const control of resetControls) {
+    const text = await page.evaluate((el) => el.textContent, control);
+    if (text && text.includes('Open recorded analysis')) {
+      await control.click();
+      break;
+    }
+  }
+  await new Promise((r) => setTimeout(r, 2200));
 
   // 4. Evidence Workspace (Default Q1)
   console.log('Capturing: desktop_evidence_benchmarks.png');
@@ -137,7 +205,14 @@ async function run() {
 
   // 6. Presenter Mode
   console.log('Capturing: desktop_presenter_mode.png');
-  await page.keyboard.press('p');
+  const presenterControls = await page.$$('button');
+  for (const control of presenterControls) {
+    const text = await page.evaluate((el) => el.textContent, control);
+    if (text && text.includes('Start guided demo')) {
+      await control.click();
+      break;
+    }
+  }
   await new Promise((r) => setTimeout(r, 1200));
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_presenter_mode.png') });
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_1920_presenter_mode.png') });

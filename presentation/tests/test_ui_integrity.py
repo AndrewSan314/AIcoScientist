@@ -389,3 +389,24 @@ def test_alab_featured_source_metadata_joins(snapshot):
         assert joined[sample_id]["refinement_selection_rule"]
 
 
+def test_first_time_user_story_is_explicit_in_the_ui():
+    frontend = ROOT / "presentation" / "frontend" / "src"
+    discovery = (frontend / "views" / "DiscoveryLabWorkspace.tsx").read_text(encoding="utf-8")
+    system = (frontend / "views" / "ResearchSystemWorkspace.tsx").read_text(encoding="utf-8")
+    presenter = (frontend / "components" / "PresenterMode.tsx").read_text(encoding="utf-8")
+
+    for required_copy in (
+        "NEXT EXPERIMENT",
+        "Candidate × Measurement Decision Matrix",
+        "highest-priority recorded candidate × measurement action",
+        "BEST CANDIDATE FOUND SO FAR",
+        "not an experimentally confirmed physical optimum",
+        "Presentation-only candidate layout",
+    ):
+        assert required_copy in discovery
+
+    assert "AIcoScientist capabilities" in system
+    assert "Why this project is different" in system
+    assert "Next Experiment ≠ Best Material" in presenter
+
+

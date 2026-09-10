@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0.0",
-  "generated_at_utc": "2026-09-10T09:05:56.724586+00:00",
-  "snapshot_generator_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-  "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+  "generated_at_utc": "2026-09-10T10:12:23.896991+00:00",
+  "snapshot_generator_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+  "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
   "scientific_source_commit": null,
   "scientific_source_commit_status": "UNVERIFIED",
   "verification_method": "SHA-256 hashes are verified against the local source artifacts. No required artifact embeds an independently verifiable scientific source SHA; the external-source audit records no commit SHA.",
@@ -12,8 +12,8 @@
       "artifact_path": "outputs/alab/multimodal/evidence_ledger.jsonl",
       "artifact_sha256": "02cd3a2482304e4e7a1f0cb5d407546448d304a5f9af25fb6dd73a25b44ffaed",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -21,8 +21,8 @@
       "artifact_path": "data/external/precursor_genome_2026/ledger_precursor_genome.json",
       "artifact_sha256": "f8b8aabb5b8718ad912075b9aa10373a5e81659b496348f14c926e432eb42dac",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -30,8 +30,8 @@
       "artifact_path": "outputs/alab/multimodal/multimodal_validation.json",
       "artifact_sha256": "6ba95a6cc348c230e3c51476086a4478849223bbd67cf6f3ebc8d78db113c390",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -39,8 +39,8 @@
       "artifact_path": "outputs/alab/multimodal/per_observable_calibration.json",
       "artifact_sha256": "415ce5654135637dc77395162ed897c24b36bbe6cc07b4bc6f249d996413964e",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -48,8 +48,8 @@
       "artifact_path": "outputs/alab/multimodal/full_policy_matrix.json",
       "artifact_sha256": "539590bff923c967ff71c3913c3915205553233d07defd3853f9b7a52b2e2285",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -57,8 +57,8 @@
       "artifact_path": "outputs/alab/multimodal/hig_trajectory_sensitivity.json",
       "artifact_sha256": "6eed21cb2789b567326dbfe98632ebe5c3d6b01f918cef018f108b9a9854d33a",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -66,8 +66,8 @@
       "artifact_path": "outputs/alab/multimodal/hypothesis_definitions.json",
       "artifact_sha256": "2b896333798f9252654ec9f0afa3705237035a14d4869d0bf4e612b88af559f0",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -75,8 +75,8 @@
       "artifact_path": "outputs/alab/multimodal/modality_inventory.json",
       "artifact_sha256": "17caa8bb3a9a9a64a3e2820be09a8e9864c1d2c020e28de72dd83e3a922982c3",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -84,8 +84,8 @@
       "artifact_path": "outputs/alab/alab_dataset_audit.json",
       "artifact_sha256": "b2bb5f13fd66fb310df05d676482c3e437228a559bab0028a1fba003fde3c7b3",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -93,8 +93,8 @@
       "artifact_path": "outputs/electrolyte/benchmark/screening_quality_diagnostics.json",
       "artifact_sha256": "05b302fd382b1d40d87fc98668a5fa24be501a321c389c464cf7b01181f8df4e",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -102,8 +102,8 @@
       "artifact_path": "outputs/electrolyte/benchmark/surrogate_simulation.json",
       "artifact_sha256": "96228347bd5bfbd33197257b59541b6b3fc63ab046b0a27efd4d601c28add904",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     },
     {
@@ -111,8 +111,8 @@
       "artifact_path": "outputs/electrolyte/audit/experimental_identity_audit.json",
       "artifact_sha256": "dfb9876dd93a39d833f3aae983795518554da37c0acf9869867e8bc818ed5b15",
       "generating_scientific_commit": null,
-      "generating_snapshot_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
-      "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+      "generating_snapshot_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
+      "presentation_build_commit": "73f514e1c8e94d8b2d183d2b2df8770fdaa8271d",
       "provenance_verification_method": "local_artifact_sha256_only"
     }
   ]

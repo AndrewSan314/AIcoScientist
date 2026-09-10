@@ -106,6 +106,48 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
       {/* SUBTAB 1: ARCHITECTURE */}
       {activeSubtab === 'architecture' && (
         <div className="space-y-6 animate-fade-in">
+          <section className="sci-card p-6 border-t-4 border-t-[#DC2626] space-y-4">
+            <div className="border-b border-[#D9DFDB] pb-3">
+              <h2 className="text-base font-bold text-[#17201F]">AIcoScientist capabilities</h2>
+              <p className="text-xs text-[#66706C] mt-1">What exists today—and the boundary on what is not claimed.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                ['Scientific decision engine', 'Selects a candidate × measurement action from recorded feasible choices.', 'Implemented'],
+                ['Hypothesis falsification', 'Locks predictions, reveals evidence, then updates model support.', 'Benchmarked'],
+                ['Controlled validation', `${data.benchmarks?.trajectory_count ?? 'Recorded'} source trajectories across clean and stress worlds.`, 'Completed'],
+                ['Historical physical replay', `${alabInfo?.candidateCount?.toLocaleString() ?? 'Recorded'} A-Lab source samples with linked replay metadata.`, 'Retrospective validation'],
+                ['Large-space optimization', `${electrolyteInfo?.candidateCount?.toLocaleString() ?? 'Recorded'} virtual formulations; ${electrolyteInfo?.screenedWorkingSetCount ?? 'recorded'}-candidate working set.`, 'Surrogate benchmark'],
+                ['Prospective autonomous laboratory', 'A new physical autonomous-lab campaign is not validated by this presentation.', 'Not yet validated'],
+              ].map(([title, description, status]) => (
+                <article key={title} className="p-4 rounded-xl border border-[#D9DFDB] bg-[#FCFCFA] space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xs font-bold text-[#17201F]">{title}</h3>
+                    <span className={`sci-badge text-3xs ${status === 'Not yet validated' ? 'sci-badge-surrogate' : 'sci-badge-verified'}`}>{status}</span>
+                  </div>
+                  <p className="text-2xs text-[#66706C] leading-relaxed">{description}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="sci-card p-6 space-y-4">
+            <div className="border-b border-[#D9DFDB] pb-3">
+              <h2 className="text-base font-bold text-[#17201F]">Why this project is different</h2>
+              <p className="text-xs text-[#66706C] mt-1">Material optimization can rank candidates. AIcoScientist adds an explicit scientific decision layer.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="p-4 rounded-xl bg-[#F4F3EE] border border-[#D9DFDB]">
+                <div className="text-2xs font-mono uppercase tracking-wider text-[#8F9995]">Typical material optimization</div>
+                <p className="mt-2 font-semibold text-[#17201F]">candidate → predicted property → rank candidates</p>
+              </div>
+              <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA]">
+                <div className="text-2xs font-mono uppercase tracking-wider text-[#991B1B]">AIcoScientist</div>
+                <p className="mt-2 font-semibold text-[#17201F]">candidate × measurement → expected information → discovery value → cost → lock prediction → reveal evidence → update model support</p>
+              </div>
+            </div>
+          </section>
+
           {/* Pipeline Flow Diagram */}
           <section className="sci-card p-6 space-y-4">
             <div className="border-b border-[#D9DFDB] pb-3">

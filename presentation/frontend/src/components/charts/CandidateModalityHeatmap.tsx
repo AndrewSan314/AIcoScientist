@@ -172,14 +172,14 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
         <div>
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-bold text-[#17201F] tracking-tight">
-              Candidate × Modality Action Matrix
+              Candidate × Measurement Decision Matrix
             </h4>
             <span className="text-2xs font-semibold px-2 py-0.5 rounded-full bg-[#F4F3EE] text-[#66706C] border border-[#D9DFDB]">
               {candidateIds.length} Candidates × {modalities.length} Modalities
             </span>
           </div>
           <p className="text-xs text-[#66706C] mt-0.5 font-normal">
-            Click any cell to inspect expected information gain, costs, and counterfactuals
+            Each cell is one possible experiment. Select a cell to inspect its source-recorded values.
           </p>
         </div>
 
@@ -195,7 +195,7 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
                   : 'text-[#66706C] hover:text-[#17201F]'
               }`}
             >
-              {m === 'composite' ? 'S(a)' : m === 'raw_hig' ? 'HIG' : m === 'discovery' ? 'Discovery' : 'Cost'}
+              {m === 'composite' ? 'Composite score' : m === 'raw_hig' ? 'Information gain' : m === 'discovery' ? 'Discovery value' : 'Cost'}
             </button>
           ))}
         </div>
@@ -298,17 +298,17 @@ export const CandidateModalityHeatmap: React.FC<Props> = ({
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-[#DC2626] border border-[#B91C1C] inline-block shadow-2xs" />
-            <span>High Source Score</span>
+            <span>More preferred under this metric</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-slate-100 border border-slate-300 inline-block" />
-            <span>Low / Penalized</span>
+            <span>Less preferred / penalized</span>
           </div>
           <div className="flex items-center gap-1.5 text-[#991B1B] font-semibold">
             <div className="w-3.5 h-3.5 rounded-full bg-[#DC2626] text-white flex items-center justify-center text-3xs">
               <Award className="w-2.5 h-2.5" />
             </div>
-            <span>Recorded Winner</span>
+            <span>Recorded selected action</span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5 text-slate-900" />
