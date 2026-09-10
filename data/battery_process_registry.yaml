@@ -96,9 +96,9 @@ datasets:
     chemistry: lithium-ion electrode simulation
     evidence_kind: SIMULATED_PHYSICS
     source_doi: 10.5281/zenodo.5956128
-    version: unverified
+    version: "5956128"
     license: CC BY-NC-SA 4.0
-    source_paths: []
+    source_paths: [https://zenodo.org/records/5956128]
     source_hashes: {}
     sample_count: null
     run_count: null
@@ -108,9 +108,9 @@ datasets:
     intermediate_targets: null
     final_targets: null
     grouping_keys: simulation manifest
-    known_missingness: null
+    known_missingness: source files restricted; no run fields are available
     known_leakage_fields: null
     recommended_splits: [OOD_FACTOR_EXTREME]
     optimization_capable: true
     multimodal_capable: true
-    limitations: Restricted source files; simulated evidence only.
+    limitations: Zenodo record is audited, but files require authenticated access; simulated evidence only.
