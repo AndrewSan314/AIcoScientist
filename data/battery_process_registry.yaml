@@ -49,25 +49,25 @@ datasets:
     display_name: Warwick Ultrasonic Inline QC
     chemistry: graphite anode / NMC622 cathode
     evidence_kind: PHYSICAL_HISTORICAL
-    source_doi: 10.17632/c62yn37d9h.1
-    version: "1"
+    source_doi: 10.17632/c62yn37d9h.4
+    version: "4"
     license: CC BY 4.0
-    source_paths: []
-    source_hashes: {}
-    sample_count: null
-    run_count: null
-    process_stages: [CALENDERING]
-    modalities: [ULTRASOUND_SIGNAL, ULTRASOUND_SPECTRUM, PROCESS_TABULAR]
-    control_variables: null
-    intermediate_targets: [thickness]
-    final_targets: []
-    grouping_keys: null
-    known_missingness: null
+    source_paths: [https://data.mendeley.com/public-api/zip/c62yn37d9h/download/4]
+    source_hashes: {frequency_domain_ultrasound_v4.zip: c8a8dbdcc0d7bbe2580ec1d3a0842d13706f794c6c13ee33b9eb1ade9056825d}
+    sample_count: 48
+    run_count: 48
+    process_stages: [CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [ULTRASOUND_SPECTRUM, PROCESS_TABULAR]
+    control_variables: [calendering_speed, web_speed, coat_weight, roll_gap]
+    intermediate_targets: [pre_calendering_thickness_um]
+    final_targets: [post_calendering_thickness_um, post_calendering_density_g_cm3]
+    grouping_keys: exact observed calendering control tuple
+    known_missingness: target density is absent where not reported by source
     known_leakage_fields: post-calendering signals are unavailable before a calendering decision
     recommended_splits: [LEAVE_ONE_PROCESS_SETTING_OUT]
     optimization_capable: false
     multimodal_capable: true
-    limitations: Source assets and field mapping must be audited before use.
+    limitations: V4 paired spectra parsed; after-calendering signal remains unavailable at a CALENDERING decision horizon.
   - id: naion_hte
     display_name: Na-ion High-Throughput Process Chain
     chemistry: sodium-ion
