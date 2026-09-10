@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import zipfile
 
 import pytest
 
 from src.datasets.battery_process.drakopoulos_graphite import DrakopoulosGraphiteAdapter
 from src.datasets.battery_process.base import RawDatasetUnavailableError
+from src.datasets.battery_process.naion_hte import NaIonHTEAdapter
 from src.datasets.battery_process.warwick_ultrasound import WarwickUltrasoundAdapter
 from src.process.modalities import ModalityType
 from .conftest import process_run
@@ -37,3 +39,15 @@ def test_ultrasound_adapter_parses_paired_fft_records(tmp_path) -> None:
 
     assert run.final_kpis["post_calendering_thickness_um"].value == 34.0
     assert [item.modality_type for item in run.stages[0].modalities] == [ModalityType.ULTRASOUND_SPECTRUM] * 2
+
+
+def test_naion_adapter_streams_source_csv_traces(tmp_path) -> None:
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    rows = "Data_Point,Cycle_Index,Test_Time(s),Current(A),Voltage(V),Charge_Capacity(Ah),Discharge_Capacity(Ah)\n1,1,1,0.1,3.0,0.01,0\n2,1,2,-0.1,2.9,0.01,0.009\n"
+    with zipfile.ZipFile(raw / "Na-upscaling.zip", "w") as archive:
+        archive.writestr("Na-upscaling/C20Form/test_cell35_Channel_12_Wb_1.CSV", rows)
+    run = NaIonHTEAdapter(tmp_path).load_runs()[0]
+    assert run.cell_id == "35"
+    assert run.final_kpis["last_observed_discharge_capacity_ah"].value == 0.009
+    assert run.stages[1].modalities[0].modality_type == ModalityType.CYCLING_CURVE

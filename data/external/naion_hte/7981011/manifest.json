@@ -1,0 +1,10 @@
+{
+  "dataset_id": "naion_hte",
+  "source_doi": "10.5281/zenodo.7981011",
+  "source_record": "7981011",
+  "source_url": "https://zenodo.org/api/records/7981011/files/Na-upscaling.zip/content",
+  "archive": "Na-upscaling.zip",
+  "source_md5": "955939922331e756e756ef81a6b68fb6",
+  "sha256": "881bf2f9f9fbf59cd2d05b3c996f94940c0e0abe89d9eae6106ea0bee4e7a4f5",
+  "license": "not specified in record metadata"
+}
