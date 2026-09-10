@@ -8,15 +8,15 @@ datasets:
     license: CC BY 4.0
     source_paths: []
     source_hashes: {}
-    sample_count: null
-    run_count: null
+    sample_count: 13
+    run_count: 13
     process_stages: [FORMULATION, MIXING, COATING, DRYING, CALENDERING, FINAL_CHARACTERIZATION]
     modalities: [PROCESS_TABULAR, SCALAR_METROLOGY]
-    control_variables: null
-    intermediate_targets: null
-    final_targets: null
-    grouping_keys: null
-    known_missingness: null
+    control_variables: [drying_temperature_c, coating_speed_m_per_min, coating_gap_um, active_material_fraction_pct, conductive_additive_fraction_pct, binder_cmc_fraction_pct, binder_sbr_fraction_pct, additive_fraction_pct]
+    intermediate_targets: []
+    final_targets: [cell_capacity_mah]
+    grouping_keys: exact observed control tuple
+    known_missingness: sparse formulation fractions and temperature
     known_leakage_fields: null
     recommended_splits: [GROUP_BY_PROCESS_RECIPE, OOD_FACTOR_EXTREME]
     optimization_capable: true
@@ -31,15 +31,15 @@ datasets:
     license: CC0 1.0
     source_paths: []
     source_hashes: {}
-    sample_count: null
-    run_count: null
+    sample_count: 18
+    run_count: 18
     process_stages: [CALENDERING, FINAL_CHARACTERIZATION]
-    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY, EIS_SPECTRUM, CYCLING_CURVE]
-    control_variables: null
-    intermediate_targets: null
-    final_targets: null
-    grouping_keys: DOE condition (to be verified in raw data)
-    known_missingness: null
+    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY]
+    control_variables: [target_coating_weight_gsm, roll_temperature_c, target_density_g_cm3, target_porosity_pct, roll_gap_um, number_of_passes]
+    intermediate_targets: [pre_calendering_thickness_um, pre_calendering_density_g_cm3, pre_calendering_porosity_pct]
+    final_targets: [calendered_density_g_cm3, calendered_porosity_pct]
+    grouping_keys: exact DOE control tuple
+    known_missingness: no missing fields among parsed source rows
     known_leakage_fields: null
     recommended_splits: [GROUP_BY_DOE_CONDITION]
     optimization_capable: true

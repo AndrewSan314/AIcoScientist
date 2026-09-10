@@ -23,7 +23,7 @@ def main() -> None:
     parser.add_argument("--dataset", choices=ADAPTERS, required=True)
     parser.add_argument("--task", choices=["recipe_optimization"], default="recipe_optimization")
     parser.add_argument("--target", required=True, help="Verified adapter target name; never invent a source column.")
-    parser.add_argument("--stage", choices=[stage.value for stage in ProcessStage], default=ProcessStage.CALENDERING.value)
+    parser.add_argument("--stage", choices=[stage.value for stage in ProcessStage], default=ProcessStage.COATING.value)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--initial-count", type=int, default=3)
     parser.add_argument("--output", type=Path, default=Path("outputs/process_demo"))
