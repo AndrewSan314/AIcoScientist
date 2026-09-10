@@ -2736,10 +2736,10 @@
         "surrogateSimulation": true,
         "evidenceKind": "SIMULATED_SURROGATE"
       },
-      "summary": "Source diagnostic reports a 333333 candidate virtual pool, a 200 candidate working set, and ExtraTreesRegressor (100 trees, max_depth=8) surrogate trajectories.",
+      "summary": "Source diagnostic reports a 333333 candidate virtual pool, a 200 candidate working set, and ensemble surrogate trajectories.",
       "statusBadge": "Screening & Surrogate",
       "disclosures": [
-        "Surrogate oracle is an ExtraTrees in-silico computational approximation only; no live physical battery cycling is performed.",
+        "Surrogate oracle is an in-silico computational approximation only; no live physical battery cycling is performed.",
         "The surrogate oracle is a frozen univariate target model: it does not model coupling between multiple measured modalities or causal process structure.",
         "Screening timing is stage-specific: the 200-candidate diagnostic reports 2.535 seconds; the end-to-end simulation artifact reports 1.1821 seconds.",
         "Target audit: Normalized discharge capacity at the 20th cycle (C_dis^20 / C_theoretical)."
