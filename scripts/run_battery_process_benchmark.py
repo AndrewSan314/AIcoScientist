@@ -14,6 +14,7 @@ from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosG
 from src.datasets.battery_process.base import ProcessOptimizationTask, ProcessPredictionTask
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.evaluation import reveal_one
+from src.process.fusion.encoders import SignalFeatureEncoder
 from src.process.models.flat_baseline import TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
@@ -92,6 +93,37 @@ def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
     }
 
 
+def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
+    if adapter.metadata().dataset_id != "warwick_ultrasound":
+        return {"status": "SKIPPED", "reason": "no source-backed paired process/spectrum task"}
+    rows = []
+    encoder = SignalFeatureEncoder()
+    for run in adapter.load_runs():
+        target = run.final_kpis.get("post_calendering_thickness_um")
+        stage = next((item for item in run.stages if item.stage_type == ProcessStage.CALENDERING), None)
+        spectrum = next((item for item in stage.modalities if item.modality_id.endswith("before_spectrum")), None) if stage else None
+        if target is None or not isinstance(target.value, (int, float)) or spectrum is None:
+            continue
+        rows.append((dict(stage.controls), encoder.encode(spectrum.values["fft_magnitude"]), float(target.value), run.batch_id or run.run_id))
+    if len(rows) < 8 or len({row[3] for row in rows}) < 4:
+        return {"status": "SKIPPED", "reason": "insufficient grouped paired process/spectrum rows"}
+    columns = sorted({name for controls, _, _, _ in rows for name in controls})
+    process = np.asarray([[float(controls[name].value) if name in controls else 0.0 for name in columns] + [float(name in controls) for name in columns] for controls, _, _, _ in rows])
+    signal = np.asarray([features for _, features, _, _ in rows])
+    target = np.asarray([value for _, _, value, _ in rows])
+    groups = np.asarray([group for _, _, _, group in rows])
+    train, test = next(GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed).split(process, target, groups))
+    reports = []
+    for name, features in {"process_only": process, "signal_only": signal, "naive_concatenation": np.column_stack((process, signal))}.items():
+        prediction, _ = TreeEnsembleBaseline(random_state=seed).fit(features[train], target[train]).predict_distribution(features[test])
+        reports.append({"mode": name, "metrics": _metrics(target[test], prediction)})
+    return {
+        "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
+        "rows": len(rows), "groups": len(set(groups)), "reports": reports,
+        "gated_fusion": {"status": "IMPLEMENTED_NOT_CLAIMED", "reason": "GatedMaskedFusion is unit-tested; this small-N benchmark reports auditable scalar baselines without a superiority claim."},
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a source-backed BPSS benchmark manifest.")
     parser.add_argument("--output", type=Path, default=Path("outputs/process_benchmark"))
@@ -120,6 +152,9 @@ def main() -> None:
         prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
         (root / "prediction" / f"{dataset_id}.json").write_text(json.dumps(prediction_report, indent=2), encoding="utf-8")
         (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval")} for item in predictions]}, indent=2), encoding="utf-8")
+        ablation = _ultrasound_ablation(adapter, seed=args.seed)
+        (root / "multimodal_ablations" / f"{dataset_id}.json").write_text(json.dumps(ablation, indent=2), encoding="utf-8")
+        (root / "missing_modality" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "status": ablation["status"], "policy": "An unavailable modality is omitted, never zero-filled.", "process_only_reference": next((item for item in ablation.get("reports", []) if item["mode"] == "process_only"), None)}, indent=2), encoding="utf-8")
         replays = [_offline_replay(adapter, seed=args.seed + offset) for offset in range(args.replay_seeds)]
         (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
