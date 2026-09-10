@@ -15,11 +15,13 @@ import type {
   ReplayCampaign,
   ScientificDatasetRegistryEntry,
   ResolvedViewShell,
+  SampleItem,
 } from '../types/mission_control';
 
 const POLICY_ALIASES: Record<string, string> = {
   hig_cost_penalized: 'HYBRID',
   greedy_hig: 'PURE_HIG',
+  discovery_only: 'DISCOVERY_ONLY',
   random_baseline: 'RANDOM_ACTION',
 };
 
@@ -72,10 +74,21 @@ function sourceManifest(snapshot: SnapshotData, entry: ScientificDatasetRegistry
     sourcePaths: entry.provenance.sourcePaths,
     sourceArtifactHashes: snapshot.manifest?.source_artifact_hashes,
     scientificSourceCommit: snapshot.manifest?.scientific_source_commit,
+    scientificSourceCommitStatus: snapshot.manifest?.scientific_source_commit_status,
   };
 }
 
-function candidatePool(run: FlagshipCampaign | ReplayCampaign): Candidate[] {
+function availableAlternatives(entry: ScientificDatasetRegistryEntry, mode: string) {
+  const configurations = entry.availableConfigurations.filter((configuration) => configuration.mode === mode);
+  return {
+    configurations,
+    policies: [...new Set(configurations.map((configuration) => configuration.policy))].sort(),
+    seeds: [...new Set(configurations.map((configuration) => configuration.seed).filter((seed): seed is number => seed !== undefined))].sort((a, b) => a - b),
+    worlds: [...new Set(configurations.map((configuration) => configuration.world).filter((world): world is string => Boolean(world)))].sort(),
+  };
+}
+
+function candidatePool(snapshot: SnapshotData, run: FlagshipCampaign | ReplayCampaign): Candidate[] {
   const ids = new Set<string>();
   for (const step of run.steps) {
     for (const action of step.all_scored_actions || []) {
@@ -84,11 +97,35 @@ function candidatePool(run: FlagshipCampaign | ReplayCampaign): Candidate[] {
     const candidateId = step.preregistration?.action?.candidate_id;
     if (candidateId) ids.add(candidateId);
   }
-  return [...ids].map((candidate_id) => ({
-    candidate_id,
-    composition_label: candidate_id,
-    target_system: 'mode' in run && run.mode === 'HISTORICAL_REPLAY' ? 'A-Lab Precursor Genome' : 'Controlled synthetic world',
-  }));
+  const samples = new Map((snapshot.samples || []).map((sample) => [sample.sample_id, sample]));
+  return [...ids].map((candidate_id) => {
+    const sample: SampleItem | undefined = 'mode' in run && run.mode === 'HISTORICAL_REPLAY' ? samples.get(candidate_id) : undefined;
+    return sample ? {
+      candidate_id,
+      composition_label: sample.target_formula || candidate_id,
+      target_system: 'A-Lab Precursor Genome',
+      target_formula: sample.target_formula,
+      target_stoichiometry: sample.target_stoichiometry,
+      precursors: sample.precursors,
+      heating_temperature_c: sample.heating_temperature_c,
+      heating_time_minutes: sample.heating_time_minutes,
+      reaction_energy_ev_per_atom: sample.reaction_energy_ev_per_atom,
+      reaction_category: sample.reaction_category,
+      xrd_available: sample.xrd_available,
+      refinement_available: sample.refinement_available,
+      outcome_available: sample.outcome_available,
+      refinement_rwp: sample.refinement_rwp,
+      refinement_phases: sample.refinement_phases,
+      refinement_cases: sample.refinement_cases,
+      selected_refinement_case_id: sample.selected_refinement_case_id,
+      refinement_selection_rule: sample.refinement_selection_rule,
+      source_record_identifier: sample.source_record_identifier,
+    } : {
+      candidate_id,
+      composition_label: candidate_id,
+      target_system: 'Controlled synthetic world',
+    };
+  });
 }
 
 function actionModalities(run: FlagshipCampaign | ReplayCampaign): string[] {
@@ -103,36 +140,43 @@ function selectedCost(run: FlagshipCampaign | ReplayCampaign): number | null {
   return costs.reduce<number>((sum, cost) => sum + Number(cost), 0);
 }
 
-function recordedRun(snapshot: SnapshotData, config: CampaignResolutionConfiguration, defaultConfig: Record<string, any>):
+function recordedRun(snapshot: SnapshotData, entry: ScientificDatasetRegistryEntry, config: CampaignResolutionConfiguration, defaultConfig: Record<string, any>, expectedMode: 'CONTROLLED_SYNTHETIC' | 'HISTORICAL_REPLAY'):
   | { ok: true; value: FlagshipCampaign | ReplayCampaign }
   | { ok: false; result: ResolveResult<ResolvedCampaignView> } {
-  const runs = snapshot.campaign_runs || [];
-  const requestedRunId = config.runId;
-  const requestedWorld = config.world ?? defaultConfig.world;
-  const requestedSeed = config.seed ?? defaultConfig.seed;
-  const requestedPolicy = config.policy ?? defaultConfig.policy;
-
-  const run = requestedRunId
-    ? runs.find((candidate) => candidate.run_id === requestedRunId)
-    : runs.find((candidate) => {
-        const campaign = candidate as FlagshipCampaign;
-        return campaign.world === requestedWorld && campaign.seed === requestedSeed && campaign.policy === requestedPolicy;
-      });
-
+  const runs = (snapshot.campaign_runs || []).filter((candidate) => ('mode' in candidate ? candidate.mode : 'CONTROLLED_SYNTHETIC') === expectedMode);
+  const alternatives = availableAlternatives(entry, expectedMode);
+  const requested = {
+    runId: config.runId,
+    world: config.world !== undefined ? config.world : defaultConfig.world,
+    seed: config.seed !== undefined ? config.seed : defaultConfig.seed,
+    policy: config.policy !== undefined ? config.policy : defaultConfig.policy,
+  };
+  const matchesExplicit = (run: FlagshipCampaign | ReplayCampaign) => {
+    if (requested.runId !== undefined && run.run_id !== requested.runId) return false;
+    if (config.world !== undefined && (run as FlagshipCampaign).world !== config.world) return false;
+    if (config.seed !== undefined && run.seed !== config.seed) return false;
+    if (config.policy !== undefined && run.policy !== config.policy) return false;
+    return true;
+  };
+  const run = requested.runId
+    ? runs.find((candidate) => candidate.run_id === requested.runId && matchesExplicit(candidate))
+    : runs.find((candidate) =>
+        (expectedMode === 'HISTORICAL_REPLAY' ? config.world === undefined : (candidate as FlagshipCampaign).world === requested.world)
+        && candidate.seed === requested.seed
+        && candidate.policy === requested.policy,
+      );
   if (!run) {
-    const reason = requestedRunId
-      ? 'RUN_NOT_AVAILABLE'
-      : requestedWorld && !runs.some((candidate) => (candidate as FlagshipCampaign).world === requestedWorld)
-      ? 'UNKNOWN_WORLD'
-      : requestedSeed !== undefined && !runs.some((candidate) => (candidate as FlagshipCampaign).seed === requestedSeed)
-      ? 'UNKNOWN_SEED'
-      : requestedPolicy && !runs.some((candidate) => (candidate as FlagshipCampaign).policy === requestedPolicy)
-      ? 'UNKNOWN_POLICY'
+    const values = new Set(alternatives.configurations.map((configuration) => configuration.policy));
+    const seeds = new Set(alternatives.configurations.map((configuration) => configuration.seed));
+    const worlds = new Set(alternatives.configurations.map((configuration) => configuration.world));
+    const reason = config.policy !== undefined && !values.has(config.policy) ? 'UNKNOWN_POLICY'
+      : config.seed !== undefined && !seeds.has(config.seed) ? 'UNKNOWN_SEED'
+      : config.world !== undefined && !worlds.has(config.world) ? 'UNKNOWN_WORLD'
       : 'RUN_NOT_AVAILABLE';
-    return {
-      ok: false,
-      result: failure(reason, 'No recorded campaign run matches the requested configuration.', runs.map((item) => item.run_id)),
-    };
+    return { ok: false, result: failure(reason, 'No recorded campaign run matches the requested exact configuration tuple.', {
+      requested,
+      ...availableAlternatives(entry, expectedMode),
+    }) };
   }
   return { ok: true, value: run };
 }
@@ -178,7 +222,7 @@ function controlledView(
   const ranked = finalBeliefs && Object.entries(finalBeliefs).sort(([, a], [, b]) => b - a)[0];
   const cost = selectedCost(run);
   const selected = run.steps.at(-1)?.preregistration?.action;
-  const campaign = { ...run, candidates: candidatePool(run) };
+  const campaign = { ...run, candidates: candidatePool(snapshot, run) };
   return {
     kind: 'controlled_multimodal',
     ...shell(snapshot, entry, 'controlled_multimodal', 'CONTROLLED_SYNTHETIC', {
@@ -194,7 +238,7 @@ function controlledView(
     hypotheses: Object.keys(snapshot.hypotheses),
     modalities: actionModalities(campaign),
     banner: {
-      title: `Recorded run ${run.run_id}`,
+      title: `Controlled Multimodal Campaign • ${run.policy === 'HYBRID' ? 'Hybrid Policy' : run.policy === 'PURE_HIG' ? 'Pure HIG Policy' : run.policy === 'DISCOVERY_ONLY' ? 'Discovery-Only Policy' : run.policy}`,
       badge: `${campaign.steps.length} steps recorded`,
       description: selected
         ? `Selected action ${selected.candidate_id} / ${selected.action_type} is sourced from the recorded trajectory.`
@@ -213,7 +257,7 @@ function historicalView(
   entry: ScientificDatasetRegistryEntry,
   run: ReplayCampaign,
 ): HistoricalReplayView {
-  const campaign = { ...run, candidates: candidatePool(run) };
+  const campaign = { ...run, candidates: candidatePool(snapshot, run) };
   const replaySampleIds = [...new Set(campaign.steps.map((step) => step.preregistration?.action?.candidate_id).filter(Boolean) as string[])];
   const cost = selectedCost(campaign);
   const finalBeliefs = campaign.steps.at(-1)?.belief_update?.beliefs_after;
@@ -235,7 +279,7 @@ function historicalView(
     replaySampleIds,
     alabSamples: snapshot.samples.filter((sample) => replaySampleIds.includes(sample.sample_id)),
     banner: {
-      title: `Recorded historical replay ${run.run_id}`,
+      title: 'A-Lab Synthesis Retrospective Replay • Autonomous Loop',
       badge: `${campaign.steps.length} recorded steps`,
       description: 'Historical observations are replayed from source-linked artifacts; this is not the original laboratory policy log.',
       confidenceOrUtilityLabel: ranked
@@ -271,9 +315,6 @@ function surrogateView(
     revealedNoisyValue: run.revealed_noisy_values[index],
     selectedLatentValue: run.selected_latent_values[index],
     bestSelectedLatentValue: run.best_latent_curve[index],
-    simpleRegretLatent: index === run.queried_candidate_ids.length - 1 ? run.simple_regret_latent : undefined,
-    cumulativeRawHigNats: undefined,
-    realizedEntropyReductionNats: undefined,
   }));
   const summary = snapshot.electrolyte_simulation.simulation_policies?.[policy];
   return {
@@ -286,7 +327,7 @@ function surrogateView(
     simulationRun: run,
     screeningDiagnostics: screening,
     banner: {
-      title: `Recorded surrogate trajectory ${policy} / seed ${run.seed}`,
+      title: `Electrolyte Surrogate Optimization • ${policy === 'HYBRID_DEFAULT' ? 'Hybrid Policy' : policy === 'PURE_HIG' ? 'Pure HIG Policy' : policy === 'DISCOVERY_ONLY' ? 'Discovery-Only Policy' : policy}`,
       badge: `${run.queried_candidate_ids.length} queries recorded`,
       description: 'This view replays a frozen in-silico surrogate trajectory; no physical battery measurement was performed.',
       confidenceOrUtilityLabel: run.best_selected_latent_capacity !== undefined && run.simple_regret_latent !== undefined
@@ -319,29 +360,40 @@ export function resolveCampaign(
     const simulation = snapshot.electrolyte_simulation;
     const runs = simulation?.detailed_policy_seed_runs;
     if (!runs || typeof runs !== 'object') return failure('SOURCE_ARTIFACT_MISSING', 'Surrogate trajectory artifact is missing detailed policy runs.');
-    const requestedPolicy = configuration.policy || selectedPolicyId || String(entry.defaultConfiguration.policy);
+    if (configuration.runId !== undefined || configuration.world !== undefined) {
+      return failure('UNSUPPORTED_CONFIGURATION', 'Surrogate trajectories accept only an exact source policy and seed tuple.');
+    }
+    const requestedPolicy = configuration.policy ?? selectedPolicyId ?? String(entry.defaultConfiguration.policy);
     const policy = SURROGATE_POLICY_ALIASES[requestedPolicy] || requestedPolicy;
     if (!Object.prototype.hasOwnProperty.call(runs, policy)) {
-      return failure('UNKNOWN_POLICY', `No surrogate policy is recorded as ${requestedPolicy}.`, Object.keys(runs));
+      return failure('UNKNOWN_POLICY', `No surrogate policy is recorded as ${requestedPolicy}.`, availableAlternatives(entry, 'SIMULATED_SURROGATE'));
     }
     const requestedSeed = configuration.seed ?? Number(entry.defaultConfiguration.seed);
     const activeRun = (runs[policy] as SurrogateRun[]).find((run) => run.seed === requestedSeed);
     if (!activeRun) {
-      return failure('RUN_NOT_AVAILABLE', `No surrogate trajectory is recorded for ${policy} / seed ${requestedSeed}.`, (runs[policy] as SurrogateRun[]).map((run) => run.seed));
+      return failure('RUN_NOT_AVAILABLE', `No surrogate trajectory is recorded for ${policy} / seed ${requestedSeed}.`, availableAlternatives(entry, 'SIMULATED_SURROGATE'));
     }
     if (!validSurrogateRun(activeRun)) return failure('INVALID_SOURCE_DATA', `Surrogate trajectory ${policy} / seed ${requestedSeed} has mismatched or non-finite arrays.`);
     return { ok: true, value: surrogateView(snapshot, entry, activeRun, snapshot.electrolyte_screening, policy) };
   }
 
-  const requestedPolicy = configuration.policy || (selectedPolicyId ? POLICY_ALIASES[selectedPolicyId] || selectedPolicyId : undefined);
-  const runResult = recordedRun(snapshot, { ...configuration, policy: requestedPolicy }, entry.defaultConfiguration);
+  const policyInput = configuration.policy ?? selectedPolicyId;
+  const requestedPolicy = policyInput ? POLICY_ALIASES[policyInput] || policyInput : undefined;
+  const expectedMode = canonicalId === 'alab_precursor_genome' ? 'HISTORICAL_REPLAY' : 'CONTROLLED_SYNTHETIC';
+  const runResult = recordedRun(snapshot, entry, { ...configuration, policy: requestedPolicy }, entry.defaultConfiguration, expectedMode);
   if (!runResult.ok) return runResult.result;
   const run = runResult.value;
   if (canonicalId === 'alab_precursor_genome') {
-    if (!('mode' in run) || run.mode !== 'HISTORICAL_REPLAY') return failure('UNSUPPORTED_CONFIGURATION', `Run ${run.run_id} is not a historical replay.`);
-    return { ok: true, value: historicalView(snapshot, entry, run as ReplayCampaign) };
+    const replayRun = run as ReplayCampaign;
+    const referencedSampleIds = [...new Set([
+      ...(replayRun.replay_candidate_ids || []),
+      ...replayRun.steps.flatMap((step) => (step.all_scored_actions || []).map((score) => score.action?.candidate_id).filter(Boolean) as string[]),
+      ...replayRun.steps.map((step) => step.preregistration?.action?.candidate_id).filter(Boolean) as string[],
+    ])];
+    const missingSampleIds = referencedSampleIds.filter((id) => !snapshot.samples.some((sample) => sample.sample_id === id));
+    if (missingSampleIds.length) return failure('SOURCE_ARTIFACT_MISSING', `Replay ${replayRun.run_id} references missing A-Lab source samples.`, { runId: replayRun.run_id, missingSampleIds });
+    return { ok: true, value: historicalView(snapshot, entry, replayRun) };
   }
-  if ('mode' in run && run.mode === 'HISTORICAL_REPLAY') return failure('UNSUPPORTED_CONFIGURATION', `Historical run ${run.run_id} cannot resolve as a controlled campaign.`);
   return { ok: true, value: controlledView(snapshot, entry, run as FlagshipCampaign) };
 }
 

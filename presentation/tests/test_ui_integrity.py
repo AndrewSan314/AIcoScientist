@@ -59,6 +59,14 @@ def test_manifest_artifact_hashes(manifest):
         actual_hash = compute_sha256(path)
         assert actual_hash == expected_hash, f"Hash mismatch for {name}: {actual_hash} != {expected_hash}"
 
+    assert manifest["scientific_source_commit"] is None
+    assert manifest["scientific_source_commit_status"] == "UNVERIFIED"
+    provenance_path = ROOT / manifest["scientific_source_provenance_manifest"]
+    provenance = json.load(provenance_path.open("r", encoding="utf-8"))
+    assert provenance["scientific_source_commit"] is None
+    assert provenance["scientific_source_commit_status"] == "UNVERIFIED"
+    assert {item["artifact_name"] for item in provenance["artifacts"]} == set(hashes)
+
 
 def test_alab_sample_provenance_and_count(snapshot):
     samples = snapshot.get("samples", [])
@@ -73,6 +81,9 @@ def test_alab_sample_provenance_and_count(snapshot):
     assert pg_0309["reaction_category"] == "transformed"
     assert "outcome_utility" not in pg_0309
     assert pg_0309["refinement_rwp"] == 1.17
+    assert len(pg_0309["refinement_cases"]) == 2
+    assert pg_0309["selected_refinement_case_id"].endswith(":case:0")
+    assert pg_0309["refinement_selection_rule"] == "source_canonical_active_scan_and_case"
 
     for s in samples:
         assert s.get("source_archive") == "data/external/precursor_genome_2026/ledger_precursor_genome.json"
@@ -246,7 +257,10 @@ def test_dataset_registry_completeness(snapshot):
     alloy = datasets["controlled_multimodal_alloy"]
     assert alloy["candidateCount"] == 12
     assert alloy["provenance"]["sourceType"] == "IN_SILICO_BENCHMARK"
-    assert alloy["capabilities"]["competingHypotheses"] is True
+    assert alloy["capabilities"]["modelHypothesesAvailable"] is True
+    assert alloy["capabilities"]["posteriorModelWeightsAvailable"] is True
+    assert alloy["capabilities"]["mutuallyExclusivePhysicalMechanismsClaimed"] is True
+    assert alloy["capabilities"]["prospectiveMechanismIdentification"] is False
     assert alloy["capabilities"]["closedLoopExecution"] is True
     assert alloy["capabilities"]["preregistrationReplay"] is True
     alloy_modalities = set(alloy["modalities"].keys())
@@ -256,7 +270,10 @@ def test_dataset_registry_completeness(snapshot):
     alab = datasets["alab_precursor_genome"]
     assert alab["candidateCount"] == 1035
     assert alab["provenance"]["sourceType"] == "PEER_REVIEWED_BENCHMARK"
-    assert alab["capabilities"]["competingHypotheses"] is False
+    assert alab["capabilities"]["modelHypothesesAvailable"] is True
+    assert alab["capabilities"]["posteriorModelWeightsAvailable"] is True
+    assert alab["capabilities"]["mutuallyExclusivePhysicalMechanismsClaimed"] is False
+    assert alab["capabilities"]["prospectiveMechanismIdentification"] is False
     assert alab["capabilities"]["closedLoopExecution"] is False
     assert alab["capabilities"]["preregistrationReplay"] is True
     assert alab["provenance"]["doi"] == "10.5281/zenodo.21285546"
@@ -272,7 +289,10 @@ def test_dataset_registry_completeness(snapshot):
     assert electrolyte["candidateCount"] == 333333
     assert electrolyte["screenedWorkingSetCount"] == 200
     assert electrolyte["capabilities"]["surrogateSimulation"] is True
-    assert electrolyte["capabilities"]["competingHypotheses"] is False
+    assert electrolyte["capabilities"]["modelHypothesesAvailable"] is False
+    assert electrolyte["capabilities"]["posteriorModelWeightsAvailable"] is False
+    assert electrolyte["capabilities"]["mutuallyExclusivePhysicalMechanismsClaimed"] is False
+    assert electrolyte["capabilities"]["prospectiveMechanismIdentification"] is False
     assert electrolyte["provenance"]["doi"] == "10.1038/s41467-025-63303-7"
     assert electrolyte["targetObservable"] == "norm_capacity_3"
     assert electrolyte["scientificTargetName"] == "C_norm^20"
@@ -331,5 +351,41 @@ def test_campaign_resolution_isolation(snapshot):
     assert len(queried_cands) == 15
     for cid in queried_cands:
         assert cid.startswith("ELEC_")
+
+
+def test_exact_source_configuration_matrices(snapshot):
+    datasets = {dataset["id"]: dataset for dataset in snapshot["dataset_registry"]["datasets"]}
+
+    def tuple_key(configuration):
+        return tuple(configuration.get(key) for key in ("configurationId", "runId", "world", "seed", "policy", "mode", "stepCount"))
+
+    for dataset_id, mode in (("controlled_multimodal_alloy", "CONTROLLED_SYNTHETIC"), ("alab_precursor_genome", "HISTORICAL_REPLAY")):
+        expected = {
+            (run["run_id"], run["run_id"], run.get("world"), run["seed"], run["policy"], mode, len(run["steps"]))
+            for run in snapshot["campaign_runs"] if run.get("mode") == mode
+        }
+        actual = {tuple_key(configuration) for configuration in datasets[dataset_id]["availableConfigurations"]}
+        assert actual == expected
+
+    expected_electrolyte = {
+        (f"{policy}::{run['seed']}", None, None, run["seed"], policy, "SIMULATED_SURROGATE", len(run["queried_candidate_ids"]))
+        for policy, runs in snapshot["electrolyte_simulation"]["detailed_policy_seed_runs"].items()
+        for run in runs
+    }
+    actual_electrolyte = {tuple_key(configuration) for configuration in datasets["anode_free_electrolyte_screening"]["availableConfigurations"]}
+    assert actual_electrolyte == expected_electrolyte
+
+
+def test_alab_featured_source_metadata_joins(snapshot):
+    raw = json.load((ROOT / "data" / "external" / "precursor_genome_2026" / "ledger_precursor_genome.json").open("r", encoding="utf-8"))
+    joined = {sample["sample_id"]: sample for sample in snapshot["samples"]}
+    source = {sample["sample_id"]: sample for sample in raw["samples"]}
+    for sample_id in ("PG_0309", "PG_0214", "PG_0209"):
+        assert joined[sample_id]["target_formula"] == source[sample_id]["target_compound"]
+        assert joined[sample_id]["target_stoichiometry"] == source[sample_id].get("target_stoichiometry")
+        assert joined[sample_id]["source_record_identifier"] == sample_id
+        assert joined[sample_id]["refinement_available"] is True
+        assert joined[sample_id]["selected_refinement_case_id"] is not None
+        assert joined[sample_id]["refinement_selection_rule"]
 
 

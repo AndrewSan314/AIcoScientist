@@ -6,7 +6,7 @@ import {
   Zap,
   Crosshair
 } from 'lucide-react';
-import type { Candidate, CampaignStep } from '../types/mission_control';
+import type { Candidate, CampaignStep, DisplayLayout } from '../types/mission_control';
 
 interface StarkHologramSphereProps {
   candidates: Candidate[];
@@ -23,6 +23,7 @@ interface AtomNode {
   composition: string;
   kind: 'SCIENTIFIC_CANDIDATE' | 'DECORATIVE_LATTICE_NODE';
   isSelectable: boolean;
+  layout: DisplayLayout;
   x0: number;
   y0: number;
   z0: number;
@@ -146,7 +147,8 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           label: cid.replace('controlled-', 'Syn-'),
           composition: cand.composition_label || `Candidate ${cid}`,
           kind: 'SCIENTIFIC_CANDIDATE',
-          isSelectable: true,
+           isSelectable: true,
+           layout: { kind: 'PRESENTATION_ONLY', algorithm: 'FIBONACCI_SPHERE', x: x0, y: y0, z: z0 },
           x0,
           y0,
           z0,
@@ -175,7 +177,8 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
           label: `Lattice #${i}`,
           composition: 'Structural Lattice Scaffold Point',
           kind: 'DECORATIVE_LATTICE_NODE',
-          isSelectable: false,
+           isSelectable: false,
+           layout: { kind: 'PRESENTATION_ONLY', algorithm: 'FIBONACCI_SPHERE', x: x0, y: y0, z: z0 },
           x0,
           y0,
           z0,
@@ -785,7 +788,7 @@ export const StarkHologramSphere: React.FC<StarkHologramSphereProps> = ({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-white ring-2 ring-red-400 shadow-sm shadow-red-400" />
-            <span className="text-white font-bold">Recommended Decision ({winnerId || 'Locked'})</span>
+            <span className="text-white font-bold">Recorded Winner ({winnerId || 'Locked'})</span>
           </div>
           {selectedCandidateId && selectedCandidateId !== winnerId && (
             <div className="flex items-center gap-1.5">

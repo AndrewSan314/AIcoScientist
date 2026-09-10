@@ -1,9 +1,11 @@
 {
   "snapshot_schema_version": "1.3.0",
-  "generated_at_utc": "2026-09-09T19:06:36.944466+00:00",
-  "presentation_build_commit": "b4405e8baeec243a23ace4f9fa2243670ab562df",
-  "snapshot_generator_commit": "b4405e8baeec243a23ace4f9fa2243670ab562df",
-  "scientific_source_commit": "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e",
+  "generated_at_utc": "2026-09-10T09:05:56.724586+00:00",
+  "presentation_build_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+  "snapshot_generator_commit": "8afd3bbab942d0f34cadecbe5d4218b5133a79a5",
+  "scientific_source_commit": null,
+  "scientific_source_commit_status": "UNVERIFIED",
+  "scientific_source_provenance_manifest": "presentation/data/scientific_source_provenance.json",
   "source_branch": "integration/multimodal-scientific-engine",
   "source_artifact_hashes": {
     "evidence_ledger": "02cd3a2482304e4e7a1f0cb5d407546448d304a5f9af25fb6dd73a25b44ffaed",

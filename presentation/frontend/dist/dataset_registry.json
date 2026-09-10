@@ -1,5 +1,5 @@
 {
-  "registry_schema_version": "1.0.0",
+  "registry_schema_version": "1.1.0",
   "datasets": [
     {
       "id": "controlled_multimodal_alloy",
@@ -32,61 +32,931 @@
         "controlled-8",
         "controlled-9"
       ],
-      "availableRunIds": [
-        "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
-        "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
-        "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
-        "policy_comparison:WORLD_H1_PHASE_PURITY:42:DISCOVERY_ONLY",
-        "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID",
-        "policy_comparison:WORLD_H1_PHASE_PURITY:42:PURE_HIG"
-      ],
-      "availablePolicies": [
-        "DISCOVERY_ONLY",
-        "HYBRID",
-        "PURE_HIG"
-      ],
-      "availableSeeds": [
-        7,
-        42,
-        101,
-        314,
-        2024
-      ],
-      "availableWorlds": [
-        "CLEAN_WORLD_H1_PHASE_PURITY",
-        "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY",
-        "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS",
-        "STRESS_WORLD_H1_PHASE_PURITY",
-        "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY",
-        "STRESS_WORLD_H3_MORPHOLOGY_KINETICS",
-        "WORLD_H1_PHASE_PURITY"
+      "availableConfigurations": [
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
+          "runId": "controlled_world:CLEAN_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "CLEAN_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H1_PHASE_PURITY:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "EDS",
+            "OUTCOME_TEST",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H2_COMPOSITION_HOMOGENEITY"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:101:PURE_HIG",
+          "seed": 101,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:2024:PURE_HIG",
+          "seed": 2024,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:314:PURE_HIG",
+          "seed": 314,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
+          "runId": "controlled_world:STRESS_WORLD_H3_MORPHOLOGY_KINETICS:7:PURE_HIG",
+          "seed": 7,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "SEM",
+            "XRD"
+          ],
+          "world": "STRESS_WORLD_H3_MORPHOLOGY_KINETICS"
+        },
+        {
+          "configurationId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:DISCOVERY_ONLY",
+          "runId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:DISCOVERY_ONLY",
+          "seed": 42,
+          "policy": "DISCOVERY_ONLY",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID",
+          "runId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:HYBRID",
+          "seed": 42,
+          "policy": "HYBRID",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "WORLD_H1_PHASE_PURITY"
+        },
+        {
+          "configurationId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "runId": "policy_comparison:WORLD_H1_PHASE_PURITY:42:PURE_HIG",
+          "seed": 42,
+          "policy": "PURE_HIG",
+          "mode": "CONTROLLED_SYNTHETIC",
+          "stepCount": 4,
+          "candidateIds": [
+            "controlled-0",
+            "controlled-1",
+            "controlled-10",
+            "controlled-11",
+            "controlled-2",
+            "controlled-3",
+            "controlled-4",
+            "controlled-5",
+            "controlled-6",
+            "controlled-7",
+            "controlled-8",
+            "controlled-9"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ],
+          "world": "WORLD_H1_PHASE_PURITY"
+        }
       ],
       "modalities": {
         "XRD": {
@@ -120,7 +990,10 @@
         "policy": "HYBRID"
       },
       "capabilities": {
-        "competingHypotheses": true,
+        "modelHypothesesAvailable": true,
+        "posteriorModelWeightsAvailable": true,
+        "mutuallyExclusivePhysicalMechanismsClaimed": true,
+        "prospectiveMechanismIdentification": false,
         "candidateScreening": false,
         "preregistrationReplay": true,
         "closedLoopExecution": true,
@@ -1197,18 +2070,61 @@
         "PG_0319",
         "PG_0324"
       ],
-      "availableRunIds": [
-        "replay:HYBRID:101:2",
-        "replay:HYBRID:42:1",
-        "replay:HYBRID:7:0"
-      ],
-      "availablePolicies": [
-        "HYBRID"
-      ],
-      "availableSeeds": [
-        7,
-        42,
-        101
+      "availableConfigurations": [
+        {
+          "configurationId": "replay:HYBRID:101:2",
+          "runId": "replay:HYBRID:101:2",
+          "seed": 101,
+          "policy": "HYBRID",
+          "mode": "HISTORICAL_REPLAY",
+          "stepCount": 6,
+          "candidateIds": [
+            "PG_0313",
+            "PG_0319",
+            "PG_0324"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ]
+        },
+        {
+          "configurationId": "replay:HYBRID:42:1",
+          "runId": "replay:HYBRID:42:1",
+          "seed": 42,
+          "policy": "HYBRID",
+          "mode": "HISTORICAL_REPLAY",
+          "stepCount": 6,
+          "candidateIds": [
+            "PG_0209",
+            "PG_0214",
+            "PG_0309"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ]
+        },
+        {
+          "configurationId": "replay:HYBRID:7:0",
+          "runId": "replay:HYBRID:7:0",
+          "seed": 7,
+          "policy": "HYBRID",
+          "mode": "HISTORICAL_REPLAY",
+          "stepCount": 6,
+          "candidateIds": [
+            "PG_0105",
+            "PG_0109",
+            "PG_0119"
+          ],
+          "modalities": [
+            "OUTCOME_TEST",
+            "REFINEMENT",
+            "XRD"
+          ]
+        }
       ],
       "modalities": {
         "XRD": {
@@ -1263,7 +2179,10 @@
         "policy": "HYBRID"
       },
       "capabilities": {
-        "competingHypotheses": false,
+        "modelHypothesesAvailable": true,
+        "posteriorModelWeightsAvailable": true,
+        "mutuallyExclusivePhysicalMechanismsClaimed": false,
+        "prospectiveMechanismIdentification": false,
         "candidateScreening": false,
         "preregistrationReplay": true,
         "closedLoopExecution": false,
@@ -1318,24 +2237,502 @@
         "seed": 42,
         "queries": 15
       },
-      "availablePolicies": [
-        "BOTORCH_EI_DIRECT",
-        "BOTORCH_GPUCB_DIRECT",
-        "DISCOVERY_ONLY",
-        "HYBRID_DEFAULT",
-        "PURE_FALSIFICATION",
-        "RANDOM"
-      ],
-      "availableSeeds": [
-        42,
-        101,
-        2024
+      "availableConfigurations": [
+        {
+          "configurationId": "BOTORCH_EI_DIRECT::42",
+          "policy": "BOTORCH_EI_DIRECT",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_ebfc9c3a215447be",
+            "ELEC_419828c7c9442277",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_48eb8bfa6d816015",
+            "ELEC_2497bc8561e9bb41",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_5b8a15301aa10271",
+            "ELEC_274a8731c379535d",
+            "ELEC_53d0524f6f0ca231",
+            "ELEC_2d7a84bcec4bf628",
+            "ELEC_8aaf6640daa15853",
+            "ELEC_c5afa70d49ee8486"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "BOTORCH_EI_DIRECT::101",
+          "policy": "BOTORCH_EI_DIRECT",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_1180506ad1aae9ce",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_2457579d9a1f5998",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_d96d76a064f5016a",
+            "ELEC_8aaf6640daa15853",
+            "ELEC_ae4fbf7d48e06518",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_85aebfd9f8fc662b",
+            "ELEC_a12c45820b3aad11",
+            "ELEC_9a54edc22078ab02",
+            "ELEC_cbcc509886dac415"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "BOTORCH_EI_DIRECT::2024",
+          "policy": "BOTORCH_EI_DIRECT",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2457579d9a1f5998",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_2a5b7fc5ddf833d3",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_5b8a15301aa10271",
+            "ELEC_274a8731c379535d",
+            "ELEC_d96d76a064f5016a",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_dbb0f01b50d0c0e7",
+            "ELEC_7c3b122a5a470a9d",
+            "ELEC_2d7a84bcec4bf628",
+            "ELEC_91b799039b035ecb",
+            "ELEC_b9034018bb4ef898",
+            "ELEC_884024c586d2db84"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "BOTORCH_GPUCB_DIRECT::42",
+          "policy": "BOTORCH_GPUCB_DIRECT",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_ebfc9c3a215447be",
+            "ELEC_130661d81b8fc9cf",
+            "ELEC_673be08e5ecb337b",
+            "ELEC_48eb8bfa6d816015",
+            "ELEC_e6b6c47ad00d2d6a",
+            "ELEC_3122b87d4f6df835",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_de0d49638ba89933",
+            "ELEC_2497bc8561e9bb41",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_e02876abac7a34e4",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_c5dd357271de3e01"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "BOTORCH_GPUCB_DIRECT::101",
+          "policy": "BOTORCH_GPUCB_DIRECT",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_4745e6c00434e07a",
+            "ELEC_2457579d9a1f5998",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_b7f0c156726fbc6b",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_2a5b7fc5ddf833d3",
+            "ELEC_1180506ad1aae9ce",
+            "ELEC_e02876abac7a34e4",
+            "ELEC_c5dd357271de3e01",
+            "ELEC_6614c3d3522cc136",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_c5afa70d49ee8486",
+            "ELEC_943df94bc27e2c6c"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "BOTORCH_GPUCB_DIRECT::2024",
+          "policy": "BOTORCH_GPUCB_DIRECT",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_b7f0c156726fbc6b",
+            "ELEC_06e5e6a371a55a64",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_de0d49638ba89933",
+            "ELEC_c5afa70d49ee8486",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_4745e6c00434e07a",
+            "ELEC_2a5b7fc5ddf833d3",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_6614c3d3522cc136",
+            "ELEC_1180506ad1aae9ce",
+            "ELEC_f6b070826bf9fb71"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "DISCOVERY_ONLY::42",
+          "policy": "DISCOVERY_ONLY",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_ebfc9c3a215447be",
+            "ELEC_419828c7c9442277",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_48eb8bfa6d816015",
+            "ELEC_2497bc8561e9bb41",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_5b8a15301aa10271",
+            "ELEC_274a8731c379535d",
+            "ELEC_53d0524f6f0ca231",
+            "ELEC_2d7a84bcec4bf628",
+            "ELEC_8aaf6640daa15853",
+            "ELEC_c5afa70d49ee8486"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "DISCOVERY_ONLY::101",
+          "policy": "DISCOVERY_ONLY",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_1180506ad1aae9ce",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_2457579d9a1f5998",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_d96d76a064f5016a",
+            "ELEC_8aaf6640daa15853",
+            "ELEC_ae4fbf7d48e06518",
+            "ELEC_943df94bc27e2c6c",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_85aebfd9f8fc662b",
+            "ELEC_a12c45820b3aad11",
+            "ELEC_9a54edc22078ab02",
+            "ELEC_cbcc509886dac415"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "DISCOVERY_ONLY::2024",
+          "policy": "DISCOVERY_ONLY",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2457579d9a1f5998",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_2a5b7fc5ddf833d3",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_5b8a15301aa10271",
+            "ELEC_274a8731c379535d",
+            "ELEC_d96d76a064f5016a",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_dbb0f01b50d0c0e7",
+            "ELEC_7c3b122a5a470a9d",
+            "ELEC_2d7a84bcec4bf628",
+            "ELEC_91b799039b035ecb",
+            "ELEC_b9034018bb4ef898",
+            "ELEC_884024c586d2db84"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "HYBRID_DEFAULT::42",
+          "policy": "HYBRID_DEFAULT",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_ae4fbf7d48e06518",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_0e988a19c105db11",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_e15411ad601f84fe",
+            "ELEC_6f63c09550de8b96",
+            "ELEC_09b692096b935922",
+            "ELEC_d728ac2cbcc72afb",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_f9168344dc2a7d27",
+            "ELEC_792e94f4d861dc70",
+            "ELEC_a12c45820b3aad11",
+            "ELEC_c94eddf6fbe1a85a",
+            "ELEC_705ff7d31d4b4a88",
+            "ELEC_9a54edc22078ab02"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "HYBRID_DEFAULT::101",
+          "policy": "HYBRID_DEFAULT",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_130661d81b8fc9cf",
+            "ELEC_f9168344dc2a7d27",
+            "ELEC_07046eac546db1b5",
+            "ELEC_2e2265f862a7c1f1",
+            "ELEC_7ab3310c93d364b3",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_18b6d4a91e9f47e5",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_dea451d2ed171365",
+            "ELEC_c5afa70d49ee8486",
+            "ELEC_6f63c09550de8b96",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_274a8731c379535d"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "HYBRID_DEFAULT::2024",
+          "policy": "HYBRID_DEFAULT",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_b0dcc2b2d1411afc",
+            "ELEC_2457579d9a1f5998",
+            "ELEC_83380688ce92ae46",
+            "ELEC_7c3b122a5a470a9d",
+            "ELEC_884024c586d2db84",
+            "ELEC_e26d42f4145f62d7",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_274a8731c379535d",
+            "ELEC_e2ec385ebd7bec26",
+            "ELEC_df5e49194dc974e6",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_4658f745f31a64c1",
+            "ELEC_d96d76a064f5016a",
+            "ELEC_2a5b7fc5ddf833d3"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "PURE_FALSIFICATION::42",
+          "policy": "PURE_FALSIFICATION",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_ae4fbf7d48e06518",
+            "ELEC_0e988a19c105db11",
+            "ELEC_87bd4e4b63cc5084",
+            "ELEC_ff6222c2408b3976",
+            "ELEC_2ee0928722c2c9a1",
+            "ELEC_6cdd7b1f9a71469f",
+            "ELEC_e7280ddc223d8cf7",
+            "ELEC_9b7c1502e1f4a572",
+            "ELEC_bc1cef45fd1f8bdc",
+            "ELEC_1ff03819fa79eb48",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_18b6d4a91e9f47e5",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_0426de52c4e6ef96"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "PURE_FALSIFICATION::101",
+          "policy": "PURE_FALSIFICATION",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_103f22410afc6b07",
+            "ELEC_f9168344dc2a7d27",
+            "ELEC_dd7c37b110efbdc1",
+            "ELEC_5b8a15301aa10271",
+            "ELEC_274a8731c379535d",
+            "ELEC_705ff7d31d4b4a88",
+            "ELEC_f62f80120d4f088b",
+            "ELEC_884024c586d2db84",
+            "ELEC_4516a0a0cd328cd3",
+            "ELEC_f55f1531a42c60a6",
+            "ELEC_a12c45820b3aad11",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_7c3b122a5a470a9d",
+            "ELEC_ebfc9c3a215447be",
+            "ELEC_f5360ff703cbb12d"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "PURE_FALSIFICATION::2024",
+          "policy": "PURE_FALSIFICATION",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_742536097a53c2bd",
+            "ELEC_5f3faaf3421abbec",
+            "ELEC_c5d29a6f18e010ba",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_bc1cef45fd1f8bdc",
+            "ELEC_705ff7d31d4b4a88",
+            "ELEC_49a2a9aaab9b2111",
+            "ELEC_f55f1531a42c60a6",
+            "ELEC_8c3d0f7fd28e6935",
+            "ELEC_76c6c3b118850175",
+            "ELEC_2eed92d7e1282a5f",
+            "ELEC_0426de52c4e6ef96",
+            "ELEC_f500ab30708855b7",
+            "ELEC_53d0524f6f0ca231"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "RANDOM::42",
+          "policy": "RANDOM",
+          "seed": 42,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_e02876abac7a34e4",
+            "ELEC_705ff7d31d4b4a88",
+            "ELEC_7a584cbff52e8366",
+            "ELEC_f9168344dc2a7d27",
+            "ELEC_0e5b4868f6420475",
+            "ELEC_23f048d29c88c664",
+            "ELEC_317ccb5a6f839661",
+            "ELEC_4905e7d45fdfd4bd",
+            "ELEC_0b38dbabf99cec78",
+            "ELEC_07046eac546db1b5",
+            "ELEC_c3998f0778bd5b5b",
+            "ELEC_0620f97d1431d200",
+            "ELEC_96bbbf00ccbae859",
+            "ELEC_0e988a19c105db11",
+            "ELEC_8fd46e5e57c2b2ce"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "RANDOM::101",
+          "policy": "RANDOM",
+          "seed": 101,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_fc6a8df1ddc0894e",
+            "ELEC_9666d23ca25571bb",
+            "ELEC_b6211bb8ccbabfa8",
+            "ELEC_9b7c1502e1f4a572",
+            "ELEC_2a5b7fc5ddf833d3",
+            "ELEC_40af1b952b0d177c",
+            "ELEC_ee8ae3bdd7076951",
+            "ELEC_a9458a1366f2d887",
+            "ELEC_993f6f03e78cb9e4",
+            "ELEC_56a129d58a565a0f",
+            "ELEC_dbb0f01b50d0c0e7",
+            "ELEC_ac557005c7922f03",
+            "ELEC_f55f1531a42c60a6",
+            "ELEC_23f048d29c88c664",
+            "ELEC_13baf1a9729fe8eb"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        },
+        {
+          "configurationId": "RANDOM::2024",
+          "policy": "RANDOM",
+          "seed": 2024,
+          "mode": "SIMULATED_SURROGATE",
+          "stepCount": 15,
+          "candidateIds": [
+            "ELEC_2e2265f862a7c1f1",
+            "ELEC_d728ac2cbcc72afb",
+            "ELEC_b26358d31f190682",
+            "ELEC_ff6222c2408b3976",
+            "ELEC_b9034018bb4ef898",
+            "ELEC_6300423265e1fc95",
+            "ELEC_cf45aef061c86c04",
+            "ELEC_ad76085cc4d6536f",
+            "ELEC_ac557005c7922f03",
+            "ELEC_55a668240bcb0720",
+            "ELEC_1973a4d5f6cac8ea",
+            "ELEC_a12c45820b3aad11",
+            "ELEC_23f048d29c88c664",
+            "ELEC_1180506ad1aae9ce",
+            "ELEC_65f2b1fe11ca9703"
+          ],
+          "modalities": [
+            "SURROGATE_ORACLE"
+          ]
+        }
       ],
       "capabilities": {
-        "competingHypotheses": false,
+        "modelHypothesesAvailable": false,
+        "posteriorModelWeightsAvailable": false,
+        "mutuallyExclusivePhysicalMechanismsClaimed": false,
+        "prospectiveMechanismIdentification": false,
         "candidateScreening": true,
         "preregistrationReplay": false,
-        "closedLoopExecution": true,
+        "closedLoopExecution": false,
         "surrogateSimulation": true,
         "evidenceKind": "SIMULATED_SURROGATE"
       },

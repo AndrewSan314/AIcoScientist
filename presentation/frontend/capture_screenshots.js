@@ -5,6 +5,8 @@ import path from 'path';
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const SCREENSHOT_DIR = path.resolve('../screenshots');
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
+
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
@@ -18,11 +20,13 @@ async function run() {
   });
 
   const page = await browser.newPage();
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  page.on('pageerror', err => console.error('PAGE ERROR:', err.stack || err.message));
   await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
 
   // 1. Discovery Setup State (Default)
   console.log('Capturing: desktop_discovery_setup.png');
-  await page.goto('http://localhost:8501/', { waitUntil: 'networkidle0', timeout: 15000 });
+  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0', timeout: 15000 });
   await new Promise((r) => setTimeout(r, 2000));
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_discovery_setup.png') });
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_1920_discovery_lab.png') });
@@ -32,7 +36,7 @@ async function run() {
   const buttons = await page.$$('button');
   for (const b of buttons) {
     const text = await page.evaluate((el) => el.textContent, b);
-    if (text && (text.includes('Execute 4-step campaign') || text.includes('Run discovery analysis'))) {
+    if (text && (text.includes('Execute 4-step campaign') || text.includes('Run discovery analysis') || text.includes('Open recorded analysis'))) {
       await b.click();
       break;
     }
@@ -57,6 +61,13 @@ async function run() {
   }
   await new Promise((r) => setTimeout(r, 1000));
   await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_discovery_predictive_chart.png') });
+
+  // 3c. Scroll down to capture the Heatmap and Score Decomposition
+  console.log('Capturing: desktop_discovery_decision_matrix.png');
+  await page.evaluate(() => window.scrollBy(0, 650));
+  await new Promise((r) => setTimeout(r, 600));
+  await page.screenshot({ path: path.join(SCREENSHOT_DIR, 'desktop_discovery_decision_matrix.png') });
+  await page.evaluate(() => window.scrollTo(0, 0));
 
   // 4. Evidence Workspace (Default Q1)
   console.log('Capturing: desktop_evidence_benchmarks.png');

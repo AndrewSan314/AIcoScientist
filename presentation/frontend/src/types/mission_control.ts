@@ -46,12 +46,32 @@ export interface DatasetProvenance {
 }
 
 export interface DatasetCapabilities {
-  competingHypotheses: boolean;
+  modelHypothesesAvailable: boolean;
+  posteriorModelWeightsAvailable: boolean;
+  mutuallyExclusivePhysicalMechanismsClaimed: boolean;
+  prospectiveMechanismIdentification: boolean;
   candidateScreening: boolean;
   preregistrationReplay: boolean;
   closedLoopExecution: boolean;
   surrogateSimulation: boolean;
   evidenceKind: EvidenceMode;
+}
+
+export type RecordedConfigurationMode =
+  | 'CONTROLLED_SYNTHETIC'
+  | 'HISTORICAL_REPLAY'
+  | 'SIMULATED_SURROGATE';
+
+export interface RecordedCampaignConfiguration {
+  configurationId: string;
+  runId?: string;
+  world?: string;
+  seed?: number;
+  policy: string;
+  mode: RecordedConfigurationMode;
+  stepCount: number;
+  candidateIds?: string[];
+  modalities?: string[];
 }
 
 export interface ScientificDatasetRegistryEntry {
@@ -63,10 +83,7 @@ export interface ScientificDatasetRegistryEntry {
   candidateCount: number;
   candidateIds: string[];
   featuredCandidateIds?: string[];
-  availableRunIds?: string[];
-  availablePolicies?: string[];
-  availableSeeds?: number[];
-  availableWorlds?: string[];
+  availableConfigurations: RecordedCampaignConfiguration[];
   screenedWorkingSetCount?: number;
   targetObservable?: string;
   scientificTargetName?: string;
@@ -97,7 +114,8 @@ export interface ResolvedViewShell {
   sourceManifest: {
     sourcePaths: string[];
     sourceArtifactHashes?: Record<string, string>;
-    scientificSourceCommit?: string;
+    scientificSourceCommit?: string | null;
+    scientificSourceCommitStatus?: string;
   };
   availableViews: string[];
   limitations: string[];
@@ -141,10 +159,6 @@ export interface SurrogateTrajectoryStep {
   revealedNoisyValue?: number;
   selectedLatentValue?: number;
   bestSelectedLatentValue?: number;
-  bestNoisyObservedValue?: number;
-  simpleRegretLatent?: number;
-  cumulativeRawHigNats?: number;
-  realizedEntropyReductionNats?: number;
 }
 
 export interface SurrogateOptimizationView extends ResolvedViewShell {
@@ -212,6 +226,9 @@ export interface ProvenanceInfo {
   head_commit: string;
   branch: string;
   total_ledger_events: number;
+  scientific_source_commit?: string | null;
+  scientific_source_commit_status?: 'VERIFIED' | 'UNVERIFIED';
+  scientific_source_provenance_manifest?: string;
 }
 
 export interface HypothesisDefinition {
@@ -230,12 +247,32 @@ export interface HypothesisDefinition {
 export interface Candidate {
   candidate_id: string;
   composition_label: string;
-  x?: number;
-  y?: number;
-  characterization_cost?: number;
-  outcome_cost?: number;
   target_system?: string;
+  target_formula?: string | null;
+  target_stoichiometry?: string | null;
+  precursors?: string[];
+  heating_temperature_c?: number | null;
+  heating_time_minutes?: number | null;
+  reaction_energy_ev_per_atom?: number | null;
+  reaction_category?: string | null;
+  xrd_available?: boolean;
+  refinement_available?: boolean;
+  outcome_available?: boolean;
+  refinement_rwp?: number | null;
+  refinement_phases?: Array<{ name: string; weight_percent?: number | null }>;
+  refinement_cases?: RefinementCase[];
+  selected_refinement_case_id?: string | null;
+  refinement_selection_rule?: string | null;
+  source_record_identifier?: string | null;
   status?: 'unobserved' | 'characterized' | 'outcome_tested' | 'selected';
+}
+
+export interface DisplayLayout {
+  kind: 'PRESENTATION_ONLY';
+  algorithm: 'GRID' | 'FIBONACCI_SPHERE' | 'INDEX_LAYOUT';
+  x: number;
+  y: number;
+  z?: number;
 }
 
 export interface ActionMetadata {
@@ -495,8 +532,6 @@ export interface ElectrolyteSimulationData {
   detailed_policy_seed_runs?: Record<string, SurrogateRun[]>;
   simulation_policies?: Record<string, Record<string, number>>;
   evaluated_seeds?: number[];
-  availablePolicies?: string[];
-  availableSeeds?: number[];
 }
 
 export interface SurrogateRun {
@@ -528,12 +563,16 @@ export interface SampleItem {
   reaction_category?: string | null;
   xrd_available: boolean;
   refinement_available: boolean;
+  outcome_available: boolean;
   sem_available: boolean;
   eds_available: boolean;
   sem_availability_reason?: string;
   eds_availability_reason?: string;
   refinement_rwp?: number | null;
   refinement_phases?: Array<{ name: string; weight_percent?: number | null }>;
+  refinement_cases?: RefinementCase[];
+  selected_refinement_case_id?: string | null;
+  refinement_selection_rule?: string | null;
   canonical_descriptors?: Record<string, number>;
   refinement_observables?: Record<string, number>;
   source_archive: string;
@@ -541,6 +580,15 @@ export interface SampleItem {
   extractor_name?: string;
   extractor_version?: string;
   extractor_provenance?: string;
+}
+
+export interface RefinementCase {
+  scan_id: string;
+  case_id: string;
+  rwp?: number | null;
+  phases?: Record<string, number> | null;
+  source_index: number;
+  scan_index: number;
 }
 
 export interface CoreAbstraction {
@@ -567,7 +615,10 @@ export interface SnapshotManifest {
   snapshot_schema_version: string;
   generated_at_utc: string;
   presentation_build_commit: string;
-  scientific_source_commit: string;
+  snapshot_generator_commit: string;
+  scientific_source_commit: string | null;
+  scientific_source_commit_status: 'VERIFIED' | 'UNVERIFIED';
+  scientific_source_provenance_manifest: string;
   source_branch: string;
   source_artifact_hashes: Record<string, string>;
   source_dataset_manifest_hash: string;

@@ -197,7 +197,7 @@ export const PolicyTrajectoryChart: React.FC<Props> = ({ benchmarks }) => {
           </div>
         </div>
         <div className="text-[#8F9995]">
-          Evaluated across {benchmarks.trajectory_count ?? 'N/A'} source trajectories ({benchmarks.seeds?.length ?? 'N/A'} seeds per policy)
+          Evaluated across {benchmarks.trajectory_count ?? 'N/A'} source trajectories ({benchmarks.seeds?.length ?? 'N/A'} independent trials per policy)
         </div>
       </div>
     </div>

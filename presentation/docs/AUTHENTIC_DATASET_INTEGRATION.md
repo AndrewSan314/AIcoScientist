@@ -63,7 +63,7 @@ export interface ScientificDatasetRegistryEntry {
 ```
 
 ### Critical Capability Flags
-- `competingHypotheses`: `true` only for `controlled_multimodal_alloy` where Bayesian inference adjudicates among mutually exclusive hypotheses ($H_1, H_2, H_3$). Set to `false` for A-Lab and Electrolyte.
+- Capability fields are explicit: `modelHypothesesAvailable`, `posteriorModelWeightsAvailable`, `mutuallyExclusivePhysicalMechanismsClaimed`, and `prospectiveMechanismIdentification`. Controlled runs record synthetic model discrimination; A-Lab retains model/posterior records without claiming exhaustive physical mechanisms; Electrolyte exposes surrogate optimization only.
 - `candidateScreening`: `true` only for `anode_free_electrolyte_screening` where a 4-tranche rank ensemble screens 333,333 virtual formulations down to a working set of 200 in 2.535s.
 - `preregistrationReplay`: `true` for Controlled Alloy and A-Lab Replay, where audit records enforce pre-reveal hypothesis distributions and state sequence ordering ($t_B < t_C < t_D$).
 - `closedLoopExecution`: `true` when the policy actively selects subsequent actions from the unmeasured pool; `false` in A-Lab because the sequence was historically determined in the robotic wet lab.

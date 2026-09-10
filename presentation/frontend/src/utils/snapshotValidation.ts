@@ -15,7 +15,7 @@ function validateCampaign(campaign: any, errors: string[], label: string) {
   }
   const initialBeliefs = campaign.initial_beliefs || {};
   const initialSum = Object.values(initialBeliefs).reduce((sum: number, value: any) => sum + Number(value), 0);
-  if (Math.abs(initialSum - 1) > 1e-4) errors.push(`${label} initial beliefs do not sum to 1 (${initialSum}).`);
+  if (Math.abs(initialSum - 1) > 1e-4 || Object.values(initialBeliefs).some((value: any) => !finite(value) || value < 0 || value > 1)) errors.push(`${label} initial beliefs are not finite probabilities summing to 1.`);
   let previousBeliefs = initialBeliefs;
   campaign.steps.forEach((step: any, index: number) => {
     const name = `${label} step ${step?.step ?? index + 1}`;
@@ -30,29 +30,37 @@ function validateCampaign(campaign: any, errors: string[], label: string) {
     if (!(prereg.event_sequence < observation.event_sequence && observation.event_sequence < update.event_sequence)) {
       errors.push(`${name} event order is not preregistration < reveal < update.`);
     }
-    if (prereg.action?.candidate_id !== observation.action?.candidate_id || prereg.action?.action_type !== observation.action?.action_type) {
+    const actionKey = `${prereg.action?.candidate_id}|${prereg.action?.action_type}`;
+    if (!prereg.action?.action_id || `${observation.action?.candidate_id}|${observation.action?.action_type}` !== actionKey || `${update.action?.candidate_id}|${update.action?.action_type}` !== actionKey) {
       errors.push(`${name} selected action does not match its observation.`);
+    }
+    for (const event of [prereg, observation, update]) {
+      if ((event.run_id && event.run_id !== campaign.run_id) || event.step !== step.step || !Number.isInteger(event.event_sequence) || typeof event.timestamp !== 'string' || !event.timestamp) errors.push(`${name} contains an event with invalid identity or timestamp.`);
+      if (event.action?.requested_at_step !== undefined && event.action.requested_at_step !== step.step) errors.push(`${name} action step is inconsistent.`);
     }
     for (const [hypothesisId, value] of Object.entries(prereg.beliefs_before || {})) {
       if (Math.abs(Number(value) - Number(previousBeliefs[hypothesisId] ?? NaN)) > 1e-4) errors.push(`${name} belief continuity is broken for ${hypothesisId}.`);
     }
     const posterior = update.beliefs_after || {};
     const posteriorSum = Object.values(posterior).reduce((sum: number, value: any) => sum + Number(value), 0);
-    if (Math.abs(posteriorSum - 1) > 1e-4) errors.push(`${name} posterior does not sum to 1.`);
+    if (Math.abs(posteriorSum - 1) > 1e-4 || Object.values(posterior).some((value: any) => !finite(value) || value < 0 || value > 1)) errors.push(`${name} posterior is not finite or does not sum to 1.`);
+    if (JSON.stringify(update.beliefs_before) !== JSON.stringify(prereg.beliefs_before)) errors.push(`${name} update prior differs from preregistration.`);
     previousBeliefs = posterior;
     if (!prereg.predictive_distributions || !Object.keys(prereg.predictive_distributions).length) errors.push(`${name} has no predictive distributions.`);
     for (const [hypothesisId, distribution] of Object.entries<any>(prereg.predictive_distributions || {})) {
       if (distribution.distribution_kind === 'categorical') {
         const sum = (distribution.probabilities || []).reduce((total: number, value: any) => total + Number(value), 0);
-        if (Math.abs(sum - 1) > 1e-4) errors.push(`${name} ${hypothesisId} categorical probabilities are invalid.`);
+        if (Math.abs(sum - 1) > 1e-4 || !(distribution.probabilities || []).every((value: any) => finite(value) && value >= 0 && value <= 1)) errors.push(`${name} ${hypothesisId} categorical probabilities are invalid.`);
       } else if (!(distribution.variance || []).every((value: any) => finite(value) && value > 0)) {
         errors.push(`${name} ${hypothesisId} predictive variance is invalid.`);
       }
+      if (distribution.candidate_id !== prereg.action?.candidate_id || distribution.modality !== prereg.action?.action_type) errors.push(`${name} ${hypothesisId} predictive distribution is bound to another action.`);
     }
     const scores = step.all_scored_actions || [];
     if (!scores.length) errors.push(`${name} has no source action scores.`);
     scores.forEach((score: any) => {
       if (!score.action?.action_id) errors.push(`${name} has a score without a source action ID.`);
+      if (score.step !== step.step || (score.run_id && score.run_id !== campaign.run_id) || !Number.isInteger(score.event_sequence) || typeof score.timestamp !== 'string' || !score.timestamp || !finite(score.action?.estimated_cost)) errors.push(`${name} has a malformed source score event.`);
       for (const field of ['expected_hig_nats', 'discovery_utility', 'normalized_cost', 'total_action_score']) {
         if (!finite(score[field])) errors.push(`${name} source score field ${field} is not finite.`);
       }
@@ -66,10 +74,12 @@ export function validateSnapshot(data: any): ValidationResult {
   if (!data || typeof data !== 'object') return { valid: false, errors: ['Snapshot data is not an object.'], warnings };
 
   const manifest = data.manifest;
-  const manifestKeys = ['snapshot_schema_version', 'generated_at_utc', 'scientific_source_commit', 'snapshot_generator_commit', 'presentation_build_commit', 'source_branch', 'source_artifact_hashes', 'campaign_run_id', 'campaign_world', 'total_real_samples', 'validation_gate_pass_count'];
+  const manifestKeys = ['snapshot_schema_version', 'generated_at_utc', 'scientific_source_commit_status', 'scientific_source_provenance_manifest', 'snapshot_generator_commit', 'presentation_build_commit', 'source_branch', 'source_artifact_hashes', 'campaign_run_id', 'campaign_world', 'total_real_samples', 'validation_gate_pass_count'];
   if (!manifest) errors.push('Snapshot is missing its embedded manifest.');
   else {
     manifestKeys.forEach((key) => { if (manifest[key] === undefined || manifest[key] === null || manifest[key] === '') errors.push(`Manifest is missing ${key}.`); });
+    if (!['VERIFIED', 'UNVERIFIED'].includes(manifest.scientific_source_commit_status)) errors.push('Manifest scientific source commit status is invalid.');
+    if (manifest.scientific_source_commit_status === 'UNVERIFIED' && manifest.scientific_source_commit !== null) errors.push('Unverified manifest must not claim a scientific source commit.');
     if (Object.keys(manifest.source_artifact_hashes || {}).length < 10) errors.push('Manifest tracks fewer than 10 source artifacts.');
   }
 
@@ -80,7 +90,7 @@ export function validateSnapshot(data: any): ValidationResult {
   campaignRuns.forEach((run: any) => validateCampaign(run, errors, `Campaign ${run.run_id || 'unknown'}`));
 
   const samples = data.samples || [];
-  if (samples.length !== 1035 || new Set(samples.map((sample: any) => sample.sample_id)).size !== samples.length) errors.push('A-Lab sample catalog is not the unique 1,035-record source catalog.');
+  if (samples.length !== 1035 || new Set(samples.map((sample: any) => sample.sample_id)).size !== samples.length || samples.some((sample: any) => !Array.isArray(sample.refinement_cases) || !('outcome_available' in sample))) errors.push('A-Lab sample catalog is not the unique source catalog with refinement/outcome provenance.');
 
   const benchmarks = data.benchmarks;
   if (!benchmarks || benchmarks.status !== 'METHODOLOGY_VALID' || !Number.isInteger(benchmarks.trajectory_count) || benchmarks.trajectory_count <= 0) errors.push('Benchmark summary is missing or invalid.');
@@ -88,6 +98,8 @@ export function validateSnapshot(data: any): ValidationResult {
   const registry = data.dataset_registry;
   if (!registry || !Array.isArray(registry.datasets) || registry.datasets.length !== 3) errors.push('Dataset registry must contain the three canonical datasets.');
   (registry?.datasets || []).forEach((dataset: any) => {
+    if (!Array.isArray(dataset.availableConfigurations) || dataset.availableConfigurations.length === 0) errors.push(`${dataset.id} has no exact source configuration matrix.`);
+    if (dataset.capabilities?.competingHypotheses !== undefined) errors.push(`${dataset.id} exposes ambiguous competingHypotheses capability.`);
     if (Array.isArray(dataset.candidateIds) && dataset.candidateIds.length !== dataset.candidateCount) errors.push(`${dataset.id} candidate catalog is truncated.`);
     if (dataset.id === 'anode_free_electrolyte_screening' && /cycle 3/i.test(dataset.targetObservableDescription || '')) errors.push('Electrolyte registry contains the incorrect cycle-3 target description.');
   });

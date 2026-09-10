@@ -53,7 +53,7 @@ export const SCENES: SceneMeta[] = [
   },
   {
     index: 2,
-    title: '3. Recommended Experiment & Score Decomposition',
+    title: '3. Recorded Action & Score Decomposition',
     workspace: 'discovery',
     flowState: 'results',
     stepIndex: 1,

@@ -37,10 +37,10 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
     },
     {
       scene: 3,
-      title: '3. Recommended Experiment & Score Decomposition (1:00)',
+      title: '3. Recorded Action & Score Decomposition (1:00)',
       lead: '“The console exposes source score fields without reconstructing absent weighting components.”',
       talkingPoints: [
-        'Look at the Recommended Next Experiment Card: the selected candidate and modality come from the recorded run.',
+        'Look at the Recorded Action Card: the selected candidate and modality come from the recorded run.',
         'The Score Decomposition Waterfall stays unavailable when the source did not persist weights and normalized components.',
         'Use the source manifest and action payload for provenance; do not infer a cost or mechanism claim from a missing field.',
       ],
@@ -51,7 +51,7 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
       lead: '“Preregistration before reveal strictly firewalls observations, preventing hindsight bias with immutable audit logging.”',
       talkingPoints: [
         'State 1 (Scored): All candidate actions are objectively evaluated using predictive distributions.',
-        'State 2 (Preregistered): The selected experimental plan is cryptographically committed to the audit ledger before any measurement is taken.',
+        'State 2 (Preregistered): The source-recorded plan is shown before the observation reveal.',
         'State 3 (Observed): the source-linked observation is revealed for the preregistered action.',
         'State 4 (Belief Updated): the recorded posterior is displayed without calling it physical confirmation.',
       ],

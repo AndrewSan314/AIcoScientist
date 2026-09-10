@@ -127,7 +127,7 @@ export const SensitivityRankAgreementChart: React.FC<Props> = ({ sensitivity }) 
           <span>Source design: <strong>{sensitivity?.design?.low_samples ?? 'N/A'} vs {sensitivity?.design?.high_samples ?? 'N/A'} MC samples</strong></span>
         </div>
         <div className="text-[#8F9995]">
-          Design: {sensitivity?.trajectory_count ?? 'N/A'} paired source runs across {worlds.length || 'N/A'} worlds & {sensitivity?.design?.seeds?.length ?? 'N/A'} seeds
+          Evaluation: {sensitivity?.trajectory_count ?? 'N/A'} paired source runs across {worlds.length || 'N/A'} physical worlds ({sensitivity?.design?.seeds?.length ?? 'N/A'} randomized trials)
         </div>
       </div>
     </div>

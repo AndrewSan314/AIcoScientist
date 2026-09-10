@@ -47,7 +47,7 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData, 
             <Zap className="w-4 h-4 text-red-600" />
             <h4 className="text-sm font-bold text-slate-900 tracking-tight">Recorded Surrogate Trajectory</h4>
             <span className="text-2xs font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-              {selectedPolicy || 'Source policies'}{selectedSeed === undefined ? '' : ` / seed ${selectedSeed}`}
+              {selectedPolicy === 'HYBRID_DEFAULT' ? 'Hybrid Policy' : selectedPolicy === 'PURE_HIG' ? 'Pure HIG Policy' : selectedPolicy === 'DISCOVERY_ONLY' ? 'Discovery-Only Policy' : selectedPolicy || 'Acquisition Policy'}
             </span>
           </div>
           <p className="text-xs text-slate-500">Best selected latent value across the source query sequence</p>
@@ -83,7 +83,7 @@ export const ElectrolyteOptimizationChart: React.FC<Props> = ({ simulationData, 
               ))}
             </LineChart>
           </ResponsiveContainer>
-        ) : <div className="h-full flex items-center justify-center text-sm text-slate-500">No trajectory is recorded for this policy and seed.</div>}
+        ) : <div className="h-full flex items-center justify-center text-sm text-slate-500">No trajectory is recorded for this policy.</div>}
       </div>
 
       <div className="mt-2 pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-2xs font-mono text-slate-500">

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -28,8 +29,10 @@ FRONTEND_DIR = ROOT / "presentation" / "frontend"
 DEST_FILE = DATA_DIR / "snapshot.json"
 MANIFEST_FILE = DATA_DIR / "snapshot_manifest.json"
 REGISTRY_FILE = DATA_DIR / "dataset_registry.json"
+SOURCE_PROVENANCE_FILE = DATA_DIR / "scientific_source_provenance.json"
 
-SCIENTIFIC_SOURCE_COMMIT = "dc1f5fda1eb4327a4fe709de24a302643e0ecc8e"
+SCIENTIFIC_SOURCE_COMMIT = None
+SCIENTIFIC_SOURCE_COMMIT_STATUS = "UNVERIFIED"
 SNAPSHOT_SCHEMA_VERSION = "1.3.0"
 
 
@@ -81,6 +84,41 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return records
 
 
+def build_source_provenance_manifest(
+    source_artifacts: dict[str, Path],
+    source_hashes: dict[str, str],
+    generated_at_utc: str,
+    snapshot_generator_commit: str | None = None,
+    presentation_build_commit: str | None = None,
+) -> dict[str, Any]:
+    """Pin artifact identity without claiming an unverified scientific commit."""
+    return {
+        "schema_version": "1.0.0",
+        "generated_at_utc": generated_at_utc,
+        "snapshot_generator_commit": snapshot_generator_commit,
+        "presentation_build_commit": presentation_build_commit,
+        "scientific_source_commit": SCIENTIFIC_SOURCE_COMMIT,
+        "scientific_source_commit_status": SCIENTIFIC_SOURCE_COMMIT_STATUS,
+        "verification_method": (
+            "SHA-256 hashes are verified against the local source artifacts. "
+            "No required artifact embeds an independently verifiable scientific source SHA; "
+            "the external-source audit records no commit SHA."
+        ),
+        "artifacts": [
+            {
+                "artifact_name": name,
+                "artifact_path": path.relative_to(ROOT).as_posix(),
+                "artifact_sha256": source_hashes[name],
+                "generating_scientific_commit": None,
+                "generating_snapshot_commit": snapshot_generator_commit,
+                "presentation_build_commit": presentation_build_commit,
+                "provenance_verification_method": "local_artifact_sha256_only",
+            }
+            for name, path in source_artifacts.items()
+        ],
+    }
+
+
 def _parse_run_id(run_id: str) -> dict[str, Any]:
     parts = run_id.split(":")
     if parts[0] == "replay" and len(parts) == 4:
@@ -88,6 +126,72 @@ def _parse_run_id(run_id: str) -> dict[str, Any]:
     if parts[0] in {"controlled_world", "policy_comparison"} and len(parts) == 4:
         return {"world": parts[1], "seed": int(parts[2]), "policy": parts[3], "mode": "CONTROLLED_SYNTHETIC"}
     raise ValueError(f"Unsupported campaign run id: {run_id}")
+
+
+def _finite(value: Any) -> bool:
+    return isinstance(value, (int, float)) and math.isfinite(float(value))
+
+
+def _valid_beliefs(value: Any) -> bool:
+    return isinstance(value, dict) and bool(value) and all(_finite(prob) and 0 <= float(prob) <= 1 for prob in value.values()) and abs(sum(float(prob) for prob in value.values()) - 1) <= 1e-4
+
+
+def _canonical_refinement_case(scan: dict[str, Any]) -> tuple[dict[str, Any] | None, int | None, str | None]:
+    cases = scan.get("refinement_cases") or []
+    if not cases:
+        return None, None, None
+    active = scan.get("active_case_index")
+    if isinstance(active, int) and 0 <= active < len(cases):
+        return cases[active], active, "ledger_active_case_index"
+
+    def rank(item: tuple[int, dict[str, Any]]) -> tuple[int, float, float, int]:
+        index, case = item
+        verification = case.get("verification") or {}
+        is_manual = case.get("rank") == -1 or case.get("origin") == "manual"
+        quality = verification.get("human_quality_score")
+        quality_rank = float(quality) if _finite(quality) else float("inf")
+        rwp = float(case["rwp"]) if _finite(case.get("rwp")) else float("inf")
+        return (0 if is_manual else 1, quality_rank, rwp, index)
+
+    index, selected = min(enumerate(cases), key=rank)
+    method = "upstream_fallback_manual" if selected.get("rank") == -1 or selected.get("origin") == "manual" else "upstream_fallback_quality_or_rwp"
+    return selected, index, method
+
+
+def _canonical_scan(sample: dict[str, Any]) -> tuple[dict[str, Any] | None, int | None, str | None, bool]:
+    scans = sample.get("characterization", {}).get("xrd", {}).get("scans", [])
+    if not scans:
+        return None, None, None, False
+    active = sample.get("active_scan_index")
+    if isinstance(active, int) and 0 <= active < len(scans):
+        return scans[active], active, "ledger_active_scan_index", True
+
+    candidates = []
+    for index, scan in enumerate(scans):
+        case, case_index, _ = _canonical_refinement_case(scan)
+        if case is None:
+            continue
+        verification = case.get("verification") or {}
+        quality = verification.get("human_quality_score")
+        rwp = float(case["rwp"]) if _finite(case.get("rwp")) else float("inf")
+        candidates.append((0 if case.get("rank") == -1 or case.get("origin") == "manual" else 1, float(quality) if _finite(quality) else float("inf"), rwp, index, scan, case_index))
+    if candidates:
+        _, _, _, index, scan, _ = min(candidates, key=lambda item: item[:4])
+        return scan, index, "upstream_recomputed_active_scan", True
+    valid = next((index for index, scan in enumerate(scans) if scan.get("is_active") or scan.get("status") == "valid"), 0)
+    return scans[valid], valid, "noncanonical_replay_fallback", False
+
+
+def _refinement_case_record(sample_id: str, scan: dict[str, Any], scan_index: int, case_index: int, case: dict[str, Any]) -> dict[str, Any]:
+    scan_id = str(scan.get("filename") or f"{sample_id}:scan:{scan_index}")
+    return {
+        "scan_id": scan_id,
+        "case_id": f"{scan_id}:case:{case_index}",
+        "rwp": float(case["rwp"]) if _finite(case.get("rwp")) else None,
+        "phases": case.get("phase_weights") if isinstance(case.get("phase_weights"), dict) else None,
+        "source_index": case_index,
+        "scan_index": scan_index,
+    }
 
 
 def _build_recorded_campaign_run(run_id: str, ledger_events: list[dict[str, Any]]) -> dict[str, Any]:
@@ -99,23 +203,43 @@ def _build_recorded_campaign_run(run_id: str, ledger_events: list[dict[str, Any]
     by_step: dict[int, dict[str, Any]] = defaultdict(
         lambda: {"scores": [], "preregistration": None, "observation": None, "belief_update": None}
     )
+    seen_event_keys: set[tuple[int, str]] = set()
     for event in events:
         step = event.get("step")
         if not isinstance(step, int):
             raise ValueError(f"Run {run_id} contains an event without an integer step")
+        if event.get("run_id") != run_id or not isinstance(event.get("event_sequence"), int) or not isinstance(event.get("timestamp"), str) or not event.get("timestamp"):
+            raise ValueError(f"Run {run_id} contains an event with invalid identity or timestamp")
         event_type = event.get("event")
+        action = event.get("action")
+        if event_type in {"ACTION_SCORE_RECORD", "PREREGISTERED_SELECTED_ACTION", "MEASUREMENT_REVEALED", "BELIEF_UPDATE"}:
+            if not isinstance(action, dict) or not action.get("action_id") or not action.get("candidate_id") or not action.get("action_type"):
+                raise ValueError(f"Run {run_id} step {step} has an invalid action record")
+            if action.get("requested_at_step") not in {None, step}:
+                raise ValueError(f"Run {run_id} step {step} action requested_at_step is inconsistent")
         if event_type == "ACTION_SCORE_RECORD":
             by_step[step]["scores"].append(event)
         elif event_type == "PREREGISTERED_SELECTED_ACTION":
+            if (step, event_type) in seen_event_keys:
+                raise ValueError(f"Run {run_id} step {step} contains duplicate preregistration")
             by_step[step]["preregistration"] = event
         elif event_type == "MEASUREMENT_REVEALED":
+            if (step, event_type) in seen_event_keys:
+                raise ValueError(f"Run {run_id} step {step} contains duplicate observation")
             by_step[step]["observation"] = event
         elif event_type == "BELIEF_UPDATE":
+            if (step, event_type) in seen_event_keys:
+                raise ValueError(f"Run {run_id} step {step} contains duplicate belief update")
             by_step[step]["belief_update"] = event
+        seen_event_keys.add((step, event_type))
+
+    if sorted(by_step) != list(range(1, len(by_step) + 1)):
+        raise ValueError(f"Run {run_id} has non-contiguous step numbers")
 
     steps: list[dict[str, Any]] = []
     tested_candidates: list[str] = []
     candidate_modalities: dict[str, set[str]] = defaultdict(set)
+    previous_beliefs: dict[str, float] | None = None
     for step_number in sorted(by_step):
         step_data = by_step[step_number]
         prereg = step_data["preregistration"]
@@ -129,19 +253,49 @@ def _build_recorded_campaign_run(run_id: str, ledger_events: list[dict[str, Any]
             raise ValueError(f"Run {run_id} step {step_number} violates preregistration/reveal/update ordering")
         p_action = prereg.get("action", {})
         o_action = observation.get("action", {})
-        if (p_action.get("candidate_id"), p_action.get("action_type")) != (o_action.get("candidate_id"), o_action.get("action_type")):
+        u_action = belief_update.get("action", {})
+        action_key = (p_action.get("candidate_id"), p_action.get("action_type"))
+        if action_key != (o_action.get("candidate_id"), o_action.get("action_type")) or action_key != (u_action.get("candidate_id"), u_action.get("action_type")):
             raise ValueError(f"Run {run_id} step {step_number} selected action does not match observation")
-        beliefs = belief_update.get("beliefs_after")
-        if not isinstance(beliefs, dict) or abs(sum(float(value) for value in beliefs.values()) - 1.0) > 1e-4:
-            raise ValueError(f"Run {run_id} step {step_number} has invalid posterior beliefs")
+        prior = prereg.get("beliefs_before")
+        after = belief_update.get("beliefs_after")
+        if not _valid_beliefs(prior) or not _valid_beliefs(after) or prior.keys() != after.keys():
+            raise ValueError(f"Run {run_id} step {step_number} has invalid beliefs")
+        if previous_beliefs is not None and any(abs(float(prior[key]) - previous_beliefs.get(key, 0)) > 1e-4 for key in prior):
+            raise ValueError(f"Run {run_id} step {step_number} breaks belief continuity")
+        if belief_update.get("beliefs_before") != prior or observation.get("beliefs_before") not in (None, prior) or observation.get("beliefs_after") not in (None, after):
+            raise ValueError(f"Run {run_id} step {step_number} has inconsistent belief records")
+        previous_beliefs = {key: float(value) for key, value in after.items()}
+        score_actions = {score.get("action", {}).get("action_id") for score in scores}
+        if p_action.get("action_id") not in score_actions:
+            raise ValueError(f"Run {run_id} step {step_number} selected action is absent from scored actions")
+        distributions = prereg.get("predictive_distributions") or {}
+        if not isinstance(distributions, dict) or not distributions:
+            raise ValueError(f"Run {run_id} step {step_number} has no predictive distributions")
+        for dist in distributions.values():
+            if (dist.get("candidate_id"), dist.get("modality")) != action_key:
+                raise ValueError(f"Run {run_id} step {step_number} predictive distribution is bound to another action")
+            kind = dist.get("distribution_kind", "gaussian")
+            if kind == "gaussian":
+                means, variances = dist.get("mean"), dist.get("variance")
+                if not isinstance(means, list) or not isinstance(variances, list) or len(means) != len(variances) or not means or not all(_finite(value) for value in means) or not all(_finite(value) and float(value) > 0 for value in variances):
+                    raise ValueError(f"Run {run_id} step {step_number} has invalid predictive moments")
+            elif kind == "categorical":
+                probs = dist.get("probabilities")
+                if not isinstance(probs, list) or not probs or not all(_finite(value) and 0 <= float(value) <= 1 for value in probs) or abs(sum(float(value) for value in probs) - 1) > 1e-4:
+                    raise ValueError(f"Run {run_id} step {step_number} has invalid predictive probabilities")
         for score in scores:
             action = score.get("action", {})
             candidate_id = action.get("candidate_id")
             modality = action.get("action_type")
             if candidate_id and modality:
                 candidate_modalities[candidate_id].add(modality)
-            if "total_action_score" not in score:
-                raise ValueError(f"Run {run_id} step {step_number} has an unscored action record")
+            if any(not _finite(score.get(field)) for field in ["expected_hig_nats", "discovery_utility", "normalized_cost", "total_action_score"]):
+                raise ValueError(f"Run {run_id} step {step_number} has a non-finite source score")
+            if not _finite(action.get("estimated_cost")):
+                raise ValueError(f"Run {run_id} step {step_number} has a non-finite action cost")
+            if score.get("predictive_distributions") or score.get("predictive_distribution"):
+                raise ValueError(f"Run {run_id} step {step_number} stores predictive distributions on an alternative score")
         selected_candidate = p_action.get("candidate_id")
         tested_before = list(tested_candidates)
         if selected_candidate and selected_candidate not in tested_candidates:
@@ -221,16 +375,22 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
         outcome = s.get("outcome") or {}
         scans = s.get("characterization", {}).get("xrd", {}).get("scans", [])
 
-        # Find canonical refinement case Rwp if available
-        rwp = None
-        for sc in scans:
-            cases = sc.get("refinement_cases", [])
-            if cases and cases[0].get("rwp") is not None:
-                try:
-                    rwp = float(cases[0]["rwp"])
-                    break
-                except (ValueError, TypeError):
-                    pass
+        selected_scan, selected_scan_index, scan_rule, is_canonical_scan = _canonical_scan(s)
+        refinement_cases = []
+        for scan_index, scan in enumerate(scans):
+            for case_index, case in enumerate(scan.get("refinement_cases") or []):
+                refinement_cases.append(_refinement_case_record(sid, scan, scan_index, case_index, case))
+        selected_case = None
+        selected_case_index = None
+        case_rule = None
+        if selected_scan is not None and selected_scan_index is not None:
+            selected_case, selected_case_index, case_rule = _canonical_refinement_case(selected_scan)
+        selected_case_record = (
+            _refinement_case_record(sid, selected_scan, selected_scan_index, selected_case_index, selected_case)
+            if selected_scan is not None and selected_scan_index is not None and selected_case is not None and selected_case_index is not None
+            else None
+        )
+        rwp = selected_case_record.get("rwp") if selected_case_record else None
 
         cat = outcome.get("reaction_category")
         target_formula = s.get("target_compound")
@@ -270,7 +430,8 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
             "reaction_energy_ev_per_atom": float(s["reaction_energy_ev_per_atom"]) if s.get("reaction_energy_ev_per_atom") is not None else None,
             "reaction_category": cat,
             "xrd_available": bool(scans),
-            "refinement_available": rwp is not None or bool(any(sc.get("refinement_cases") for sc in scans)),
+            "refinement_available": bool(refinement_cases),
+            "outcome_available": bool(cat),
             "sem_available": False,
             "eds_available": False,
             "sem_availability_reason": "Archive present in sem.zip (408 MB) but lacks sample-level linkage (precursor-level only).",
@@ -278,10 +439,16 @@ def extract_real_alab_sample_catalog() -> list[dict[str, Any]]:
             "refinement_rwp": rwp,
             "refinement_phases": phases,
             "refinement_phases_preview": phases[:4],
+            "refinement_cases": refinement_cases,
+            "selected_refinement_case_id": selected_case_record.get("case_id") if selected_case_record else None,
+            "refinement_selection_rule": (
+                "source_canonical_active_scan_and_case" if scan_rule == "ledger_active_scan_index" and case_rule == "ledger_active_case_index"
+                else scan_rule or case_rule or "no_refinement_case"
+            ),
             "source_archive": "data/external/precursor_genome_2026/ledger_precursor_genome.json",
             "source_record_identifier": sid,
             "extractor_name": "ALabSourceLedgerExtractor.direct_v1",
-            "extractor_version": "1.1.0",
+            "extractor_version": "1.2.0",
         }
         catalog.append(item)
 
@@ -354,12 +521,49 @@ def build_dataset_registry(
     surrogate_default_policy = "HYBRID_DEFAULT"
     if surrogate_default_policy not in simulation_policies:
         raise ValueError("Electrolyte source artifact has no HYBRID_DEFAULT policy summary")
-    source_run_ids = [run.get("run_id") for run in campaign_runs if run.get("run_id")]
     hypothesis_ids = sorted(hypotheses)
     replay_ids = sorted({candidate_id for run in replay_runs for candidate_id in run.get("replay_candidate_ids", [])})
+    def run_configuration(run: dict[str, Any]) -> dict[str, Any]:
+        candidate_ids = run.get("replay_candidate_ids") or [candidate.get("candidate_id") for candidate in run.get("candidates", []) if candidate.get("candidate_id")]
+        modalities = sorted({
+            action.get("action", {}).get("action_type")
+            for step in run.get("steps", [])
+            for action in step.get("all_scored_actions", [])
+            if action.get("action", {}).get("action_type")
+        })
+        config = {
+            "configurationId": run["run_id"],
+            "runId": run["run_id"],
+            "seed": run.get("seed"),
+            "policy": run["policy"],
+            "mode": run["mode"],
+            "stepCount": len(run.get("steps", [])),
+            "candidateIds": sorted(set(candidate_ids)),
+            "modalities": modalities,
+        }
+        if run.get("world") is not None:
+            config["world"] = run["world"]
+        return config
+
+    controlled_configurations = [run_configuration(run) for run in controlled_runs]
+    replay_configurations = [run_configuration(run) for run in replay_runs]
+    detailed_runs = electrolyte_simulation.get("detailed_policy_seed_runs", {})
+    surrogate_configurations = [
+        {
+            "configurationId": f"{policy}::{run['seed']}",
+            "policy": policy,
+            "seed": run["seed"],
+            "mode": "SIMULATED_SURROGATE",
+            "stepCount": len(run.get("queried_candidate_ids", [])),
+            "candidateIds": list(run.get("queried_candidate_ids", [])),
+            "modalities": ["SURROGATE_ORACLE"],
+        }
+        for policy, policy_runs in sorted(detailed_runs.items())
+        for run in sorted(policy_runs, key=lambda item: item.get("seed", 0))
+    ]
 
     return {
-        "registry_schema_version": "1.0.0",
+        "registry_schema_version": "1.1.0",
         "datasets": [
             {
                 "id": "controlled_multimodal_alloy",
@@ -379,10 +583,7 @@ def build_dataset_registry(
                 },
                 "candidateCount": len(controlled_ids),
                 "candidateIds": controlled_ids,
-                "availableRunIds": [run_id for run_id in source_run_ids if run_id.startswith(("controlled_world:", "policy_comparison:"))],
-                "availablePolicies": sorted({run.get("policy") for run in controlled_runs if run.get("policy")}),
-                "availableSeeds": sorted({run.get("seed") for run in controlled_runs if run.get("seed") is not None}),
-                "availableWorlds": sorted({run.get("world") for run in controlled_runs if run.get("world")}),
+                "availableConfigurations": controlled_configurations,
                 "modalities": {
                     "XRD": controlled_modality("XRD", True, "intensity (a.u.)"),
                     "REFINEMENT": controlled_modality("REFINEMENT", True, "phase fraction [0, 1]"),
@@ -396,7 +597,10 @@ def build_dataset_registry(
                     "policy": controlled_default["policy"],
                 },
                 "capabilities": {
-                    "competingHypotheses": True,
+                    "modelHypothesesAvailable": True,
+                    "posteriorModelWeightsAvailable": True,
+                    "mutuallyExclusivePhysicalMechanismsClaimed": True,
+                    "prospectiveMechanismIdentification": False,
                     "candidateScreening": False,
                     "preregistrationReplay": True,
                     "closedLoopExecution": True,
@@ -427,9 +631,7 @@ def build_dataset_registry(
                 "candidateCount": len(samples),
                 "candidateIds": [sample["sample_id"] for sample in samples],
                 "featuredCandidateIds": replay_ids,
-                "availableRunIds": [run_id for run_id in source_run_ids if run_id.startswith("replay:")],
-                "availablePolicies": sorted({run.get("policy") for run in replay_runs if run.get("policy")}),
-                "availableSeeds": sorted({run.get("seed") for run in replay_runs if run.get("seed") is not None}),
+                "availableConfigurations": replay_configurations,
                 "modalities": alab_modality_entries,
                 "hypotheses": hypothesis_ids,
                 "defaultConfiguration": {
@@ -438,7 +640,10 @@ def build_dataset_registry(
                     "policy": replay_default["policy"],
                 },
                 "capabilities": {
-                    "competingHypotheses": False,
+                    "modelHypothesesAvailable": True,
+                    "posteriorModelWeightsAvailable": True,
+                    "mutuallyExclusivePhysicalMechanismsClaimed": False,
+                    "prospectiveMechanismIdentification": False,
                     "candidateScreening": False,
                     "preregistrationReplay": True,
                     "closedLoopExecution": False,
@@ -483,20 +688,22 @@ def build_dataset_registry(
                     "seed": min(simulation_seeds),
                     "queries": simulation_policies[surrogate_default_policy].get("queried_count"),
                 },
-                "availablePolicies": sorted(simulation_policies),
-                "availableSeeds": simulation_seeds,
+                "availableConfigurations": surrogate_configurations,
                 "capabilities": {
-                    "competingHypotheses": False,
+                    "modelHypothesesAvailable": False,
+                    "posteriorModelWeightsAvailable": False,
+                    "mutuallyExclusivePhysicalMechanismsClaimed": False,
+                    "prospectiveMechanismIdentification": False,
                     "candidateScreening": True,
                     "preregistrationReplay": False,
-                    "closedLoopExecution": True,
+                    "closedLoopExecution": False,
                     "surrogateSimulation": True,
                     "evidenceKind": "SIMULATED_SURROGATE",
                 },
-                "summary": f"Source diagnostic reports a {electrolyte_simulation.get('requested_search_space_size')} candidate virtual pool, a {electrolyte_simulation.get('screened_working_set_size')} candidate working set, and {electrolyte_simulation.get('surrogate_model_family')} surrogate trajectories.",
+                "summary": f"Source diagnostic reports a {electrolyte_simulation.get('requested_search_space_size')} candidate virtual pool, a {electrolyte_simulation.get('screened_working_set_size')} candidate working set, and ensemble surrogate trajectories.",
                 "statusBadge": "Screening & Surrogate",
                 "disclosures": [
-                    "Surrogate oracle is an ExtraTrees in-silico computational approximation only; no live physical battery cycling is performed.",
+                    "Surrogate oracle is an in-silico computational approximation only; no live physical battery cycling is performed.",
                     electrolyte_simulation.get("MODEL_COUPLING_LIMITATION", "Model coupling limitation is unavailable in the source artifact."),
                     f"Screening timing is stage-specific: the 200-candidate diagnostic reports {screening_trial.get('screening_time_sec')} seconds; the end-to-end simulation artifact reports {electrolyte_simulation.get('screening_time_sec')} seconds.",
                     f"Target audit: {target.get('scientific_meaning', 'target semantics unavailable')}.",
@@ -538,6 +745,7 @@ def main() -> None:
             raise FileNotFoundError(f"CRITICAL: Missing source artifact '{name}' at {path}")
         source_hashes[name] = compute_sha256(path)
         print(f"Verified artifact: {name} (SHA-256: {source_hashes[name][:12]}...)")
+    source_provenance = build_source_provenance_manifest(source_artifacts, source_hashes, now_utc, head_commit, head_commit)
 
     # 1. Validation & Readiness
     validation = load_json(source_artifacts["multimodal_validation"])
@@ -646,7 +854,7 @@ def main() -> None:
                 "domain_id": "controlled_synthetic",
                 "name": "Controlled Multi-Hypothesis Synthetic Worlds",
                 "status": "VALIDATED_METHODOLOGY",
-                "candidates_count": 12,
+                "candidates_count": len({candidate["candidate_id"] for run in campaign_runs if run.get("mode") == "CONTROLLED_SYNTHETIC" for candidate in run.get("candidates", [])}),
                 "modalities": ["XRD", "REFINEMENT", "SEM", "EDS", "OUTCOME_TEST"],
                 "purpose": "Inference verification, lower/upper bound guarantees, and policy benchmark comparisons.",
             },
@@ -654,7 +862,7 @@ def main() -> None:
                 "domain_id": "alab_synthesis",
                 "name": "A-Lab Autonomous Solid-State Inorganic Synthesis",
                 "status": "HISTORICAL_REPLAY",
-                "candidates_count": 1035,
+                "candidates_count": len(samples),
                 "modalities": [
                     "XRD (Canonical)",
                     "REFINEMENT (Rietveld)",
@@ -668,7 +876,7 @@ def main() -> None:
                 "domain_id": "battery_electrolyte",
                 "name": "LiFSI High-Entropy Battery Electrolyte Formulations",
                 "status": "SCREENING_&_SURROGATE",
-                "candidates_count": 333333,
+                "candidates_count": elec_sim.get("actual_search_space_size"),
                 "modalities": ["SCREENING_FILTER", "SURROGATE_ORACLE"],
                 "purpose": "Source-backed virtual-pool screening and in-silico surrogate trajectory evaluation; no live cycling.",
             },
@@ -682,6 +890,8 @@ def main() -> None:
         "presentation_build_commit": head_commit,
         "snapshot_generator_commit": head_commit,
         "scientific_source_commit": SCIENTIFIC_SOURCE_COMMIT,
+        "scientific_source_commit_status": SCIENTIFIC_SOURCE_COMMIT_STATUS,
+        "scientific_source_provenance_manifest": "presentation/data/scientific_source_provenance.json",
         "source_branch": current_branch,
         "source_artifact_hashes": source_hashes,
         "source_dataset_manifest_hash": source_hashes["precursor_genome_ledger"],
@@ -720,6 +930,8 @@ def main() -> None:
             "snapshot_generator_commit": head_commit,
             "presentation_build_commit": head_commit,
             "scientific_source_commit": SCIENTIFIC_SOURCE_COMMIT,
+            "scientific_source_commit_status": SCIENTIFIC_SOURCE_COMMIT_STATUS,
+            "scientific_source_provenance_manifest": "presentation/data/scientific_source_provenance.json",
             "branch": current_branch,
             "total_ledger_events": len(ledger_events),
             "generated_at_utc": now_utc,
@@ -752,6 +964,9 @@ def main() -> None:
     with REGISTRY_FILE.open("w", encoding="utf-8") as f:
         json.dump(dataset_registry, f, indent=2)
 
+    with SOURCE_PROVENANCE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(source_provenance, f, indent=2)
+
     # Run fail-closed runtime validation on generated snapshot
     from presentation.scripts.validate_snapshot import validate_snapshot_file
     validate_snapshot_file(DEST_FILE)
@@ -765,18 +980,24 @@ def main() -> None:
         shutil.copyfile(DEST_FILE, frontend_public / "snapshot.json")
         shutil.copyfile(MANIFEST_FILE, frontend_public / "snapshot_manifest.json")
         shutil.copyfile(REGISTRY_FILE, frontend_public / "dataset_registry.json")
+        shutil.copyfile(SOURCE_PROVENANCE_FILE, frontend_public / "scientific_source_provenance.json")
         print(f"Synchronized snapshot and registry to {frontend_public}")
 
     if frontend_dist.exists():
-        shutil.copyfile(DEST_FILE, frontend_dist / "snapshot.json")
-        shutil.copyfile(MANIFEST_FILE, frontend_dist / "snapshot_manifest.json")
-        shutil.copyfile(REGISTRY_FILE, frontend_dist / "dataset_registry.json")
-        print(f"Synchronized snapshot and registry to {frontend_dist}")
+        try:
+            shutil.copyfile(DEST_FILE, frontend_dist / "snapshot.json")
+            shutil.copyfile(MANIFEST_FILE, frontend_dist / "snapshot_manifest.json")
+            shutil.copyfile(REGISTRY_FILE, frontend_dist / "dataset_registry.json")
+            shutil.copyfile(SOURCE_PROVENANCE_FILE, frontend_dist / "scientific_source_provenance.json")
+            print(f"Synchronized snapshot and registry to {frontend_dist}")
+        except OSError as exc:
+            print(f"Warning: frontend dist sync deferred ({exc})")
 
     size_mb = DEST_FILE.stat().st_size / (1024 * 1024)
     print(f"\nSUCCESS: Snapshot generated at {DEST_FILE} ({size_mb:.2f} MB)")
     print(f"SUCCESS: Manifest generated at {MANIFEST_FILE}")
     print(f"SUCCESS: Registry generated at {REGISTRY_FILE}")
+    print(f"SUCCESS: Source provenance generated at {SOURCE_PROVENANCE_FILE}")
 
 
 if __name__ == "__main__":

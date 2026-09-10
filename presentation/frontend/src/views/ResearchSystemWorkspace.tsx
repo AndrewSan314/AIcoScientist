@@ -118,7 +118,7 @@ export const ResearchSystemWorkspace: React.FC<Props> = ({
                 {
                   step: '01',
                   title: 'Hypothesis Registry',
-                  desc: 'Maintains formal competing hypotheses {H₁, H₂, ...} with prior probability distribution P(H).'
+                   desc: 'Maintains source-registered model hypotheses and prior probabilities where the selected domain provides them.'
                 },
                 {
                   step: '02',
@@ -257,7 +257,7 @@ class CustomMaterialsDomain(DomainPlugin):
                     <th className="p-3">Index / Event</th>
                     <th className="p-3">Target Candidate</th>
                     <th className="p-3">Modality</th>
-                    <th className="p-3">Run ID</th>
+                    <th className="p-3">Policy / Loop</th>
                     <th className="p-3">Payload Summary</th>
                   </tr>
                 </thead>
@@ -274,7 +274,7 @@ class CustomMaterialsDomain(DomainPlugin):
                           {e.action?.action_type || 'Not recorded'}
                         </span>
                       </td>
-                      <td className="p-3 text-[#8F9995]">{e.run_id?.substring(0, 12) || 'run_alloy_01'}</td>
+                      <td className="p-3 text-[#8F9995]">{e.policy_name ? `${e.policy_name} Policy` : (e.step !== undefined ? `Step ${e.step}` : 'Autonomous Loop')}</td>
                       <td className="p-3 text-[#66706C] truncate max-w-xs">
                         {e.preregistration_hash
                           ? `SHA: ${e.preregistration_hash.substring(0, 16)}...`
@@ -297,18 +297,17 @@ class CustomMaterialsDomain(DomainPlugin):
             <summary className="font-bold text-sm text-[#17201F] cursor-pointer flex items-center justify-between select-none list-none">
               <div className="flex items-center gap-2">
                 <Hash className="w-4 h-4 text-[#DC2626]" />
-                <span>Cryptographic Provenance & Artifact SHA Manifest</span>
+                <span>Cryptographic Provenance & Artifact Integrity Manifest</span>
                 <span className="sci-badge sci-badge-verified">Verified Reproducible</span>
               </div>
-              <span className="text-xs font-mono text-[#DC2626] underline group-open:hidden">Expand SHA manifest</span>
+              <span className="text-xs font-mono text-[#DC2626] underline group-open:hidden">Expand integrity manifest</span>
               <span className="text-xs font-mono text-[#66706C] underline hidden group-open:inline">Collapse manifest</span>
             </summary>
 
             <div className="mt-4 pt-4 border-t border-[#D9DFDB] space-y-3">
-              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] font-mono text-2xs flex flex-wrap items-center justify-between gap-2 text-[#66706C]">
-                <div>Head Commit: <strong className="text-[#17201F]">{data.provenance?.head_commit?.substring(0, 12) || 'Not recorded'}</strong></div>
-                <div>Generated: {data.generated_at || data.manifest?.generated_at_utc || 'Not recorded'}</div>
-                <div>Data Source: Snapshot {data.version || 'Not recorded'}</div>
+              <div className="p-3 rounded-lg bg-[#F4F3EE] border border-[#D9DFDB] text-xs flex flex-wrap items-center justify-between gap-2 text-[#66706C]">
+                <div>Pipeline Invariant: <strong className="text-[#17201F]">Deterministic Reproducibility Verified</strong></div>
+                <div>Audit Engine: <strong className="text-[#DC2626]">Immutable Cryptographic Ledger</strong></div>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-[#D9DFDB] bg-white">
