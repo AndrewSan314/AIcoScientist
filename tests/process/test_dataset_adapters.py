@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import json
 import zipfile
+from copy import deepcopy
+from dataclasses import replace
 
 import pytest
 
+from src.datasets.battery_process.base import ProcessPredictionTask, RawDatasetUnavailableError
 from src.datasets.battery_process.drakopoulos_graphite import DrakopoulosGraphiteAdapter
-from src.datasets.battery_process.base import RawDatasetUnavailableError
 from src.datasets.battery_process.naion_hte import NaIonHTEAdapter
 from src.datasets.battery_process.warwick_ultrasound import WarwickUltrasoundAdapter
 from src.process.modalities import ModalityType
+from src.process.stages import ProcessStage
 from .conftest import process_run
 
 
@@ -23,6 +26,19 @@ def test_adapter_loads_a_hashed_normalized_cache(tmp_path) -> None:
     adapter = DrakopoulosGraphiteAdapter(tmp_path)
     adapter.write_processed_cache([process_run()], raw_hashes={"raw.csv": "a" * 64})
     assert adapter.load_runs()[0].run_id == "run-1"
+
+
+def test_training_view_marks_absent_numeric_fields_instead_of_treating_them_as_zero(tmp_path) -> None:
+    adapter = DrakopoulosGraphiteAdapter(tmp_path)
+    partial = deepcopy(process_run())
+    partial = replace(partial, run_id="run-2", cell_id="cell-2", batch_id="batch-b")
+    partial.stages[0].controls.pop("solids")
+    adapter.write_processed_cache([process_run(), partial], raw_hashes={"raw.csv": "a" * 64})
+
+    frame = adapter.build_training_view(ProcessPredictionTask("capacity", ProcessStage.FINAL_CHARACTERIZATION))
+
+    assert frame.features["formulation.solids"].tolist() == [0.6, 0.0]
+    assert frame.features["formulation.solids__observed"].tolist() == [1.0, 0.0]
 
 
 def test_ultrasound_adapter_parses_paired_fft_records(tmp_path) -> None:

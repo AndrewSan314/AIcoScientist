@@ -149,7 +149,13 @@ class NormalizedRunAdapter:
             run_ids.append(run.run_id)
         if not rows:
             raise ValueError(f"No numeric, horizon-valid training rows for target {task.target!r}")
-        features = pd.DataFrame(rows).fillna(0.0)
+        raw_features = pd.DataFrame(rows)
+        missing = raw_features.isna()
+        # A numeric placeholder is only usable by scalar baselines alongside its
+        # explicit mask; it never means the source observed a physical zero.
+        features = raw_features.fillna(0.0)
+        for column in raw_features.columns[missing.any()]:
+            features[f"{column}__observed"] = (~missing[column]).astype(float)
         return ProcessTrainingFrame(
             features=features,
             targets=pd.Series(targets, name=task.target),
