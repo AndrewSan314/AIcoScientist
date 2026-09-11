@@ -37,3 +37,18 @@ def test_official_process_view_keeps_a_real_missing_sentinel_category_distinct_f
     _, encoded_space = space.official_botorch_view(pd.DataFrame({"recipe_id": ["a"], "protocol": ["__MISSING__"], "target": [1.0]}))
 
     assert encoded_space.candidates[["control_0_category_0", "control_0_category_1"]].values.tolist() == [[0.0, 1.0], [1.0, 0.0]]
+
+
+def test_contextual_process_view_scales_state_separately_from_controls() -> None:
+    space = ProcessSearchSpace.from_finite_pool(
+        pd.DataFrame({"recipe_id": ["a", "b"], "temperature": [100.0, 120.0], "state": [0.0, 10.0]}),
+        context_columns=("state",), context_bounds={"state": (0.0, 10.0)},
+    )
+    observations, encoded_space = space.official_botorch_view(
+        pd.DataFrame({"recipe_id": ["a"], "temperature": [100.0], "state": [5.0], "target": [1.0]})
+    )
+    assert encoded_space.model_columns == ["state", "control_0_value"]
+    assert encoded_space.candidates["state"].tolist() == [0.0, 1.0]
+    assert observations["state"].tolist() == [0.5]
+    assert space.recipe("b") == {"temperature": 120.0}
+    assert encoded_space.recipe("b") == {"control_0_value": 1.0}

@@ -38,7 +38,7 @@ class ProcessOptimizationCoordinator:
         observations: pd.DataFrame,
         space: ProcessSearchSpace,
     ) -> tuple[pd.DataFrame, ProcessSearchSpace]:
-        """Encode only audited finite-pool controls for the official backend."""
+        """Encode audited finite-pool controls and contextual state features."""
         return space.official_botorch_view(observations)
 
     def propose_recipes(
@@ -68,7 +68,7 @@ class ProcessOptimizationCoordinator:
             observations=backend_observations,
             candidate_pool=backend_space.candidates,
             objective=OfficialOptimizationObjective(target_name=target.target, minimize=target.sense == "minimize"),
-            feature_columns=backend_space.control_columns,
+            feature_columns=backend_space.model_columns,
             candidate_id_column=backend_space.id_column,
             n=n,
             seed=seed,

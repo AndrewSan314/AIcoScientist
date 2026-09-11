@@ -36,7 +36,7 @@ class OfficialMultiObjectiveBoTorch:
             raise UnsupportedProcessOptimizationError("qNEHVI requires at least two objectives")
         target_names = [item.target for item in objective.objectives]
         self._validate_constraint_semantics(objective.constraints, space.control_columns, target_names)
-        required = [space.id_column, *space.control_columns, *target_names]
+        required = [space.id_column, *space.control_columns, *space.context_columns, *target_names]
         missing = [column for column in required if column not in observations]
         if missing:
             raise ValueError(f"observations lack required identity/control/target columns: {missing}")
@@ -157,18 +157,24 @@ class OfficialMultiObjectiveBoTorch:
         observed: pd.DataFrame, unseen: pd.DataFrame, space: ProcessSearchSpace,
     ) -> tuple[np.ndarray, np.ndarray]:
         controls = space.control_columns
+        context = space.context_columns
         pool = space.candidates[controls].apply(pd.to_numeric, errors="coerce")
         history = observed[controls].apply(pd.to_numeric, errors="coerce")
         candidates = unseen[controls].apply(pd.to_numeric, errors="coerce")
-        if any(frame.isna().any().any() or not np.isfinite(frame.to_numpy()).all() for frame in (pool, history, candidates)):
-            raise ValueError("official process qNEHVI requires finite numeric recipe controls")
+        context_history = observed[list(context)].to_numpy(dtype=float) if context else np.empty((len(observed), 0))
+        context_candidates = unseen[list(context)].to_numpy(dtype=float) if context else np.empty((len(unseen), 0))
+        if (
+            any(frame.isna().any().any() or not np.isfinite(frame.to_numpy()).all() for frame in (pool, history, candidates))
+            or not np.isfinite(context_history).all() or not np.isfinite(context_candidates).all()
+        ):
+            raise ValueError("official process qNEHVI requires finite numeric context and recipe controls")
         lower, span = pool.min(), pool.max() - pool.min()
         span = span.mask(span == 0, 1.0)
         scaled_history = (history - lower) / span
         scaled_candidates = (candidates - lower) / span
         if ((scaled_history < -1e-12) | (scaled_history > 1 + 1e-12)).any().any():
             raise ValueError("observed controls fall outside the audited finite recipe pool")
-        return scaled_history.to_numpy(), scaled_candidates.to_numpy()
+        return np.column_stack((context_history, scaled_history.to_numpy())), np.column_stack((context_candidates, scaled_candidates.to_numpy()))
 
     @staticmethod
     def _outcome_constraints(constraints: Sequence[ConstraintSpec], names: list[str], objectives: Sequence[object]):

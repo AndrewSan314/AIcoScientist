@@ -29,3 +29,18 @@ def test_multiobjective_scales_against_the_full_finite_recipe_pool() -> None:
         observations, encoded_space.candidates.loc[encoded_space.candidates["recipe_id"] == "c"], encoded_space,
     )
     assert history.tolist() == [[0.0], [0.5]] and candidates.tolist() == [[1.0]]
+
+
+def test_multiobjective_model_inputs_keep_context_before_scaled_controls() -> None:
+    space = ProcessSearchSpace.from_finite_pool(
+        pd.DataFrame({"recipe_id": ["a", "b", "c"], "speed": [10.0, 20.0, 30.0], "state": [0.0, 5.0, 10.0]}),
+        context_columns=("state",), context_bounds={"state": (0.0, 10.0)},
+    )
+    observations, encoded_space = space.official_botorch_view(
+        pd.DataFrame({"recipe_id": ["a", "b"], "speed": [10.0, 20.0], "state": [2.0, 8.0], "capacity": [1.0, 2.0], "impedance": [4.0, 3.0]})
+    )
+    history, candidates = OfficialMultiObjectiveBoTorch._scaled_inputs(
+        observations, encoded_space.candidates.loc[encoded_space.candidates["recipe_id"] == "c"], encoded_space,
+    )
+    assert history.tolist() == [[0.2, 0.0], [0.8, 0.5]]
+    assert candidates.tolist() == [[1.0, 1.0]]
