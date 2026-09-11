@@ -4,7 +4,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
+import tempfile
 
 
 PINNED_COMMIT = "5af9e0345673fac557c479ee8f4a0727e442c1fa"
@@ -14,6 +17,14 @@ SOURCE_URL = "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git"
 
 class SourcePinError(RuntimeError):
     """The local checkout is not the immutable source audited for ARTISTIC."""
+
+
+class MPIEnvironmentError(RuntimeError):
+    """MPI/LAMMPS compatibility could not be proven before a real run."""
+
+    def __init__(self, message: str, metadata: dict[str, object] | None = None) -> None:
+        super().__init__(message)
+        self.metadata = metadata or {}
 
 
 class ExecutionMode(StrEnum):
@@ -75,3 +86,77 @@ class ArtisticRunConfig:
             raise SourcePinError(f"ARTISTIC source tree mismatch: expected {PINNED_SOURCE_TREE_HASH}, got {tree}")
         if dirty:
             raise SourcePinError("ARTISTIC source checkout is modified or contains untracked files")
+
+
+def _resolve_executable(command: str) -> str | None:
+    path = Path(command)
+    return str(path.resolve()) if path.is_file() else shutil.which(command)
+
+
+def _command_version(command: str) -> str:
+    for flag in ("--version", "-h", "-help"):
+        try:
+            result = subprocess.run([command, flag], capture_output=True, text=True, timeout=30, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        lines = [line.strip() for line in (result.stdout or result.stderr).splitlines() if line.strip()]
+        usable = [line for line in lines if not line.lower().startswith(("error", "unknown option", "invalid command-line"))]
+        if usable:
+            return usable[0]
+    return "unavailable"
+
+
+def _processor_grids(output: str) -> list[tuple[int, int, int]]:
+    patterns = (
+        r"(\d+)\s+by\s+(\d+)\s+by\s+(\d+)\s+MPI processor grid",
+        r"Processor grid\s*=\s*(\d+)\s+(\d+)\s+(\d+)",
+    )
+    return [tuple(map(int, match)) for pattern in patterns for match in re.findall(pattern, output, re.IGNORECASE)]
+
+
+def validate_mpi_environment(config: ArtisticRunConfig) -> dict[str, object]:
+    """Prove that the requested launcher runs one distributed LAMMPS job."""
+    resolved_launcher = _resolve_executable(config.mpi_launcher)
+    resolved_lammps = _resolve_executable(config.lammps_command)
+    metadata: dict[str, object] = {
+        "execution_mode": config.execution_mode.value,
+        "requested_mpi_processes": config.mpi_processes,
+        "mpi_launcher": config.mpi_launcher,
+        "resolved_mpi_launcher": resolved_launcher,
+        "resolved_lammps_path": resolved_lammps,
+        "mpi_implementation_version": _command_version(resolved_launcher) if resolved_launcher else "unavailable",
+        "lammps_version": _command_version(resolved_lammps) if resolved_lammps else "unavailable",
+        "validated": False,
+    }
+    if not resolved_launcher:
+        raise MPIEnvironmentError(f"MPI launcher does not resolve: {config.mpi_launcher}", metadata)
+    if not resolved_lammps:
+        raise MPIEnvironmentError(f"LAMMPS executable does not resolve: {config.lammps_command}", metadata)
+
+    command = [resolved_launcher, "-n", str(config.mpi_processes), resolved_lammps, "-log", "none", "-in", "smoke.in"]
+    metadata["mpi_launcher_command"] = command
+    smoke_input = "\n".join((
+        "clear", "units lj", "atom_style atomic", "region box block 0 2 0 2 0 2", "create_box 1 box",
+        "create_atoms 1 single 1 1 1", "mass 1 1.0", "run 0", "",
+    ))
+    try:
+        with tempfile.TemporaryDirectory(prefix="artistic-mpi-smoke-") as directory:
+            smoke_dir = Path(directory)
+            (smoke_dir / "smoke.in").write_text(smoke_input, encoding="utf-8", newline="\n")
+            result = subprocess.run(command, cwd=smoke_dir, capture_output=True, text=True, timeout=min(config.timeout_seconds, 120), check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise MPIEnvironmentError(f"MPI/LAMMPS smoke run failed: {exc}", metadata) from exc
+    output = (result.stdout or "") + "\n" + (result.stderr or "")
+    metadata["smoke_returncode"] = result.returncode
+    grids = _processor_grids(output)
+    metadata["mpi_processor_grids"] = [list(grid) for grid in grids]
+    if result.returncode:
+        raise MPIEnvironmentError(f"MPI/LAMMPS smoke run exited {result.returncode}", metadata)
+    if len(grids) != 1:
+        raise MPIEnvironmentError("MPI smoke run did not report exactly one LAMMPS processor grid", metadata)
+    task_count = grids[0][0] * grids[0][1] * grids[0][2]
+    metadata["mpi_task_count"] = task_count
+    if task_count != config.mpi_processes:
+        raise MPIEnvironmentError(f"MPI smoke run reported {task_count} tasks; requested {config.mpi_processes}", metadata)
+    metadata["validated"] = True
+    return metadata

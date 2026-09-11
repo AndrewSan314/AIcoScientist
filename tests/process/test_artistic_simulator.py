@@ -9,13 +9,15 @@ import pytest
 
 import src.process.simulators.artistic.config as config_module
 import src.process.simulators.artistic.provenance as provenance_module
+import src.process.simulators.artistic.runner as runner_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
 from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, DryingMode, ParticleCountSafetyError, SlurryRecipe, estimate_particles
-from src.process.simulators.artistic.config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError
+from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
 from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output
 from src.process.simulators.artistic.validation import output_errors
 from src.process.simulators.artistic.runner import _version
+from src.process.simulators.artistic.schemas import _lammps_round
 from src.process.information_horizon import InformationHorizon
 from src.process.stages import ProcessStage
 
@@ -100,19 +102,81 @@ def test_recipe_validation_and_actual_minimization_mapping() -> None:
 
 def test_particle_preflight_uses_upstream_microgram_semantics_and_fails_closed(pinned_source: Path, tmp_path: Path) -> None:
     estimate = estimate_particles(_recipe())
-    assert (estimate.n_am, estimate.n_cbd, estimate.total_particles) == (295, 21220, 21515)
+    assert (estimate.n_am_nominal, estimate.n_am_by_type, estimate.n_am_created_total, estimate.n_cbd, estimate.total_particles) == (296, (296,), 296, 21221, 21517)
     simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", max_particle_count=20_000))
     with pytest.raises(ParticleCountSafetyError, match="exceeds configured safety threshold"):
         simulator.preflight(_recipe())
     with pytest.raises(ParticleCountSafetyError, match="exceeds configured safety threshold"):
         simulator.prepare(_recipe(), run_id="blocked-before-render")
     assert not (tmp_path / "runs" / "blocked-before-render").exists()
-    assert ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, max_particle_count=20_000, allow_unsafe_particle_count=True)).preflight(_recipe()).total_particles == 21515
+    assert ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, max_particle_count=20_000, allow_unsafe_particle_count=True)).preflight(_recipe()).total_particles == 21517
+
+
+def test_lammps_round_is_nearest_not_python_bankers_or_floor() -> None:
+    assert _lammps_round(1.5) == 2
+    assert _lammps_round(2.5) == 3
+    assert _lammps_round(2.49) == 2
+
+
+def test_particle_guard_uses_sum_of_per_type_rounds(pinned_source: Path, tmp_path: Path) -> None:
+    slurry = SlurryRecipe(2, (23.0, 23.0) + (5.0,) * 8, (0.5, 0.5) + (0.0,) * 8, 1.0, 0.5, 0.1, 0.9, 0.1, 0, 0.5)
+    recipe = ArtisticRecipe(slurry)
+    estimate = estimate_particles(recipe)
+    assert estimate.n_am_nominal == 3
+    assert estimate.n_am_by_type == (2, 2)
+    assert estimate.n_am_created_total == 4
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", max_particle_count=estimate.n_am_nominal + estimate.n_cbd))
+    with pytest.raises(ParticleCountSafetyError):
+        simulator.preflight(recipe)
 
 
 def test_lammps_version_skips_blank_banner_lines(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "\nLAMMPS test\n", ""))
     assert _version("lmp") == "LAMMPS test"
+
+
+def test_mpi_validation_proves_one_distributed_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    paths = {"mpiexec": r"C:\mpi\mpiexec.exe", "lmp": r"C:\lammps\lmp.exe"}
+    monkeypatch.setattr(config_module.shutil, "which", lambda command: paths.get(command))
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "-in" in command:
+            return subprocess.CompletedProcess(command, 0, "2 by 1 by 1 MPI processor grid\n", "")
+        return subprocess.CompletedProcess(command, 0, "MPI/LAMMPS test\n", "")
+
+    monkeypatch.setattr(config_module.subprocess, "run", fake_run)
+    metadata = validate_mpi_environment(ArtisticRunConfig(execution_mode=ExecutionMode.MPI, mpi_processes=2, mpi_launcher="mpiexec", lammps_command="lmp"))
+    assert metadata["validated"] is True
+    assert metadata["mpi_task_count"] == 2
+    assert metadata["resolved_mpi_launcher"] == paths["mpiexec"]
+    assert metadata["resolved_lammps_path"] == paths["lmp"]
+
+
+def test_mpi_validation_fails_closed_on_grid_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
+    paths = {"mpiexec": r"C:\mpi\mpiexec.exe", "lmp": r"C:\lammps\lmp.exe"}
+    monkeypatch.setattr(config_module.shutil, "which", lambda command: paths.get(command))
+    monkeypatch.setattr(config_module.subprocess, "run", lambda command, **kwargs: subprocess.CompletedProcess(command, 0, "1 by 1 by 1 MPI processor grid\n", "") if "-in" in command else subprocess.CompletedProcess(command, 0, "version\n", ""))
+    with pytest.raises(MPIEnvironmentError, match="reported 1 tasks"):
+        validate_mpi_environment(ArtisticRunConfig(execution_mode=ExecutionMode.MPI, mpi_processes=2, mpi_launcher="mpiexec", lammps_command="lmp"))
+
+
+def test_mpi_validation_rejects_unresolved_launcher(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config_module.shutil, "which", lambda command: None if command == "mpiexec" else r"C:\lammps\lmp.exe")
+    with pytest.raises(MPIEnvironmentError, match="launcher does not resolve"):
+        validate_mpi_environment(ArtisticRunConfig(execution_mode=ExecutionMode.MPI, mpi_processes=2, mpi_launcher="mpiexec", lammps_command="lmp"))
+
+
+def test_mpi_environment_error_prevents_workspace_start(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(config: ArtisticRunConfig) -> dict[str, object]:
+        raise MPIEnvironmentError("smoke unavailable", {"execution_mode": "mpi", "validated": False})
+
+    monkeypatch.setattr(runner_module, "validate_mpi_environment", fail)
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", execution_mode=ExecutionMode.MPI, mpi_processes=2))
+    result = simulator.execute(ArtisticRecipe(slurry=_slurry()), run_id="mpi-blocked")
+    assert result.status == SimulationStatus.ENVIRONMENT_ERROR
+    assert not (tmp_path / "runs" / "mpi-blocked" / "workspace").exists()
+    manifest = json.loads((tmp_path / "runs" / "mpi-blocked" / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["mpi_environment"]["validated"] is False
 
 
 def test_artistic_cli_runs_directly_from_repository_root() -> None:

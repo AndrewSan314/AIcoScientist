@@ -156,12 +156,19 @@ class ParticleCountSafetyError(RuntimeError):
 
 @dataclass(frozen=True)
 class ParticleEstimate:
-    n_am: int
+    n_am_nominal: int
+    n_am_by_type: tuple[int, ...]
+    n_am_created_total: int
     n_cbd: int
 
     @property
+    def n_am(self) -> int:
+        """Backward-compatible alias for the nominal AM count."""
+        return self.n_am_nominal
+
+    @property
     def total_particles(self) -> int:
-        return self.n_am + self.n_cbd
+        return self.n_am_created_total + self.n_cbd
 
     @property
     def estimated_memory_bytes(self) -> int:
@@ -170,14 +177,22 @@ class ParticleEstimate:
     def as_dict(self) -> dict[str, object]:
         gib = self.estimated_memory_bytes / 1024**3
         return {
-            "n_AM": self.n_am,
+            "n_AM": self.n_am_nominal,
+            "n_AM_nominal": self.n_am_nominal,
+            "n_AM_by_type": list(self.n_am_by_type),
+            "n_AM_created_total": self.n_am_created_total,
             "n_CBD": self.n_cbd,
             "total_particles": self.total_particles,
             "estimated_memory_bytes": self.estimated_memory_bytes,
             "estimated_memory_gib": gib,
             "memory_class": "< 1 GiB" if gib < 1 else "1-16 GiB" if gib < 16 else ">= 16 GiB",
-            "memory_basis": "1,600 bytes/particle conservative feasibility estimate",
+            "memory_basis": "heuristic 1,600 bytes/particle estimate; observed peak can be higher",
         }
+
+
+def _lammps_round(value: float) -> int:
+    """Match LAMMPS/C round semantics for the positive particle counts here."""
+    return math.floor(value + 0.5)
 
 
 def estimate_particles(recipe: ArtisticRecipe) -> ParticleEstimate:
@@ -191,10 +206,13 @@ def estimate_particles(recipe: ArtisticRecipe) -> ParticleEstimate:
     )
     cbd_volume_um3 = mass_g * slurry.ratio_cbd / (1.8 * slurry.cbd_nanoporosity) * 1e12
     cbd_particle_volume_um3 = _ARTISTIC_PI * slurry.diameter_cbd_solid_um**3 / 6
+    n_am_nominal = _lammps_round(am_volume_um3 / mean_am_volume_um3)
+    n_am_by_type = tuple(_lammps_round(n_am_nominal * fraction) for fraction in slurry.percent_am[: slurry.n_am_part])
     return ParticleEstimate(
-        # The pinned LAMMPS source's `round()` evaluates as truncation for these counts.
-        n_am=math.floor(am_volume_um3 / mean_am_volume_um3),
-        n_cbd=math.floor(cbd_volume_um3 / cbd_particle_volume_um3),
+        n_am_nominal=n_am_nominal,
+        n_am_by_type=n_am_by_type,
+        n_am_created_total=sum(n_am_by_type),
+        n_cbd=_lammps_round(cbd_volume_um3 / cbd_particle_volume_um3),
     )
 
 

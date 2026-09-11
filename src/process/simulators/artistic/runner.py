@@ -12,7 +12,7 @@ from pathlib import Path
 
 from src.process.simulators.base import SimulationResult, SimulationStatus
 
-from .config import ArtisticRunConfig, ExecutionMode
+from .config import ArtisticRunConfig, ExecutionMode, MPIEnvironmentError, validate_mpi_environment
 from .parser import parse_artistic_output
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
@@ -47,7 +47,10 @@ class ArtisticSimulator:
         state: RenderState | None = None
         commands: list[dict[str, object]] = []
         lineage: list[dict[str, object]] = []
+        mpi_environment = _initial_mpi_metadata(self.config)
         try:
+            if self.config.execution_mode == ExecutionMode.MPI:
+                mpi_environment = validate_mpi_environment(self.config)
             state = self.renderer.prepare_workspace(run_id)
             self.renderer.stage(state, "slurry", recipe.template_values)
             self._invoke(state.workspace, "slurry", "in_slurry.run", commands)
@@ -82,6 +85,9 @@ class ArtisticSimulator:
             errors = output_errors(recipe, state.workspace, parsed, self.config.lost_particle_tolerance)
             status = SimulationStatus.INVALID_PHYSICS_RUN if any("particle loss" in error for error in errors) else SimulationStatus.NUMERICAL_FAILURE if errors else SimulationStatus.SUCCESS
             result = SimulationResult(status, run_id, state.workspace.parent, parsed.stages, parsed.final_kpis, diagnostics=errors)
+        except MPIEnvironmentError as exc:
+            mpi_environment = {**mpi_environment, **exc.metadata, "validation_error": str(exc), "validated": False}
+            result = SimulationResult(SimulationStatus.ENVIRONMENT_ERROR, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
         except FileNotFoundError as exc:
             result = SimulationResult(SimulationStatus.ENVIRONMENT_ERROR, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
         except subprocess.TimeoutExpired as exc:
@@ -90,7 +96,7 @@ class ArtisticSimulator:
             result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(f"command exited {exc.returncode}: {exc.cmd}",))
         except RuntimeError as exc:
             result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
-        provenance = self._write_manifest(state, recipe, run_id=run_id, particle_estimate=estimate, commands=commands, lineage=lineage, status=result.status, diagnostics=result.diagnostics)
+        provenance = self._write_manifest(state, recipe, run_id=run_id, particle_estimate=estimate, commands=commands, lineage=lineage, status=result.status, diagnostics=result.diagnostics, mpi_environment=mpi_environment)
         return SimulationResult(result.status, result.run_id, result.run_directory, result.stage_outputs, result.final_outputs, provenance, result.diagnostics)
 
     def preflight(self, recipe: ArtisticRecipe) -> ParticleEstimate:
@@ -139,7 +145,7 @@ class ArtisticSimulator:
         script.write_text("#!/bin/sh\nset -eu\n" + " ".join(_shell_quote(part) for part in command) + "\n", encoding="utf-8", newline="\n")
         return [self.config.slurm_submit, "--wait", str(script)]
 
-    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, particle_estimate: ParticleEstimate, commands: list[dict[str, object]], lineage: list[dict[str, object]] | None = None, status: SimulationStatus | None, diagnostics: tuple[str, ...]) -> dict[str, object]:
+    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, particle_estimate: ParticleEstimate, commands: list[dict[str, object]], lineage: list[dict[str, object]] | None = None, status: SimulationStatus | None, diagnostics: tuple[str, ...], mpi_environment: dict[str, object] | None = None) -> dict[str, object]:
         run_directory = state.workspace.parent if state else self.config.output_root / (run_id or "unprepared")
         run_directory.mkdir(parents=True, exist_ok=True)
         source = source_provenance(self.config.source_root)
@@ -149,6 +155,7 @@ class ArtisticSimulator:
             "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "particle_preflight": particle_estimate.as_dict(), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
             "commands": commands, "executable_versions": {"python": sys.version, "numpy": _package_version("numpy"), "numba": _package_version("numba"), "lammps": _version(self.config.lammps_command)},
             "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "python_executable": sys.executable},
+            "mpi_environment": mpi_environment or _initial_mpi_metadata(self.config),
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
         }
@@ -175,6 +182,19 @@ def _package_version(name: str) -> str:
 def _git_head() -> str:
     result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
     return result.stdout.strip() if result.returncode == 0 else "unknown"
+
+
+def _initial_mpi_metadata(config: ArtisticRunConfig) -> dict[str, object]:
+    launcher = shutil.which(config.mpi_launcher)
+    return {
+        "execution_mode": config.execution_mode.value,
+        "requested_mpi_processes": config.mpi_processes,
+        "mpi_launcher": config.mpi_launcher,
+        "mpi_launcher_command": [config.mpi_launcher, "-n", str(config.mpi_processes)],
+        "resolved_mpi_launcher": launcher,
+        "resolved_lammps_path": shutil.which(config.lammps_command),
+        "validated": config.execution_mode != ExecutionMode.MPI,
+    }
 
 
 def _recipe_dict(recipe: ArtisticRecipe) -> dict[str, object]:
