@@ -131,7 +131,7 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
 
 
 def _commit_directory(staged: Path, destination: Path) -> None:
-    """Atomically publish the complete normalized ARTISTIC cache tree."""
+    """Publish the complete normalized ARTISTIC cache tree transactionally, with rollback on handled failures."""
     backup = destination.with_name(f".{destination.name}.backup-{uuid.uuid4().hex}")
     if destination.exists():
         os.replace(destination, backup)

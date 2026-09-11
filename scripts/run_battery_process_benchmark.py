@@ -100,7 +100,7 @@ def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
     best_so_far = float(observed[target].max())
     oracle_best = float(replay[target].max())
     return {
-        "status": "REVEALED", "target": target, "stage": stage.value, "seed": seed,
+        "status": "EVALUATED", "target": target, "stage": stage.value, "seed": seed,
         "proposal_recipe_id": proposal.source_recipe_id, "proposal_controls": proposal.controls,
         "revealed_recipe_id": revealed.recipe_id, "revealed_target": revealed.revealed_target,
         "best_so_far": best_so_far, "oracle_best": oracle_best, "simple_regret": max(0.0, oracle_best - best_so_far), "remaining_hidden": len(hidden),
@@ -224,9 +224,13 @@ def _git_revision() -> str:
 def _write_report(root: Path, manifest: dict[str, object]) -> None:
     command = " ".join(sys.argv)
     unavailable = manifest["unavailable"] or ["none"]
+    architecture_status = manifest["architecture_status"]
     (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
         "# Battery Process Stress Suite\n\n"
         f"Status: **{manifest['status']}**.\n\n"
+        "## Architecture status\n\n"
+        + "\n".join(f"- {name}: **{item['status']}** — {item['reason']}" for name, item in architecture_status.items())
+        + "\n\n"
         "## Reproducibility\n\n"
         f"- Command: `{command}`\n"
         f"- Commit: `{_git_revision()}`\n"
@@ -292,9 +296,22 @@ def main() -> None:
         replays = [_offline_replay(adapter, seed=args.seed + offset) for offset in range(args.replay_seeds)]
         (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
-        if any(replay["status"] == "REVEALED" for replay in replays):
+        if any(replay["status"] == "EVALUATED" for replay in replays):
             replayed.append(dataset_id)
-    manifest = {"suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable, "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds}
+    manifest = {
+        "suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable,
+        "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds,
+        "architecture_status": {
+            "maspo_contextual_stage_optimizer": {
+                "status": "IMPLEMENTED_NOT_VALIDATED",
+                "reason": "Contextual stage optimizer is implemented and unit-tested; source-backed multi-stage trajectory validation remains unavailable.",
+            },
+            "adaptive_evidence_acquisition": {
+                "status": "IMPLEMENTED_NOT_VALIDATED",
+                "reason": "Horizon-legal blinded evidence replay is implemented and unit-tested; adaptive policy validation remains unavailable.",
+            },
+        },
+    }
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     _write_prediction_figure(prediction_artifacts, root / "figures")
     _write_report(root, manifest)
