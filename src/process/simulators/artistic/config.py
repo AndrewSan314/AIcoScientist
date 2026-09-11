@@ -50,14 +50,15 @@ class ArtisticRunConfig:
     mpi_processes: int = 1
     slurm_submit: str = "sbatch"
     timeout_seconds: int = 86_400
+    cleanup_timeout_seconds: float = 5.0
     lost_particle_tolerance: float = 0.0
     apply_verified_patches: bool = True
     max_particle_count: int = 1_000_000
     allow_unsafe_particle_count: bool = False
 
     def __post_init__(self) -> None:
-        if self.mpi_processes < 1 or self.timeout_seconds < 1 or self.max_particle_count < 1:
-            raise ValueError("mpi_processes, timeout_seconds, and max_particle_count must be positive")
+        if self.mpi_processes < 1 or self.timeout_seconds < 1 or self.cleanup_timeout_seconds <= 0 or self.max_particle_count < 1:
+            raise ValueError("mpi_processes, timeout_seconds, cleanup_timeout_seconds, and max_particle_count must be positive")
         if not 0 <= self.lost_particle_tolerance <= 1:
             raise ValueError("lost_particle_tolerance must be in [0, 1]")
 

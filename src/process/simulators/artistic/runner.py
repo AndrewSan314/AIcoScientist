@@ -90,7 +90,7 @@ class ArtisticSimulator:
         except MPIEnvironmentError as exc:
             mpi_environment = {**mpi_environment, **exc.metadata, "validation_error": str(exc), "validated": False}
             result = SimulationResult(SimulationStatus.ENVIRONMENT_ERROR, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
-        except FileNotFoundError as exc:
+        except OSError as exc:
             result = SimulationResult(SimulationStatus.ENVIRONMENT_ERROR, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
         except subprocess.TimeoutExpired as exc:
             result = SimulationResult(SimulationStatus.TIMEOUT, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(f"command timed out: {exc.cmd}",))
@@ -118,18 +118,18 @@ class ArtisticSimulator:
         started_monotonic = time.monotonic()
         log = workspace / f"{stage}.log"
         process_options = {"start_new_session": True} if os.name != "nt" else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+        process: subprocess.Popen[str] | None = None
         try:
             with log.open("w", encoding="utf-8", newline="\n") as stream:
                 process = subprocess.Popen(command, cwd=workspace, stdout=stream, stderr=subprocess.STDOUT, text=True, **process_options)
                 try:
                     process.wait(timeout=self.config.timeout_seconds)
                 except subprocess.TimeoutExpired:
-                    _terminate_process_tree(process)
-                    process.wait()
-                    commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "timeout", "log_sha256": _sha256(log)})
+                    cleanup = _cleanup_process(process, self.config.cleanup_timeout_seconds)
+                    commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "timeout", "cleanup": cleanup, "log_sha256": _sha256(log)})
                     raise subprocess.TimeoutExpired(command, self.config.timeout_seconds, output=_tail(log))
-        except FileNotFoundError:
-            commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "environment_error", "log_sha256": _sha256(log) if log.is_file() else None})
+        except OSError as exc:
+            commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "environment_error", "error_phase": "launch" if process is None else "wait", "error_type": type(exc).__name__, "error": str(exc), "log_sha256": _sha256(log) if log.is_file() else None})
             raise
         commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": process.returncode, "log_sha256": _sha256(log)})
         if process.returncode:
@@ -210,14 +210,43 @@ def _shell_quote(part: str) -> str:
     return "'" + part.replace("'", "'\"'\"'") + "'"
 
 
-def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
+def _terminate_process_tree(process: subprocess.Popen[str], *, hard: bool, timeout_seconds: float) -> dict[str, object]:
     if os.name == "nt":
-        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
-    else:
         try:
-            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-        except (OSError, ProcessLookupError):
+            completed = subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True,
+                check=False,
+                timeout=timeout_seconds,
+            )
+            return {"method": "taskkill", "hard": hard, "returncode": completed.returncode}
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            try:
+                process.kill()
+                return {"method": "process.kill", "hard": True, "fallback": True, "taskkill_error": str(exc)}
+            except OSError as kill_exc:
+                return {"method": "taskkill", "hard": True, "error_type": type(kill_exc).__name__, "error": str(kill_exc), "taskkill_error": str(exc)}
+    try:
+        os.killpg(os.getpgid(process.pid), signal.SIGKILL if hard else signal.SIGTERM)
+        return {"method": "process_group", "hard": hard}
+    except (OSError, ProcessLookupError) as exc:
+        try:
             process.kill()
+            return {"method": "process", "hard": True, "fallback": True}
+        except OSError as kill_exc:
+            return {"method": "process", "hard": True, "fallback": True, "error_type": type(kill_exc).__name__, "error": str(kill_exc), "initial_error": str(exc)}
+
+
+def _cleanup_process(process: subprocess.Popen[str], timeout_seconds: float) -> dict[str, object]:
+    initial = _terminate_process_tree(process, hard=False, timeout_seconds=timeout_seconds)
+    try:
+        return {"initial": initial, "cleanup_complete": process.wait(timeout=timeout_seconds) is not None, "returncode": process.returncode}
+    except subprocess.TimeoutExpired:
+        hard = _terminate_process_tree(process, hard=True, timeout_seconds=timeout_seconds)
+        try:
+            return {"initial": initial, "hard": hard, "cleanup_complete": process.wait(timeout=timeout_seconds) is not None, "returncode": process.returncode}
+        except subprocess.TimeoutExpired:
+            return {"initial": initial, "hard": hard, "cleanup_complete": False, "returncode": process.poll()}
 
 
 def _tail(path: Path, limit: int = 64 * 1024) -> str:

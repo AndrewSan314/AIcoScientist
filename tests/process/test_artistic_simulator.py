@@ -4,6 +4,7 @@ import json
 import hashlib
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -151,6 +152,46 @@ def test_invoke_streams_stage_log_and_records_wall_seconds(tmp_path: Path) -> No
     ArtisticSimulator(ArtisticRunConfig())._invoke(workspace, "stream", "emit.py", commands, python=True)
     assert "stage output" in (workspace / "stream.log").read_text(encoding="utf-8")
     assert commands[0]["wall_seconds"] >= 0
+
+
+def test_invoke_records_general_launch_oserror(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    commands: list[dict[str, object]] = []
+
+    def fail_launch(*args: object, **kwargs: object) -> None:
+        raise PermissionError("launch denied")
+
+    monkeypatch.setattr(runner_module.subprocess, "Popen", fail_launch)
+    with pytest.raises(PermissionError, match="launch denied"):
+        ArtisticSimulator(ArtisticRunConfig())._invoke(workspace, "launch", "missing.run", commands)
+    assert commands[0]["returncode"] == "environment_error"
+    assert commands[0]["error_phase"] == "launch"
+    assert commands[0]["error_type"] == "PermissionError"
+    assert commands[0]["wall_seconds"] >= 0
+
+
+def test_execute_classifies_launch_oserror_and_writes_command_manifest(pinned_source: Path, tmp_path: Path) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", lammps_command="__missing_lammps_for_test__"))
+    result = simulator.execute(_recipe(), run_id="launch-error")
+    manifest = json.loads((tmp_path / "runs" / "launch-error" / "manifest.json").read_text(encoding="utf-8"))
+    assert result.status == SimulationStatus.ENVIRONMENT_ERROR
+    assert manifest["status"] == SimulationStatus.ENVIRONMENT_ERROR.value
+    assert manifest["commands"][0]["returncode"] == "environment_error"
+    assert manifest["commands"][0]["error_phase"] == "launch"
+
+
+def test_invoke_timeout_cleanup_is_bounded_and_diagnostic(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "sleep.py").write_text("import time\ntime.sleep(30)\n", encoding="utf-8")
+    commands: list[dict[str, object]] = []
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        ArtisticSimulator(ArtisticRunConfig(timeout_seconds=1, cleanup_timeout_seconds=0.2))._invoke(workspace, "sleep", "sleep.py", commands, python=True)
+    assert time.monotonic() - started < 5
+    assert commands[0]["returncode"] == "timeout"
+    assert commands[0]["cleanup"]["cleanup_complete"] is True
 
 
 def test_mpi_validation_proves_one_distributed_job(monkeypatch: pytest.MonkeyPatch) -> None:
