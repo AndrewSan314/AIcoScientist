@@ -56,7 +56,7 @@ def main() -> int:
     simulator = ArtisticSimulator(config)
     recipe = _recipe(args.recipe)
     if args.study_dry_run:
-        plan = build_convergence_study_plan(config, horizons=args.study_horizons or (), steps_per_second=args.steps_per_second) if args.study_horizons else build_convergence_study_plan(config, steps_per_second=args.steps_per_second)
+        plan = build_convergence_study_plan(config, horizons=args.study_horizons or (), steps_per_second=args.steps_per_second, recipe=recipe) if args.study_horizons else build_convergence_study_plan(config, steps_per_second=args.steps_per_second, recipe=recipe)
         print(json.dumps(asdict(plan), indent=2))
         return 0
     if args.preflight:
