@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Mapping, Sequence
 
-from .config import REFERENCE_SLURRY_STEPS
+from .config import FidelityMode, REFERENCE_SLURRY_STEPS
 
 
 class ConvergenceStatus(StrEnum):
@@ -16,6 +16,7 @@ class ConvergenceStatus(StrEnum):
     REFERENCE_METRIC_MISSING = "REFERENCE_METRIC_MISSING"
     REFERENCE_OUTSIDE_TOLERANCE = "REFERENCE_OUTSIDE_TOLERANCE"
     VALIDATED_AGAINST_REFERENCE = "VALIDATED_AGAINST_REFERENCE"
+    INCOMPATIBLE_REFERENCE_EVIDENCE = "INCOMPATIBLE_REFERENCE_EVIDENCE"
 
 
 class ReferenceAgreementStatus(StrEnum):
@@ -70,17 +71,96 @@ class MetricTolerancePolicy:
 
 @dataclass(frozen=True)
 class Checkpoint:
+    """A dynamics-relative checkpoint; raw LAMMPS step is audit metadata."""
     step: int
     metrics: Mapping[str, float]
     wall_seconds: float | None = None
     stage: str | None = None
     source_log: str | None = None
+    raw_step: int | None = None
+    dynamics_step: int | None = None
+    phase: str = "dynamics"
 
     def __post_init__(self) -> None:
-        if self.step < 0 or any(not math.isfinite(float(value)) for value in self.metrics.values()):
+        if self.step < 0 or (self.raw_step is not None and self.raw_step < 0) or (self.dynamics_step is not None and self.dynamics_step < 0):
             raise ValueError("checkpoint steps and metrics must be finite and non-negative")
+        if self.phase not in {"minimization", "dynamics"}:
+            raise ValueError("checkpoint phase must be minimization or dynamics")
+        if any(not math.isfinite(float(value)) for value in self.metrics.values()):
+            raise ValueError("checkpoint metrics must be finite")
         if self.wall_seconds is not None and (not math.isfinite(float(self.wall_seconds)) or self.wall_seconds < 0):
             raise ValueError("checkpoint wall time must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class ConvergenceRunEvidence:
+    """Manifest evidence that binds a run to one exact physics case."""
+
+    run_id: str
+    recipe_fingerprint: str
+    pinned_commit: str
+    pinned_source_tree_hash: str
+    physics_config_fingerprint: str
+    fidelity_mode: FidelityMode
+    fidelity_identity: str
+    requested_dynamic_steps: int
+    dump_interval_steps: int
+    checkpoints: tuple[Checkpoint, ...]
+    simulation_manifest_hash: str
+    successful: bool
+
+    def __post_init__(self) -> None:
+        if not all(isinstance(value, str) and value.strip() for value in (
+            self.run_id, self.recipe_fingerprint, self.pinned_commit, self.pinned_source_tree_hash,
+            self.physics_config_fingerprint, self.fidelity_identity, self.simulation_manifest_hash,
+        )) or self.requested_dynamic_steps <= 0 or self.dump_interval_steps <= 0:
+            raise ValueError("convergence evidence requires complete run and physics identities")
+        mode = FidelityMode(self.fidelity_mode)
+        object.__setattr__(self, "fidelity_mode", mode)
+        if any(item.phase != "dynamics" for item in self.checkpoints):
+            raise ValueError("convergence evidence checkpoints must be dynamics phase")
+        if mode == FidelityMode.REFERENCE and self.requested_dynamic_steps != REFERENCE_SLURRY_STEPS:
+            raise ValueError("reference evidence requires exactly 20,000,000 dynamics-relative steps")
+        if mode == FidelityMode.SHORT_HORIZON and self.requested_dynamic_steps >= REFERENCE_SLURRY_STEPS:
+            raise ValueError("short-horizon evidence cannot claim the reference horizon")
+
+    @classmethod
+    def from_manifest(cls, manifest: Mapping[str, Any], *, simulation_manifest_hash: str | None = None) -> "ConvergenceRunEvidence":
+        return cls(
+            run_id=str(manifest.get("run_id", "")), recipe_fingerprint=str(manifest.get("recipe_fingerprint", "")),
+            pinned_commit=str(manifest.get("checked_out_commit", manifest.get("pinned_upstream_commit", ""))),
+            pinned_source_tree_hash=str(manifest.get("source_tree_hash", "")),
+            physics_config_fingerprint=str(manifest.get("physics_config_fingerprint", "")),
+            fidelity_mode=FidelityMode(str(manifest.get("fidelity_mode", ""))),
+            fidelity_identity=str(manifest.get("fidelity_identity", "")),
+            requested_dynamic_steps=int(manifest.get("requested_slurry_steps", 0)),
+            dump_interval_steps=int(manifest.get("dump_interval_steps", 0)),
+            checkpoints=checkpoints_from_manifest(manifest),
+            simulation_manifest_hash=simulation_manifest_hash or str(manifest.get("simulation_manifest_hash", "")),
+            successful=str(manifest.get("status", "")) == "Success",
+        )
+
+    def compatibility_with(self, reference: "ConvergenceRunEvidence") -> tuple[bool, str]:
+        if reference.fidelity_mode != FidelityMode.REFERENCE or reference.requested_dynamic_steps != REFERENCE_SLURRY_STEPS:
+            return False, "reference evidence is not a successful exact 20,000,000-step REFERENCE run"
+        if not reference.successful:
+            return False, "reference evidence is not successful"
+        if self.fidelity_mode != FidelityMode.SHORT_HORIZON:
+            return False, "short evidence must remain SHORT_HORIZON"
+        fields = (
+            ("recipe_fingerprint", self.recipe_fingerprint, reference.recipe_fingerprint),
+            ("pinned_commit", self.pinned_commit, reference.pinned_commit),
+            ("pinned_source_tree_hash", self.pinned_source_tree_hash, reference.pinned_source_tree_hash),
+            ("physics_config_fingerprint", self.physics_config_fingerprint, reference.physics_config_fingerprint),
+        )
+        for name, short_value, reference_value in fields:
+            if short_value != reference_value:
+                return False, f"reference evidence {name} differs"
+        if not self.successful:
+            return False, "short evidence is not successful"
+        if not any(item.step == REFERENCE_SLURRY_STEPS for item in reference.checkpoints):
+            return False, "reference evidence lacks an exact 20,000,000 dynamics checkpoint"
+        return True, ""
 
 
 @dataclass(frozen=True)
@@ -124,14 +204,20 @@ def checkpoints_from_manifest(manifest: Mapping[str, Any]) -> tuple[Checkpoint, 
     for item in raw:
         if isinstance(item, int) and not isinstance(item, bool):
             item = {"step": item}
-        if not isinstance(item, Mapping) or "step" not in item:
+        if not isinstance(item, Mapping):
             raise ValueError("ARTISTIC checkpoint entries need a step")
+        phase = str(item.get("phase", "dynamics"))
+        dynamics_step = item.get("dynamics_step", item.get("step"))
+        if phase == "minimization" or dynamics_step is None:
+            continue
+        if "step" not in item and "dynamics_step" not in item:
+            raise ValueError("ARTISTIC checkpoint entries need a dynamics-relative step")
         metrics = item.get("metrics", {})
         if not isinstance(metrics, Mapping):
             raise ValueError("ARTISTIC checkpoint metrics must be a mapping")
         result.append(Checkpoint(
-            int(item["step"]), {str(name): float(value) for name, value in metrics.items()}, item.get("wall_seconds"),
-            item.get("stage"), item.get("source_log"),
+            int(dynamics_step), {str(name): float(value) for name, value in metrics.items()}, item.get("wall_seconds"),
+            item.get("stage"), item.get("source_log"), item.get("raw_step"), int(dynamics_step), phase,
         ))
     return tuple(sorted(result, key=lambda item: item.step))
 
@@ -164,7 +250,8 @@ def compare_to_reference(
 ) -> tuple[MetricComparison, ...]:
     if reference_steps != REFERENCE_SLURRY_STEPS:
         raise ValueError(f"reference horizon is fixed at exactly {REFERENCE_SLURRY_STEPS:,} steps")
-    if reference.step != reference_steps:
+    reference_dynamic_step = reference.dynamics_step if reference.dynamics_step is not None else reference.step
+    if reference.phase != "dynamics" or reference_dynamic_step != reference_steps:
         raise ValueError(f"reference comparison requires an exact {reference_steps:,}-step reference checkpoint")
     if tolerance_policy is None and tolerance is not None:
         tolerance_policy = MetricTolerancePolicy(default_relative_tolerance=tolerance)
@@ -188,13 +275,17 @@ def build_convergence_report(
     checkpoints: Sequence[Checkpoint],
     *,
     reference_checkpoints: Sequence[Checkpoint] | None = None,
+    short_evidence: ConvergenceRunEvidence | None = None,
+    reference_evidence: ConvergenceRunEvidence | None = None,
     requested_steps: int | None = None,
     reference_steps: int = REFERENCE_SLURRY_STEPS,
     tolerance: float | None = None,
     tolerance_policy: MetricTolerancePolicy | None = None,
     stability_tolerance: float = 0.01,
 ) -> ConvergenceReport:
-    short = tuple(sorted(checkpoints, key=lambda item: item.step))
+    short = tuple(sorted(short_evidence.checkpoints if short_evidence is not None else checkpoints, key=lambda item: item.step))
+    if short_evidence is not None and requested_steps is None:
+        requested_steps = short_evidence.requested_dynamic_steps
     available_metrics = tuple(sorted({name for item in short for name in item.metrics}))
     if tolerance_policy is None and tolerance is not None:
         tolerance_policy = MetricTolerancePolicy(default_relative_tolerance=tolerance)
@@ -212,10 +303,33 @@ def build_convergence_report(
             reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
             diagnostics=(f"Reference validation is fixed to exactly {REFERENCE_SLURRY_STEPS:,} steps.",), **base,
         )
-    exact_reference = next((item for item in sorted(reference_checkpoints or (), key=lambda item: item.step) if item.step == reference_steps), None)
+    if short_evidence is not None or reference_evidence is not None:
+        if short_evidence is None or reference_evidence is None:
+            return ConvergenceReport(
+                ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE, reference_available=False,
+                reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
+                diagnostics=("Both short-horizon and reference ConvergenceRunEvidence are required.",), **base,
+            )
+        compatible, reason = short_evidence.compatibility_with(reference_evidence)
+        if not compatible:
+            return ConvergenceReport(
+                ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE, reference_available=False,
+                reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
+                diagnostics=(reason,), **base,
+            )
+        evidence_checkpoints = reference_evidence.checkpoints
+    elif reference_checkpoints is not None:
+        return ConvergenceReport(
+            ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE, reference_available=False,
+            reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
+            diagnostics=("Reference comparison requires typed ConvergenceRunEvidence; raw checkpoints are insufficient.",), **base,
+        )
+    else:
+        evidence_checkpoints = ()
+    exact_reference = next((item for item in sorted(evidence_checkpoints, key=lambda item: item.step) if item.step == reference_steps), None)
     if exact_reference is None:
         reason = f"No checkpoint at the exact {reference_steps:,}-step reference horizon was supplied."
-        if reference_checkpoints:
+        if evidence_checkpoints:
             reason = f"The supplied reference checkpoints do not contain the exact {reference_steps:,}-step horizon."
         return ConvergenceReport(
             ConvergenceStatus.REFERENCE_NOT_AVAILABLE, reference_available=False,

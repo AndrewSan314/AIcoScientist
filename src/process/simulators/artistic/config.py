@@ -146,6 +146,23 @@ def _command_version(command: str) -> str:
     return "unavailable"
 
 
+def physics_config_fingerprint(
+    *, recipe_fingerprint: str, source_commit: str, source_tree_hash: str,
+    patches: list[dict[str, object]] | tuple[dict[str, object], ...] = (),
+) -> str:
+    """Identity for physics-affecting inputs; horizon and dump-only patches are excluded."""
+    excluded = {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval"}
+    normalized_patches = [
+        patch for patch in patches
+        if str(patch.get("id", "")) not in excluded
+    ]
+    payload = {
+        "recipe_fingerprint": recipe_fingerprint, "source_commit": source_commit,
+        "source_tree_hash": source_tree_hash, "physics_patches": normalized_patches,
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+
+
 def _processor_grids(output: str) -> list[tuple[int, int, int]]:
     patterns = (
         r"(\d+)\s+by\s+(\d+)\s+by\s+(\d+)\s+MPI processor grid",

@@ -39,8 +39,13 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             raise ValueError("ARTISTIC simulation provenance is not pinned to the audited source")
         fidelity_mode = result.provenance.get("fidelity_mode", FidelityMode.REFERENCE.value)
         requested_steps = int(result.provenance.get("requested_slurry_steps", REFERENCE_SLURRY_STEPS))
+        completed_steps = result.provenance.get("completed_slurry_steps")
         if fidelity_mode == FidelityMode.REFERENCE.value and requested_steps != REFERENCE_SLURRY_STEPS:
             raise ValueError("reference ARTISTIC provenance must report exactly 20,000,000 slurry steps")
+        if completed_steps is None:
+            raise ValueError("ARTISTIC provenance must report dynamics-relative completed_slurry_steps")
+        if fidelity_mode == FidelityMode.REFERENCE.value and int(completed_steps) != REFERENCE_SLURRY_STEPS:
+            raise ValueError("reference ARTISTIC run must complete exactly 20,000,000 dynamics-relative steps")
         if fidelity_mode == FidelityMode.SHORT_HORIZON.value and not 0 < requested_steps < REFERENCE_SLURRY_STEPS:
             raise ValueError("short-horizon ARTISTIC provenance must report an explicit sub-reference horizon")
         if fidelity_mode == FidelityMode.SHORT_HORIZON.value and result.provenance.get("reference_equivalence_status", "REFERENCE_NOT_AVAILABLE") != "REFERENCE_NOT_AVAILABLE":
@@ -58,8 +63,11 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
                 "executable_identity": dict(result.provenance.get("executable_identity", {})),
                 "fidelity_mode": fidelity_mode, "reference_slurry_steps": result.provenance.get("reference_slurry_steps", REFERENCE_SLURRY_STEPS),
                 "requested_slurry_steps": requested_steps,
-                "completed_slurry_steps": result.provenance.get("completed_slurry_steps", 0),
+                "completed_slurry_steps": int(completed_steps),
+                "last_raw_lammps_step": result.provenance.get("progress", {}).get("last_raw_lammps_step") if isinstance(result.provenance.get("progress"), dict) else None,
                 "dump_interval_steps": result.provenance.get("dump_interval_steps"), "fidelity_identity": result.provenance.get("fidelity_identity"),
+                "physics_config_fingerprint": result.provenance.get("physics_config_fingerprint"),
+                "simulation_manifest_hash": result.provenance.get("simulation_manifest_hash"),
                 "reference_equivalence_status": result.provenance.get("reference_equivalence_status", "NOT_EVALUATED"),
             },
         )
@@ -102,6 +110,7 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
         manifest_fidelity = {key: source_manifest[key] for key in (
             "fidelity_mode", "reference_slurry_steps", "requested_slurry_steps", "completed_slurry_steps",
             "dump_interval_steps", "fidelity_identity", "reference_equivalence_status",
+            "physics_config_fingerprint", "simulation_manifest_hash",
         ) if key in source_manifest}
         provenance = {**result.provenance, **manifest_fidelity, "simulation_manifest_sha256": manifest_hash, "normalized_simulation_manifest": manifest_rel.as_posix()}
         result = replace(result, provenance=provenance)
@@ -134,6 +143,8 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             "executable_identity": result.provenance.get("executable_identity", {}),
             "fidelity_mode": result.provenance.get("fidelity_mode", FidelityMode.REFERENCE.value),
             "requested_slurry_steps": result.provenance.get("requested_slurry_steps", REFERENCE_SLURRY_STEPS),
+            "completed_slurry_steps": result.provenance.get("completed_slurry_steps", 0),
+            "physics_config_fingerprint": result.provenance.get("physics_config_fingerprint"),
             "reference_equivalence_status": result.provenance.get("reference_equivalence_status", "NOT_EVALUATED"),
         }
         aggregate = {"official_dataset_source": SOURCE_URL, "license": "CC BY-NC-SA 4.0", "pinned_upstream_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH, "normalized_runs": [*entries, entry]}
