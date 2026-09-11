@@ -169,6 +169,7 @@ def test_convergence_rejects_missing_metrics_missing_short_reference_and_undefin
     assert missing.status == ConvergenceStatus.REFERENCE_METRIC_MISSING
     assert missing.missing_metrics == ("pressure",)
     assert build_convergence_report(short, reference_checkpoints=[Checkpoint(19_000_000, {"density": 1.0})]).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
+    assert build_convergence_report(short, reference_checkpoints=[Checkpoint(10, {"density": 1.0})], reference_steps=10).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
     undefined = build_convergence_report(short, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0})])
     assert undefined.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
 

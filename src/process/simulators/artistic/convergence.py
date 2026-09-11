@@ -162,6 +162,8 @@ def compare_to_reference(
     tolerance_policy: MetricTolerancePolicy | None = None,
     tolerance: float | None = None,
 ) -> tuple[MetricComparison, ...]:
+    if reference_steps != REFERENCE_SLURRY_STEPS:
+        raise ValueError(f"reference horizon is fixed at exactly {REFERENCE_SLURRY_STEPS:,} steps")
     if reference.step != reference_steps:
         raise ValueError(f"reference comparison requires an exact {reference_steps:,}-step reference checkpoint")
     if tolerance_policy is None and tolerance is not None:
@@ -204,6 +206,12 @@ def build_convergence_report(
         "available_metrics": available_metrics, "stability_status": stable,
         "tolerance_policy": policy.as_dict(),
     }
+    if reference_steps != REFERENCE_SLURRY_STEPS:
+        return ConvergenceReport(
+            ConvergenceStatus.REFERENCE_NOT_AVAILABLE, reference_available=False,
+            reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
+            diagnostics=(f"Reference validation is fixed to exactly {REFERENCE_SLURRY_STEPS:,} steps.",), **base,
+        )
     exact_reference = next((item for item in sorted(reference_checkpoints or (), key=lambda item: item.step) if item.step == reference_steps), None)
     if exact_reference is None:
         reason = f"No checkpoint at the exact {reference_steps:,}-step reference horizon was supplied."
