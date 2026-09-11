@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -11,7 +13,11 @@ from .config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SOURCE_URL, Artistic
 
 
 def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        while chunk := stream.read(4 * 1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def source_provenance(source_root: Path, *, files: list[Path] | None = None) -> dict[str, Any]:
@@ -31,4 +37,15 @@ def source_provenance(source_root: Path, *, files: list[Path] | None = None) -> 
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str), encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = json.dumps(payload, indent=2, sort_keys=True, default=str).encode("utf-8")
+    with tempfile.NamedTemporaryFile("wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False) as temp:
+        temp.write(data)
+        temp.flush()
+        os.fsync(temp.fileno())
+        temporary = temp.name
+    try:
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)

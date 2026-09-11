@@ -5,6 +5,7 @@ import hashlib
 import pandas as pd
 
 from .base import BatteryDatasetMetadata, NormalizedRunAdapter, RawDatasetUnavailableError
+from src.datasets.cache import compute_file_sha256
 from src.process.contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
 from src.process.stages import ProcessStage
 
@@ -30,7 +31,7 @@ class WarwickNMC622Adapter(NormalizedRunAdapter):
 
     def _raw_hashes(self) -> dict[str, str]:
         archive = next(iter(self.raw_dir.glob("*.zip")), None)
-        return {archive.name: hashlib.sha256(archive.read_bytes()).hexdigest()} if archive else {}
+        return {archive.name: compute_file_sha256(archive)} if archive else {}
 
     def _parse_raw(self) -> list[BatteryProcessRun]:
         source = self._table_path()

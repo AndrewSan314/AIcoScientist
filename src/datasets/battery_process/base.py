@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
 import subprocess
+import tempfile
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
@@ -14,6 +18,7 @@ from src.process.information_horizon import InformationHorizon
 from src.process.optimization.process_space import ProcessSearchSpace
 from src.process.stages import ProcessStage
 from src.process.validation import ProcessValidationReport, validate_process_run
+from src.datasets.cache import compute_file_sha256
 
 
 class RawDatasetUnavailableError(FileNotFoundError):
@@ -198,14 +203,14 @@ class NormalizedRunAdapter:
             raise ValueError("raw_hashes are required; processed data cannot be detached from source evidence")
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         payload = [run.to_dict() for run in runs]
-        self.normalized_runs_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+        normalized_data = json.dumps(payload, indent=2, default=str).encode("utf-8")
         source_manifest: dict[str, object] = {}
         raw_manifest_path = self.root / "manifest.json"
         if raw_manifest_path.is_file():
             parsed = json.loads(raw_manifest_path.read_text(encoding="utf-8"))
             if isinstance(parsed, dict):
                 source_manifest = parsed
-        processed_hash = hashlib.sha256(self.normalized_runs_path.read_bytes()).hexdigest()
+        processed_hash = hashlib.sha256(normalized_data).hexdigest()
         manifest = {
             "dataset": self.metadata().dataset_id,
             "source_url": source_manifest.get("official_dataset_source"),
@@ -221,7 +226,8 @@ class NormalizedRunAdapter:
             "processed_hashes": {"normalized_runs.json": processed_hash},
             "processed_hash": processed_hash,
         }
-        (self.processed_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        manifest_data = json.dumps(manifest, indent=2).encode("utf-8")
+        _atomic_cache_commit(((self.normalized_runs_path, normalized_data), (self.processed_dir / "manifest.json", manifest_data)))
         return self.normalized_runs_path
 
     @staticmethod
@@ -232,3 +238,40 @@ class NormalizedRunAdapter:
         except OSError:
             return "unknown"
         return result.stdout.strip() if result.returncode == 0 else "unknown"
+
+
+def _atomic_cache_commit(files: tuple[tuple[Path, bytes], ...]) -> None:
+    backups: list[tuple[Path, Path | None]] = []
+    for path, _ in files:
+        backup = None
+        if path.exists():
+            backup = path.with_name(f".{path.name}.{uuid.uuid4().hex}.bak")
+            shutil.copy2(path, backup)
+        backups.append((path, backup))
+    try:
+        for path, data in files:
+            _atomic_replace(path, data)
+    except Exception:
+        for path, backup in reversed(backups):
+            if backup is not None and backup.exists():
+                os.replace(backup, path)
+            elif path.exists():
+                path.unlink()
+        raise
+    finally:
+        for _, backup in backups:
+            if backup is not None and backup.exists():
+                backup.unlink()
+
+
+def _atomic_replace(path: Path, data: bytes) -> None:
+    with tempfile.NamedTemporaryFile("wb", dir=path.parent, prefix=f".{path.name}.", suffix=".tmp", delete=False) as temp:
+        temp.write(data)
+        temp.flush()
+        os.fsync(temp.fileno())
+        temporary = temp.name
+    try:
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)

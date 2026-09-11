@@ -5,6 +5,7 @@ import hashlib
 import pandas as pd
 
 from .base import BatteryDatasetMetadata, NormalizedRunAdapter, RawDatasetUnavailableError
+from src.datasets.cache import compute_file_sha256
 from src.process.contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
 from src.process.stages import ProcessStage
 
@@ -26,7 +27,7 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
         return super().load_runs()
 
     def _raw_hashes(self) -> dict[str, str]:
-        return {file.name: hashlib.sha256(file.read_bytes()).hexdigest() for file in sorted(self.raw_dir.iterdir()) if file.is_file()}
+        return {file.name: compute_file_sha256(file) for file in sorted(self.raw_dir.iterdir()) if file.is_file()}
 
     def _parse_raw(self) -> list[BatteryProcessRun]:
         source = self.raw_dir / self.SOURCE_FILE

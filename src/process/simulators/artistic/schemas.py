@@ -9,6 +9,7 @@ from typing import Mapping
 
 
 _ARTISTIC_PI = 3.1415926
+_MEMORY_BYTES_PER_PARTICLE_HEURISTIC = 2_200
 
 class DryingMode(StrEnum):
     HOMOGENEOUS = "homogeneous"
@@ -172,7 +173,7 @@ class ParticleEstimate:
 
     @property
     def estimated_memory_bytes(self) -> int:
-        return self.total_particles * 1_600
+        return self.total_particles * _MEMORY_BYTES_PER_PARTICLE_HEURISTIC
 
     def as_dict(self) -> dict[str, object]:
         gib = self.estimated_memory_bytes / 1024**3
@@ -185,8 +186,9 @@ class ParticleEstimate:
             "total_particles": self.total_particles,
             "estimated_memory_bytes": self.estimated_memory_bytes,
             "estimated_memory_gib": gib,
+            "memory_bytes_per_particle": _MEMORY_BYTES_PER_PARTICLE_HEURISTIC,
             "memory_class": "< 1 GiB" if gib < 1 else "1-16 GiB" if gib < 16 else ">= 16 GiB",
-            "memory_basis": "heuristic 1,600 bytes/particle estimate; observed peak can be higher",
+            "memory_basis": "heuristic 2,200 bytes/particle estimate (1.32x observed ~1,668 bytes/particle peak); not a hard upper bound",
         }
 
 

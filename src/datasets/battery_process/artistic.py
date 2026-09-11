@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 import shutil
+import tempfile
+import uuid
 from dataclasses import replace
 from pathlib import Path
 
@@ -83,7 +86,7 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
         provenance = {**result.provenance, "simulation_manifest_sha256": manifest_hash, "normalized_simulation_manifest": manifest_rel.as_posix()}
         result = replace(result, provenance=provenance)
         run = cls.from_simulation(result, recipe)
-        adapter.root.mkdir(parents=True, exist_ok=True)
+        adapter.root.parent.mkdir(parents=True, exist_ok=True)
         existing = adapter.load_runs() if adapter.normalized_runs_path.is_file() else []
         if any(item.run_id == run.run_id for item in existing):
             raise ValueError(f"ARTISTIC run is already normalized: {run.run_id}")
@@ -91,11 +94,8 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
         if not hashes:
             raise ValueError("successful ARTISTIC run lacks source hashes")
         manifest_path = adapter.root / manifest_rel
-        manifest_path.parent.mkdir(parents=True, exist_ok=True)
         if manifest_path.exists() and manifest_path.read_bytes() != source_manifest_bytes:
             raise ValueError(f"immutable ARTISTIC manifest collision: {manifest_path.name}")
-        if not manifest_path.exists():
-            shutil.copyfile(source_manifest_path, manifest_path)
         aggregate_path = adapter.root / "manifest.json"
         aggregate = json.loads(aggregate_path.read_text(encoding="utf-8")) if aggregate_path.is_file() else {}
         entries = aggregate.get("normalized_runs", [])
@@ -111,9 +111,39 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             "executable_identity": result.provenance.get("executable_identity", {}),
         }
         aggregate = {"official_dataset_source": SOURCE_URL, "license": "CC BY-NC-SA 4.0", "pinned_upstream_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH, "normalized_runs": [*entries, entry]}
-        aggregate_path.write_text(json.dumps(aggregate, indent=2, sort_keys=True), encoding="utf-8")
         all_hashes = _aggregate_hashes(aggregate["normalized_runs"])
-        return adapter.write_processed_cache([*existing, run], raw_hashes=all_hashes)
+        transaction_root = Path(tempfile.mkdtemp(prefix=f".{adapter.root.name}.txn-", dir=adapter.root.parent))
+        try:
+            if adapter.root.is_dir():
+                shutil.copytree(adapter.root, transaction_root, dirs_exist_ok=True)
+            staged_manifest = transaction_root / manifest_rel
+            staged_manifest.parent.mkdir(parents=True, exist_ok=True)
+            if not staged_manifest.exists():
+                shutil.copyfile(source_manifest_path, staged_manifest)
+            (transaction_root / "manifest.json").write_text(json.dumps(aggregate, indent=2, sort_keys=True), encoding="utf-8")
+            cls(transaction_root).write_processed_cache([*existing, run], raw_hashes=all_hashes)
+            _commit_directory(transaction_root, adapter.root)
+            return adapter.normalized_runs_path
+        finally:
+            if transaction_root.exists():
+                shutil.rmtree(transaction_root, ignore_errors=True)
+
+
+def _commit_directory(staged: Path, destination: Path) -> None:
+    """Atomically publish the complete normalized ARTISTIC cache tree."""
+    backup = destination.with_name(f".{destination.name}.backup-{uuid.uuid4().hex}")
+    if destination.exists():
+        os.replace(destination, backup)
+    try:
+        os.replace(staged, destination)
+    except Exception:
+        if destination.exists():
+            shutil.rmtree(destination, ignore_errors=True)
+        if backup.exists():
+            os.replace(backup, destination)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup, ignore_errors=True)
 
 
 def _aggregate_hashes(entries: list[object]) -> dict[str, str]:

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Mapping
 
 from .config import ArtisticRunConfig
+from .provenance import sha256 as _streaming_sha256
 
 
 _PLACEHOLDER = re.compile(r"@([A-Za-z0-9_]+)@")
@@ -90,4 +91,4 @@ def _format(value: float | int) -> str:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return _streaming_sha256(path)

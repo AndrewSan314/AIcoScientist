@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -133,6 +134,23 @@ def test_particle_guard_uses_sum_of_per_type_rounds(pinned_source: Path, tmp_pat
 def test_lammps_version_skips_blank_banner_lines(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(args[0], 0, "\nLAMMPS test\n", ""))
     assert _version("lmp") == "LAMMPS test"
+
+
+def test_artistic_hashing_streams_without_path_read_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "large-output.data"
+    path.write_bytes(b"x" * (5 * 1024 * 1024))
+    monkeypatch.setattr(Path, "read_bytes", lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("hashing must stream files")))
+    assert runner_module._sha256(path) == hashlib.sha256(b"x" * (5 * 1024 * 1024)).hexdigest()
+
+
+def test_invoke_streams_stage_log_and_records_wall_seconds(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "emit.py").write_text("print('stage output')\n", encoding="utf-8")
+    commands: list[dict[str, object]] = []
+    ArtisticSimulator(ArtisticRunConfig())._invoke(workspace, "stream", "emit.py", commands, python=True)
+    assert "stage output" in (workspace / "stream.log").read_text(encoding="utf-8")
+    assert commands[0]["wall_seconds"] >= 0
 
 
 def test_mpi_validation_proves_one_distributed_job(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -281,3 +299,13 @@ def test_normalization_keeps_each_manifest_and_groups_repeated_recipes(tmp_path:
         assert (cache_root / entry["simulation_manifest"]).is_file()
         assert entry["recipe_fingerprint"] == runs[0].batch_id
         assert entry["physics_output_hashes"] and entry["executable_versions"]
+
+
+def test_normalization_publishes_nothing_when_cache_write_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    recipe = _recipe()
+    result = _successful_result(tmp_path, "failed-normalize", recipe)
+    monkeypatch.setattr(ArtisticSimulationAdapter, "write_processed_cache", lambda *args, **kwargs: (_ for _ in ()).throw(OSError("injected cache failure")))
+    with pytest.raises(OSError, match="injected cache failure"):
+        ArtisticSimulationAdapter.normalize_successful(result, recipe, root=tmp_path / "cache")
+    assert not (tmp_path / "cache").exists()
+    assert not list(tmp_path.glob(".cache.txn-*"))

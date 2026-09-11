@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import hashlib
 import importlib.metadata
 import os
+import signal
 import shutil
 import subprocess
 import sys
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,6 +15,7 @@ from src.process.simulators.base import SimulationResult, SimulationStatus
 
 from .config import ArtisticRunConfig, ExecutionMode, MPIEnvironmentError, validate_mpi_environment
 from .parser import parse_artistic_output
+from .provenance import sha256 as _streaming_sha256
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
 from .schemas import ArtisticRecipe, DryingMode, ParticleCountSafetyError, ParticleEstimate, estimate_particles, recipe_fingerprint
@@ -113,26 +115,25 @@ class ArtisticSimulator:
         if self.config.execution_mode == ExecutionMode.SLURM:
             command = self._slurm_command(workspace, stage, command)
         started = datetime.now(UTC)
-        try:
-            process = subprocess.Popen(command, cwd=workspace, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        except FileNotFoundError:
-            commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "returncode": "environment_error"})
-            raise
-        try:
-            stdout, stderr = process.communicate(timeout=self.config.timeout_seconds)
-        except subprocess.TimeoutExpired:
-            _terminate_process_tree(process)
-            stdout, stderr = process.communicate()
-            log = workspace / f"{stage}.log"
-            log.write_text(stdout + "\n--- STDERR ---\n" + stderr, encoding="utf-8")
-            commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "returncode": "timeout", "log_sha256": _sha256(log)})
-            raise subprocess.TimeoutExpired(command, self.config.timeout_seconds, output=stdout, stderr=stderr)
-        completed = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+        started_monotonic = time.monotonic()
         log = workspace / f"{stage}.log"
-        log.write_text(completed.stdout + "\n--- STDERR ---\n" + completed.stderr, encoding="utf-8")
-        commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "returncode": completed.returncode, "log_sha256": _sha256(log)})
-        if completed.returncode:
-            raise subprocess.CalledProcessError(completed.returncode, command, completed.stdout, completed.stderr)
+        process_options = {"start_new_session": True} if os.name != "nt" else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+        try:
+            with log.open("w", encoding="utf-8", newline="\n") as stream:
+                process = subprocess.Popen(command, cwd=workspace, stdout=stream, stderr=subprocess.STDOUT, text=True, **process_options)
+                try:
+                    process.wait(timeout=self.config.timeout_seconds)
+                except subprocess.TimeoutExpired:
+                    _terminate_process_tree(process)
+                    process.wait()
+                    commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "timeout", "log_sha256": _sha256(log)})
+                    raise subprocess.TimeoutExpired(command, self.config.timeout_seconds, output=_tail(log))
+        except FileNotFoundError:
+            commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": "environment_error", "log_sha256": _sha256(log) if log.is_file() else None})
+            raise
+        commands.append({"stage": stage, "command": command, "started_at": started.isoformat(), "ended_at": datetime.now(UTC).isoformat(), "wall_seconds": time.monotonic() - started_monotonic, "returncode": process.returncode, "log_sha256": _sha256(log)})
+        if process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, command, output=_tail(log))
 
     def _lammps_command(self, input_file: str) -> list[str]:
         command = [self.config.lammps_command, "-in", input_file]
@@ -202,7 +203,7 @@ def _recipe_dict(recipe: ArtisticRecipe) -> dict[str, object]:
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return _streaming_sha256(path)
 
 
 def _shell_quote(part: str) -> str:
@@ -213,7 +214,16 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
     if os.name == "nt":
         subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
     else:
-        process.kill()
+        try:
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        except (OSError, ProcessLookupError):
+            process.kill()
+
+
+def _tail(path: Path, limit: int = 64 * 1024) -> str:
+    with path.open("rb") as stream:
+        stream.seek(max(0, path.stat().st_size - limit))
+        return stream.read().decode("utf-8", errors="replace")
 
 
 def _hashes(workspace: Path, *names: str) -> dict[str, str]:

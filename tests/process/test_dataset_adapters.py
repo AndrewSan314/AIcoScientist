@@ -4,9 +4,11 @@ import json
 import zipfile
 from copy import deepcopy
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
+import src.datasets.battery_process.base as base_module
 from src.datasets.battery_process.base import ProcessPredictionTask, RawDatasetUnavailableError
 from src.datasets.battery_process.drakopoulos_graphite import DrakopoulosGraphiteAdapter
 from src.datasets.battery_process.naion_hte import NaIonHTEAdapter
@@ -29,6 +31,29 @@ def test_adapter_loads_a_hashed_normalized_cache(tmp_path) -> None:
     manifest = json.loads((adapter.processed_dir / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "1"
     assert "normalized_runs.json" in manifest["processed_hashes"]
+
+
+def test_processed_cache_rolls_back_if_manifest_commit_fails(tmp_path, monkeypatch) -> None:
+    adapter = DrakopoulosGraphiteAdapter(tmp_path)
+    adapter.write_processed_cache([process_run()], raw_hashes={"raw.csv": "a" * 64})
+    normalized_before = adapter.normalized_runs_path.read_bytes()
+    manifest_path = adapter.processed_dir / "manifest.json"
+    manifest_before = manifest_path.read_bytes()
+    original_replace = base_module.os.replace
+    failed = False
+
+    def fail_once(source, destination):
+        nonlocal failed
+        if Path(destination).name == "manifest.json" and not failed:
+            failed = True
+            raise OSError("injected manifest commit failure")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(base_module.os, "replace", fail_once)
+    with pytest.raises(OSError, match="injected manifest commit failure"):
+        adapter.write_processed_cache([replace(process_run(), run_id="new")], raw_hashes={"raw.csv": "b" * 64})
+    assert adapter.normalized_runs_path.read_bytes() == normalized_before
+    assert manifest_path.read_bytes() == manifest_before
 
 
 def test_training_view_marks_absent_numeric_fields_instead_of_treating_them_as_zero(tmp_path) -> None:

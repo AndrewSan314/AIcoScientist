@@ -9,6 +9,7 @@ from collections import deque
 from pathlib import Path
 
 from .base import BatteryDatasetMetadata, NormalizedRunAdapter, RawDatasetUnavailableError
+from src.datasets.cache import compute_file_sha256
 from src.process.contracts import BatteryProcessRun, MeasurementValue, ProvenanceRecord, StageRecord
 from src.process.modalities import ModalityObservation, ModalityType
 from src.process.stages import ProcessStage
@@ -45,7 +46,7 @@ class NaIonHTEAdapter(NormalizedRunAdapter):
     def _raw_hashes(self) -> dict[str, str]:
         if not self.archive_path.is_file():
             raise RawDatasetUnavailableError(f"Missing Na-ion source archive: {self.archive_path}")
-        return {self.ARCHIVE: hashlib.sha256(self.archive_path.read_bytes()).hexdigest()}
+        return {self.ARCHIVE: compute_file_sha256(self.archive_path)}
 
     @staticmethod
     def _slug(value: str) -> str:
