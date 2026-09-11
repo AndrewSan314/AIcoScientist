@@ -14,9 +14,9 @@ import src.process.simulators.artistic.provenance as provenance_module
 import src.process.simulators.artistic.runner as runner_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
-from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceStatus, DryingMode, FidelityMode, ParticleCountSafetyError, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
+from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
 from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
-from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints
+from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints, parse_thermo_log
 from src.process.simulators.artistic.validation import output_errors
 from src.process.simulators.artistic.runner import _version
 from src.process.simulators.artistic.schemas import _lammps_round
@@ -124,17 +124,64 @@ def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -
     assert plan.dry_run is True and all(entry["auto_launch"] is False for entry in plan.entries)
     assert plan.entries[0]["estimated_wall_seconds"] == 500.0
     assert plan.entries[-1]["requires_explicit_reference_confirmation"] is True
+    assert ArtisticRunConfig().confirm_reference_execution is False
+    with pytest.raises(ValueError, match="dump_interval_steps=1,000,000"):
+        ArtisticRunConfig(dump_interval_steps=500_000)
 
 
-def test_convergence_reports_only_available_metrics_and_never_equates_without_reference() -> None:
+def test_reference_execution_requires_explicit_confirmation(pinned_source: Path, tmp_path: Path) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs"))
+    with pytest.raises(ValueError, match="explicit confirm_reference_execution"):
+        simulator.execute(ArtisticRecipe(slurry=_slurry()), run_id="reference-confirmation-required")
+    assert not (tmp_path / "runs" / "reference-confirmation-required").exists()
+
+
+def test_convergence_requires_stability_and_explicit_reference_agreement() -> None:
     short = [Checkpoint(500_000, {"density": 1.0}), Checkpoint(1_000_000, {"density": 1.001}), Checkpoint(2_000_000, {"density": 1.0005})]
     assert stability_status(short) == ConvergenceStatus.STABILITY_OBSERVED
     report = build_convergence_report(short, requested_steps=2_000_000)
     assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
-    reference = [Checkpoint(20_000_000, {"density": 1.0, "unavailable_in_short": 3.0})]
-    compared = build_convergence_report(short, reference_checkpoints=reference, requested_steps=2_000_000)
+    reference = [Checkpoint(20_000_000, {"density": 1.0})]
+    compared = build_convergence_report(short, reference_checkpoints=reference, requested_steps=2_000_000, tolerance_policy=MetricTolerancePolicy(relative_tolerances={"density": 0.01}))
     assert compared.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
     assert compared.available_metrics == ("density",)
+    assert compared.stability_status == ConvergenceStatus.STABILITY_OBSERVED
+    assert compared.reference_agreement_status == ReferenceAgreementStatus.REFERENCE_WITHIN_TOLERANCE
+
+
+def test_convergence_rejects_far_or_unstable_short_runs() -> None:
+    policy = MetricTolerancePolicy(default_relative_tolerance=0.01)
+    stable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.001}), Checkpoint(3, {"density": 1.0005})]
+    far = build_convergence_report(stable, reference_checkpoints=[Checkpoint(20_000_000, {"density": 2.0})], tolerance_policy=policy)
+    assert far.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
+    unstable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.4}), Checkpoint(3, {"density": 1.0})]
+    close = build_convergence_report(unstable, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0})], tolerance_policy=policy)
+    assert close.status == ConvergenceStatus.NOT_STABLE
+    assert close.reference_agreement_status == ReferenceAgreementStatus.REFERENCE_WITHIN_TOLERANCE
+
+
+def test_convergence_rejects_missing_metrics_missing_short_reference_and_undefined_tolerance() -> None:
+    short = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.0}), Checkpoint(3, {"density": 1.0})]
+    missing = build_convergence_report(
+        short, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0, "pressure": 2.0})],
+        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01, required_metrics=("density", "pressure")),
+    )
+    assert missing.status == ConvergenceStatus.REFERENCE_METRIC_MISSING
+    assert missing.missing_metrics == ("pressure",)
+    assert build_convergence_report(short, reference_checkpoints=[Checkpoint(19_000_000, {"density": 1.0})]).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
+    undefined = build_convergence_report(short, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0})])
+    assert undefined.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
+
+
+def test_convergence_uses_absolute_tolerance_for_zero_reference() -> None:
+    policy = MetricTolerancePolicy(absolute_tolerances={"residual": 0.01}, required_metrics=("residual",))
+    report = build_convergence_report(
+        [Checkpoint(1, {"residual": 0.001}), Checkpoint(2, {"residual": 0.001}), Checkpoint(3, {"residual": 0.001})],
+        reference_checkpoints=[Checkpoint(20_000_000, {"residual": 0.0})], tolerance_policy=policy,
+    )
+    comparison = report.comparisons[0]
+    assert report.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
+    assert comparison.error_rule == "absolute" and comparison.relative_error is None and comparison.within_tolerance
 
 
 def test_recipe_validation_and_actual_minimization_mapping() -> None:
@@ -199,7 +246,23 @@ def test_thermo_progress_parser_reports_only_printed_steps(tmp_path: Path) -> No
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     (workspace / "slurry.log").write_text("Step Temp\n0 300\n250000 301\nLoop time of 1 on 1 procs\n", encoding="utf-8")
-    assert parse_thermo_checkpoints(workspace) == (0, 250000)
+    parsed = parse_thermo_checkpoints(workspace)
+    assert tuple(item.step for item in parsed) == (0, 250000)
+    assert parsed[1].metrics == {"Temp": 301.0} and parsed[1].stage == "slurry" and parsed[1].source_log == "slurry.log"
+
+
+def test_thermo_progress_ignores_other_stage_logs_and_reports_malformed_rows(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text("Step Temp Press\n0 300 1\n250000 301 1.1\n500000 nan 1.2\n750000 303\n", encoding="utf-8")
+    (workspace / "drying.log").write_text("Step Temp\n9000000 999\n", encoding="utf-8")
+    parsed = parse_thermo_log(workspace, stage="slurry")
+    assert [item.step for item in parsed.checkpoints] == [0, 250000]
+    assert any("non-finite" in item for item in parsed.diagnostics)
+    assert any("malformed" in item for item in parsed.diagnostics)
+    progress = runner_module._progress(workspace, [{"stage": "slurry", "wall_seconds": 2.0}], 1_000_000, 250_000, None)
+    assert progress["completed_steps"] == 250_000 and progress["checkpoints"][0]["metrics"] == {"Temp": 300.0, "Press": 1.0}
+    assert progress["thermo_parse_diagnostics"]
 
 
 def test_invoke_records_general_launch_oserror(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -220,7 +283,7 @@ def test_invoke_records_general_launch_oserror(monkeypatch: pytest.MonkeyPatch, 
 
 
 def test_execute_classifies_launch_oserror_and_writes_command_manifest(pinned_source: Path, tmp_path: Path) -> None:
-    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", lammps_command="__missing_lammps_for_test__"))
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", lammps_command="__missing_lammps_for_test__", confirm_reference_execution=True))
     result = simulator.execute(_recipe(), run_id="launch-error")
     manifest = json.loads((tmp_path / "runs" / "launch-error" / "manifest.json").read_text(encoding="utf-8"))
     assert result.status == SimulationStatus.ENVIRONMENT_ERROR
@@ -278,7 +341,7 @@ def test_mpi_environment_error_prevents_workspace_start(pinned_source: Path, tmp
         raise MPIEnvironmentError("smoke unavailable", {"execution_mode": "mpi", "validated": False})
 
     monkeypatch.setattr(runner_module, "validate_mpi_environment", fail)
-    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", execution_mode=ExecutionMode.MPI, mpi_processes=2))
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", execution_mode=ExecutionMode.MPI, mpi_processes=2, confirm_reference_execution=True))
     result = simulator.execute(ArtisticRecipe(slurry=_slurry()), run_id="mpi-blocked")
     assert result.status == SimulationStatus.ENVIRONMENT_ERROR
     assert not (tmp_path / "runs" / "mpi-blocked" / "workspace").exists()
@@ -330,7 +393,7 @@ def test_validation_uses_file_size_for_large_data_file(tmp_path: Path, monkeypat
 
 
 def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs")); calls: list[str] = []
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", confirm_reference_execution=True)); calls: list[str] = []
     def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
         calls.append(stage)
         if stage == "slurry":
@@ -355,7 +418,7 @@ def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, t
 
 @pytest.mark.parametrize(("exception", "status"), [(subprocess.TimeoutExpired(["lmp"], 1), SimulationStatus.TIMEOUT), (subprocess.CalledProcessError(1, ["lmp"]), SimulationStatus.NUMERICAL_FAILURE)])
 def test_runner_never_promotes_timeout_or_numerical_failure(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, exception: Exception, status: SimulationStatus) -> None:
-    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs"))
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", confirm_reference_execution=True))
     def fail(*args: object, **kwargs: object) -> None: raise exception
     monkeypatch.setattr(simulator, "_invoke", fail)
     assert simulator.execute(ArtisticRecipe(slurry=_slurry()), run_id=f"{status}").status == status
