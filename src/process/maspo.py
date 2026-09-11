@@ -140,6 +140,7 @@ class MASPOProcessOptimizationCoordinator:
         objective: ProcessOptimizationObjective,
         seed: int | None = None,
         optimization_state: OptimizationState | None = None,
+        historical_latent_metadata: Mapping[str, Any] | None = None,
     ) -> MASPOPlan:
         started = perf_counter()
         legal_state = (
@@ -163,6 +164,7 @@ class MASPOProcessOptimizationCoordinator:
         stage_observations = observations[next_stage] if isinstance(observations, dict) else observations
         state, contextual_observations, contextual_space = self._contextual_inputs(
             legal_state, remaining_control_spaces[next_stage], stage_observations, objective, optimization_state=optimization_state,
+            historical_latent_metadata=historical_latent_metadata,
         )
         proposals = self.optimizer.propose_recipes(contextual_observations, contextual_space, objective, n=1, seed=seed)
         if not proposals:
@@ -182,6 +184,7 @@ class MASPOProcessOptimizationCoordinator:
         objective: ProcessOptimizationObjective,
         *,
         optimization_state: OptimizationState | None = None,
+        historical_latent_metadata: Mapping[str, Any] | None = None,
     ) -> tuple[OptimizationState, pd.DataFrame, ProcessSearchSpace]:
         if not isinstance(observations, pd.DataFrame):
             raise TypeError("contextual MASPO observations must be a pandas DataFrame")
@@ -190,6 +193,9 @@ class MASPOProcessOptimizationCoordinator:
         )
         if state.decision_stage != legal_state.decision_stage:
             raise ValueError("optimization state decision_stage must match the legal HorizonView")
+        if state.representation_kind != "scalar_horizon":
+            metadata = historical_latent_metadata or observations.attrs.get("latent_artifact_metadata") or _latent_metadata_from_rows(observations)
+            _validate_historical_latent_provenance(state, metadata)
         if space.context_columns:
             raise ValueError("MASPO expects an uncontextualized finite control space")
         context_columns = tuple(getattr(state, "context_columns", ())) or state.feature_names
@@ -329,3 +335,50 @@ class MASPOProcessOptimizationCoordinator:
                 encoded[name] = values.astype(float)
                 bounds[name] = (lower, upper)
         return encoded, bounds
+
+
+def _validate_historical_latent_provenance(
+    state: OptimizationState, metadata: Mapping[str, Any] | None,
+) -> None:
+    if not isinstance(metadata, Mapping):
+        raise ValueError("historical multimodal latent rows require an artifact provenance manifest")
+    current = state.provenance.get("semantic_fingerprint_inputs", {})
+    expected = {
+        "representation_kind": state.representation_kind,
+        "model_fingerprint": state.provenance.get("model_fingerprint") or current.get("model_fingerprint"),
+        "encoder_fingerprint": current.get("encoder_fingerprint"),
+        "model_version": state.provenance.get("model_version") or current.get("model_version"),
+        "latent_feature_schema": tuple(state.feature_names),
+    }
+    observed_schema = metadata.get("latent_feature_schema", metadata.get("feature_schema"))
+    observed = {
+        "representation_kind": metadata.get("representation_kind"),
+        "model_fingerprint": metadata.get("model_fingerprint"),
+        "encoder_fingerprint": metadata.get("encoder_fingerprint"),
+        "model_version": metadata.get("model_version"),
+        "latent_feature_schema": tuple(observed_schema) if isinstance(observed_schema, (list, tuple)) else observed_schema,
+    }
+    mismatches = [name for name, value in expected.items() if observed.get(name) != value]
+    if not isinstance(metadata.get("dataset_fingerprint"), str) or not metadata["dataset_fingerprint"].strip():
+        mismatches.append("dataset_fingerprint")
+    current_dataset = state.provenance.get("dataset_fingerprint")
+    if current_dataset and metadata.get("dataset_fingerprint") != current_dataset:
+        mismatches.append("dataset_fingerprint")
+    if mismatches:
+        raise ValueError(f"historical multimodal latent provenance is incompatible: {', '.join(mismatches)}")
+
+
+def _latent_metadata_from_rows(observations: pd.DataFrame) -> Mapping[str, Any] | None:
+    names = (
+        "representation_kind", "model_fingerprint", "encoder_fingerprint", "model_version",
+        "latent_feature_schema", "dataset_fingerprint",
+    )
+    if any(name not in observations for name in names):
+        return None
+    values: dict[str, Any] = {}
+    for name in names:
+        column = observations[name].tolist()
+        if not column or any(item != column[0] for item in column[1:]):
+            return None
+        values[name] = column[0]
+    return values
