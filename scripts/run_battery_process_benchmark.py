@@ -8,7 +8,6 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
-from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -17,11 +16,10 @@ from src.datasets.battery_process.base import ProcessOptimizationTask, ProcessPr
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.evaluation import reveal_one
 from src.process.fusion.encoders import SignalFeatureEncoder
-from src.process.models.flat_baseline import TreeEnsembleBaseline
+from src.process.models.flat_baseline import GaussianProcessBaseline, TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.stages import ProcessStage
-from src.science.hypothesis_backends.sklearn_backend import SklearnGaussianBackend
 
 
 ADAPTERS = [DrakopoulosGraphiteAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter, NaIonHTEAdapter, ArtisticSimulationAdapter]
@@ -71,10 +69,7 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
         forest_mean, _ = TreeEnsembleBaseline("random_forest", random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
         baselines.append({"model": "RandomForestRegressor", "metrics": _metrics(y[test], forest_mean)})
         if X.shape[1] <= 12:
-            scaler = StandardScaler().fit(X[train])
-            gp = SklearnGaussianBackend(random_state=seed)
-            gp.fit(scaler.transform(X[train]), y[train])
-            gp_mean, _ = gp.predict_distribution(scaler.transform(X[test]))
+            gp_mean, _ = GaussianProcessBaseline(random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
             baselines.append({"model": "GaussianProcessRegressor", "metrics": _metrics(y[test], gp_mean)})
         reports.append({
             "target": target, "status": "EVALUATED", "model": "ExtraTreesRegressor", "split": "grouped holdout with disjoint grouped calibration",
