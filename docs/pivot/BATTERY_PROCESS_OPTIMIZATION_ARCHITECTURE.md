@@ -1,6 +1,6 @@
 # Battery process optimization architecture
 
-`BatteryProcessRun` is an ordered list of typed `StageRecord`s. A stage separates controllable settings from observations and represents absence explicitly with a missing modality record. `InformationHorizon` materializes only pre-decision records; final KPIs and future stages are forbidden.
+`BatteryProcessRun` is an ordered list of typed `StageRecord`s. A stage separates controllable settings from observations and represents absence explicitly with a missing modality record. Scalar training views pair every absent numeric field's zero placeholder with a `__observed` mask, so the placeholder is never treated as a measured physical zero. `InformationHorizon` materializes only pre-decision records; final KPIs and future stages are forbidden.
 
 ```text
 source-backed raw data -> adapter -> BatteryProcessRun -> InformationHorizon
