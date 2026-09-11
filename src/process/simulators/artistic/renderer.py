@@ -28,6 +28,7 @@ class ArtisticRenderer:
         self.config = config
 
     def prepare_workspace(self, run_id: str) -> RenderState:
+        self.config.verify_source_pin()
         if not self.config.source_tree.is_dir():
             raise FileNotFoundError(f"Pinned ARTISTIC source tree is unavailable: {self.config.source_tree}")
         run_directory = self.config.output_root / run_id

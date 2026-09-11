@@ -6,3 +6,5 @@
 - License: CC BY-NC-SA 4.0, as identified for ARTISTIC source material. Its usage constraints remain applicable.
 
 This is public historical model code, not the restricted Zenodo 5956128 package. Zenodo remains an independently restricted artifact; its restricted status does not prohibit the pinned public GitHub source. The source README requires sequential slurry → drying → calendering execution and documents cluster-specific scripts. AIcoScientist replaces those scripts with a portable local/MPI/SLURM runner while preserving the source inputs and recording commands, versions, hashes, and outputs per run.
+
+Before every prepare or execution, the runner fail-closes unless the checkout is clean, its `HEAD` is the pinned commit, and the `NMC/Updated version` git-tree equals the audited hash above.

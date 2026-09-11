@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 
-_NUMBER = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
+SOURCE_TO_ROLE = {
+    "slurry_density": "intermediate_state", "am_loading": "intermediate_state",
+    "drying_porosity_bulk_percent": "intermediate_state", "drying_porosity_all_percent": "intermediate_state",
+    "initial_thickness": "diagnostic", "calendered_electrode_thickness": "final_kpi",
+    "calendered_cbd_nanoporosity": "final_kpi", "calendered_porosity_bulk_percent": "final_kpi",
+    "calendered_porosity_all_percent": "final_kpi",
+}
 _ATOMS = re.compile(r"^\s*(\d+)\s+atoms\s*$")
 _BOUNDS = re.compile(r"^\s*(\S+)\s+(\S+)\s+[xyz]lo\s+[xyz]hi\s*$")
 _LOST = re.compile(r"Lost atoms:\s*original\s+(\d+)\s+current\s+(\d+)", re.I)
@@ -15,9 +22,11 @@ _LOST = re.compile(r"Lost atoms:\s*original\s+(\d+)\s+current\s+(\d+)", re.I)
 class ParsedArtisticOutput:
     stages: dict[str, dict[str, float]]
     final_kpis: dict[str, float]
+    diagnostics: dict[str, float]
     initial_atoms: int | None
     final_atoms: int | None
     log_lost_fraction: float | None
+    parse_errors: tuple[str, ...] = ()
 
     @property
     def lost_fraction(self) -> float | None:
@@ -27,58 +36,78 @@ class ParsedArtisticOutput:
 
 
 def parse_artistic_output(workspace: Path) -> ParsedArtisticOutput:
+    errors: list[str] = []
+    slurry = _scalar(workspace / "density_slurry.out", errors)
+    drying_loading = _scalar(workspace / "AM_loading.out", errors)
+    drying_bulk = _scalar(workspace / "porosity_bulk.out", errors)
+    drying_all = _scalar(workspace / "porosity_all.out", errors)
+    initial_thickness = _scalar(workspace / "initial_lz", errors)
+    cbd_nanoporosity = _scalar(workspace / "new_CBD_nanoporosity", errors)
+    cal_bulk = _scalar(workspace / "porosity_cal_bulk.out", errors)
+    cal_all = _scalar(workspace / "porosity_cal_all.out", errors)
+    final_box = _lammps_box(workspace / "coord_out_cal.data", errors)
     stages: dict[str, dict[str, float]] = {}
-    slurry = _read_number(workspace / "density_slurry.out")
     if slurry is not None:
         stages["slurry"] = {"slurry_density": slurry}
-    drying = _read_number(workspace / "AM_loading.out")
-    if drying is not None:
-        stages["drying"] = {"am_loading": drying}
-    calendering: dict[str, float] = {}
-    initial_thickness = _read_number(workspace / "initial_lz")
-    if initial_thickness is not None:
-        calendering["initial_thickness"] = initial_thickness
-    nanoporosity = _read_number(workspace / "new_CBD_nanoporosity")
-    if nanoporosity is not None:
-        calendering["cbd_nanoporosity"] = nanoporosity
-    final_box = _lammps_box(workspace / "coord_out_cal.data")
-    if final_box and "z" in final_box:
-        calendering["electrode_thickness"] = final_box["z"]
-    if calendering:
-        stages["calendering"] = calendering
-    initial_atoms = _lammps_atoms(workspace / "coord_in.data")
-    final_atoms = _lammps_atoms(workspace / ("coord_out_cal.data" if (workspace / "coord_out_cal.data").is_file() else "coord_out_electrode.data"))
-    lost = _lost_from_logs(workspace)
-    final_kpis = dict(calendering)
-    return ParsedArtisticOutput(stages=stages, final_kpis=final_kpis, initial_atoms=initial_atoms, final_atoms=final_atoms, log_lost_fraction=lost)
+    drying = _present(am_loading=drying_loading, drying_porosity_bulk_percent=drying_bulk, drying_porosity_all_percent=drying_all)
+    if drying:
+        stages["drying"] = drying
+    final_kpis = _present(calendered_electrode_thickness=final_box.get("z") if final_box else None, calendered_cbd_nanoporosity=cbd_nanoporosity, calendered_porosity_bulk_percent=cal_bulk, calendered_porosity_all_percent=cal_all)
+    diagnostics = _present(initial_thickness=initial_thickness)
+    initial_atoms = _lammps_atoms(workspace / "coord_in.data", errors)
+    final_path = workspace / ("coord_out_cal.data" if (workspace / "coord_out_cal.data").is_file() else "coord_out_electrode.data")
+    final_atoms = _lammps_atoms(final_path, errors)
+    return ParsedArtisticOutput(stages, final_kpis, diagnostics, initial_atoms, final_atoms, _lost_from_logs(workspace), tuple(errors))
 
 
-def _read_number(path: Path) -> float | None:
+def _present(**values: float | None) -> dict[str, float]:
+    return {name: value for name, value in values.items() if value is not None}
+
+
+def _scalar(path: Path, errors: list[str]) -> float | None:
     if not path.is_file():
         return None
-    match = _NUMBER.search(path.read_text(encoding="utf-8", errors="replace"))
-    return float(match.group()) if match else None
+    text = path.read_text(encoding="utf-8", errors="replace").strip()
+    try:
+        value = float(text)
+    except ValueError:
+        errors.append(f"malformed scalar output: {path.name}")
+        return None
+    if not math.isfinite(value):
+        errors.append(f"non-finite scalar output: {path.name}")
+        return None
+    return value
 
 
-def _lammps_atoms(path: Path) -> int | None:
+def _lammps_atoms(path: Path, errors: list[str]) -> int | None:
     if not path.is_file():
         return None
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         match = _ATOMS.match(line)
         if match:
             return int(match.group(1))
+    errors.append(f"malformed LAMMPS data output: {path.name}")
     return None
 
 
-def _lammps_box(path: Path) -> dict[str, float]:
+def _lammps_box(path: Path, errors: list[str]) -> dict[str, float]:
     if not path.is_file():
         return {}
     values: dict[str, float] = {}
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         match = _BOUNDS.match(line)
         if match:
-            axis = line.split()[-2][0]
-            values[axis] = float(match.group(2)) - float(match.group(1))
+            try:
+                value = float(match.group(2)) - float(match.group(1))
+            except ValueError:
+                errors.append(f"malformed box bound in {path.name}")
+                return {}
+            if not math.isfinite(value):
+                errors.append(f"non-finite box bound in {path.name}")
+                return {}
+            values[line.split()[-2][0]] = value
+    if "z" not in values:
+        errors.append(f"missing z bounds in {path.name}")
     return values
 
 

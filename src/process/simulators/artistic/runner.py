@@ -39,23 +39,41 @@ class ArtisticSimulator:
 
     def execute(self, recipe: ArtisticRecipe, *, run_id: str | None = None) -> SimulationResult:
         run_id = run_id or uuid.uuid4().hex
+        self.config.verify_source_pin()
         state: RenderState | None = None
         commands: list[dict[str, object]] = []
+        lineage: list[dict[str, object]] = []
         try:
             state = self.renderer.prepare_workspace(run_id)
             self.renderer.stage(state, "slurry", recipe.template_values)
             self._invoke(state.workspace, "slurry", "in_slurry.run", commands)
+            slurry_outputs = _hashes(state.workspace, "coord_out_slurry.data", "density_slurry.out")
+            lineage.append({"boundary": "slurry_output", "output_hashes": slurry_outputs})
             if recipe.drying_mode == DryingMode.HOMOGENEOUS:
                 self.renderer.stage(state, "drying_homogeneous", recipe.template_values)
+                _assert_hashes(state.workspace, slurry_outputs)
+                lineage.append({"boundary": "slurry_to_drying", "upstream_output_hashes": slurry_outputs, "downstream_input_hashes": _hashes(state.workspace, *slurry_outputs)})
                 self._invoke(state.workspace, "drying_homogeneous", "in_evap_hom.run", commands)
+                self._invoke(state.workspace, "drying_porosity", "pores.py", commands, python=True)
             elif recipe.drying_mode == DryingMode.HETEROGENEOUS:
                 self.renderer.stage(state, "drying_heterogeneous", recipe.template_values)
+                _assert_hashes(state.workspace, slurry_outputs)
+                lineage.append({"boundary": "slurry_to_cbd_generation", "upstream_output_hashes": slurry_outputs, "downstream_input_hashes": _hashes(state.workspace, *slurry_outputs)})
                 self._invoke(state.workspace, "drying_cbd", "CBDs.txt", commands)
+                cbd_outputs = _hashes(state.workspace, "coord_out_slurry_CBDs.data")
+                lineage.append({"boundary": "cbd_generation_output", "output_hashes": cbd_outputs})
+                _assert_hashes(state.workspace, cbd_outputs)
+                lineage.append({"boundary": "cbd_generation_to_drying", "upstream_output_hashes": cbd_outputs, "downstream_input_hashes": _hashes(state.workspace, *cbd_outputs)})
                 self._invoke(state.workspace, "drying_heterogeneous", "in_evaporation_freeze.run", commands)
+                self._invoke(state.workspace, "drying_porosity", "pores.py", commands, python=True)
             if recipe.calendering:
                 self.renderer.stage(state, "calendering", recipe.template_values)
+                drying_outputs = _hashes(state.workspace, "coord_out_electrode.data", "AM_loading.out", "porosity_bulk.out", "porosity_all.out")
+                _assert_hashes(state.workspace, {"coord_out_electrode.data": drying_outputs["coord_out_electrode.data"]})
+                lineage.append({"boundary": "drying_to_calendering", "upstream_output_hashes": drying_outputs, "downstream_input_hashes": _hashes(state.workspace, "coord_out_electrode.data")})
                 self._invoke(state.workspace, "calendering_reformat", "Reformatting_cal_electrode.py", commands, python=True)
                 self._invoke(state.workspace, "calendering", "in_cal.run", commands)
+                self._invoke(state.workspace, "calendering_porosity", "pores_cal.py", commands, python=True)
             parsed = parse_artistic_output(state.workspace)
             errors = output_errors(recipe, state.workspace, parsed, self.config.lost_particle_tolerance)
             status = SimulationStatus.INVALID_PHYSICS_RUN if any("particle loss" in error for error in errors) else SimulationStatus.NUMERICAL_FAILURE if errors else SimulationStatus.SUCCESS
@@ -66,7 +84,9 @@ class ArtisticSimulator:
             result = SimulationResult(SimulationStatus.TIMEOUT, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(f"command timed out: {exc.cmd}",))
         except subprocess.CalledProcessError as exc:
             result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(f"command exited {exc.returncode}: {exc.cmd}",))
-        provenance = self._write_manifest(state, recipe, run_id=run_id, commands=commands, status=result.status, diagnostics=result.diagnostics)
+        except RuntimeError as exc:
+            result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
+        provenance = self._write_manifest(state, recipe, run_id=run_id, commands=commands, lineage=lineage, status=result.status, diagnostics=result.diagnostics)
         return SimulationResult(result.status, result.run_id, result.run_directory, result.stage_outputs, result.final_outputs, provenance, result.diagnostics)
 
     def _invoke(self, workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
@@ -106,7 +126,7 @@ class ArtisticSimulator:
         script.write_text("#!/bin/sh\nset -eu\n" + " ".join(_shell_quote(part) for part in command) + "\n", encoding="utf-8", newline="\n")
         return [self.config.slurm_submit, "--wait", str(script)]
 
-    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, commands: list[dict[str, object]], status: SimulationStatus | None, diagnostics: tuple[str, ...]) -> dict[str, object]:
+    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, commands: list[dict[str, object]], lineage: list[dict[str, object]] | None = None, status: SimulationStatus | None, diagnostics: tuple[str, ...]) -> dict[str, object]:
         run_directory = state.workspace.parent if state else self.config.output_root / (run_id or "unprepared")
         run_directory.mkdir(parents=True, exist_ok=True)
         source = source_provenance(self.config.source_root)
@@ -116,7 +136,7 @@ class ArtisticSimulator:
             "recipe": _recipe_dict(recipe), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
             "commands": commands, "executable_versions": {"python": sys.version, "lammps": _version(self.config.lammps_command)},
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
-            "output_hashes": outputs, "diagnostics": list(diagnostics),
+            "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
         }
         write_json(run_directory / "manifest.json", payload)
         return payload
@@ -127,7 +147,8 @@ def _version(command: str) -> str:
         result = subprocess.run([command, "-h"], capture_output=True, text=True, timeout=30, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return "unavailable"
-    return (result.stdout or result.stderr).splitlines()[0] if (result.stdout or result.stderr) else f"exit {result.returncode}"
+    lines = [line.strip() for line in (result.stdout or result.stderr).splitlines() if line.strip()]
+    return lines[0] if lines else f"exit {result.returncode}"
 
 
 def _git_head() -> str:
@@ -152,3 +173,17 @@ def _terminate_process_tree(process: subprocess.Popen[str]) -> None:
         subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
     else:
         process.kill()
+
+
+def _hashes(workspace: Path, *names: str) -> dict[str, str]:
+    missing = [name for name in names if not (workspace / name).is_file()]
+    if missing:
+        raise RuntimeError(f"missing stage-boundary output: {', '.join(missing)}")
+    return {name: _sha256(workspace / name) for name in names}
+
+
+def _assert_hashes(workspace: Path, expected: dict[str, str]) -> None:
+    actual = _hashes(workspace, *expected)
+    mismatched = [name for name, digest in expected.items() if actual[name] != digest]
+    if mismatched:
+        raise RuntimeError(f"stage-lineage hash mismatch: {', '.join(mismatched)}")
