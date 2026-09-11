@@ -16,6 +16,7 @@ from .optimization.process_objective import ProcessOptimizationObjective
 from .optimization.process_space import ProcessSearchSpace
 from .optimization.proposal import ProcessControlProposal
 from .optimization.state import (
+    ModelValidationStatus,
     OptimizationState,
     canonical_control_action_id,
     contextual_candidate_instance_id,
@@ -25,6 +26,7 @@ from .stages import ProcessStage, STAGE_ORDER
 
 
 SOURCE_RECIPE_ID_COLUMN = "source_recipe_id"
+SOURCE_RECIPE_IDS_COLUMN = "source_recipe_ids"
 CONTROL_ACTION_ID_COLUMN = "control_action_id"
 CANDIDATE_INSTANCE_ID_COLUMN = "candidate_instance_id"
 CONTEXT_PROVENANCE_COLUMN = "context_provenance_fingerprint"
@@ -103,11 +105,20 @@ class ContextualProcessState(OptimizationState):
             values.update({feature: float(category == current) for feature, category in zip(features, categories)})
         if not values:
             raise ValueError("contextual MASPO requires a finite legal HorizonView feature; no zero-state fallback")
-        fingerprint = context_provenance_fingerprint(values, horizon.decision_stage, "scalar_horizon")
+        semantic_metadata = {
+            "source_stage_ids": horizon.source_stage_ids,
+            "category_vocabulary_manifest": category_manifest,
+        }
+        fingerprint = context_provenance_fingerprint(
+            values, horizon.decision_stage, "scalar_horizon", semantic_metadata=semantic_metadata,
+        )
         return cls(
             feature_names=tuple(values), feature_values=values, decision_stage=horizon.decision_stage,
             source_stage_ids=horizon.source_stage_ids, provenance_fingerprint=fingerprint,
-            representation_kind="scalar_horizon", provenance={"category_vocabularies": category_manifest},
+            representation_kind="scalar_horizon", provenance={
+                "category_vocabularies": category_manifest,
+                "semantic_fingerprint_inputs": semantic_metadata,
+            },
             context_columns=context_columns, context_feature_map=feature_map,
         )
 
@@ -115,8 +126,9 @@ class ContextualProcessState(OptimizationState):
 class MASPOProcessOptimizationCoordinator:
     """Stage-wise contextual receding-horizon wrapper around the official optimizer."""
 
-    def __init__(self, optimizer: ProcessOptimizationCoordinator | None = None) -> None:
+    def __init__(self, optimizer: ProcessOptimizationCoordinator | None = None, *, require_validated_multimodal_state: bool = True) -> None:
         self.optimizer = optimizer or ProcessOptimizationCoordinator()
+        self.require_validated_multimodal_state = require_validated_multimodal_state
 
     def optimize_remaining_process(
         self,
@@ -137,6 +149,13 @@ class MASPOProcessOptimizationCoordinator:
         )
         if legal_state.decision_stage != current_stage:
             raise ValueError("current HorizonView decision_stage must match current_stage")
+        if (
+            optimization_state is not None
+            and optimization_state.representation_kind in {"multimodal_stage_state", "scalar_plus_multimodal_stage_state", "multimodal_fused_baseline"}
+            and self.require_validated_multimodal_state
+            and optimization_state.validation_status != ModelValidationStatus.SOURCE_BACKED_VALIDATED
+        ):
+            raise ValueError("production MASPO requires SOURCE_BACKED_VALIDATED multimodal optimization state")
         stages = tuple(sorted((stage for stage in remaining_control_spaces if STAGE_ORDER[stage] > STAGE_ORDER[current_stage]), key=STAGE_ORDER.__getitem__))
         if not stages:
             raise ValueError("no remaining process control stage exists after current_stage")
@@ -193,9 +212,19 @@ class MASPOProcessOptimizationCoordinator:
             if values.isna().any() or not np.isfinite(values.to_numpy()).all():
                 raise ValueError(f"historical target column {name!r} is missing or non-finite")
 
-        candidate_pool = space.candidates.copy()
-        action_ids = [canonical_control_action_id(row[space.control_columns].to_dict()) for _, row in candidate_pool.iterrows()]
+        source_pool = space.candidates.copy()
+        all_action_ids = [canonical_control_action_id(row[space.control_columns].to_dict()) for _, row in source_pool.iterrows()]
+        action_groups: dict[str, list[int]] = {}
+        for index, action_id in enumerate(all_action_ids):
+            action_groups.setdefault(action_id, []).append(index)
+        candidate_indices = [indices[0] for indices in action_groups.values()]
+        action_ids = list(action_groups)
+        candidate_pool = source_pool.iloc[candidate_indices].copy().reset_index(drop=True)
         candidate_pool[SOURCE_RECIPE_ID_COLUMN] = candidate_pool[source_column]
+        candidate_pool[SOURCE_RECIPE_IDS_COLUMN] = [
+            [str(source_pool.iloc[index][source_column]) for index in indices]
+            for indices in action_groups.values()
+        ]
         candidate_pool[CONTROL_ACTION_ID_COLUMN] = action_ids
         candidate_pool[CONTEXT_PROVENANCE_COLUMN] = state.provenance_fingerprint
         candidate_pool[CANDIDATE_INSTANCE_ID_COLUMN] = [
@@ -209,7 +238,10 @@ class MASPOProcessOptimizationCoordinator:
 
         historical_action_ids = [canonical_control_action_id(row[space.control_columns].to_dict()) for _, row in base.iterrows()]
         historical_context_fingerprints = [
-            context_provenance_fingerprint(history_context.iloc[index].to_dict(), state.decision_stage, state.representation_kind)
+            context_provenance_fingerprint(
+                history_context.iloc[index].to_dict(), state.decision_stage, state.representation_kind,
+                semantic_metadata=MASPOProcessOptimizationCoordinator._state_semantic_metadata(state),
+            )
             for index in range(len(history_context))
         ]
         clean = pd.DataFrame({
@@ -228,7 +260,8 @@ class MASPOProcessOptimizationCoordinator:
         for column in target_names:
             clean[column] = base[column]
         metadata_columns = tuple(dict.fromkeys([
-            space.id_column, source_column, SOURCE_RECIPE_ID_COLUMN, CONTROL_ACTION_ID_COLUMN, CONTEXT_PROVENANCE_COLUMN,
+            space.id_column, source_column, SOURCE_RECIPE_ID_COLUMN, SOURCE_RECIPE_IDS_COLUMN,
+            CONTROL_ACTION_ID_COLUMN, CONTEXT_PROVENANCE_COLUMN,
             *space.metadata_columns,
         ]))
         contextual_space = ProcessSearchSpace.from_finite_pool(
@@ -237,6 +270,12 @@ class MASPOProcessOptimizationCoordinator:
             control_action_id_column=CONTROL_ACTION_ID_COLUMN, metadata_columns=metadata_columns,
         )
         return state, clean, contextual_space
+
+    @staticmethod
+    def _state_semantic_metadata(state: OptimizationState) -> Mapping[str, Any]:
+        metadata = dict(state.provenance.get("semantic_fingerprint_inputs", {}))
+        metadata.setdefault("source_stage_ids", state.source_stage_ids)
+        return metadata
 
     @staticmethod
     def _categorical_vocabularies(horizon: HorizonView, observations: pd.DataFrame) -> dict[str, Sequence[object]]:

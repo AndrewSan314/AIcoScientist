@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import pandas as pd
+import numpy as np
 
 from src.optimization.finite_pool import FiniteCandidatePool
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.optimization.state import (
     canonical_control_action_id,
+    context_provenance_fingerprint,
     contextual_candidate_instance_id,
 )
 from src.process.optimization.process_space import ProcessSearchSpace
@@ -81,3 +83,43 @@ def test_generic_finite_candidate_pool_identity_semantics_remain_unchanged() -> 
     )
 
     assert pool.filter_unseen({"a"}).candidate_ids == ["b"]
+
+
+def test_action_identity_canonicalizes_all_project_missing_scalars_without_confusing_zero_or_category() -> None:
+    missing_ids = [canonical_control_action_id({"temperature": value}) for value in (None, float("nan"), np.float64(np.nan), pd.NA)]
+
+    assert len(set(missing_ids)) == 1
+    assert missing_ids[0] != canonical_control_action_id({"temperature": 0.0})
+    assert missing_ids[0] != canonical_control_action_id({"temperature": "__MISSING__"})
+    assert canonical_control_action_id({"a": 1, "b": 2}) == canonical_control_action_id({"b": 2, "a": 1})
+
+
+def test_context_fingerprint_carries_semantic_model_and_category_identity() -> None:
+    base = {"context.state.0": 0.25}
+    first = context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"source_stage_ids": ("form", "mix"), "model_version": "v1", "model_fingerprint": "a", "modality_bindings": {"signal": "s", "tabular": "t"}, "category_vocabulary_manifest": {"mode": ("fast", "slow")}},
+    )
+    reordered = context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"category_vocabulary_manifest": {"mode": ("fast", "slow")}, "modality_bindings": {"tabular": "t", "signal": "s"}, "model_fingerprint": "a", "model_version": "v1", "source_stage_ids": ("form", "mix")},
+    )
+    other_model = context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"source_stage_ids": ("form", "mix"), "model_version": "v2", "model_fingerprint": "b"},
+    )
+    other_vocabulary = context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "scalar_horizon",
+        semantic_metadata={"source_stage_ids": ("form", "mix"), "category_vocabulary_manifest": {"mode": ("fast", "slow", "turbo")}},
+    )
+
+    assert first == reordered
+    assert first != other_model
+    assert first != other_vocabulary
+    assert context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"source_stage_ids": ("form", "mix"), "timestamp": "2026-09-11T00:00:00Z"},
+    ) == context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"source_stage_ids": ("form", "mix"), "timestamp": "2026-09-12T00:00:00Z"},
+    )

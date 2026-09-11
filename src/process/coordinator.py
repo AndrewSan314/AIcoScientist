@@ -83,6 +83,8 @@ class ProcessOptimizationCoordinator:
             provenance.update({"candidate_instance_id": str(item.candidate_id)})
             if "context_provenance_fingerprint" in row:
                 provenance["context_provenance_fingerprint"] = row["context_provenance_fingerprint"]
+            if "source_recipe_ids" in row:
+                provenance["source_recipe_ids"] = list(row["source_recipe_ids"])
             source_recipe_id = row[space.source_id_column] if space.source_id_column in row.index else item.candidate_id
             control_action_id = row[space.control_action_id_column] if space.control_action_id_column else None
             result.append(ProcessControlProposal(

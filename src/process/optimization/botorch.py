@@ -110,6 +110,8 @@ class OfficialMultiObjectiveBoTorch:
             provenance = {"acquisition": "qNoisyExpectedHypervolumeImprovement", "reference_point": reference.tolist(), "seed": seed, "candidate_instance_id": recipe_id}
             if "context_provenance_fingerprint" in source_row:
                 provenance["context_provenance_fingerprint"] = source_row["context_provenance_fingerprint"]
+            if "source_recipe_ids" in source_row:
+                provenance["source_recipe_ids"] = list(source_row["source_recipe_ids"])
             result.append(ProcessControlProposal(
                 proposal_id=f"process:{recipe_id}", stage=None, controls=controls,
                 predicted_outputs=outputs, feasibility_probability=self._feasibility_probability(outputs, objective.constraints),

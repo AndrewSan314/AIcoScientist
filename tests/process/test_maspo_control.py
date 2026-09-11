@@ -194,3 +194,28 @@ def test_maspo_represents_missing_categorical_context_explicitly() -> None:
 
     assert len(plan.optimization_state.feature_names) == 2
     assert plan.optimization_state.feature_values[plan.optimization_state.feature_names[0]] == 1.0
+
+
+def test_maspo_deduplicates_replicate_actions_but_keeps_historical_rows() -> None:
+    space = ProcessSearchSpace.from_finite_pool(pd.DataFrame([
+        {"recipe_id": "run-001", "temperature": 120},
+        {"recipe_id": "run-002", "temperature": 120},
+        {"recipe_id": "run-003", "temperature": 130},
+    ]))
+    observations = pd.DataFrame([
+        {"recipe_id": "run-001", "temperature": 120, "context.control.formulation.solids": 0.8, "context.control.mixing.speed": 100.0, "context.intermediate.mixing.viscosity": 5.0, "capacity": 150.0},
+        {"recipe_id": "run-002", "temperature": 120, "context.control.formulation.solids": 0.8, "context.control.mixing.speed": 100.0, "context.intermediate.mixing.viscosity": 5.0, "capacity": 151.0},
+        {"recipe_id": "run-003", "temperature": 130, "context.control.formulation.solids": 0.8, "context.control.mixing.speed": 100.0, "context.intermediate.mixing.viscosity": 5.0, "capacity": 155.0},
+    ])
+    backend = FirstCandidateBackend()
+    plan = MASPOProcessOptimizationCoordinator(ProcessOptimizationCoordinator(scalar_backend=backend)).optimize_remaining_process(
+        current_state=_horizon(0.8), current_stage=ProcessStage.COATING,
+        remaining_control_spaces={ProcessStage.DRYING: space}, observations=observations,
+        objective=ProcessOptimizationObjective([ObjectiveSpec("capacity", "maximize")]),
+    )
+
+    pool = backend.calls[0]["candidate_pool"]
+    history = backend.calls[0]["observations"]
+    assert len(pool) == 2
+    assert len(history) == 3
+    assert plan.next_control.provenance["source_recipe_ids"] == ["run-001", "run-002"]
