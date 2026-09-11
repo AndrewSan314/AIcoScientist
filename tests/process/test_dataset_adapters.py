@@ -26,6 +26,9 @@ def test_adapter_loads_a_hashed_normalized_cache(tmp_path) -> None:
     adapter = DrakopoulosGraphiteAdapter(tmp_path)
     adapter.write_processed_cache([process_run()], raw_hashes={"raw.csv": "a" * 64})
     assert adapter.load_runs()[0].run_id == "run-1"
+    manifest = json.loads((adapter.processed_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema_version"] == "1"
+    assert "normalized_runs.json" in manifest["processed_hashes"]
 
 
 def test_training_view_marks_absent_numeric_fields_instead_of_treating_them_as_zero(tmp_path) -> None:

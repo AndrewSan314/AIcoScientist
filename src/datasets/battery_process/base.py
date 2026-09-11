@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
@@ -75,6 +76,7 @@ class NormalizedRunAdapter:
     """
 
     ADAPTER_VERSION = "1"
+    SCHEMA_VERSION = "1"
 
     def __init__(self, root: str | Path | None = None) -> None:
         self.root = Path(root or Path("data/external") / self.metadata().dataset_id / self.metadata().version)
@@ -197,13 +199,36 @@ class NormalizedRunAdapter:
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         payload = [run.to_dict() for run in runs]
         self.normalized_runs_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+        source_manifest: dict[str, object] = {}
+        raw_manifest_path = self.root / "manifest.json"
+        if raw_manifest_path.is_file():
+            parsed = json.loads(raw_manifest_path.read_text(encoding="utf-8"))
+            if isinstance(parsed, dict):
+                source_manifest = parsed
+        processed_hash = hashlib.sha256(self.normalized_runs_path.read_bytes()).hexdigest()
         manifest = {
             "dataset": self.metadata().dataset_id,
+            "source_url": source_manifest.get("official_dataset_source"),
             "source_doi": self.metadata().source_doi,
             "version": self.metadata().version,
+            "license": source_manifest.get("license"),
+            "downloaded_at": source_manifest.get("downloaded_at"),
             "adapter_version": self.ADAPTER_VERSION,
+            "adapter_git_sha": self._adapter_git_sha(),
+            "schema_version": self.SCHEMA_VERSION,
+            "processing_parameters": {"normalization": "typed BatteryProcessRun JSON"},
             "raw_hashes": dict(sorted(raw_hashes.items())),
-            "processed_hash": hashlib.sha256(self.normalized_runs_path.read_bytes()).hexdigest(),
+            "processed_hashes": {"normalized_runs.json": processed_hash},
+            "processed_hash": processed_hash,
         }
         (self.processed_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return self.normalized_runs_path
+
+    @staticmethod
+    def _adapter_git_sha() -> str:
+        root = Path(__file__).resolve().parents[3]
+        try:
+            result = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
+        except OSError:
+            return "unknown"
+        return result.stdout.strip() if result.returncode == 0 else "unknown"
