@@ -14,7 +14,7 @@ from pathlib import Path
 from src.process.simulators.base import SimulationResult, SimulationStatus
 
 from .config import ArtisticRunConfig, ExecutionMode, FidelityMode, MPIEnvironmentError, validate_mpi_environment
-from .parser import parse_artistic_output, parse_thermo_checkpoints
+from .parser import parse_artistic_output, parse_thermo_log
 from .provenance import sha256 as _streaming_sha256
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
@@ -172,7 +172,7 @@ class ArtisticSimulator:
             "fidelity_identity": self.config.fidelity_identity,
             "early_termination": progress["early_termination"],
             "progress": progress,
-            "checkpoints": [{"step": step} for step in progress["checkpoint_steps"]],
+            "checkpoints": progress["checkpoints"],
             "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE" if self.config.fidelity_mode == FidelityMode.SHORT_HORIZON else "NOT_EVALUATED",
         })
         write_json(run_directory / "manifest.json", payload)
@@ -285,8 +285,10 @@ def _assert_hashes(workspace: Path, expected: dict[str, str]) -> None:
 
 
 def _progress(workspace: Path | None, commands: list[dict[str, object]], requested_steps: int, dump_interval_steps: int, status: SimulationStatus | None) -> dict[str, object]:
-    checkpoints = list(parse_thermo_checkpoints(workspace)) if workspace else []
-    completed = max(checkpoints, default=0)
+    parsed = parse_thermo_log(workspace / "slurry.log", stage="slurry") if workspace else None
+    checkpoints = list(parsed.checkpoints) if parsed else []
+    records = [{"step": item.step, "metrics": dict(item.metrics), "stage": item.stage, "source_log": item.source_log} for item in checkpoints]
+    completed = max((item.step for item in checkpoints), default=0)
     wall_seconds = sum(float(command.get("wall_seconds", 0.0)) for command in commands if command.get("stage") == "slurry")
     steps_per_second = completed / wall_seconds if completed and wall_seconds > 0 else None
     remaining = max(0, requested_steps - completed)
@@ -294,7 +296,9 @@ def _progress(workspace: Path | None, commands: list[dict[str, object]], request
     return {
         "requested_steps": requested_steps,
         "completed_steps": completed,
-        "checkpoint_steps": checkpoints,
+        "checkpoint_steps": [item.step for item in checkpoints],
+        "checkpoints": records,
+        "thermo_parse_diagnostics": list(parsed.diagnostics) if parsed else [],
         "dump_interval_steps": dump_interval_steps,
         "last_thermo_step": completed or None,
         "wall_seconds": wall_seconds,

@@ -63,22 +63,65 @@ def parse_artistic_output(workspace: Path) -> ParsedArtisticOutput:
     return ParsedArtisticOutput(stages, final_kpis, diagnostics, initial_atoms, final_atoms, _lost_from_logs(workspace), tuple(errors))
 
 
-def parse_thermo_checkpoints(workspace: Path) -> tuple[int, ...]:
-    """Return only step numbers actually printed by LAMMPS thermo logs."""
-    steps: set[int] = set()
-    for path in workspace.glob("*.log"):
-        in_thermo = False
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-            if _THERMO_HEADER.search(line):
-                in_thermo = True
-                continue
-            if in_thermo:
-                match = _THERMO_ROW.match(line)
-                if match:
-                    steps.add(int(match.group(1)))
-                elif line.strip().startswith(("Loop time", "ERROR", "Per MPI rank")):
-                    in_thermo = False
-    return tuple(sorted(steps))
+@dataclass(frozen=True)
+class ThermoCheckpoint:
+    step: int
+    metrics: dict[str, float]
+    stage: str
+    source_log: str
+
+
+@dataclass(frozen=True)
+class ThermoParseResult:
+    checkpoints: tuple[ThermoCheckpoint, ...]
+    diagnostics: tuple[str, ...] = ()
+
+
+def parse_thermo_log(path: Path, *, stage: str = "slurry") -> ThermoParseResult:
+    """Parse one stage log; progress never aggregates unrelated stage logs."""
+    log = path / f"{stage}.log" if path.is_dir() else path
+    if not log.is_file():
+        return ThermoParseResult((), (f"missing thermo log: {log.name}",))
+    checkpoints: list[ThermoCheckpoint] = []
+    diagnostics: list[str] = []
+    headers: tuple[str, ...] | None = None
+    for line_number, line in enumerate(log.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        if _THERMO_HEADER.match(line):
+            columns = tuple(line.split())
+            headers = columns[1:] or None
+            if headers is None:
+                diagnostics.append(f"{log.name}:{line_number}: thermo header has no metrics")
+            continue
+        if headers is None:
+            continue
+        match = _THERMO_ROW.match(line)
+        if not match:
+            if line.strip().startswith(("Loop time", "ERROR", "Per MPI rank", "WARNING")):
+                headers = None
+            continue
+        fields = line.split()
+        if len(fields) != len(headers) + 1:
+            diagnostics.append(f"{log.name}:{line_number}: malformed thermo row for step {fields[0]}")
+            continue
+        try:
+            values = [float(value) for value in fields[1:]]
+        except ValueError:
+            diagnostics.append(f"{log.name}:{line_number}: malformed thermo metric row for step {fields[0]}")
+            continue
+        if not all(math.isfinite(value) for value in values):
+            diagnostics.append(f"{log.name}:{line_number}: non-finite thermo metric row for step {fields[0]}")
+            continue
+        checkpoints.append(ThermoCheckpoint(int(fields[0]), dict(zip(headers, values)), stage, log.name))
+    return ThermoParseResult(tuple(checkpoints), tuple(diagnostics))
+
+
+def parse_thermo_checkpoints(path: Path, *, stage: str = "slurry") -> tuple[ThermoCheckpoint, ...]:
+    return parse_thermo_log(path, stage=stage).checkpoints
+
+
+def parse_thermo_steps(path: Path, *, stage: str = "slurry") -> tuple[int, ...]:
+    """Compatibility projection for callers that only need printed step numbers."""
+    return tuple(item.step for item in parse_thermo_checkpoints(path, stage=stage))
 
 
 def _present(**values: float | None) -> dict[str, float]:

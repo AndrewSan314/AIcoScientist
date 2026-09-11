@@ -68,7 +68,7 @@ class ArtisticRunConfig:
     fidelity_mode: FidelityMode = FidelityMode.REFERENCE
     slurry_steps: int | None = None
     dump_interval_steps: int = 1_000_000
-    confirm_reference_execution: bool = True
+    confirm_reference_execution: bool = False
 
     def __post_init__(self) -> None:
         mode = FidelityMode(self.fidelity_mode)
@@ -82,6 +82,8 @@ class ArtisticRunConfig:
         if mode == FidelityMode.REFERENCE:
             if self.slurry_steps is not None and self.slurry_steps != REFERENCE_SLURRY_STEPS:
                 raise ValueError(f"reference ARTISTIC fidelity requires exactly {REFERENCE_SLURRY_STEPS:,} slurry steps")
+            if self.dump_interval_steps != 1_000_000:
+                raise ValueError("reference ARTISTIC fidelity requires dump_interval_steps=1,000,000")
         elif self.slurry_steps is None or not 0 < self.slurry_steps < REFERENCE_SLURRY_STEPS:
             raise ValueError(f"short-horizon ARTISTIC fidelity requires explicit slurry_steps below {REFERENCE_SLURRY_STEPS:,}")
 
