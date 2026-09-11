@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -25,6 +26,10 @@ ADAPTERS = [DrakopoulosGraphiteAdapter, WarwickNMC622Adapter, WarwickUltrasoundA
 REPLAY_TASKS = {
     "drakopoulos_graphite": ("cell_capacity_mah", ProcessStage.COATING),
     "warwick_nmc622": ("calendered_density_g_cm3", ProcessStage.CALENDERING),
+}
+OOD_TASKS = {
+    "drakopoulos_graphite": ("cell_capacity_mah", "coating.coating_speed_m_per_min"),
+    "warwick_nmc622": ("calendered_density_g_cm3", "calendering.roll_gap_um"),
 }
 
 
@@ -85,11 +90,13 @@ def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
     except RuntimeError as exc:
         return {"status": "SKIPPED_DEPENDENCY", "reason": str(exc)}
     observed, hidden, revealed = reveal_one(observed, hidden, recipe_id=proposal.source_recipe_id or "", id_column="recipe_id", target=target)
+    best_so_far = float(observed[target].max())
+    oracle_best = float(replay[target].max())
     return {
         "status": "REVEALED", "target": target, "stage": stage.value, "seed": seed,
         "proposal_recipe_id": proposal.source_recipe_id, "proposal_controls": proposal.controls,
         "revealed_recipe_id": revealed.recipe_id, "revealed_target": revealed.revealed_target,
-        "best_so_far": float(observed[target].max()), "remaining_hidden": len(hidden),
+        "best_so_far": best_so_far, "oracle_best": oracle_best, "simple_regret": max(0.0, oracle_best - best_so_far), "remaining_hidden": len(hidden),
     }
 
 
@@ -124,6 +131,110 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     }
 
 
+def _stage_ablation(adapter, *, seed: int) -> dict[str, object]:
+    """Evaluate only information available by each recorded process stage."""
+    targets = sorted({name for run in adapter.load_runs() for name, value in run.final_kpis.items() if isinstance(value.value, (int, float))})
+    reports: list[dict[str, object]] = []
+    for target in targets:
+        for stage in adapter.metadata().process_stages:
+            try:
+                frame = adapter.build_training_view(ProcessPredictionTask(target, stage))
+            except ValueError as exc:
+                reports.append({"target": target, "stage": stage.value, "status": "SKIPPED", "reason": str(exc)})
+                continue
+            X, y, groups = frame.features.to_numpy(), frame.targets.to_numpy(), frame.groups.to_numpy()
+            if len(X) < 8 or len(set(groups)) < 4:
+                reports.append({"target": target, "stage": stage.value, "status": "SKIPPED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
+                continue
+            train, test = next(GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed).split(X, y, groups))
+            predicted, _ = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
+            reports.append({"target": target, "stage": stage.value, "status": "EVALUATED", "model": "ExtraTreesRegressor", "split": "grouped holdout", "rows": len(X), "groups": len(set(groups)), "feature_count": X.shape[1], "metrics": _metrics(y[test], predicted)})
+    return {
+        "dataset_id": adapter.metadata().dataset_id,
+        "reports": reports,
+        "stage_transition_model": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."},
+    }
+
+
+def _extreme_ood_stress(adapter, *, seed: int) -> dict[str, object]:
+    task_definition = OOD_TASKS.get(adapter.metadata().dataset_id)
+    if task_definition is None:
+        return {"status": "SKIPPED", "reason": "no audited recipe control supports an extreme-condition holdout"}
+    target, feature = task_definition
+    try:
+        frame = adapter.build_training_view(ProcessPredictionTask(target, ProcessStage.FINAL_CHARACTERIZATION))
+    except ValueError as exc:
+        return {"status": "SKIPPED", "reason": str(exc)}
+    if feature not in frame.features:
+        return {"status": "SKIPPED", "reason": f"source control {feature!r} is unavailable at this information horizon"}
+    values = frame.features[feature].to_numpy(dtype=float)
+    held_out = np.isclose(values, values.min()) | np.isclose(values, values.max())
+    train, test = np.flatnonzero(~held_out), np.flatnonzero(held_out)
+    groups = frame.groups.to_numpy()
+    if len(train) < 4 or len(test) < 2 or set(groups[train]) & set(groups[test]):
+        return {"status": "SKIPPED", "reason": "source extremes do not produce a disjoint grouped holdout", "train_rows": len(train), "test_rows": len(test)}
+    X, y = frame.features.to_numpy(), frame.targets.to_numpy()
+    predicted, _ = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
+    return {
+        "status": "EVALUATED", "target": target, "source_control": feature,
+        "split": "minimum-and-maximum source-control values held out as OOD recipes",
+        "process_dimension": frame.features.shape[1], "candidate_pool_size": len(frame.features),
+        "train_rows": len(train), "test_rows": len(test), "train_groups": len(set(groups[train])), "test_groups": len(set(groups[test])),
+        "metrics": _metrics(y[test], predicted),
+        "missing_intermediate_observations": {"status": "NOT_EVALUATED", "reason": "the parsed source subset lacks source-linked repeated intermediate observations per recipe"},
+        "multiobjective_frontier": {"status": "NOT_EVALUATED", "reason": "no prespecified, source-backed multiobjective target pair is registered for this replay task"},
+    }
+
+
+def _write_prediction_figure(predictions: list[dict[str, object]], output: Path) -> None:
+    rows = [
+        (f"{report['dataset_id']}\n{item['target']}", item["metrics"]["r2"])
+        for report in predictions for item in report["reports"]
+        if item["status"] == "EVALUATED" and item["metrics"]["r2"] is not None
+    ]
+    if not rows:
+        (output / "README.md").write_text("No comparable grouped-holdout R² values were available to plot.\n", encoding="utf-8")
+        return
+    import matplotlib.pyplot as plt
+
+    labels, scores = zip(*rows)
+    figure, axis = plt.subplots(figsize=(max(6, len(labels) * 1.4), 4))
+    axis.bar(range(len(scores)), scores, color="#2b6cb0")
+    axis.axhline(0, color="black", linewidth=0.8)
+    axis.set_xticks(range(len(labels)), labels, rotation=30, ha="right")
+    axis.set_ylabel("Grouped holdout R²")
+    axis.set_title("BPSS prediction results (not a cross-chemistry ranking)")
+    figure.tight_layout()
+    figure.savefig(output / "grouped_prediction_r2.png", dpi=180)
+    plt.close(figure)
+
+
+def _git_revision() -> str:
+    result = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
+    return result.stdout.strip() if result.returncode == 0 else "unknown"
+
+
+def _write_report(root: Path, manifest: dict[str, object]) -> None:
+    command = " ".join(sys.argv)
+    unavailable = manifest["unavailable"] or ["none"]
+    (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
+        "# Battery Process Stress Suite\n\n"
+        f"Status: **{manifest['status']}**.\n\n"
+        "## Reproducibility\n\n"
+        f"- Command: `{command}`\n"
+        f"- Commit: `{_git_revision()}`\n"
+        f"- Python: `{sys.version.split()[0]}`\n"
+        "- Process tests (run separately): `python -m pytest -q tests/process -p no:cacheprovider`\n"
+        "- Artifact manifest: `manifest.json`\n\n"
+        "## Limitations\n\n"
+        "- Small, source-specific datasets; no chemistry-generalization claim.\n"
+        "- Missing modalities are omitted rather than imputed.\n"
+        f"- Unavailable raw sources: {', '.join(unavailable)}.\n"
+        "- No live production control or causal-effect claim.\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a source-backed BPSS benchmark manifest.")
     parser.add_argument("--output", type=Path, default=Path("outputs/process_benchmark"))
@@ -138,6 +249,7 @@ def main() -> None:
     unavailable = []
     evaluated = []
     replayed = []
+    prediction_artifacts = []
     for adapter_class in ADAPTERS:
         adapter = adapter_class()
         report = adapter.validate()
@@ -147,14 +259,23 @@ def main() -> None:
         audits.append(audit)
         if not report.valid:
             unavailable.append(dataset_id)
+            blocked = {
+                "dataset_id": dataset_id, "status": "BLOCKED_SOURCE_ACCESS", "reason": list(report.errors),
+                "simulation_manifest": {"status": "NOT_GENERATED", "reason": "official simulator raw files require source access"},
+            }
+            (root / "stage_ablations" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
+            (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
             continue
         predictions = _grouped_prediction(adapter, seed=args.seed)
         prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
         (root / "prediction" / f"{dataset_id}.json").write_text(json.dumps(prediction_report, indent=2), encoding="utf-8")
+        prediction_artifacts.append(prediction_report)
         (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval")} for item in predictions]}, indent=2), encoding="utf-8")
         ablation = _ultrasound_ablation(adapter, seed=args.seed)
         (root / "multimodal_ablations" / f"{dataset_id}.json").write_text(json.dumps(ablation, indent=2), encoding="utf-8")
         (root / "missing_modality" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "status": ablation["status"], "policy": "An unavailable modality is omitted, never zero-filled.", "process_only_reference": next((item for item in ablation.get("reports", []) if item["mode"] == "process_only"), None)}, indent=2), encoding="utf-8")
+        (root / "stage_ablations" / f"{dataset_id}.json").write_text(json.dumps(_stage_ablation(adapter, seed=args.seed), indent=2), encoding="utf-8")
+        (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(_extreme_ood_stress(adapter, seed=args.seed), indent=2), encoding="utf-8")
         replays = [_offline_replay(adapter, seed=args.seed + offset) for offset in range(args.replay_seeds)]
         (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
@@ -162,10 +283,8 @@ def main() -> None:
             replayed.append(dataset_id)
     manifest = {"suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable, "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds}
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
-    (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
-        "# Battery Process Stress Suite\n\n" + "Grouped ExtraTrees/split-conformal artifacts and no-lookahead recipe replays are written for supported source-backed tasks. " + ("Unavailable sources: " + ", ".join(unavailable) if unavailable else "All registered adapters passed source validation."),
-        encoding="utf-8",
-    )
+    _write_prediction_figure(prediction_artifacts, root / "figures")
+    _write_report(root, manifest)
     if unavailable and not args.allow_unavailable:
         raise SystemExit("BPSS refused to benchmark unaudited source data; rerun with --allow-unavailable for an audit-only manifest.")
     print(json.dumps(manifest, indent=2, default=str))
