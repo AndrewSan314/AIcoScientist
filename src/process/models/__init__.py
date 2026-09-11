@@ -1,8 +1,9 @@
 from .flat_baseline import TreeEnsembleBaseline
 from .maspo import MASPOProcessStateModel
 from .multioutput import MaskedMultiOutputRegressor
-from .state_adapter import encode_legal_multimodal_state
+from .state_adapter import build_legal_stage_transitions, encode_legal_multimodal_state
 from .stage_transition import StageAwareProcessModel
+from .transitions import LegalStageTransition, source_stage_fingerprint
 from .uncertainty import conformal_interval, empirical_coverage
 
-__all__ = ["MASPOProcessStateModel", "MaskedMultiOutputRegressor", "StageAwareProcessModel", "TreeEnsembleBaseline", "conformal_interval", "empirical_coverage", "encode_legal_multimodal_state"]
+__all__ = ["LegalStageTransition", "MASPOProcessStateModel", "MaskedMultiOutputRegressor", "StageAwareProcessModel", "TreeEnsembleBaseline", "build_legal_stage_transitions", "conformal_interval", "empirical_coverage", "encode_legal_multimodal_state", "source_stage_fingerprint"]

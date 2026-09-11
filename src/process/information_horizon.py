@@ -19,6 +19,7 @@ class HorizonView:
     intermediate_properties: Mapping[str, MeasurementValue]
     modalities: tuple[ModalityObservation, ...]
     source_stage_ids: tuple[str, ...]
+    source_stages: tuple[StageRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -47,6 +48,7 @@ class InformationHorizon:
             intermediate_properties=measurements,
             modalities=tuple(modalities),
             source_stage_ids=tuple(record.stage_id for record in stages),
+            source_stages=tuple(stages),
         )
 
     def assert_visible(self, run: BatteryProcessRun, feature_names: list[str]) -> None:
