@@ -14,9 +14,9 @@ import src.process.simulators.artistic.provenance as provenance_module
 import src.process.simulators.artistic.runner as runner_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
-from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, DryingMode, ParticleCountSafetyError, SlurryRecipe, estimate_particles
+from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceStatus, DryingMode, FidelityMode, ParticleCountSafetyError, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
 from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
-from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output
+from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints
 from src.process.simulators.artistic.validation import output_errors
 from src.process.simulators.artistic.runner import _version
 from src.process.simulators.artistic.schemas import _lammps_round
@@ -58,7 +58,7 @@ def pinned_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     source = tmp_path / "source"; root = source / "NMC" / "Updated version"; slurry = root / "Slurry"; slurry.mkdir(parents=True)
     (slurry / "user_inputs.txt").write_text("variable nAM_part equal @nAM_part@\n", encoding="utf-8")
     (slurry / "init_structure.txt").write_text("\n".join(f"variable n_AM{i} equal round(v_n_AM*v_p_AM6)" for i in range(7, 11)), encoding="utf-8")
-    (slurry / "in_slurry.run").write_text("# source fixture\n", encoding="utf-8")
+    (slurry / "in_slurry.run").write_text("dump 1 all custom 1000000 dump.atom id type x y z radius\nvariable run equal 20000000\nrun ${run}\n", encoding="utf-8")
     for name, files in {"Drying_homogeneous": ("in_evap_hom.run", "pores.py"), "Calendering": ("in_cal.run", "pores_cal.py", "Reformatting_cal_electrode.py")}.items():
         directory = root / name; directory.mkdir()
         for file in files: (directory / file).write_text("# source fixture\n", encoding="utf-8")
@@ -94,6 +94,47 @@ def test_renderer_patch_is_workspace_only_and_run_ids_are_isolated(pinned_source
     assert "v_p_AM7" in rendered and "v_p_AM10" in rendered
     assert "v_p_AM6" in (pinned_source / "NMC" / "Updated version" / "Slurry" / "init_structure.txt").read_text(encoding="utf-8")
     with pytest.raises(FileExistsError, match="Refusing to append"): simulator.prepare(ArtisticRecipe(slurry=_slurry()), run_id="render")
+
+
+def test_short_horizon_is_explicit_workspace_patch_and_has_distinct_identity(pinned_source: Path, tmp_path: Path) -> None:
+    config = ArtisticRunConfig(
+        source_root=pinned_source, output_root=tmp_path / "runs", fidelity_mode=FidelityMode.SHORT_HORIZON,
+        slurry_steps=500_000, dump_interval_steps=250_000,
+    )
+    run = ArtisticSimulator(config).prepare(ArtisticRecipe(slurry=_slurry()), run_id="short")
+    rendered = (run / "workspace" / "in_slurry.run").read_text(encoding="utf-8")
+    source = (pinned_source / "NMC" / "Updated version" / "Slurry" / "in_slurry.run").read_text(encoding="utf-8")
+    assert "variable run equal 500000" in rendered and "custom 250000" in rendered
+    assert "variable run equal 20000000" in source and "custom 1000000" in source
+    manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["fidelity_mode"] == "SHORT_HORIZON"
+    assert manifest["requested_slurry_steps"] == 500_000
+    assert manifest["reference_equivalence_status"] == "REFERENCE_NOT_AVAILABLE"
+    assert {patch["id"] for patch in manifest["patches"]} >= {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval"}
+    assert config.fidelity_identity != ArtisticRunConfig(source_root=pinned_source).fidelity_identity
+
+
+def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -> None:
+    with pytest.raises(ValueError, match="exactly 20,000,000"):
+        ArtisticRunConfig(slurry_steps=500_000)
+    with pytest.raises(ValueError, match="explicit slurry_steps"):
+        ArtisticRunConfig(fidelity_mode=FidelityMode.SHORT_HORIZON)
+    config = ArtisticRunConfig(fidelity_mode=FidelityMode.REFERENCE, confirm_reference_execution=False)
+    plan = build_convergence_study_plan(config, steps_per_second=1000)
+    assert plan.dry_run is True and all(entry["auto_launch"] is False for entry in plan.entries)
+    assert plan.entries[0]["estimated_wall_seconds"] == 500.0
+    assert plan.entries[-1]["requires_explicit_reference_confirmation"] is True
+
+
+def test_convergence_reports_only_available_metrics_and_never_equates_without_reference() -> None:
+    short = [Checkpoint(500_000, {"density": 1.0}), Checkpoint(1_000_000, {"density": 1.001}), Checkpoint(2_000_000, {"density": 1.0005})]
+    assert stability_status(short) == ConvergenceStatus.STABILITY_OBSERVED
+    report = build_convergence_report(short, requested_steps=2_000_000)
+    assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
+    reference = [Checkpoint(20_000_000, {"density": 1.0, "unavailable_in_short": 3.0})]
+    compared = build_convergence_report(short, reference_checkpoints=reference, requested_steps=2_000_000)
+    assert compared.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
+    assert compared.available_metrics == ("density",)
 
 
 def test_recipe_validation_and_actual_minimization_mapping() -> None:
@@ -152,6 +193,13 @@ def test_invoke_streams_stage_log_and_records_wall_seconds(tmp_path: Path) -> No
     ArtisticSimulator(ArtisticRunConfig())._invoke(workspace, "stream", "emit.py", commands, python=True)
     assert "stage output" in (workspace / "stream.log").read_text(encoding="utf-8")
     assert commands[0]["wall_seconds"] >= 0
+
+
+def test_thermo_progress_parser_reports_only_printed_steps(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text("Step Temp\n0 300\n250000 301\nLoop time of 1 on 1 procs\n", encoding="utf-8")
+    assert parse_thermo_checkpoints(workspace) == (0, 250000)
 
 
 def test_invoke_records_general_launch_oserror(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -325,6 +373,23 @@ def test_adapter_normalizes_only_pinned_success_without_target_alias(tmp_path: P
     assert ArtisticSimulationAdapter().metadata().multimodal_capable is False
     failed = SimulationResult(SimulationStatus.TIMEOUT, "failed", tmp_path / "failed")
     with pytest.raises(ValueError, match="not valid simulated physics"): ArtisticSimulationAdapter.normalize_successful(failed, recipe, root=tmp_path / "cache")
+
+
+def test_short_horizon_cache_preserves_lower_fidelity_identity_and_evidence_kind(tmp_path: Path) -> None:
+    recipe = _recipe()
+    result = _successful_result(tmp_path, "short", recipe)
+    result.provenance.update({"fidelity_mode": "SHORT_HORIZON", "requested_slurry_steps": 500_000, "fidelity_identity": "short-id", "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE"})
+    manifest_path = result.run_directory / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.update({key: result.provenance[key] for key in ("fidelity_mode", "requested_slurry_steps", "fidelity_identity", "reference_equivalence_status")})
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    cache = ArtisticSimulationAdapter.normalize_successful(result, recipe, root=tmp_path / "cache")
+    run = ArtisticSimulationAdapter(tmp_path / "cache").load_runs()[0]
+    aggregate = json.loads((tmp_path / "cache" / "manifest.json").read_text(encoding="utf-8"))
+    assert run.provenance.evidence_kind == "SIMULATED_STRESS"
+    assert aggregate["normalized_runs"][0]["fidelity_identity"] == "short-id"
+    assert aggregate["normalized_runs"][0]["cache_identity"]
+    assert cache.is_file()
 
 
 def test_normalization_keeps_each_manifest_and_groups_repeated_recipes(tmp_path: Path) -> None:
