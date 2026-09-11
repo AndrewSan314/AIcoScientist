@@ -14,10 +14,10 @@ def output_errors(recipe: ArtisticRecipe, workspace: Path, parsed: ParsedArtisti
         expected.update({"AM_loading.out", "coord_out_electrode.data", "porosity_bulk.out", "porosity_all.out", "check.txt"})
         required_values.update({"am_loading", "drying_porosity_bulk_percent", "drying_porosity_all_percent"})
     if recipe.calendering:
-        expected.update({"coord_out_cal.data", "new_CBD_nanoporosity", "porosity_cal_bulk.out", "porosity_cal_all.out", "check_cal.txt"})
+        expected.update({"coord_out_cal.data", "Cal_electrode.atom", "new_CBD_nanoporosity", "porosity_cal_bulk.out", "porosity_cal_all.out", "check_cal.txt"})
         required_values.update({"calendered_electrode_thickness", "calendered_cbd_nanoporosity", "calendered_porosity_bulk_percent", "calendered_porosity_all_percent"})
     errors = [f"missing expected source output: {name}" for name in sorted(expected) if not (workspace / name).is_file()]
-    errors.extend(f"empty source output: {name}" for name in sorted(expected) if (workspace / name).is_file() and not (workspace / name).read_text(encoding="utf-8", errors="replace").strip())
+    errors.extend(f"empty source output: {name}" for name in sorted(expected) if (workspace / name).is_file() and (workspace / name).stat().st_size == 0)
     values = {**parsed.stages.get("slurry", {}), **parsed.stages.get("drying", {}), **parsed.final_kpis}
     errors.extend(parsed.parse_errors)
     errors.extend(f"missing parsed source quantity: {name}" for name in sorted(required_values - set(values)))

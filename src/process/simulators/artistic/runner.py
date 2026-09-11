@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -14,7 +16,7 @@ from .config import ArtisticRunConfig, ExecutionMode
 from .parser import parse_artistic_output
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
-from .schemas import ArtisticRecipe, DryingMode
+from .schemas import ArtisticRecipe, DryingMode, recipe_fingerprint
 from .validation import output_errors
 
 
@@ -133,8 +135,9 @@ class ArtisticSimulator:
         outputs = {str(path.relative_to(run_directory)).replace("\\", "/"): _sha256(path) for path in run_directory.rglob("*") if path.is_file() and path.name != "manifest.json"}
         payload: dict[str, object] = {
             **source, "license": "CC BY-NC-SA 4.0", "ai_co_scientist_commit": _git_head(),
-            "recipe": _recipe_dict(recipe), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
-            "commands": commands, "executable_versions": {"python": sys.version, "lammps": _version(self.config.lammps_command)},
+            "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
+            "commands": commands, "executable_versions": {"python": sys.version, "numpy": _package_version("numpy"), "numba": _package_version("numba"), "lammps": _version(self.config.lammps_command)},
+            "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "python_executable": sys.executable},
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
         }
@@ -149,6 +152,13 @@ def _version(command: str) -> str:
         return "unavailable"
     lines = [line.strip() for line in (result.stdout or result.stderr).splitlines() if line.strip()]
     return lines[0] if lines else f"exit {result.returncode}"
+
+
+def _package_version(name: str) -> str:
+    try:
+        return importlib.metadata.version(name)
+    except importlib.metadata.PackageNotFoundError:
+        return "unavailable"
 
 
 def _git_head() -> str:

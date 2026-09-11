@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from dataclasses import dataclass
 from enum import StrEnum
@@ -137,3 +139,24 @@ class ArtisticRecipe:
         if self.calendering:
             values.update(self.calendering.template_values())
         return values
+
+
+def recipe_fingerprint(recipe: ArtisticRecipe) -> str:
+    """Stable group identity for the physical controls, never a simulator execution."""
+    payload = {
+        "slurry": recipe.slurry.template_values(),
+        "drying_mode": recipe.drying_mode.value if recipe.drying_mode else None,
+        "heterogeneous_drying": recipe.heterogeneous_drying.template_values() if recipe.heterogeneous_drying else None,
+        "calendering": recipe.calendering.template_values() if recipe.calendering else None,
+    }
+    encoded = json.dumps(_canonical_controls(payload), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _canonical_controls(value: object) -> object:
+    if isinstance(value, Mapping):
+        return {str(key): _canonical_controls(item) for key, item in value.items()}
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        number = float(value)
+        return "0" if number == 0 else format(number, ".17g")
+    return value

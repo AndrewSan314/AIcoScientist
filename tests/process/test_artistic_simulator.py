@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -11,7 +13,7 @@ from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
 from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, DryingMode, SlurryRecipe
 from src.process.simulators.artistic.config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError
-from src.process.simulators.artistic.parser import parse_artistic_output
+from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output
 from src.process.simulators.artistic.validation import output_errors
 from src.process.simulators.artistic.runner import _version
 from src.process.information_horizon import InformationHorizon
@@ -28,6 +30,23 @@ def _recipe() -> ArtisticRecipe:
 
 def _data(atoms: int = 10, z: float = 12.0) -> str:
     return f"LAMMPS data\n\n{atoms} atoms\n\n0 10 xlo xhi\n0 10 ylo yhi\n0 {z} zlo zhi\n"
+
+
+def _dump(*z_values: float, zlo: float = 0.0, zhi: float = 12.0) -> str:
+    atoms = "\n".join(f"{index} 1 1 1 {z} 0.5" for index, z in enumerate(z_values, 1))
+    return f"ITEM: TIMESTEP\n0\nITEM: NUMBER OF ATOMS\n{len(z_values)}\nITEM: BOX BOUNDS pp pp pp\n0 10\n0 10\n{zlo} {zhi}\nITEM: ATOMS id type x y z radius\n{atoms}\n"
+
+
+def _successful_result(root: Path, run_id: str, recipe: ArtisticRecipe) -> SimulationResult:
+    run_directory = root / run_id; run_directory.mkdir()
+    provenance = {
+        "checked_out_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH,
+        "rendered_source_file_hashes": {"workspace/in_slurry.run": "input-digest"}, "patches": ["workspace-only"],
+        "output_hashes": {"workspace/coord_out_cal.data": "output-digest"}, "stage_lineage": [{"boundary": "drying_to_calendering"}],
+        "executable_versions": {"lammps": "LAMMPS test", "python": "Python test"}, "executable_identity": {"lammps_command": "lmp-test"},
+    }
+    (run_directory / "manifest.json").write_text(json.dumps(provenance), encoding="utf-8")
+    return SimulationResult(SimulationStatus.SUCCESS, run_id, run_directory, {"slurry": {"slurry_density": 1.0}, "drying": {"am_loading": 2.0, "drying_porosity_bulk_percent": 10.0, "drying_porosity_all_percent": 20.0}}, {"calendered_electrode_thickness": 8.0, "calendered_cbd_nanoporosity": 0.4, "calendered_porosity_bulk_percent": 5.0, "calendered_porosity_all_percent": 15.0}, provenance)
 
 
 @pytest.fixture
@@ -84,6 +103,12 @@ def test_lammps_version_skips_blank_banner_lines(monkeypatch: pytest.MonkeyPatch
     assert _version("lmp") == "LAMMPS test"
 
 
+def test_artistic_cli_runs_directly_from_repository_root() -> None:
+    root = Path(__file__).resolve().parents[2]
+    completed = subprocess.run([sys.executable, "scripts/run_artistic_simulator.py", "--help"], cwd=root, capture_output=True, text=True, check=False)
+    assert completed.returncode == 0
+
+
 def test_output_validation_rejects_nan_missing_and_particle_loss(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"; workspace.mkdir()
     (workspace / "density_slurry.out").write_text("nan", encoding="utf-8")
@@ -99,6 +124,28 @@ def test_output_validation_rejects_missing_required_file(tmp_path: Path) -> None
     assert any("missing expected source output: density_slurry.out" in error for error in output_errors(ArtisticRecipe(slurry=_slurry()), workspace, parse_artistic_output(workspace), 0.0))
 
 
+def test_final_thickness_uses_particle_extent_not_fixed_simulation_box(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"; workspace.mkdir()
+    (workspace / "coord_out_cal.data").write_text(_data(z=12), encoding="utf-8")
+    (workspace / "Cal_electrode.atom").write_text(_dump(2.0, 6.0), encoding="utf-8")
+    first = parse_artistic_output(workspace)
+    (workspace / "Cal_electrode.atom").write_text(_dump(2.0, 9.0), encoding="utf-8")
+    second = parse_artistic_output(workspace)
+    assert first.diagnostics["simulation_box_z_length"] == second.diagnostics["simulation_box_z_length"] == 12.0
+    assert first.final_kpis["calendered_electrode_thickness"] == 6.0
+    assert second.final_kpis["calendered_electrode_thickness"] == 9.0
+
+
+def test_validation_uses_file_size_for_large_data_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    workspace = tmp_path / "workspace"; workspace.mkdir()
+    (workspace / "density_slurry.out").write_text("1", encoding="utf-8")
+    (workspace / "coord_out_slurry.data").write_text(_data(), encoding="utf-8")
+    original = Path.read_text
+    monkeypatch.setattr(Path, "read_text", lambda self, *args, **kwargs: (_ for _ in ()).throw(AssertionError("validation must not read data files")) if self.name == "coord_out_slurry.data" else original(self, *args, **kwargs))
+    parsed = ParsedArtisticOutput({"slurry": {"slurry_density": 1.0}}, {}, {}, 10, 10, None)
+    assert output_errors(ArtisticRecipe(slurry=_slurry()), workspace, parsed, 0.0) == ()
+
+
 def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs")); calls: list[str] = []
     def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
@@ -110,7 +157,7 @@ def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, t
         elif stage == "drying_porosity":
             for name, value in {"porosity_bulk.out": "10", "porosity_all.out": "20", "check.txt": "ok"}.items(): (workspace / name).write_text(value, encoding="utf-8")
         elif stage == "calendering":
-            for name, value in {"coord_out_cal.data": _data(z=8), "new_CBD_nanoporosity": "0.4", "initial_lz": "12"}.items(): (workspace / name).write_text(value, encoding="utf-8")
+            for name, value in {"coord_out_cal.data": _data(z=8), "Cal_electrode.atom": _dump(3, 7, zhi=8), "new_CBD_nanoporosity": "0.4", "initial_lz": "12"}.items(): (workspace / name).write_text(value, encoding="utf-8")
         elif stage == "calendering_porosity":
             for name, value in {"porosity_cal_bulk.out": "5", "porosity_cal_all.out": "15", "check_cal.txt": "ok"}.items(): (workspace / name).write_text(value, encoding="utf-8")
         commands.append({"stage": stage, "command": [input_file], "returncode": 0})
@@ -120,6 +167,7 @@ def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, t
     assert calls == ["slurry", "drying_homogeneous", "drying_porosity", "calendering_reformat", "calendering", "calendering_porosity"]
     assert [entry["boundary"] for entry in result.provenance["stage_lineage"]] == ["slurry_output", "slurry_to_drying", "drying_to_calendering"]
     assert "workspace/coord_out_cal.data" in result.provenance["output_hashes"]
+    assert result.final_outputs["calendered_electrode_thickness"] == 7.0
 
 
 @pytest.mark.parametrize(("exception", "status"), [(subprocess.TimeoutExpired(["lmp"], 1), SimulationStatus.TIMEOUT), (subprocess.CalledProcessError(1, ["lmp"]), SimulationStatus.NUMERICAL_FAILURE)])
@@ -132,7 +180,7 @@ def test_runner_never_promotes_timeout_or_numerical_failure(pinned_source: Path,
 
 def test_adapter_normalizes_only_pinned_success_without_target_alias(tmp_path: Path) -> None:
     recipe = _recipe()
-    result = SimulationResult(SimulationStatus.SUCCESS, "success", tmp_path / "run", {"slurry": {"slurry_density": 1.0}, "drying": {"am_loading": 2.0, "drying_porosity_bulk_percent": 10.0, "drying_porosity_all_percent": 20.0}}, {"calendered_electrode_thickness": 8.0, "calendered_cbd_nanoporosity": 0.4, "calendered_porosity_bulk_percent": 5.0, "calendered_porosity_all_percent": 15.0}, {"checked_out_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH, "rendered_source_file_hashes": {"source": "digest"}, "patches": []})
+    result = _successful_result(tmp_path, "success", recipe)
     run = ArtisticSimulationAdapter.from_simulation(result, recipe)
     assert not (set(run.final_kpis) & {name for stage in run.stages for name in stage.intermediate_properties})
     view = InformationHorizon(ProcessStage.CALENDERING).project(run)
@@ -142,3 +190,18 @@ def test_adapter_normalizes_only_pinned_success_without_target_alias(tmp_path: P
     assert ArtisticSimulationAdapter().metadata().multimodal_capable is False
     failed = SimulationResult(SimulationStatus.TIMEOUT, "failed", tmp_path / "failed")
     with pytest.raises(ValueError, match="not valid simulated physics"): ArtisticSimulationAdapter.normalize_successful(failed, recipe, root=tmp_path / "cache")
+
+
+def test_normalization_keeps_each_manifest_and_groups_repeated_recipes(tmp_path: Path) -> None:
+    recipe = _recipe(); cache_root = tmp_path / "cache"
+    ArtisticSimulationAdapter.normalize_successful(_successful_result(tmp_path, "repeat-one", recipe), recipe, root=cache_root)
+    ArtisticSimulationAdapter.normalize_successful(_successful_result(tmp_path, "repeat-two", recipe), recipe, root=cache_root)
+    runs = ArtisticSimulationAdapter(cache_root).load_runs()
+    assert {run.run_id for run in runs} == {"repeat-one", "repeat-two"}
+    assert len({run.batch_id for run in runs}) == 1
+    aggregate = json.loads((cache_root / "manifest.json").read_text(encoding="utf-8"))
+    assert len(aggregate["normalized_runs"]) == 2
+    for entry in aggregate["normalized_runs"]:
+        assert (cache_root / entry["simulation_manifest"]).is_file()
+        assert entry["recipe_fingerprint"] == runs[0].batch_id
+        assert entry["physics_output_hashes"] and entry["executable_versions"]
