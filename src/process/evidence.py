@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Any, Callable, Mapping
 
-from .stages import ProcessStage
+from .information_horizon import HorizonView
+from .stages import ProcessStage, stage_precedes
 
 
 @dataclass(frozen=True)
@@ -17,7 +19,10 @@ class EvidenceOption:
     reveals_source_observation: bool = False
 
     def __post_init__(self) -> None:
-        if not self.modality_id.strip() or self.cost < 0 or self.latency_seconds < 0:
+        if (
+            not self.modality_id.strip() or self.cost < 0 or self.latency_seconds < 0
+            or not math.isfinite(float(self.cost)) or not math.isfinite(float(self.latency_seconds))
+        ):
             raise ValueError("evidence option needs an id and non-negative cost/latency")
 
 
@@ -34,11 +39,22 @@ def replay_blinded_evidence(
     withheld_observations: Mapping[str, Any],
     options: list[EvidenceOption],
     choose: Callable[[Mapping[str, Any], tuple[EvidenceOption, ...]], EvidenceOption | None],
+    *,
+    decision_stage: ProcessStage | HorizonView,
 ) -> EvidenceReplayResult:
-    """Select first, then reveal only the selected source-backed modality."""
+    """Select first, then reveal only a source-backed observation legal at the horizon."""
+    horizon_stage = decision_stage.decision_stage if isinstance(decision_stage, HorizonView) else decision_stage
+    if not isinstance(horizon_stage, ProcessStage):
+        raise TypeError("decision_stage must be a ProcessStage or HorizonView")
     by_id = {option.modality_id: option for option in options}
     if len(by_id) != len(options):
         raise ValueError("evidence option ids must be unique")
+    illegal = [
+        option.modality_id for option in options
+        if not option.available or not option.reveals_source_observation or not stage_precedes(option.stage, horizon_stage)
+    ]
+    if illegal:
+        raise ValueError(f"evidence options are unavailable, non-source-backed, or beyond {horizon_stage.value}: {illegal}")
     selected = choose(dict(visible_observations), tuple(options))
     if selected is None:
         return EvidenceReplayResult(None, dict(visible_observations), 0.0, 0.0)
