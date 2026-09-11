@@ -22,13 +22,20 @@ class ExecutionMode(StrEnum):
     SLURM = "slurm"
 
 
+def _default_mpi_launcher() -> str:
+    if os.name != "nt":
+        return "mpirun"
+    installed = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Microsoft MPI" / "Bin" / "mpiexec.exe"
+    return str(installed) if installed.is_file() else "mpiexec"
+
+
 @dataclass(frozen=True)
 class ArtisticRunConfig:
     source_root: Path = Path("data/external/artistic/source") / f"Manufacturing-Model-Codes-{PINNED_COMMIT}"
     output_root: Path = Path("outputs/artistic_runs")
     lammps_command: str = "lmp"
     execution_mode: ExecutionMode = ExecutionMode.LOCAL
-    mpi_launcher: str = "mpiexec" if os.name == "nt" else "mpirun"
+    mpi_launcher: str = _default_mpi_launcher()
     mpi_processes: int = 1
     slurm_submit: str = "sbatch"
     timeout_seconds: int = 86_400
