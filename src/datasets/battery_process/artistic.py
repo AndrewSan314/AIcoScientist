@@ -1,14 +1,60 @@
 from __future__ import annotations
 
 from .base import BatteryDatasetMetadata, NormalizedRunAdapter
-from src.process.stages import ProcessStage
+from src.process.contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
+from src.process.simulators.artistic.config import PINNED_COMMIT, SOURCE_URL
+from src.process.simulators.artistic.schemas import ArtisticRecipe, DryingMode
+from src.process.simulators.base import SimulationResult, SimulationStatus
+from src.process.stages import ProcessStage, STAGE_ORDER
 
 
 class ArtisticSimulationAdapter(NormalizedRunAdapter):
     def metadata(self) -> BatteryDatasetMetadata:
         return BatteryDatasetMetadata(
             dataset_id="artistic", display_name="ARTISTIC Physics Stress", chemistry="lithium-ion electrode simulation",
-            evidence_kind="SIMULATED_PHYSICS", source_doi="10.5281/zenodo.5956128", version="5956128", license="CC BY-NC-SA 4.0",
-            process_stages=(ProcessStage.MIXING, ProcessStage.DRYING, ProcessStage.CALENDERING), modalities=("PROCESS_TABULAR", "XCT_VOLUME"),
+            evidence_kind="SIMULATED_PHYSICS", source_doi="not applicable: pinned public GitHub source", version=PINNED_COMMIT, license="CC BY-NC-SA 4.0",
+            process_stages=(ProcessStage.MIXING, ProcessStage.DRYING, ProcessStage.CALENDERING), modalities=("PROCESS_TABULAR",),
             recommended_splits=("OOD_FACTOR_EXTREME",), optimization_capable=True, multimodal_capable=True,
-            limitations="Zenodo record is source-audited but its simulation files are restricted; simulated evidence only.")
+            limitations="Runs are public-source simulated physics, never physical observations; training is blocked until a validated real execution exists.")
+
+    @staticmethod
+    def from_simulation(result: SimulationResult, recipe: ArtisticRecipe) -> BatteryProcessRun:
+        if result.status != SimulationStatus.SUCCESS:
+            raise ValueError(f"ARTISTIC result is not valid simulated physics: {result.status}")
+        provenance = ProvenanceRecord(
+            evidence_kind="SIMULATED_PHYSICS", source_url=SOURCE_URL, source_version=PINNED_COMMIT,
+            raw_hashes=dict(result.provenance.get("rendered_source_file_hashes", {})), adapter_version="2",
+            processing_parameters={"manifest": str(result.run_directory / "manifest.json"), "status": str(result.status), "patches": result.provenance.get("patches", [])},
+        )
+        stages: list[StageRecord] = [
+            _stage("artistic-mixing", ProcessStage.MIXING, _slurry_controls(recipe), result.stage_outputs.get("slurry", {}), None, provenance),
+        ]
+        if recipe.drying_mode:
+            stages.append(_stage("artistic-drying", ProcessStage.DRYING, _drying_controls(recipe), result.stage_outputs.get("drying", {}), "artistic-mixing", provenance))
+        if recipe.calendering:
+            stages.append(_stage("artistic-calendering", ProcessStage.CALENDERING, _calendering_controls(recipe), result.stage_outputs.get("calendering", {}), "artistic-drying", provenance))
+        return BatteryProcessRun(
+            run_id=result.run_id, cell_id=None, batch_id=result.run_id, chemistry_id="ARTISTIC_NMC",
+            equipment_context={"simulator": "LAMMPS", "runner": result.provenance.get("commands", [])}, environment_context={}, stages=stages,
+            final_kpis={name: MeasurementValue(value, source_name=name) for name, value in result.final_outputs.items()}, provenance=provenance,
+        )
+
+
+def _stage(stage_id: str, stage_type: ProcessStage, controls: dict[str, object], properties: dict[str, float], upstream: str | None, provenance: ProvenanceRecord) -> StageRecord:
+    return StageRecord(
+        stage_id=stage_id, stage_type=stage_type, sequence_index=STAGE_ORDER[stage_type], upstream_stage_id=upstream,
+        controls={name: ParameterValue(value, source_name=name) for name, value in controls.items()},
+        intermediate_properties={name: MeasurementValue(value, source_name=name) for name, value in properties.items()}, modalities=[], provenance=provenance,
+    )
+
+
+def _slurry_controls(recipe: ArtisticRecipe) -> dict[str, object]:
+    return dict(recipe.slurry.template_values())
+
+
+def _drying_controls(recipe: ArtisticRecipe) -> dict[str, object]:
+    return dict(recipe.heterogeneous_drying.template_values()) if recipe.drying_mode == DryingMode.HETEROGENEOUS and recipe.heterogeneous_drying else {"drying_mode": DryingMode.HOMOGENEOUS.value}
+
+
+def _calendering_controls(recipe: ArtisticRecipe) -> dict[str, object]:
+    return {"compression_degree": recipe.calendering.compression_degree, "cbd_nanoporosity_decrease": recipe.calendering.cbd_nanoporosity_decrease, "relaxation": recipe.calendering.relaxation, "perform_energy_minimization": recipe.calendering.perform_energy_minimization} if recipe.calendering else {}

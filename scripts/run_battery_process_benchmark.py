@@ -266,9 +266,15 @@ def main() -> None:
         audits.append(audit)
         if not report.valid:
             unavailable.append(dataset_id)
+            artistic_pending = dataset_id == "artistic"
             blocked = {
-                "dataset_id": dataset_id, "status": "BLOCKED_SOURCE_ACCESS", "reason": list(report.errors),
-                "simulation_manifest": {"status": "NOT_GENERATED", "reason": "official simulator raw files require source access"},
+                "dataset_id": dataset_id,
+                "status": "BLOCKED_NO_VALIDATED_SIMULATION" if artistic_pending else "BLOCKED_SOURCE_ACCESS",
+                "reason": (["Pinned public ARTISTIC source is available, but no valid real LAMMPS execution has been normalized; simulated data are not fabricated."] if artistic_pending else []) + list(report.errors),
+                "simulation_manifest": {
+                    "status": "PREPARED_NOT_EXECUTED" if artistic_pending else "NOT_GENERATED",
+                    "reason": "a full source-backed ARTISTIC execution is required before model fitting" if artistic_pending else "source files require audit",
+                },
             }
             (root / "stage_ablations" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
             (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")

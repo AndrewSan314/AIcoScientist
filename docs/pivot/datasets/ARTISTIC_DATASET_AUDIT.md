@@ -1,6 +1,5 @@
-# ARTISTIC physics-stress dataset audit
+# ARTISTIC physics-stress source audit
 
-- Source: [Zenodo DOI 10.5281/zenodo.5956128](https://zenodo.org/records/5956128), checked 2026-09-11; CC BY-NC-SA 4.0.
-- Record scope: source code for the ARTISTIC online calculator workflow, run sequentially as slurry, drying, then calendering. The record describes inputs in `user_inputs*` files and 3D electrode/manufacturing outputs.
-- Access: the public record exposes metadata but restricts all files behind authenticated access/request access. No archive, schema, sample count, or hash was inferable without credentials.
-- Policy: `ArtisticSimulationAdapter` remains fail-closed. It must never synthesize records, label simulated output as physical, or claim an executable benchmark until source files are supplied through authorized access.
+- Public model code: pinned GitHub commit `5af9e0345673fac557c479ee8f4a0727e442c1fa`; see `ARTISTIC_SOURCE_AUDIT.md`.
+- Restricted artifact: [Zenodo DOI 10.5281/zenodo.5956128](https://zenodo.org/records/5956128) remains distinct and is not used as a substitute for the public source tree.
+- Policy: source-backed outputs are `SIMULATED_PHYSICS`, never physical observations. The adapter stays fail-closed until a real LAMMPS execution produces and validates artifacts.

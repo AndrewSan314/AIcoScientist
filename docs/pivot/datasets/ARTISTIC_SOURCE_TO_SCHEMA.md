@@ -1,12 +1,14 @@
-# ARTISTIC source-to-schema status
+# ARTISTIC source-to-schema mapping
 
-No source-to-schema field mapping exists yet because the record files are restricted. The reserved mapping contract is:
+The public pinned source is rendered only at its documented `@input@` placeholders. No extra optimization controls are invented.
 
 | Expected ARTISTIC source evidence | Intended normalized destination |
 | --- | --- |
-| `user_inputs*` slurry settings | `MIXING.controls` |
-| Drying input/output fields | `DRYING.controls` and intermediate properties |
-| Calendering input/output fields | `CALENDERING.controls` and final simulated KPIs |
-| Source-linked 3D electrode output | `XCT_VOLUME` modality with `SIMULATED_PHYSICS` provenance |
+| `Slurry/user_inputs.txt`: AM population, diameters/fractions, CBD diameter, solid content, mass, AM/CBD ratios, thickness, nanoporosity | `MIXING.controls` |
+| `Slurry/density_slurry.out`, `coord_out_slurry.data` | `MIXING.intermediate_properties` |
+| `Drying_heterogeneous/user_inputs_evHet.txt`: zone count, evaporation mode/rates | `DRYING.controls` |
+| `AM_loading.out`, `coord_out_electrode.data` | `DRYING.intermediate_properties` |
+| `Calendering/user_inputs_cal.txt`: compression, CBD nanoporosity decrease, relaxation, minimization | `CALENDERING.controls` |
+| `initial_lz`, `new_CBD_nanoporosity`, `coord_out_cal.data` | `CALENDERING.intermediate_properties` and final simulated KPIs |
 
-Populate this table only after authorized raw files are downloaded, hashed, and audited.
+Raw source hashes, rendered-input hashes, patch records, executable versions, commands and parsed output hashes are written into each isolated `outputs/artistic_runs/<run_id>/manifest.json`.
