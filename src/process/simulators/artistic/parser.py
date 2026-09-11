@@ -16,6 +16,8 @@ SOURCE_TO_ROLE = {
 _ATOMS = re.compile(r"^\s*(\d+)\s+atoms\s*$")
 _BOUNDS = re.compile(r"^\s*(\S+)\s+(\S+)\s+[xyz]lo\s+[xyz]hi\s*$")
 _LOST = re.compile(r"Lost atoms:\s*original\s+(\d+)\s+current\s+(\d+)", re.I)
+_THERMO_HEADER = re.compile(r"^\s*Step(?:\s|$)", re.I)
+_THERMO_ROW = re.compile(r"^\s*(\d+)(?:\s|$)")
 
 
 @dataclass(frozen=True)
@@ -59,6 +61,24 @@ def parse_artistic_output(workspace: Path) -> ParsedArtisticOutput:
     final_path = workspace / ("coord_out_cal.data" if (workspace / "coord_out_cal.data").is_file() else "coord_out_electrode.data")
     final_atoms = _lammps_atoms(final_path, errors)
     return ParsedArtisticOutput(stages, final_kpis, diagnostics, initial_atoms, final_atoms, _lost_from_logs(workspace), tuple(errors))
+
+
+def parse_thermo_checkpoints(workspace: Path) -> tuple[int, ...]:
+    """Return only step numbers actually printed by LAMMPS thermo logs."""
+    steps: set[int] = set()
+    for path in workspace.glob("*.log"):
+        in_thermo = False
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if _THERMO_HEADER.search(line):
+                in_thermo = True
+                continue
+            if in_thermo:
+                match = _THERMO_ROW.match(line)
+                if match:
+                    steps.add(int(match.group(1)))
+                elif line.strip().startswith(("Loop time", "ERROR", "Per MPI rank")):
+                    in_thermo = False
+    return tuple(sorted(steps))
 
 
 def _present(**values: float | None) -> dict[str, float]:

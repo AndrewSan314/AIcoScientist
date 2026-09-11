@@ -13,8 +13,8 @@ from pathlib import Path
 
 from src.process.simulators.base import SimulationResult, SimulationStatus
 
-from .config import ArtisticRunConfig, ExecutionMode, MPIEnvironmentError, validate_mpi_environment
-from .parser import parse_artistic_output
+from .config import ArtisticRunConfig, ExecutionMode, FidelityMode, MPIEnvironmentError, validate_mpi_environment
+from .parser import parse_artistic_output, parse_thermo_checkpoints
 from .provenance import sha256 as _streaming_sha256
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
@@ -44,6 +44,8 @@ class ArtisticSimulator:
 
     def execute(self, recipe: ArtisticRecipe, *, run_id: str | None = None) -> SimulationResult:
         run_id = run_id or uuid.uuid4().hex
+        if self.config.fidelity_mode == FidelityMode.REFERENCE and not self.config.confirm_reference_execution:
+            raise ValueError("reference ARTISTIC execution requires explicit confirm_reference_execution=True")
         self.config.verify_source_pin()
         estimate = self.preflight(recipe)
         state: RenderState | None = None
@@ -160,6 +162,19 @@ class ArtisticSimulator:
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
         }
+        progress = _progress(state.workspace if state else None, commands, self.config.requested_slurry_steps, self.config.dump_interval_steps, status)
+        payload.update({
+            "fidelity_mode": self.config.fidelity_mode.value,
+            "reference_slurry_steps": 20_000_000,
+            "requested_slurry_steps": self.config.requested_slurry_steps,
+            "completed_slurry_steps": progress["completed_steps"],
+            "dump_interval_steps": self.config.dump_interval_steps,
+            "fidelity_identity": self.config.fidelity_identity,
+            "early_termination": progress["early_termination"],
+            "progress": progress,
+            "checkpoints": [{"step": step} for step in progress["checkpoint_steps"]],
+            "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE" if self.config.fidelity_mode == FidelityMode.SHORT_HORIZON else "NOT_EVALUATED",
+        })
         write_json(run_directory / "manifest.json", payload)
         return payload
 
@@ -267,3 +282,23 @@ def _assert_hashes(workspace: Path, expected: dict[str, str]) -> None:
     mismatched = [name for name, digest in expected.items() if actual[name] != digest]
     if mismatched:
         raise RuntimeError(f"stage-lineage hash mismatch: {', '.join(mismatched)}")
+
+
+def _progress(workspace: Path | None, commands: list[dict[str, object]], requested_steps: int, dump_interval_steps: int, status: SimulationStatus | None) -> dict[str, object]:
+    checkpoints = list(parse_thermo_checkpoints(workspace)) if workspace else []
+    completed = max(checkpoints, default=0)
+    wall_seconds = sum(float(command.get("wall_seconds", 0.0)) for command in commands if command.get("stage") == "slurry")
+    steps_per_second = completed / wall_seconds if completed and wall_seconds > 0 else None
+    remaining = max(0, requested_steps - completed)
+    estimate = remaining / steps_per_second if steps_per_second else None
+    return {
+        "requested_steps": requested_steps,
+        "completed_steps": completed,
+        "checkpoint_steps": checkpoints,
+        "dump_interval_steps": dump_interval_steps,
+        "last_thermo_step": completed or None,
+        "wall_seconds": wall_seconds,
+        "steps_per_second": steps_per_second,
+        "estimated_remaining_seconds": estimate,
+        "early_termination": status is not None and completed < requested_steps,
+    }

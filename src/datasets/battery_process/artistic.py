@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .base import BatteryDatasetMetadata, NormalizedRunAdapter
 from src.process.contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
-from src.process.simulators.artistic.config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SOURCE_URL
+from src.process.simulators.artistic.config import FidelityMode, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, REFERENCE_SLURRY_STEPS, SOURCE_URL
 from src.process.simulators.artistic.schemas import ArtisticRecipe, DryingMode, recipe_fingerprint
 from src.process.simulators.base import SimulationResult, SimulationStatus
 from src.process.stages import ProcessStage, STAGE_ORDER
@@ -21,6 +21,7 @@ from src.process.stages import ProcessStage, STAGE_ORDER
 class ArtisticSimulationAdapter(NormalizedRunAdapter):
     ADAPTER_VERSION = "3"
     SCHEMA_VERSION = "3"
+    ACCEPTED_EVIDENCE_KINDS = ("SIMULATED_PHYSICS", "SIMULATED_STRESS")
 
     def metadata(self) -> BatteryDatasetMetadata:
         return BatteryDatasetMetadata(
@@ -36,8 +37,17 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             raise ValueError(f"ARTISTIC result is not valid simulated physics: {result.status}")
         if result.provenance.get("checked_out_commit") != PINNED_COMMIT or result.provenance.get("source_tree_hash") != PINNED_SOURCE_TREE_HASH:
             raise ValueError("ARTISTIC simulation provenance is not pinned to the audited source")
+        fidelity_mode = result.provenance.get("fidelity_mode", FidelityMode.REFERENCE.value)
+        requested_steps = int(result.provenance.get("requested_slurry_steps", REFERENCE_SLURRY_STEPS))
+        if fidelity_mode == FidelityMode.REFERENCE.value and requested_steps != REFERENCE_SLURRY_STEPS:
+            raise ValueError("reference ARTISTIC provenance must report exactly 20,000,000 slurry steps")
+        if fidelity_mode == FidelityMode.SHORT_HORIZON.value and not 0 < requested_steps < REFERENCE_SLURRY_STEPS:
+            raise ValueError("short-horizon ARTISTIC provenance must report an explicit sub-reference horizon")
+        if fidelity_mode == FidelityMode.SHORT_HORIZON.value and result.provenance.get("reference_equivalence_status", "REFERENCE_NOT_AVAILABLE") != "REFERENCE_NOT_AVAILABLE":
+            raise ValueError("short-horizon ARTISTIC output cannot claim reference equivalence")
+        evidence_kind = "SIMULATED_STRESS" if fidelity_mode == FidelityMode.SHORT_HORIZON.value else "SIMULATED_PHYSICS"
         provenance = ProvenanceRecord(
-            evidence_kind="SIMULATED_PHYSICS", source_url=SOURCE_URL, source_version=PINNED_COMMIT,
+            evidence_kind=evidence_kind, source_url=SOURCE_URL, source_version=PINNED_COMMIT,
             raw_hashes=dict(result.provenance.get("rendered_source_file_hashes", {})), adapter_version=ArtisticSimulationAdapter.ADAPTER_VERSION,
             processing_parameters={
                 "simulation_manifest": str(result.run_directory / "manifest.json"), "simulation_manifest_sha256": result.provenance.get("simulation_manifest_sha256"),
@@ -46,6 +56,11 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
                 "physics_output_hashes": dict(result.provenance.get("output_hashes", {})), "stage_lineage": result.provenance.get("stage_lineage", []),
                 "recipe_fingerprint": recipe_fingerprint(recipe), "executable_versions": dict(result.provenance.get("executable_versions", {})),
                 "executable_identity": dict(result.provenance.get("executable_identity", {})),
+                "fidelity_mode": fidelity_mode, "reference_slurry_steps": result.provenance.get("reference_slurry_steps", REFERENCE_SLURRY_STEPS),
+                "requested_slurry_steps": requested_steps,
+                "completed_slurry_steps": result.provenance.get("completed_slurry_steps", 0),
+                "dump_interval_steps": result.provenance.get("dump_interval_steps"), "fidelity_identity": result.provenance.get("fidelity_identity"),
+                "reference_equivalence_status": result.provenance.get("reference_equivalence_status", "NOT_EVALUATED"),
             },
         )
         stages: list[StageRecord] = [
@@ -84,7 +99,11 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             raise ValueError("successful ARTISTIC simulation manifest is not pinned to the audited source")
         manifest_hash = hashlib.sha256(source_manifest_bytes).hexdigest()
         manifest_rel = Path("raw") / "simulation_manifests" / f"{result.run_id}-{manifest_hash}.json"
-        provenance = {**result.provenance, "simulation_manifest_sha256": manifest_hash, "normalized_simulation_manifest": manifest_rel.as_posix()}
+        manifest_fidelity = {key: source_manifest[key] for key in (
+            "fidelity_mode", "reference_slurry_steps", "requested_slurry_steps", "completed_slurry_steps",
+            "dump_interval_steps", "fidelity_identity", "reference_equivalence_status",
+        ) if key in source_manifest}
+        provenance = {**result.provenance, **manifest_fidelity, "simulation_manifest_sha256": manifest_hash, "normalized_simulation_manifest": manifest_rel.as_posix()}
         result = replace(result, provenance=provenance)
         run = cls.from_simulation(result, recipe)
         adapter.root.parent.mkdir(parents=True, exist_ok=True)
@@ -102,14 +121,20 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
         entries = aggregate.get("normalized_runs", [])
         if not isinstance(entries, list):
             raise ValueError("ARTISTIC aggregate manifest has invalid normalized_runs")
+        fidelity_identity = str(result.provenance.get("fidelity_identity") or "REFERENCE")
+        cache_identity = hashlib.sha256(json.dumps({"run_id": run.run_id, "recipe_fingerprint": recipe_fingerprint(recipe), "fidelity_identity": fidelity_identity}, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         entry = {
             "run_id": run.run_id, "recipe_fingerprint": recipe_fingerprint(recipe),
+            "cache_identity": cache_identity, "fidelity_identity": fidelity_identity,
             "simulation_manifest": manifest_rel.as_posix(), "simulation_manifest_sha256": manifest_hash,
             "source_simulation_manifest": str(source_manifest_path), "source_commit": result.provenance.get("checked_out_commit"),
             "source_tree_hash": result.provenance.get("source_tree_hash"), "patches": result.provenance.get("patches", []),
             "rendered_input_hashes": hashes, "physics_output_hashes": result.provenance.get("output_hashes", {}),
             "stage_lineage": result.provenance.get("stage_lineage", []), "executable_versions": result.provenance.get("executable_versions", {}),
             "executable_identity": result.provenance.get("executable_identity", {}),
+            "fidelity_mode": result.provenance.get("fidelity_mode", FidelityMode.REFERENCE.value),
+            "requested_slurry_steps": result.provenance.get("requested_slurry_steps", REFERENCE_SLURRY_STEPS),
+            "reference_equivalence_status": result.provenance.get("reference_equivalence_status", "NOT_EVALUATED"),
         }
         aggregate = {"official_dataset_source": SOURCE_URL, "license": "CC BY-NC-SA 4.0", "pinned_upstream_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH, "normalized_runs": [*entries, entry]}
         all_hashes = _aggregate_hashes(aggregate["normalized_runs"])

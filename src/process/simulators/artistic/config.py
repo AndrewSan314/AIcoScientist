@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 import os
+import hashlib
+import json
 from pathlib import Path
 import re
 import shutil
@@ -33,6 +35,14 @@ class ExecutionMode(StrEnum):
     SLURM = "slurm"
 
 
+class FidelityMode(StrEnum):
+    REFERENCE = "REFERENCE"
+    SHORT_HORIZON = "SHORT_HORIZON"
+
+
+REFERENCE_SLURRY_STEPS = 20_000_000
+
+
 def _default_mpi_launcher() -> str:
     if os.name != "nt":
         return "mpirun"
@@ -55,16 +65,43 @@ class ArtisticRunConfig:
     apply_verified_patches: bool = True
     max_particle_count: int = 1_000_000
     allow_unsafe_particle_count: bool = False
+    fidelity_mode: FidelityMode = FidelityMode.REFERENCE
+    slurry_steps: int | None = None
+    dump_interval_steps: int = 1_000_000
+    confirm_reference_execution: bool = True
 
     def __post_init__(self) -> None:
+        mode = FidelityMode(self.fidelity_mode)
+        object.__setattr__(self, "fidelity_mode", mode)
         if self.mpi_processes < 1 or self.timeout_seconds < 1 or self.cleanup_timeout_seconds <= 0 or self.max_particle_count < 1:
             raise ValueError("mpi_processes, timeout_seconds, cleanup_timeout_seconds, and max_particle_count must be positive")
         if not 0 <= self.lost_particle_tolerance <= 1:
             raise ValueError("lost_particle_tolerance must be in [0, 1]")
+        if self.dump_interval_steps < 1:
+            raise ValueError("dump_interval_steps must be positive")
+        if mode == FidelityMode.REFERENCE:
+            if self.slurry_steps is not None and self.slurry_steps != REFERENCE_SLURRY_STEPS:
+                raise ValueError(f"reference ARTISTIC fidelity requires exactly {REFERENCE_SLURRY_STEPS:,} slurry steps")
+        elif self.slurry_steps is None or not 0 < self.slurry_steps < REFERENCE_SLURRY_STEPS:
+            raise ValueError(f"short-horizon ARTISTIC fidelity requires explicit slurry_steps below {REFERENCE_SLURRY_STEPS:,}")
 
     @property
     def source_tree(self) -> Path:
         return self.source_root / "NMC" / "Updated version"
+
+    @property
+    def requested_slurry_steps(self) -> int:
+        return REFERENCE_SLURRY_STEPS if self.fidelity_mode == FidelityMode.REFERENCE else int(self.slurry_steps)
+
+    @property
+    def fidelity_identity(self) -> str:
+        payload = {
+            "mode": self.fidelity_mode.value,
+            "reference_slurry_steps": REFERENCE_SLURRY_STEPS,
+            "requested_slurry_steps": self.requested_slurry_steps,
+            "dump_interval_steps": self.dump_interval_steps,
+        }
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
     def verify_source_pin(self) -> None:
         if not self.source_tree.is_dir():

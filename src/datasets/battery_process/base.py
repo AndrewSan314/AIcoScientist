@@ -122,7 +122,8 @@ class NormalizedRunAdapter:
             seen.add(run.run_id)
             report = validate_process_run(run)
             errors.extend(f"{run.run_id}: {error}" for error in report.errors)
-            if run.provenance.evidence_kind != self.metadata().evidence_kind:
+            accepted_evidence_kinds = getattr(self, "ACCEPTED_EVIDENCE_KINDS", (self.metadata().evidence_kind,))
+            if run.provenance.evidence_kind not in accepted_evidence_kinds:
                 errors.append(f"{run.run_id}: evidence kind differs from adapter metadata")
         return ProcessValidationReport(valid=not errors, errors=tuple(errors))
 
