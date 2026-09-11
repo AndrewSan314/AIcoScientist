@@ -1,0 +1,22 @@
+{
+  "slurry": {
+    "n_am_part": 1,
+    "diameter_am_um": [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0],
+    "percent_am": [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "diameter_cbd_solid_um": 1.0,
+    "solid_content": 0.5,
+    "electrode_mass_ug": 0.1,
+    "ratio_am": 0.9,
+    "ratio_cbd": 0.1,
+    "thickness_level": 0,
+    "cbd_nanoporosity": 0.5
+  },
+  "drying_mode": "homogeneous",
+  "heterogeneous_drying": null,
+  "calendering": {
+    "compression_degree": 0.25,
+    "cbd_nanoporosity_decrease": 0.05,
+    "relaxation": true,
+    "perform_energy_minimization": false
+  }
+}

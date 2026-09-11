@@ -16,7 +16,7 @@ from .config import ArtisticRunConfig, ExecutionMode
 from .parser import parse_artistic_output
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
-from .schemas import ArtisticRecipe, DryingMode, recipe_fingerprint
+from .schemas import ArtisticRecipe, DryingMode, ParticleCountSafetyError, ParticleEstimate, estimate_particles, recipe_fingerprint
 from .validation import output_errors
 
 
@@ -28,6 +28,7 @@ class ArtisticSimulator:
         self.renderer = ArtisticRenderer(config)
 
     def prepare(self, recipe: ArtisticRecipe, *, run_id: str | None = None) -> Path:
+        estimate = self.preflight(recipe)
         state = self.renderer.prepare_workspace(run_id or uuid.uuid4().hex)
         self.renderer.stage(state, "slurry", recipe.template_values)
         if recipe.drying_mode == DryingMode.HOMOGENEOUS:
@@ -36,12 +37,13 @@ class ArtisticSimulator:
             self.renderer.stage(state, "drying_heterogeneous", recipe.template_values)
         if recipe.calendering:
             self.renderer.stage(state, "calendering", recipe.template_values)
-        self._write_manifest(state, recipe, commands=[], status=None, diagnostics=())
+        self._write_manifest(state, recipe, particle_estimate=estimate, commands=[], status=None, diagnostics=())
         return state.workspace.parent
 
     def execute(self, recipe: ArtisticRecipe, *, run_id: str | None = None) -> SimulationResult:
         run_id = run_id or uuid.uuid4().hex
         self.config.verify_source_pin()
+        estimate = self.preflight(recipe)
         state: RenderState | None = None
         commands: list[dict[str, object]] = []
         lineage: list[dict[str, object]] = []
@@ -88,8 +90,17 @@ class ArtisticSimulator:
             result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(f"command exited {exc.returncode}: {exc.cmd}",))
         except RuntimeError as exc:
             result = SimulationResult(SimulationStatus.NUMERICAL_FAILURE, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
-        provenance = self._write_manifest(state, recipe, run_id=run_id, commands=commands, lineage=lineage, status=result.status, diagnostics=result.diagnostics)
+        provenance = self._write_manifest(state, recipe, run_id=run_id, particle_estimate=estimate, commands=commands, lineage=lineage, status=result.status, diagnostics=result.diagnostics)
         return SimulationResult(result.status, result.run_id, result.run_directory, result.stage_outputs, result.final_outputs, provenance, result.diagnostics)
+
+    def preflight(self, recipe: ArtisticRecipe) -> ParticleEstimate:
+        estimate = estimate_particles(recipe)
+        if estimate.total_particles > self.config.max_particle_count and not self.config.allow_unsafe_particle_count:
+            raise ParticleCountSafetyError(
+                f"predicted ARTISTIC particle count {estimate.total_particles:,} exceeds configured safety threshold "
+                f"{self.config.max_particle_count:,}; rerun only with explicit allow_unsafe_particle_count"
+            )
+        return estimate
 
     def _invoke(self, workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
         command = [sys.executable, input_file] if python else self._lammps_command(input_file)
@@ -128,14 +139,14 @@ class ArtisticSimulator:
         script.write_text("#!/bin/sh\nset -eu\n" + " ".join(_shell_quote(part) for part in command) + "\n", encoding="utf-8", newline="\n")
         return [self.config.slurm_submit, "--wait", str(script)]
 
-    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, commands: list[dict[str, object]], lineage: list[dict[str, object]] | None = None, status: SimulationStatus | None, diagnostics: tuple[str, ...]) -> dict[str, object]:
+    def _write_manifest(self, state: RenderState | None, recipe: ArtisticRecipe, *, run_id: str | None = None, particle_estimate: ParticleEstimate, commands: list[dict[str, object]], lineage: list[dict[str, object]] | None = None, status: SimulationStatus | None, diagnostics: tuple[str, ...]) -> dict[str, object]:
         run_directory = state.workspace.parent if state else self.config.output_root / (run_id or "unprepared")
         run_directory.mkdir(parents=True, exist_ok=True)
         source = source_provenance(self.config.source_root)
         outputs = {str(path.relative_to(run_directory)).replace("\\", "/"): _sha256(path) for path in run_directory.rglob("*") if path.is_file() and path.name != "manifest.json"}
         payload: dict[str, object] = {
             **source, "license": "CC BY-NC-SA 4.0", "ai_co_scientist_commit": _git_head(),
-            "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
+            "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "particle_preflight": particle_estimate.as_dict(), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
             "commands": commands, "executable_versions": {"python": sys.version, "numpy": _package_version("numpy"), "numba": _package_version("numba"), "lammps": _version(self.config.lammps_command)},
             "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "python_executable": sys.executable},
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],

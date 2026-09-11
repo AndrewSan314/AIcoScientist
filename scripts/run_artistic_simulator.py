@@ -16,6 +16,8 @@ from src.process.simulators.artistic.config import PINNED_COMMIT
 def _recipe(path: Path) -> ArtisticRecipe:
     raw = json.loads(path.read_text(encoding="utf-8"))
     slurry = dict(raw["slurry"])
+    if "dry_mass_mg" in slurry:
+        raise ValueError("legacy dry_mass_mg is unsupported; migrate the recipe to electrode_mass_ug (the upstream source divides it by 1E6)")
     slurry["diameter_am_um"] = tuple(slurry["diameter_am_um"])
     slurry["percent_am"] = tuple(slurry["percent_am"])
     return ArtisticRecipe(
@@ -33,12 +35,20 @@ def main() -> int:
     parser.add_argument("--output-root", type=Path, default=ArtisticRunConfig().output_root)
     parser.add_argument("--lammps-command", default="lmp")
     parser.add_argument("--mode", choices=[mode.value for mode in ExecutionMode], default=ExecutionMode.LOCAL.value)
+    parser.add_argument("--mpi-processes", type=int, default=ArtisticRunConfig().mpi_processes)
+    parser.add_argument("--mpi-launcher", default=ArtisticRunConfig().mpi_launcher)
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument("--preflight", action="store_true", help="Report predicted ARTISTIC particle and memory requirements without rendering or running.")
+    parser.add_argument("--max-particle-count", type=int, default=ArtisticRunConfig().max_particle_count)
+    parser.add_argument("--allow-unsafe-particle-count", action="store_true", help="Explicitly override the particle-count safety threshold.")
     parser.add_argument("--normalize-root", type=Path, default=Path("data/external/artistic") / PINNED_COMMIT)
     parser.add_argument("--no-normalize", action="store_true", help="Do not write a successful, validated run to the ARTISTIC adapter cache.")
     args = parser.parse_args()
-    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode)))
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count))
     recipe = _recipe(args.recipe)
+    if args.preflight:
+        print(json.dumps(simulator.preflight(recipe).as_dict(), indent=2))
+        return 0
     if args.prepare_only:
         print(simulator.prepare(recipe, run_id=args.run_id))
         return 0

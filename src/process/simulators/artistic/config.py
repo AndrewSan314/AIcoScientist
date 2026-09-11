@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+import os
 from pathlib import Path
 import subprocess
 
@@ -27,16 +28,18 @@ class ArtisticRunConfig:
     output_root: Path = Path("outputs/artistic_runs")
     lammps_command: str = "lmp"
     execution_mode: ExecutionMode = ExecutionMode.LOCAL
-    mpi_launcher: str = "mpirun"
+    mpi_launcher: str = "mpiexec" if os.name == "nt" else "mpirun"
     mpi_processes: int = 1
     slurm_submit: str = "sbatch"
     timeout_seconds: int = 86_400
     lost_particle_tolerance: float = 0.0
     apply_verified_patches: bool = True
+    max_particle_count: int = 1_000_000
+    allow_unsafe_particle_count: bool = False
 
     def __post_init__(self) -> None:
-        if self.mpi_processes < 1 or self.timeout_seconds < 1:
-            raise ValueError("mpi_processes and timeout_seconds must be positive")
+        if self.mpi_processes < 1 or self.timeout_seconds < 1 or self.max_particle_count < 1:
+            raise ValueError("mpi_processes, timeout_seconds, and max_particle_count must be positive")
         if not 0 <= self.lost_particle_tolerance <= 1:
             raise ValueError("lost_particle_tolerance must be in [0, 1]")
 

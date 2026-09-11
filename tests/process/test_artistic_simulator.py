@@ -11,7 +11,7 @@ import src.process.simulators.artistic.config as config_module
 import src.process.simulators.artistic.provenance as provenance_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
-from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, DryingMode, SlurryRecipe
+from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, DryingMode, ParticleCountSafetyError, SlurryRecipe, estimate_particles
 from src.process.simulators.artistic.config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError
 from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output
 from src.process.simulators.artistic.validation import output_errors
@@ -21,7 +21,7 @@ from src.process.stages import ProcessStage
 
 
 def _slurry() -> SlurryRecipe:
-    return SlurryRecipe(1, (5.0,) * 10, (1.0,) + (0.0,) * 9, 0.1, 0.5, 1.0, 0.9, 0.1, 0, 0.5)
+    return SlurryRecipe(1, (5.0,) * 10, (1.0,) + (0.0,) * 9, 1.0, 0.5, 0.1, 0.9, 0.1, 0, 0.5)
 
 
 def _recipe() -> ArtisticRecipe:
@@ -93,9 +93,21 @@ def test_renderer_patch_is_workspace_only_and_run_ids_are_isolated(pinned_source
 
 
 def test_recipe_validation_and_actual_minimization_mapping() -> None:
-    with pytest.raises(ValueError, match="sum to one"): SlurryRecipe(2, (5.0,) * 10, (0.4, 0.4) + (0.0,) * 8, 0.1, 0.5, 1.0, 0.9, 0.1, 0, 0.5)
+    with pytest.raises(ValueError, match="sum to one"): SlurryRecipe(2, (5.0,) * 10, (0.4, 0.4) + (0.0,) * 8, 1.0, 0.5, 0.1, 0.9, 0.1, 0, 0.5)
     assert CalenderingRecipe(0.2, 0, False, True).template_values()["minimize"] == 1
     assert CalenderingRecipe(0.2, 0, False, False).template_values()["minimize"] == 0
+
+
+def test_particle_preflight_uses_upstream_microgram_semantics_and_fails_closed(pinned_source: Path, tmp_path: Path) -> None:
+    estimate = estimate_particles(_recipe())
+    assert (estimate.n_am, estimate.n_cbd, estimate.total_particles) == (295, 21220, 21515)
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", max_particle_count=20_000))
+    with pytest.raises(ParticleCountSafetyError, match="exceeds configured safety threshold"):
+        simulator.preflight(_recipe())
+    with pytest.raises(ParticleCountSafetyError, match="exceeds configured safety threshold"):
+        simulator.prepare(_recipe(), run_id="blocked-before-render")
+    assert not (tmp_path / "runs" / "blocked-before-render").exists()
+    assert ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, max_particle_count=20_000, allow_unsafe_particle_count=True)).preflight(_recipe()).total_particles == 21515
 
 
 def test_lammps_version_skips_blank_banner_lines(monkeypatch: pytest.MonkeyPatch) -> None:

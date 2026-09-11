@@ -15,8 +15,8 @@ from src.process.stages import ProcessStage, STAGE_ORDER
 
 
 class ArtisticSimulationAdapter(NormalizedRunAdapter):
-    ADAPTER_VERSION = "2"
-    SCHEMA_VERSION = "2"
+    ADAPTER_VERSION = "3"
+    SCHEMA_VERSION = "3"
 
     def metadata(self) -> BatteryDatasetMetadata:
         return BatteryDatasetMetadata(
@@ -34,7 +34,7 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
             raise ValueError("ARTISTIC simulation provenance is not pinned to the audited source")
         provenance = ProvenanceRecord(
             evidence_kind="SIMULATED_PHYSICS", source_url=SOURCE_URL, source_version=PINNED_COMMIT,
-            raw_hashes=dict(result.provenance.get("rendered_source_file_hashes", {})), adapter_version="2",
+            raw_hashes=dict(result.provenance.get("rendered_source_file_hashes", {})), adapter_version=ArtisticSimulationAdapter.ADAPTER_VERSION,
             processing_parameters={
                 "simulation_manifest": str(result.run_directory / "manifest.json"), "simulation_manifest_sha256": result.provenance.get("simulation_manifest_sha256"),
                 "status": str(result.status), "source_commit": result.provenance.get("checked_out_commit"), "source_tree_hash": result.provenance.get("source_tree_hash"),
