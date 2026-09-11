@@ -25,6 +25,7 @@ class MASPOProcessStateModel(nn.Module):
         self.empty_modality_state = nn.Parameter(torch.empty(embedding_dim))
         nn.init.normal_(self.empty_modality_state, mean=0.0, std=0.02)
         self.stage_model = StageAwareProcessModel(state_dim, control_dim, observation_dim + embedding_dim)
+        self.initial_state = nn.Parameter(torch.zeros(state_dim))
 
     def add_final_head(self, target: str) -> None:
         self.stage_model.add_final_head(target)
