@@ -14,7 +14,7 @@ import src.process.simulators.artistic.provenance as provenance_module
 import src.process.simulators.artistic.runner as runner_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
-from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
+from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceRunEvidence, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
 from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
 from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints, parse_thermo_log
 from src.process.simulators.artistic.validation import output_errors
@@ -45,12 +45,24 @@ def _successful_result(root: Path, run_id: str, recipe: ArtisticRecipe) -> Simul
     run_directory = root / run_id; run_directory.mkdir()
     provenance = {
         "checked_out_commit": PINNED_COMMIT, "source_tree_hash": PINNED_SOURCE_TREE_HASH,
+        "fidelity_mode": "REFERENCE", "requested_slurry_steps": 20_000_000, "completed_slurry_steps": 20_000_000,
+        "dump_interval_steps": 1_000_000, "fidelity_identity": "reference-id", "reference_equivalence_status": "NOT_EVALUATED",
+        "physics_config_fingerprint": "physics", "simulation_manifest_hash": "manifest",
         "rendered_source_file_hashes": {"workspace/in_slurry.run": "input-digest"}, "patches": ["workspace-only"],
         "output_hashes": {"workspace/coord_out_cal.data": "output-digest"}, "stage_lineage": [{"boundary": "drying_to_calendering"}],
         "executable_versions": {"lammps": "LAMMPS test", "python": "Python test"}, "executable_identity": {"lammps_command": "lmp-test"},
     }
     (run_directory / "manifest.json").write_text(json.dumps(provenance), encoding="utf-8")
     return SimulationResult(SimulationStatus.SUCCESS, run_id, run_directory, {"slurry": {"slurry_density": 1.0}, "drying": {"am_loading": 2.0, "drying_porosity_bulk_percent": 10.0, "drying_porosity_all_percent": 20.0}}, {"calendered_electrode_thickness": 8.0, "calendered_cbd_nanoporosity": 0.4, "calendered_porosity_bulk_percent": 5.0, "calendered_porosity_all_percent": 15.0}, provenance)
+
+
+def _evidence(checkpoints: list[Checkpoint], mode: FidelityMode, steps: int, *, recipe: str = "recipe", physics: str = "physics", successful: bool = True) -> ConvergenceRunEvidence:
+    return ConvergenceRunEvidence(
+        run_id=f"{mode.value}-{steps}", recipe_fingerprint=recipe, pinned_commit="commit", pinned_source_tree_hash="tree",
+        physics_config_fingerprint=physics, fidelity_mode=mode, fidelity_identity=f"{mode.value}-{steps}",
+        requested_dynamic_steps=steps, dump_interval_steps=1_000_000, checkpoints=tuple(checkpoints),
+        simulation_manifest_hash=f"manifest-{mode.value}-{steps}", successful=successful,
+    )
 
 
 @pytest.fixture
@@ -120,10 +132,14 @@ def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -
     with pytest.raises(ValueError, match="explicit slurry_steps"):
         ArtisticRunConfig(fidelity_mode=FidelityMode.SHORT_HORIZON)
     config = ArtisticRunConfig(fidelity_mode=FidelityMode.REFERENCE, confirm_reference_execution=False)
-    plan = build_convergence_study_plan(config, steps_per_second=1000)
+    plan = build_convergence_study_plan(config, steps_per_second=1000, recipe=_recipe())
     assert plan.dry_run is True and all(entry["auto_launch"] is False for entry in plan.entries)
     assert plan.entries[0]["estimated_wall_seconds"] == 500.0
-    assert plan.entries[-1]["requires_explicit_reference_confirmation"] is True
+    assert plan.horizons == (500_000, 1_000_000, 2_000_000)
+    assert all(entry["requires_explicit_reference_confirmation"] is False for entry in plan.entries)
+    assert plan.entries[0]["particle_preflight"]["total_particles"] == 21517
+    assert plan.entries[0]["requested_dynamic_steps"] == 500_000
+    assert plan.entries[0]["execution_mode"] == "local" and plan.entries[0]["fidelity_identity"]
     assert ArtisticRunConfig().confirm_reference_execution is False
     with pytest.raises(ValueError, match="dump_interval_steps=1,000,000"):
         ArtisticRunConfig(dump_interval_steps=500_000)
@@ -142,7 +158,11 @@ def test_convergence_requires_stability_and_explicit_reference_agreement() -> No
     report = build_convergence_report(short, requested_steps=2_000_000)
     assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
     reference = [Checkpoint(20_000_000, {"density": 1.0})]
-    compared = build_convergence_report(short, reference_checkpoints=reference, requested_steps=2_000_000, tolerance_policy=MetricTolerancePolicy(relative_tolerances={"density": 0.01}))
+    compared = build_convergence_report(
+        short, requested_steps=2_000_000, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 2_000_000),
+        reference_evidence=_evidence(reference, FidelityMode.REFERENCE, 20_000_000),
+        tolerance_policy=MetricTolerancePolicy(relative_tolerances={"density": 0.01}),
+    )
     assert compared.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
     assert compared.available_metrics == ("density",)
     assert compared.stability_status == ConvergenceStatus.STABILITY_OBSERVED
@@ -152,10 +172,10 @@ def test_convergence_requires_stability_and_explicit_reference_agreement() -> No
 def test_convergence_rejects_far_or_unstable_short_runs() -> None:
     policy = MetricTolerancePolicy(default_relative_tolerance=0.01)
     stable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.001}), Checkpoint(3, {"density": 1.0005})]
-    far = build_convergence_report(stable, reference_checkpoints=[Checkpoint(20_000_000, {"density": 2.0})], tolerance_policy=policy)
+    far = build_convergence_report(stable, short_evidence=_evidence(stable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 2.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy)
     assert far.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
     unstable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.4}), Checkpoint(3, {"density": 1.0})]
-    close = build_convergence_report(unstable, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0})], tolerance_policy=policy)
+    close = build_convergence_report(unstable, short_evidence=_evidence(unstable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy)
     assert close.status == ConvergenceStatus.NOT_STABLE
     assert close.reference_agreement_status == ReferenceAgreementStatus.REFERENCE_WITHIN_TOLERANCE
 
@@ -163,14 +183,14 @@ def test_convergence_rejects_far_or_unstable_short_runs() -> None:
 def test_convergence_rejects_missing_metrics_missing_short_reference_and_undefined_tolerance() -> None:
     short = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.0}), Checkpoint(3, {"density": 1.0})]
     missing = build_convergence_report(
-        short, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0, "pressure": 2.0})],
+        short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0, "pressure": 2.0})], FidelityMode.REFERENCE, 20_000_000),
         tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01, required_metrics=("density", "pressure")),
     )
     assert missing.status == ConvergenceStatus.REFERENCE_METRIC_MISSING
     assert missing.missing_metrics == ("pressure",)
-    assert build_convergence_report(short, reference_checkpoints=[Checkpoint(19_000_000, {"density": 1.0})]).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
+    assert build_convergence_report(short, reference_checkpoints=[Checkpoint(19_000_000, {"density": 1.0})]).status == ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE
     assert build_convergence_report(short, reference_checkpoints=[Checkpoint(10, {"density": 1.0})], reference_steps=10).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
-    undefined = build_convergence_report(short, reference_checkpoints=[Checkpoint(20_000_000, {"density": 1.0})])
+    undefined = build_convergence_report(short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000))
     assert undefined.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
 
 
@@ -178,11 +198,25 @@ def test_convergence_uses_absolute_tolerance_for_zero_reference() -> None:
     policy = MetricTolerancePolicy(absolute_tolerances={"residual": 0.01}, required_metrics=("residual",))
     report = build_convergence_report(
         [Checkpoint(1, {"residual": 0.001}), Checkpoint(2, {"residual": 0.001}), Checkpoint(3, {"residual": 0.001})],
-        reference_checkpoints=[Checkpoint(20_000_000, {"residual": 0.0})], tolerance_policy=policy,
+        short_evidence=_evidence([Checkpoint(1, {"residual": 0.001}), Checkpoint(2, {"residual": 0.001}), Checkpoint(3, {"residual": 0.001})], FidelityMode.SHORT_HORIZON, 3),
+        reference_evidence=_evidence([Checkpoint(20_000_000, {"residual": 0.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy,
     )
     comparison = report.comparisons[0]
     assert report.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
     assert comparison.error_rule == "absolute" and comparison.relative_error is None and comparison.within_tolerance
+
+
+def test_convergence_requires_compatible_typed_run_evidence() -> None:
+    short = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.0}), Checkpoint(3, {"density": 1.0})]
+    reference = [Checkpoint(20_000_000, {"density": 1.0})]
+    report = build_convergence_report(
+        short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3, recipe="short-recipe"),
+        reference_evidence=_evidence(reference, FidelityMode.REFERENCE, 20_000_000, recipe="reference-recipe"),
+        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01),
+    )
+    assert report.status == ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE
+    with pytest.raises(ValueError, match="cannot claim the reference horizon"):
+        _evidence(short, FidelityMode.SHORT_HORIZON, 20_000_000)
 
 
 def test_recipe_validation_and_actual_minimization_mapping() -> None:
@@ -248,7 +282,7 @@ def test_thermo_progress_parser_reports_only_printed_steps(tmp_path: Path) -> No
     workspace.mkdir()
     (workspace / "slurry.log").write_text("Step Temp\n0 300\n250000 301\nLoop time of 1 on 1 procs\n", encoding="utf-8")
     parsed = parse_thermo_checkpoints(workspace)
-    assert tuple(item.step for item in parsed) == (0, 250000)
+    assert tuple(item.raw_step for item in parsed) == (0, 250000)
     assert parsed[1].metrics == {"Temp": 301.0} and parsed[1].stage == "slurry" and parsed[1].source_log == "slurry.log"
 
 
@@ -258,12 +292,77 @@ def test_thermo_progress_ignores_other_stage_logs_and_reports_malformed_rows(tmp
     (workspace / "slurry.log").write_text("Step Temp Press\n0 300 1\n250000 301 1.1\n500000 nan 1.2\n750000 303\n", encoding="utf-8")
     (workspace / "drying.log").write_text("Step Temp\n9000000 999\n", encoding="utf-8")
     parsed = parse_thermo_log(workspace, stage="slurry")
-    assert [item.step for item in parsed.checkpoints] == [0, 250000]
+    assert [item.raw_step for item in parsed.checkpoints] == [0, 250000]
     assert any("non-finite" in item for item in parsed.diagnostics)
     assert any("malformed" in item for item in parsed.diagnostics)
     progress = runner_module._progress(workspace, [{"stage": "slurry", "wall_seconds": 2.0}], 1_000_000, 250_000, None)
     assert progress["completed_steps"] == 250_000 and progress["checkpoints"][0]["metrics"] == {"Temp": 300.0, "Press": 1.0}
     assert progress["thermo_parse_diagnostics"]
+
+
+def test_thermo_progress_uses_structure_for_dynamics_relative_steps(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text(
+        "Step Temp\n0 300\n50000 301\nMinimization stats:\nconverged\nStep Temp\n90000 302\n340000 303\n590000 304\n",
+        encoding="utf-8",
+    )
+    parsed = parse_thermo_log(workspace, minimization_expected=True)
+    assert [(item.raw_step, item.dynamics_step, item.phase) for item in parsed.checkpoints] == [
+        (0, None, "minimization"), (50000, None, "minimization"),
+        (90000, 0, "dynamics"), (340000, 250000, "dynamics"), (590000, 500000, "dynamics"),
+    ]
+    progress = runner_module._progress(
+        workspace, [{"stage": "slurry", "wall_seconds": 2.0}], 20_000_000, 1_000_000, None,
+        minimization_expected=True,
+    )
+    assert progress["completed_slurry_steps"] == 500_000
+    assert progress["last_raw_lammps_step"] == 590_000
+    assert progress["checkpoint_steps"] == [0, 250_000, 500_000]
+    assert progress["steps_per_second"] is None and progress["estimated_remaining_seconds"] is None
+
+
+def test_thermo_progress_handles_no_minimization_and_multiple_headers(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text(
+        "Step Temp\n0 300\nStep Temp\n250000 301\n500000 302\n", encoding="utf-8",
+    )
+    parsed = parse_thermo_log(workspace)
+    assert [(item.raw_step, item.dynamics_step, item.phase) for item in parsed.checkpoints] == [
+        (0, 0, "dynamics"), (250000, 250000, "dynamics"), (500000, 500000, "dynamics"),
+    ]
+
+
+def test_thermo_progress_refuses_ambiguous_minimization_boundary(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text("Step Temp\n0 300\nStep Temp\n10 301\n", encoding="utf-8")
+    parsed = parse_thermo_log(workspace, minimization_expected=True)
+    assert parsed.checkpoints == () and any("ambiguous" in item for item in parsed.diagnostics)
+
+
+def test_thermo_progress_accepts_exact_dynamics_relative_reference_horizon(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "slurry.log").write_text(
+        "Step Temp\n100 300\nMinimization stats:\nStep Temp\n90000 301\n20090000 302\n", encoding="utf-8",
+    )
+    parsed = parse_thermo_log(workspace, minimization_expected=True)
+    assert parsed.checkpoints[-1].dynamics_step == 20_000_000
+
+
+def test_convergence_evidence_can_be_loaded_from_a_run_manifest() -> None:
+    manifest = {
+        "run_id": "reference", "recipe_fingerprint": "recipe", "checked_out_commit": "commit",
+        "source_tree_hash": "tree", "physics_config_fingerprint": "physics", "fidelity_mode": "REFERENCE",
+        "fidelity_identity": "identity", "requested_slurry_steps": 20_000_000, "dump_interval_steps": 1_000_000,
+        "status": "Success", "simulation_manifest_hash": "manifest",
+        "checkpoints": [{"step": None, "dynamics_step": None, "raw_step": 90000, "phase": "minimization", "metrics": {}},
+                        {"step": 20_000_000, "dynamics_step": 20_000_000, "raw_step": 20_090_000, "phase": "dynamics", "metrics": {"density": 1.0}}],
+    }
+    evidence = ConvergenceRunEvidence.from_manifest(manifest)
+    assert evidence.fidelity_mode == FidelityMode.REFERENCE and evidence.checkpoints[0].raw_step == 20_090_000
 
 
 def test_invoke_records_general_launch_oserror(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -439,13 +538,21 @@ def test_adapter_normalizes_only_pinned_success_without_target_alias(tmp_path: P
     with pytest.raises(ValueError, match="not valid simulated physics"): ArtisticSimulationAdapter.normalize_successful(failed, recipe, root=tmp_path / "cache")
 
 
+def test_adapter_requires_exact_reference_dynamics_horizon(tmp_path: Path) -> None:
+    recipe = _recipe()
+    result = _successful_result(tmp_path, "short-reference", recipe)
+    result.provenance["completed_slurry_steps"] = 19_000_000
+    with pytest.raises(ValueError, match="exactly 20,000,000 dynamics-relative"):
+        ArtisticSimulationAdapter.from_simulation(result, recipe)
+
+
 def test_short_horizon_cache_preserves_lower_fidelity_identity_and_evidence_kind(tmp_path: Path) -> None:
     recipe = _recipe()
     result = _successful_result(tmp_path, "short", recipe)
-    result.provenance.update({"fidelity_mode": "SHORT_HORIZON", "requested_slurry_steps": 500_000, "fidelity_identity": "short-id", "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE"})
+    result.provenance.update({"fidelity_mode": "SHORT_HORIZON", "requested_slurry_steps": 500_000, "completed_slurry_steps": 500_000, "fidelity_identity": "short-id", "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE"})
     manifest_path = result.run_directory / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest.update({key: result.provenance[key] for key in ("fidelity_mode", "requested_slurry_steps", "fidelity_identity", "reference_equivalence_status")})
+    manifest.update({key: result.provenance[key] for key in ("fidelity_mode", "requested_slurry_steps", "completed_slurry_steps", "fidelity_identity", "reference_equivalence_status")})
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     cache = ArtisticSimulationAdapter.normalize_successful(result, recipe, root=tmp_path / "cache")
     run = ArtisticSimulationAdapter(tmp_path / "cache").load_runs()[0]

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.metadata
+import json
 import os
+import re
 import signal
 import shutil
 import subprocess
@@ -13,7 +16,7 @@ from pathlib import Path
 
 from src.process.simulators.base import SimulationResult, SimulationStatus
 
-from .config import ArtisticRunConfig, ExecutionMode, FidelityMode, MPIEnvironmentError, validate_mpi_environment
+from .config import ArtisticRunConfig, ExecutionMode, FidelityMode, MPIEnvironmentError, physics_config_fingerprint, validate_mpi_environment
 from .parser import parse_artistic_output, parse_thermo_log
 from .provenance import sha256 as _streaming_sha256
 from .provenance import source_provenance, write_json
@@ -154,20 +157,30 @@ class ArtisticSimulator:
         source = source_provenance(self.config.source_root)
         outputs = {str(path.relative_to(run_directory)).replace("\\", "/"): _sha256(path) for path in run_directory.rglob("*") if path.is_file() and path.name != "manifest.json"}
         payload: dict[str, object] = {
-            **source, "license": "CC BY-NC-SA 4.0", "ai_co_scientist_commit": _git_head(),
+            **source, "run_id": run_id or run_directory.name, "license": "CC BY-NC-SA 4.0", "ai_co_scientist_commit": _git_head(),
             "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "particle_preflight": particle_estimate.as_dict(), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
             "commands": commands, "executable_versions": {"python": sys.version, "numpy": _package_version("numpy"), "numba": _package_version("numba"), "lammps": _version(self.config.lammps_command)},
             "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "python_executable": sys.executable},
             "mpi_environment": mpi_environment or _initial_mpi_metadata(self.config),
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
+            "physics_config_fingerprint": physics_config_fingerprint(
+                recipe_fingerprint=recipe_fingerprint(recipe),
+                source_commit=str(source.get("checked_out_commit", "")),
+                source_tree_hash=str(source.get("source_tree_hash", "")),
+                patches=state.patches if state else (),
+            ),
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
         }
-        progress = _progress(state.workspace if state else None, commands, self.config.requested_slurry_steps, self.config.dump_interval_steps, status)
+        progress = _progress(
+            state.workspace if state else None, commands, self.config.requested_slurry_steps,
+            self.config.dump_interval_steps, status,
+            minimization_expected=_slurry_minimization_expected(state.workspace) if state else None,
+        )
         payload.update({
             "fidelity_mode": self.config.fidelity_mode.value,
             "reference_slurry_steps": 20_000_000,
             "requested_slurry_steps": self.config.requested_slurry_steps,
-            "completed_slurry_steps": progress["completed_steps"],
+            "completed_slurry_steps": progress["completed_slurry_steps"],
             "dump_interval_steps": self.config.dump_interval_steps,
             "fidelity_identity": self.config.fidelity_identity,
             "early_termination": progress["early_termination"],
@@ -175,6 +188,7 @@ class ArtisticSimulator:
             "checkpoints": progress["checkpoints"],
             "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE" if self.config.fidelity_mode == FidelityMode.SHORT_HORIZON else "NOT_EVALUATED",
         })
+        payload["simulation_manifest_hash"] = _manifest_hash(payload)
         write_json(run_directory / "manifest.json", payload)
         return payload
 
@@ -219,6 +233,10 @@ def _recipe_dict(recipe: ArtisticRecipe) -> dict[str, object]:
 
 def _sha256(path: Path) -> str:
     return _streaming_sha256(path)
+
+
+def _manifest_hash(payload: dict[str, object]) -> str:
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
 
 
 def _shell_quote(part: str) -> str:
@@ -284,25 +302,56 @@ def _assert_hashes(workspace: Path, expected: dict[str, str]) -> None:
         raise RuntimeError(f"stage-lineage hash mismatch: {', '.join(mismatched)}")
 
 
-def _progress(workspace: Path | None, commands: list[dict[str, object]], requested_steps: int, dump_interval_steps: int, status: SimulationStatus | None) -> dict[str, object]:
-    parsed = parse_thermo_log(workspace / "slurry.log", stage="slurry") if workspace else None
+def _progress(
+    workspace: Path | None,
+    commands: list[dict[str, object]],
+    requested_steps: int,
+    dump_interval_steps: int,
+    status: SimulationStatus | None,
+    *,
+    minimization_expected: bool | None = None,
+) -> dict[str, object]:
+    parsed = parse_thermo_log(
+        workspace / "slurry.log", stage="slurry", minimization_expected=minimization_expected,
+    ) if workspace else None
     checkpoints = list(parsed.checkpoints) if parsed else []
-    records = [{"step": item.step, "metrics": dict(item.metrics), "stage": item.stage, "source_log": item.source_log} for item in checkpoints]
-    completed = max((item.step for item in checkpoints), default=0)
+    records = [{
+        "step": item.dynamics_step,
+        "raw_step": item.raw_step,
+        "dynamics_step": item.dynamics_step,
+        "phase": item.phase,
+        "metrics": dict(item.metrics),
+        "stage": item.stage,
+        "source_log": item.source_log,
+    } for item in checkpoints]
+    dynamic_checkpoints = [item for item in checkpoints if item.dynamics_step is not None and item.phase == "dynamics"]
+    completed = max((item.dynamics_step for item in dynamic_checkpoints), default=0)
+    raw_completed = max((item.raw_step for item in checkpoints), default=None)
     wall_seconds = sum(float(command.get("wall_seconds", 0.0)) for command in commands if command.get("stage") == "slurry")
-    steps_per_second = completed / wall_seconds if completed and wall_seconds > 0 else None
-    remaining = max(0, requested_steps - completed)
-    estimate = remaining / steps_per_second if steps_per_second else None
     return {
+        "requested_slurry_steps": requested_steps,
         "requested_steps": requested_steps,
+        "completed_slurry_steps": completed,
         "completed_steps": completed,
-        "checkpoint_steps": [item.step for item in checkpoints],
+        "checkpoint_steps": [item.dynamics_step for item in dynamic_checkpoints],
+        "checkpoint_raw_steps": [item.raw_step for item in checkpoints],
         "checkpoints": records,
         "thermo_parse_diagnostics": list(parsed.diagnostics) if parsed else [],
         "dump_interval_steps": dump_interval_steps,
-        "last_thermo_step": completed or None,
+        "last_raw_lammps_step": raw_completed,
+        "last_thermo_step": raw_completed,
+        "last_thermo_step_semantics": "raw_lammps_step",
         "wall_seconds": wall_seconds,
-        "steps_per_second": steps_per_second,
-        "estimated_remaining_seconds": estimate,
+        "dynamics_wall_seconds": None,
+        "steps_per_second": None,
+        "estimated_remaining_seconds": None,
+        "eta_limitation": "slurry command timing cannot be separated between minimization and dynamics",
         "early_termination": status is not None and completed < requested_steps,
     }
+
+
+def _slurry_minimization_expected(workspace: Path) -> bool | None:
+    script = workspace / "in_slurry.run"
+    if not script.is_file():
+        return None
+    return bool(re.search(r"(?m)^\s*minimize(?:\s|$)", script.read_text(encoding="utf-8", errors="replace")))

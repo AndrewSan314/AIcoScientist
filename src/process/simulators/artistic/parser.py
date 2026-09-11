@@ -65,10 +65,20 @@ def parse_artistic_output(workspace: Path) -> ParsedArtisticOutput:
 
 @dataclass(frozen=True)
 class ThermoCheckpoint:
-    step: int
+    raw_step: int
     metrics: dict[str, float]
     stage: str
     source_log: str
+    dynamics_step: int | None = None
+    phase: str = "dynamics"
+
+
+@dataclass
+class _ThermoBlock:
+    headers: tuple[str, ...]
+    start_line: int
+    after_loop: bool
+    rows: list[tuple[int, dict[str, float]]]
 
 
 @dataclass(frozen=True)
@@ -77,30 +87,43 @@ class ThermoParseResult:
     diagnostics: tuple[str, ...] = ()
 
 
-def parse_thermo_log(path: Path, *, stage: str = "slurry") -> ThermoParseResult:
-    """Parse one stage log; progress never aggregates unrelated stage logs."""
+def parse_thermo_log(
+    path: Path, *, stage: str = "slurry", minimization_expected: bool | None = None,
+) -> ThermoParseResult:
+    """Parse raw LAMMPS thermo rows and derive dynamics-relative steps from structure."""
     log = path / f"{stage}.log" if path.is_dir() else path
     if not log.is_file():
         return ThermoParseResult((), (f"missing thermo log: {log.name}",))
-    checkpoints: list[ThermoCheckpoint] = []
     diagnostics: list[str] = []
-    headers: tuple[str, ...] | None = None
+    blocks: list[_ThermoBlock] = []
+    current: _ThermoBlock | None = None
+    minimization_marker: int | None = None
+    loop_since_header = False
     for line_number, line in enumerate(log.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        if minimization_marker is None and re.search(r"\bMinimization stats\b", line, re.I):
+            minimization_marker = line_number
         if _THERMO_HEADER.match(line):
             columns = tuple(line.split())
-            headers = columns[1:] or None
-            if headers is None:
+            headers = columns[1:]
+            if not headers:
                 diagnostics.append(f"{log.name}:{line_number}: thermo header has no metrics")
+                current = None
+            else:
+                current = _ThermoBlock(headers, line_number, loop_since_header, [])
+                blocks.append(current)
+            loop_since_header = False
             continue
-        if headers is None:
+        if line.strip().startswith("Loop time"):
+            loop_since_header = True
+            current = None
+            continue
+        if current is None:
             continue
         match = _THERMO_ROW.match(line)
         if not match:
-            if line.strip().startswith(("Loop time", "ERROR", "Per MPI rank", "WARNING")):
-                headers = None
             continue
         fields = line.split()
-        if len(fields) != len(headers) + 1:
+        if len(fields) != len(current.headers) + 1:
             diagnostics.append(f"{log.name}:{line_number}: malformed thermo row for step {fields[0]}")
             continue
         try:
@@ -111,17 +134,51 @@ def parse_thermo_log(path: Path, *, stage: str = "slurry") -> ThermoParseResult:
         if not all(math.isfinite(value) for value in values):
             diagnostics.append(f"{log.name}:{line_number}: non-finite thermo metric row for step {fields[0]}")
             continue
-        checkpoints.append(ThermoCheckpoint(int(fields[0]), dict(zip(headers, values)), stage, log.name))
+        current.rows.append((int(fields[0]), dict(zip(current.headers, values))))
+
+    if minimization_marker is not None:
+        boundary = next((index for index, block in enumerate(blocks) if block.start_line > minimization_marker), len(blocks))
+    elif minimization_expected:
+        candidates = [index for index, block in enumerate(blocks) if block.after_loop]
+        if len(candidates) != 1:
+            return ThermoParseResult((), tuple(diagnostics) + (
+                f"{log.name}: minimization/dynamics boundary is ambiguous; refusing dynamics-relative progress",
+            ))
+        boundary = candidates[0]
+    else:
+        boundary = 0
+
+    rows: list[tuple[int, dict[str, float], str]] = []
+    for index, block in enumerate(blocks):
+        phase = "dynamics" if index >= boundary else "minimization"
+        rows.extend((raw_step, metrics, phase) for raw_step, metrics in block.rows)
+    dynamics_start = next((raw_step for raw_step, _, phase in rows if phase == "dynamics"), None)
+    checkpoints: list[ThermoCheckpoint] = []
+    last_dynamic: int | None = None
+    for raw_step, metrics, phase in rows:
+        dynamics_step = None
+        if phase == "dynamics" and dynamics_start is not None:
+            candidate = raw_step - dynamics_start
+            if candidate < 0 or (last_dynamic is not None and candidate < last_dynamic):
+                diagnostics.append(f"{log.name}: dynamics raw step moved backwards; refusing relative step")
+            else:
+                dynamics_step = candidate
+                last_dynamic = candidate
+        checkpoints.append(ThermoCheckpoint(raw_step, metrics, stage, log.name, dynamics_step, phase))
+    if minimization_expected and minimization_marker is None and boundary == len(blocks):
+        diagnostics.append(f"{log.name}: minimization completed without a dynamics thermo block")
     return ThermoParseResult(tuple(checkpoints), tuple(diagnostics))
 
 
-def parse_thermo_checkpoints(path: Path, *, stage: str = "slurry") -> tuple[ThermoCheckpoint, ...]:
-    return parse_thermo_log(path, stage=stage).checkpoints
+def parse_thermo_checkpoints(
+    path: Path, *, stage: str = "slurry", minimization_expected: bool | None = None,
+) -> tuple[ThermoCheckpoint, ...]:
+    return parse_thermo_log(path, stage=stage, minimization_expected=minimization_expected).checkpoints
 
 
 def parse_thermo_steps(path: Path, *, stage: str = "slurry") -> tuple[int, ...]:
     """Compatibility projection for callers that only need printed step numbers."""
-    return tuple(item.step for item in parse_thermo_checkpoints(path, stage=stage))
+    return tuple(item.raw_step for item in parse_thermo_checkpoints(path, stage=stage))
 
 
 def _present(**values: float | None) -> dict[str, float]:
