@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -20,6 +21,7 @@ from src.process.models.flat_baseline import TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.stages import ProcessStage
+from src.science.hypothesis_backends.sklearn_backend import SklearnGaussianBackend
 
 
 ADAPTERS = [DrakopoulosGraphiteAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter, NaIonHTEAdapter, ArtisticSimulationAdapter]
@@ -65,10 +67,20 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
         calibration_mean, _ = model.predict_distribution(X[calibration])
         test_mean, _ = model.predict_distribution(X[test])
         lower, upper = conformal_interval(test_mean, y[calibration] - calibration_mean)
+        baselines = [{"model": "ExtraTreesRegressor", "metrics": _metrics(y[test], test_mean)}]
+        forest_mean, _ = TreeEnsembleBaseline("random_forest", random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
+        baselines.append({"model": "RandomForestRegressor", "metrics": _metrics(y[test], forest_mean)})
+        if X.shape[1] <= 12:
+            scaler = StandardScaler().fit(X[train])
+            gp = SklearnGaussianBackend(random_state=seed)
+            gp.fit(scaler.transform(X[train]), y[train])
+            gp_mean, _ = gp.predict_distribution(scaler.transform(X[test]))
+            baselines.append({"model": "GaussianProcessRegressor", "metrics": _metrics(y[test], gp_mean)})
         reports.append({
             "target": target, "status": "EVALUATED", "model": "ExtraTreesRegressor", "split": "grouped holdout with disjoint grouped calibration",
             "rows": len(X), "groups": len(set(groups)), "train_rows": len(train), "calibration_rows": len(calibration), "test_rows": len(test),
-            "metrics": _metrics(y[test], test_mean), "interval": {"nominal_coverage": 0.9, "empirical_coverage": float(np.mean((y[test] >= lower) & (y[test] <= upper))), "calibration_residual_count": len(calibration)},
+            "metrics": _metrics(y[test], test_mean), "baselines": baselines,
+            "interval": {"nominal_coverage": 0.9, "empirical_coverage": float(np.mean((y[test] >= lower) & (y[test] <= upper))), "calibration_residual_count": len(calibration)},
         })
     return reports
 
