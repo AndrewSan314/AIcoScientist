@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import pandas as pd
 
+from src.optimization.finite_pool import FiniteCandidatePool
 from src.process.coordinator import ProcessOptimizationCoordinator
+from src.process.optimization.state import (
+    canonical_control_action_id,
+    contextual_candidate_instance_id,
+)
 from src.process.optimization.process_space import ProcessSearchSpace
+from src.process.stages import ProcessStage
 
 
 def test_process_space_proposes_only_exact_recorded_recipes() -> None:
@@ -52,3 +58,26 @@ def test_contextual_process_view_scales_state_separately_from_controls() -> None
     assert observations["state"].tolist() == [0.5]
     assert space.recipe("b") == {"temperature": 120.0}
     assert encoded_space.recipe("b") == {"control_0_value": 1.0}
+
+
+def test_contextual_identity_reuses_actions_only_with_the_same_context_and_stage() -> None:
+    action_a = canonical_control_action_id({"temperature": 100})
+    action_b = canonical_control_action_id({"temperature": 120})
+    historical_a = contextual_candidate_instance_id("context-02", action_a, ProcessStage.DRYING)
+    current_a = contextual_candidate_instance_id("context-08", action_a, ProcessStage.DRYING)
+    current_b = contextual_candidate_instance_id("context-08", action_b, ProcessStage.DRYING)
+
+    assert action_a == canonical_control_action_id({"temperature": 100})
+    assert historical_a != current_a
+    assert current_a != current_b
+    assert {current_a, current_b} - {historical_a} == {current_a, current_b}
+    assert {current_a, current_b} - {current_a} == {current_b}
+
+
+def test_generic_finite_candidate_pool_identity_semantics_remain_unchanged() -> None:
+    pool = FiniteCandidatePool(
+        pd.DataFrame({"candidate_id": ["a", "b"], "temperature": [100.0, 120.0]}),
+        feature_columns=["temperature"], id_column="candidate_id",
+    )
+
+    assert pool.filter_unseen({"a"}).candidate_ids == ["b"]

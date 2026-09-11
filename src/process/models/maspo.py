@@ -35,6 +35,20 @@ class MASPOProcessStateModel(nn.Module):
         encoded = {name: self.modality_encoders[name](value.float()) for name, value in tokens.items()}
         return self.fusion(encoded, available)
 
+    def state_from_transitions(
+        self,
+        initial_state: torch.Tensor,
+        transitions: Iterable[tuple[ProcessStage, torch.Tensor, torch.Tensor, Mapping[str, torch.Tensor], Mapping[str, bool | torch.Tensor]]],
+    ) -> torch.Tensor:
+        """Return the stage-aware latent state after the supplied legal transitions."""
+        state = initial_state
+        for stage, controls, observations, tokens, available in transitions:
+            fused = self.fuse_observations(tokens, available)
+            if fused.ndim == 1 and controls.ndim == 2:
+                fused = fused.unsqueeze(0)
+            state = self.stage_model.transition_stage(state, stage, controls, torch.cat([observations, fused], dim=-1))
+        return state
+
     def forward(
         self,
         initial_state: torch.Tensor,

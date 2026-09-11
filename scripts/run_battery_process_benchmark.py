@@ -302,13 +302,21 @@ def main() -> None:
         "suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable,
         "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds,
         "architecture_status": {
-            "maspo_contextual_stage_optimizer": {
+            "scalar_contextual_stage_optimizer": {
                 "status": "IMPLEMENTED_NOT_VALIDATED",
-                "reason": "Contextual stage optimizer is implemented and unit-tested; source-backed multi-stage trajectory validation remains unavailable.",
+                "reason": "Context-conditioned stage-wise optimizer is implemented and unit-tested; source-backed multi-stage trajectory validation remains unavailable.",
             },
-            "adaptive_evidence_acquisition": {
+            "multimodal_contextual_state": {
                 "status": "IMPLEMENTED_NOT_VALIDATED",
-                "reason": "Horizon-legal blinded evidence replay is implemented and unit-tested; adaptive policy validation remains unavailable.",
+                "reason": "Multimodal latent state adapter is implemented and unit-tested; no source-backed trained state benchmark is claimed.",
+            },
+            "horizon_safe_evidence_replay": {
+                "status": "IMPLEMENTED_NOT_VALIDATED",
+                "reason": "Horizon-safe source-backed evidence replay is implemented and unit-tested; no adaptive policy performance is claimed.",
+            },
+            "adaptive_evidence_policy": {
+                "status": "NOT_EVALUATED",
+                "reason": "No adaptive evidence policy or EVI evaluation is implemented in this milestone.",
             },
         },
     }

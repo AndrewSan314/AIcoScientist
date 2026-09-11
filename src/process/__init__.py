@@ -8,6 +8,8 @@ from .evidence import EvidenceOption, EvidenceReplayResult, replay_blinded_evide
 from .information_horizon import InformationHorizon, InformationHorizonError
 from .maspo import ContextualProcessState, MASPOPlan, MASPOProcessOptimizationCoordinator
 from .modalities import ModalityObservation, ModalityType
+from .models import encode_legal_multimodal_state
+from .optimization.state import OptimizationState, canonical_control_action_id, context_provenance_fingerprint, contextual_candidate_instance_id
 from .robustness import RobustnessReport, evaluate_recipe_robustness
 from .stages import ProcessStage
 
@@ -17,6 +19,7 @@ __all__ = [
     "DEFAULT_PRODUCT_MODE",
     "BatteryProcessRun",
     "ContextualProcessState",
+    "OptimizationState",
     "EvidenceOption",
     "EvidenceReplayResult",
     "InformationHorizon",
@@ -32,5 +35,9 @@ __all__ = [
     "StageRecord",
     "RobustnessReport",
     "evaluate_recipe_robustness",
+    "canonical_control_action_id",
+    "context_provenance_fingerprint",
+    "contextual_candidate_instance_id",
+    "encode_legal_multimodal_state",
     "replay_blinded_evidence",
 ]

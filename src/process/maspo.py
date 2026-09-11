@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import hashlib
-import json
 import math
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from numbers import Real
 from time import perf_counter
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -17,7 +15,44 @@ from .information_horizon import HorizonView
 from .optimization.process_objective import ProcessOptimizationObjective
 from .optimization.process_space import ProcessSearchSpace
 from .optimization.proposal import ProcessControlProposal
+from .optimization.state import (
+    OptimizationState,
+    canonical_control_action_id,
+    contextual_candidate_instance_id,
+    context_provenance_fingerprint,
+)
 from .stages import ProcessStage, STAGE_ORDER
+
+
+SOURCE_RECIPE_ID_COLUMN = "source_recipe_id"
+CONTROL_ACTION_ID_COLUMN = "control_action_id"
+CANDIDATE_INSTANCE_ID_COLUMN = "candidate_instance_id"
+CONTEXT_PROVENANCE_COLUMN = "context_provenance_fingerprint"
+
+
+def _numeric_context(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError("legal process context contains a non-finite numeric value")
+    return numeric
+
+
+def _category_key(value: object) -> tuple[str, str]:
+    try:
+        if bool(pd.isna(value)):
+            return ("missing", "")
+    except (TypeError, ValueError):
+        pass
+    return ("value", str(value))
+
+
+def _horizon_context_items(horizon: HorizonView) -> list[tuple[str, object]]:
+    items: list[tuple[str, object]] = []
+    for prefix, source in (("context.control.", horizon.controls), ("context.intermediate.", horizon.intermediate_properties)):
+        items.extend((prefix + name, item.value) for name, item in source.items())
+    return items
 
 
 @dataclass(frozen=True)
@@ -27,37 +62,58 @@ class MASPOPlan:
     next_control: ProcessControlProposal
     downstream_stages: tuple[ProcessStage, ...]
     legal_state: HorizonView
+    optimization_state: OptimizationState
     decision_latency_seconds: float
 
 
 @dataclass(frozen=True)
-class ContextualProcessState:
-    """Numeric process state encoded from one legal InformationHorizon view."""
+class ContextualProcessState(OptimizationState):
+    """Scalar state encoded from one legal InformationHorizon view."""
 
-    feature_names: tuple[str, ...]
-    feature_values: dict[str, float]
-    source_stage_ids: tuple[str, ...]
-    decision_stage: ProcessStage
-    provenance_fingerprint: str
+    context_columns: tuple[str, ...] = ()
+    context_feature_map: Mapping[str, tuple[str, ...]] = field(default_factory=dict)
 
     @classmethod
-    def from_horizon(cls, horizon: HorizonView) -> "ContextualProcessState":
+    def from_horizon(
+        cls,
+        horizon: HorizonView,
+        *,
+        categorical_vocabularies: Mapping[str, Sequence[object]] | None = None,
+    ) -> "ContextualProcessState":
         values: dict[str, float] = {}
-        for prefix, source in (("context.control.", horizon.controls), ("context.intermediate.", horizon.intermediate_properties)):
-            for name, item in source.items():
-                value = item.value
-                if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(float(value)):
-                    continue
-                values[prefix + name] = float(value)
+        feature_map: dict[str, tuple[str, ...]] = {}
+        category_manifest: dict[str, tuple[tuple[str, str], ...]] = {}
+        context_columns = tuple(name for name, _ in _horizon_context_items(horizon))
+        for raw_name, raw_value in _horizon_context_items(horizon):
+            numeric = _numeric_context(raw_value)
+            if numeric is not None:
+                values[raw_name] = numeric
+                feature_map[raw_name] = (raw_name,)
+                continue
+            vocabulary = None if categorical_vocabularies is None else categorical_vocabularies.get(raw_name)
+            if vocabulary is None:
+                raise ValueError(f"categorical legal context {raw_name!r} requires a source-supported vocabulary")
+            categories = tuple(sorted({_category_key(item) for item in vocabulary}))
+            current = _category_key(raw_value)
+            if not categories or current not in categories:
+                raise ValueError(f"categorical legal context {raw_name!r} is unknown to the source vocabulary")
+            features = tuple(f"{raw_name}.category.{index}" for index in range(len(categories)))
+            feature_map[raw_name] = features
+            category_manifest[raw_name] = categories
+            values.update({feature: float(category == current) for feature, category in zip(features, categories)})
         if not values:
-            raise ValueError("contextual MASPO requires a finite numeric feature in the legal HorizonView; no zero-state fallback")
-        payload = {"decision_stage": horizon.decision_stage.value, "source_stage_ids": horizon.source_stage_ids, "features": values}
-        fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        return cls(tuple(values), values, horizon.source_stage_ids, horizon.decision_stage, fingerprint)
+            raise ValueError("contextual MASPO requires a finite legal HorizonView feature; no zero-state fallback")
+        fingerprint = context_provenance_fingerprint(values, horizon.decision_stage, "scalar_horizon")
+        return cls(
+            feature_names=tuple(values), feature_values=values, decision_stage=horizon.decision_stage,
+            source_stage_ids=horizon.source_stage_ids, provenance_fingerprint=fingerprint,
+            representation_kind="scalar_horizon", provenance={"category_vocabularies": category_manifest},
+            context_columns=context_columns, context_feature_map=feature_map,
+        )
 
 
 class MASPOProcessOptimizationCoordinator:
-    """Stage-wise/receding-horizon wrapper around the existing official optimizer."""
+    """Stage-wise contextual receding-horizon wrapper around the official optimizer."""
 
     def __init__(self, optimizer: ProcessOptimizationCoordinator | None = None) -> None:
         self.optimizer = optimizer or ProcessOptimizationCoordinator()
@@ -71,6 +127,7 @@ class MASPOProcessOptimizationCoordinator:
         observations: pd.DataFrame | dict[ProcessStage, pd.DataFrame],
         objective: ProcessOptimizationObjective,
         seed: int | None = None,
+        optimization_state: OptimizationState | None = None,
     ) -> MASPOPlan:
         started = perf_counter()
         legal_state = (
@@ -85,19 +142,16 @@ class MASPOProcessOptimizationCoordinator:
             raise ValueError("no remaining process control stage exists after current_stage")
         next_stage = stages[0]
         stage_observations = observations[next_stage] if isinstance(observations, dict) else observations
-        _, contextual_observations, contextual_space = self._contextual_inputs(
-            legal_state, remaining_control_spaces[next_stage], stage_observations, objective,
+        state, contextual_observations, contextual_space = self._contextual_inputs(
+            legal_state, remaining_control_spaces[next_stage], stage_observations, objective, optimization_state=optimization_state,
         )
         proposals = self.optimizer.propose_recipes(contextual_observations, contextual_space, objective, n=1, seed=seed)
         if not proposals:
             raise ValueError("official process optimizer returned no next-stage action")
         action = replace(proposals[0], stage=next_stage)
         return MASPOPlan(
-            current_stage=current_stage,
-            next_stage=next_stage,
-            next_control=action,
-            downstream_stages=stages[1:],
-            legal_state=legal_state,
+            current_stage=current_stage, next_stage=next_stage, next_control=action,
+            downstream_stages=stages[1:], legal_state=legal_state, optimization_state=state,
             decision_latency_seconds=perf_counter() - started,
         )
 
@@ -107,42 +161,134 @@ class MASPOProcessOptimizationCoordinator:
         space: ProcessSearchSpace,
         observations: pd.DataFrame,
         objective: ProcessOptimizationObjective,
-    ) -> tuple[ContextualProcessState, pd.DataFrame, ProcessSearchSpace]:
-        state = ContextualProcessState.from_horizon(legal_state)
+        *,
+        optimization_state: OptimizationState | None = None,
+    ) -> tuple[OptimizationState, pd.DataFrame, ProcessSearchSpace]:
+        if not isinstance(observations, pd.DataFrame):
+            raise TypeError("contextual MASPO observations must be a pandas DataFrame")
+        state = optimization_state or ContextualProcessState.from_horizon(
+            legal_state, categorical_vocabularies=MASPOProcessOptimizationCoordinator._categorical_vocabularies(legal_state, observations),
+        )
+        if state.decision_stage != legal_state.decision_stage:
+            raise ValueError("optimization state decision_stage must match the legal HorizonView")
         if space.context_columns:
             raise ValueError("MASPO expects an uncontextualized finite control space")
+        context_columns = tuple(getattr(state, "context_columns", ())) or state.feature_names
         target_names = tuple(item.target for item in objective.objectives)
-        required = [space.id_column, *space.control_columns, *state.feature_names, *target_names]
+        source_column = space.source_id_column
+        required = list(dict.fromkeys([space.id_column, source_column, *space.control_columns, *context_columns, *target_names]))
         missing = [column for column in required if column not in observations]
         if missing:
             raise ValueError(f"contextual MASPO requires source-backed historical context columns: {missing}")
-        if observations.empty or observations[space.id_column].isna().any():
+        if observations.empty or observations[source_column].isna().any():
             raise ValueError("contextual MASPO requires non-null historical recipe identities")
-        known_ids = set(space.candidates[space.id_column].astype(str))
-        unknown_ids = sorted(set(observations[space.id_column].astype(str)) - known_ids)
+        known_ids = set(space.candidates[source_column].astype(str))
+        unknown_ids = sorted(set(observations[source_column].astype(str)) - known_ids)
         if unknown_ids:
             raise ValueError(f"historical observations contain unknown source recipes: {unknown_ids}")
-        clean = observations.loc[:, required].copy()
-        bounds: dict[str, tuple[float, float]] = {}
-        for name in state.feature_names:
-            values = pd.to_numeric(clean[name], errors="coerce")
-            if values.isna().any() or not np.isfinite(values.to_numpy()).all():
-                raise ValueError(f"historical context column {name!r} is missing or non-finite")
-            lower, upper = float(values.min()), float(values.max())
-            current = state.feature_values[name]
-            if current < lower or current > upper:
-                raise ValueError(f"current legal context {name!r} lies outside historical support")
-            bounds[name] = (lower, upper)
+        base = observations.loc[:, required].copy()
+        history_context, context_bounds = MASPOProcessOptimizationCoordinator._encode_historical_context(base, state, context_columns)
         for name in target_names:
-            values = pd.to_numeric(clean[name], errors="coerce")
+            values = pd.to_numeric(base[name], errors="coerce")
             if values.isna().any() or not np.isfinite(values.to_numpy()).all():
                 raise ValueError(f"historical target column {name!r} is missing or non-finite")
+
         candidate_pool = space.candidates.copy()
+        action_ids = [canonical_control_action_id(row[space.control_columns].to_dict()) for _, row in candidate_pool.iterrows()]
+        candidate_pool[SOURCE_RECIPE_ID_COLUMN] = candidate_pool[source_column]
+        candidate_pool[CONTROL_ACTION_ID_COLUMN] = action_ids
+        candidate_pool[CONTEXT_PROVENANCE_COLUMN] = state.provenance_fingerprint
+        candidate_pool[CANDIDATE_INSTANCE_ID_COLUMN] = [
+            contextual_candidate_instance_id(state.provenance_fingerprint, action_id, legal_state.decision_stage)
+            for action_id in action_ids
+        ]
         for name, value in state.feature_values.items():
-            if name in candidate_pool:
-                raise ValueError(f"context column collides with source control column: {name}")
             candidate_pool[name] = value
+        if candidate_pool[CANDIDATE_INSTANCE_ID_COLUMN].duplicated().any():
+            raise ValueError("finite process pool contains duplicate control actions under contextual identity")
+
+        historical_action_ids = [canonical_control_action_id(row[space.control_columns].to_dict()) for _, row in base.iterrows()]
+        historical_context_fingerprints = [
+            context_provenance_fingerprint(history_context.iloc[index].to_dict(), state.decision_stage, state.representation_kind)
+            for index in range(len(history_context))
+        ]
+        clean = pd.DataFrame({
+            CANDIDATE_INSTANCE_ID_COLUMN: [
+                contextual_candidate_instance_id(fingerprint, action_id, state.decision_stage)
+                for fingerprint, action_id in zip(historical_context_fingerprints, historical_action_ids)
+            ],
+            SOURCE_RECIPE_ID_COLUMN: base[source_column].tolist(),
+            CONTROL_ACTION_ID_COLUMN: historical_action_ids,
+            CONTEXT_PROVENANCE_COLUMN: historical_context_fingerprints,
+        }, index=base.index)
+        for column in state.feature_names:
+            clean[column] = history_context[column]
+        for column in space.control_columns:
+            clean[column] = base[column]
+        for column in target_names:
+            clean[column] = base[column]
+        metadata_columns = tuple(dict.fromkeys([
+            space.id_column, source_column, SOURCE_RECIPE_ID_COLUMN, CONTROL_ACTION_ID_COLUMN, CONTEXT_PROVENANCE_COLUMN,
+            *space.metadata_columns,
+        ]))
         contextual_space = ProcessSearchSpace.from_finite_pool(
-            candidate_pool, id_column=space.id_column, context_columns=state.feature_names, context_bounds=bounds,
+            candidate_pool, id_column=CANDIDATE_INSTANCE_ID_COLUMN, context_columns=state.feature_names,
+            context_bounds=context_bounds, source_recipe_id_column=SOURCE_RECIPE_ID_COLUMN,
+            control_action_id_column=CONTROL_ACTION_ID_COLUMN, metadata_columns=metadata_columns,
         )
         return state, clean, contextual_space
+
+    @staticmethod
+    def _categorical_vocabularies(horizon: HorizonView, observations: pd.DataFrame) -> dict[str, Sequence[object]]:
+        return {
+            name: observations[name].tolist()
+            for name, value in _horizon_context_items(horizon)
+            if _numeric_context(value) is None and name in observations
+        }
+
+    @staticmethod
+    def _encode_historical_context(
+        base: pd.DataFrame, state: OptimizationState, context_columns: tuple[str, ...],
+    ) -> tuple[pd.DataFrame, dict[str, tuple[float, float]]]:
+        context_map = getattr(state, "context_feature_map", {})
+        category_vocabularies = getattr(state, "provenance", {}).get("category_vocabularies", {})
+        encoded = pd.DataFrame(index=base.index)
+        bounds: dict[str, tuple[float, float]] = {}
+        if isinstance(state, ContextualProcessState):
+            for raw_name in context_columns:
+                feature_names = context_map[raw_name]
+                if len(feature_names) == 1 and feature_names[0] == raw_name:
+                    values = pd.to_numeric(base[raw_name], errors="coerce")
+                    if values.isna().any() or not np.isfinite(values.to_numpy()).all():
+                        raise ValueError(f"historical context column {raw_name!r} is missing or non-finite")
+                    current = state.feature_values[raw_name]
+                    lower, upper = float(values.min()), float(values.max())
+                    if current < lower or current > upper:
+                        raise ValueError(f"current legal context {raw_name!r} lies outside historical support")
+                    encoded[raw_name] = values.astype(float)
+                    bounds[raw_name] = (lower, upper)
+                    continue
+                categories = tuple(tuple(item) for item in category_vocabularies.get(raw_name, ()))
+                if not categories:
+                    raise ValueError(f"categorical historical context {raw_name!r} lacks a source vocabulary")
+                values = base[raw_name].map(_category_key)
+                unknown = sorted(set(values) - set(categories))
+                if unknown:
+                    raise ValueError(f"historical context {raw_name!r} contains unknown categories: {unknown}")
+                for feature, category in zip(feature_names, categories):
+                    encoded[feature] = (values == category).astype(float)
+                    bounds[feature] = (0.0, 1.0)
+        else:
+            for name in state.feature_names:
+                if name not in base:
+                    raise ValueError(f"contextual MASPO requires historical latent context column: {name!r}")
+                values = pd.to_numeric(base[name], errors="coerce")
+                if values.isna().any() or not np.isfinite(values.to_numpy()).all():
+                    raise ValueError(f"historical latent context column {name!r} is missing or non-finite")
+                current = state.feature_values[name]
+                lower, upper = float(values.min()), float(values.max())
+                if current < lower or current > upper:
+                    raise ValueError(f"current latent context {name!r} lies outside historical support")
+                encoded[name] = values.astype(float)
+                bounds[name] = (lower, upper)
+        return encoded, bounds

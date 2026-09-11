@@ -75,14 +75,23 @@ class ProcessOptimizationCoordinator:
             strategy="noisy_expected_improvement",
         )
         fingerprint = hashlib.sha256(pd.util.hash_pandas_object(observations, index=True).values.tobytes()).hexdigest()
-        source_controls = space.candidates.set_index(space.id_column)[space.control_columns]
-        return [
-            ProcessControlProposal(
-                proposal_id=f"process:{item.candidate_id}", stage=None, controls=source_controls.loc[item.candidate_id].to_dict(),
+        source_candidates = space.candidates.set_index(space.id_column)
+        result: list[ProcessControlProposal] = []
+        for item in proposals:
+            row = source_candidates.loc[item.candidate_id]
+            provenance = dict(item.metadata)
+            provenance.update({"candidate_instance_id": str(item.candidate_id)})
+            if "context_provenance_fingerprint" in row:
+                provenance["context_provenance_fingerprint"] = row["context_provenance_fingerprint"]
+            source_recipe_id = row[space.source_id_column] if space.source_id_column in row.index else item.candidate_id
+            control_action_id = row[space.control_action_id_column] if space.control_action_id_column else None
+            result.append(ProcessControlProposal(
+                proposal_id=f"process:{item.candidate_id}", stage=None, controls=row[space.control_columns].to_dict(),
                 predicted_outputs={target.target: Prediction(item.predicted_mean, item.predicted_std, target.units)},
                 feasibility_probability=None, acquisition_value=item.acquisition_value, pareto_rank=0,
                 model_version=f"{item.backend_name}:{item.acquisition_class}", data_fingerprint=fingerprint,
-                source_recipe_id=item.candidate_id, provenance=item.metadata,
-            )
-            for item in proposals
-        ]
+                source_recipe_id=str(source_recipe_id), provenance=provenance,
+                control_action_id=str(control_action_id) if control_action_id is not None else None,
+                candidate_instance_id=str(item.candidate_id),
+            ))
+        return result

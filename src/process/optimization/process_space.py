@@ -15,6 +15,9 @@ class ProcessSearchSpace:
     id_column: str = "recipe_id"
     context_columns: tuple[str, ...] = ()
     context_bounds: Mapping[str, tuple[float, float]] = field(default_factory=dict)
+    source_recipe_id_column: str | None = None
+    control_action_id_column: str | None = None
+    metadata_columns: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.id_column not in self.candidates or self.candidates.empty:
@@ -23,6 +26,19 @@ class ProcessSearchSpace:
             raise ValueError("process recipe identities must be non-null and unique")
         if self.id_column in self.context_columns or len(set(self.context_columns)) != len(self.context_columns):
             raise ValueError("context columns must be unique and separate from recipe identity")
+        for column in (self.source_recipe_id_column, self.control_action_id_column):
+            if column is not None:
+                if column not in self.candidates:
+                    raise ValueError(f"identity metadata column missing from candidate pool: {column!r}")
+        if (
+            len(set(self.metadata_columns)) != len(self.metadata_columns)
+            or set(self.metadata_columns) & {self.id_column, *self.context_columns}
+            or any(column in self.context_columns or column == self.id_column for column in (self.source_recipe_id_column, self.control_action_id_column) if column is not None)
+        ):
+            raise ValueError("metadata columns must be unique and separate from context")
+        missing_metadata = [column for column in self.metadata_columns if column not in self.candidates]
+        if missing_metadata:
+            raise ValueError(f"metadata columns missing from candidate pool: {missing_metadata}")
         missing = [column for column in self.context_columns if column not in self.candidates]
         if missing:
             raise ValueError(f"context columns missing from candidate pool: {missing}")
@@ -44,15 +60,26 @@ class ProcessSearchSpace:
         id_column: str = "recipe_id",
         context_columns: tuple[str, ...] = (),
         context_bounds: Mapping[str, tuple[float, float]] | None = None,
+        source_recipe_id_column: str | None = None,
+        control_action_id_column: str | None = None,
+        metadata_columns: tuple[str, ...] = (),
     ) -> "ProcessSearchSpace":
         return cls(
             candidates=candidates.copy().reset_index(drop=True), id_column=id_column,
             context_columns=context_columns, context_bounds=context_bounds or {},
+            source_recipe_id_column=source_recipe_id_column, control_action_id_column=control_action_id_column,
+            metadata_columns=metadata_columns,
         )
 
     @property
     def control_columns(self) -> list[str]:
-        return [column for column in self.candidates if column not in {self.id_column, *self.context_columns}]
+        excluded = {self.id_column, *self.context_columns, *self.metadata_columns}
+        excluded.update(column for column in (self.source_recipe_id_column, self.control_action_id_column) if column is not None)
+        return [column for column in self.candidates if column not in excluded]
+
+    @property
+    def source_id_column(self) -> str:
+        return self.source_recipe_id_column or self.id_column
 
     @property
     def model_columns(self) -> list[str]:

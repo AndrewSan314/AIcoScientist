@@ -26,3 +26,5 @@ class ProcessControlProposal:
     data_fingerprint: str
     source_recipe_id: str | None = None
     provenance: dict[str, Any] = field(default_factory=dict)
+    control_action_id: str | None = None
+    candidate_instance_id: str | None = None

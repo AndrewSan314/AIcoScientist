@@ -106,12 +106,18 @@ class OfficialMultiObjectiveBoTorch:
             }
             recipe_id = str(unseen.iloc[index][encoded_space.id_column])
             controls = space.recipe(recipe_id)
+            source_row = space.candidates.loc[space.candidates[space.id_column].astype(str) == recipe_id].iloc[0]
+            provenance = {"acquisition": "qNoisyExpectedHypervolumeImprovement", "reference_point": reference.tolist(), "seed": seed, "candidate_instance_id": recipe_id}
+            if "context_provenance_fingerprint" in source_row:
+                provenance["context_provenance_fingerprint"] = source_row["context_provenance_fingerprint"]
             result.append(ProcessControlProposal(
                 proposal_id=f"process:{recipe_id}", stage=None, controls=controls,
                 predicted_outputs=outputs, feasibility_probability=self._feasibility_probability(outputs, objective.constraints),
                 acquisition_value=float(scores[index]), pareto_rank=int(ranks[index]), model_version="botorch-qNEHVI",
-                data_fingerprint=self._fingerprint(observed), source_recipe_id=recipe_id,
-                provenance={"acquisition": "qNoisyExpectedHypervolumeImprovement", "reference_point": reference.tolist(), "seed": seed},
+                data_fingerprint=self._fingerprint(observed), source_recipe_id=str(source_row[space.source_id_column]),
+                provenance=provenance,
+                control_action_id=str(source_row[space.control_action_id_column]) if space.control_action_id_column else None,
+                candidate_instance_id=recipe_id,
             ))
         return result
 
