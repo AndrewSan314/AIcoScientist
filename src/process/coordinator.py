@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
 import pandas as pd
+from src.optimization.objective import OptimizationObjective as OfficialOptimizationObjective
 
 if TYPE_CHECKING:
     from src.optimization.objective import OptimizationObjective
@@ -56,7 +57,6 @@ class ProcessOptimizationCoordinator:
         if self.scalar_backend is None:
             try:
                 from src.optimization.botorch_backend import BoTorchBackend
-                from src.optimization.objective import OptimizationObjective
             except ImportError as exc:
                 raise RuntimeError("scalar process optimization requires the official botorch dependency") from exc
             backend = BoTorchBackend()
@@ -67,7 +67,7 @@ class ProcessOptimizationCoordinator:
         proposals = backend.propose(
             observations=backend_observations,
             candidate_pool=backend_space.candidates,
-            objective=OptimizationObjective(target_name=target.target, minimize=target.sense == "minimize"),
+            objective=OfficialOptimizationObjective(target_name=target.target, minimize=target.sense == "minimize"),
             feature_columns=backend_space.control_columns,
             candidate_id_column=backend_space.id_column,
             n=n,
