@@ -106,7 +106,6 @@ class ContextualProcessState(OptimizationState):
         if not values:
             raise ValueError("contextual MASPO requires a finite legal HorizonView feature; no zero-state fallback")
         semantic_metadata = {
-            "source_stage_ids": horizon.source_stage_ids,
             "category_vocabulary_manifest": category_manifest,
         }
         fingerprint = context_provenance_fingerprint(
@@ -118,6 +117,7 @@ class ContextualProcessState(OptimizationState):
             representation_kind="scalar_horizon", provenance={
                 "category_vocabularies": category_manifest,
                 "semantic_fingerprint_inputs": semantic_metadata,
+                "audit_provenance": {"source_stage_ids": horizon.source_stage_ids},
             },
             context_columns=context_columns, context_feature_map=feature_map,
         )
@@ -273,9 +273,7 @@ class MASPOProcessOptimizationCoordinator:
 
     @staticmethod
     def _state_semantic_metadata(state: OptimizationState) -> Mapping[str, Any]:
-        metadata = dict(state.provenance.get("semantic_fingerprint_inputs", {}))
-        metadata.setdefault("source_stage_ids", state.source_stage_ids)
-        return metadata
+        return dict(state.provenance.get("semantic_fingerprint_inputs", {}))
 
     @staticmethod
     def _categorical_vocabularies(horizon: HorizonView, observations: pd.DataFrame) -> dict[str, Sequence[object]]:

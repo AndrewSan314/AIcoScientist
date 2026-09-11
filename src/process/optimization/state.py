@@ -66,12 +66,11 @@ def context_provenance_fingerprint(
     feature_values: Mapping[str, float], decision_stage: ProcessStage, representation_kind: str, *,
     semantic_metadata: Mapping[str, Any] | None = None,
 ) -> str:
-    """Hash semantic state identity, excluding runtime-only fields such as timestamps."""
+    """Hash semantic state identity, excluding audit/source identity and runtime fields."""
     semantic = _semantic_metadata(semantic_metadata or {})
-    semantic.setdefault("source_stage_ids", ())
     payload = {
         "decision_stage": decision_stage.value, "representation_kind": representation_kind,
-        "features": dict(feature_values), "semantic_metadata": semantic,
+        "feature_schema": tuple(feature_values), "features": dict(feature_values), "semantic_metadata": semantic,
     }
     return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
 
@@ -81,7 +80,11 @@ def _semantic_metadata(value: Any) -> Any:
         return {
             str(key): _semantic_metadata(item)
             for key, item in value.items()
-            if not any(token in str(key).lower() for token in ("timestamp", "created_at", "updated_at", "retrieved_at", "started_at", "ended_at", "wall_time"))
+            if not any(token in str(key).lower() for token in (
+                "timestamp", "created_at", "updated_at", "retrieved_at", "started_at", "ended_at", "wall_time",
+                "source_stage_id", "source_stage_ids", "run_id", "batch_id", "raw_hash", "file_path", "audit_provenance",
+                "provenance", "transition_fingerprint", "evidence_id",
+            ))
         }
     if isinstance(value, (list, tuple)):
         return [_semantic_metadata(item) for item in value]
@@ -111,6 +114,11 @@ class OptimizationState:
     representation_kind: str
     provenance: Mapping[str, Any] = field(default_factory=dict)
     validation_status: ModelValidationStatus = ModelValidationStatus.TEST_ONLY
+
+    @property
+    def semantic_fingerprint(self) -> str:
+        """Compatibility name for the state-semantic identity used by candidate history."""
+        return self.provenance_fingerprint
 
     def __post_init__(self) -> None:
         if not self.feature_names or len(set(self.feature_names)) != len(self.feature_names):

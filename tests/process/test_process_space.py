@@ -116,6 +116,10 @@ def test_context_fingerprint_carries_semantic_model_and_category_identity() -> N
     assert first == reordered
     assert first != other_model
     assert first != other_vocabulary
+    assert first == context_provenance_fingerprint(
+        base, ProcessStage.DRYING, "multimodal_stage_state",
+        semantic_metadata={"source_stage_ids": ("other-form", "other-mix"), "model_version": "v1", "model_fingerprint": "a", "modality_bindings": {"signal": "s", "tabular": "t"}, "category_vocabulary_manifest": {"mode": ("fast", "slow")}},
+    )
     assert context_provenance_fingerprint(
         base, ProcessStage.DRYING, "multimodal_stage_state",
         semantic_metadata={"source_stage_ids": ("form", "mix"), "timestamp": "2026-09-11T00:00:00Z"},
