@@ -35,6 +35,7 @@ class OfficialMultiObjectiveBoTorch:
         if not objective.is_multiobjective:
             raise UnsupportedProcessOptimizationError("qNEHVI requires at least two objectives")
         target_names = [item.target for item in objective.objectives]
+        self._validate_constraint_semantics(objective.constraints, space.control_columns, target_names)
         required = [space.id_column, *space.control_columns, *target_names]
         missing = [column for column in required if column not in observations]
         if missing:
@@ -51,13 +52,13 @@ class OfficialMultiObjectiveBoTorch:
             from botorch.acquisition.multi_objective.monte_carlo import qNoisyExpectedHypervolumeImprovement
             from botorch.fit import fit_gpytorch_mll
             from botorch.models import ModelListGP, SingleTaskGP
-            from botorch.models.transforms.input import Normalize
             from botorch.models.transforms.outcome import Standardize
             from gpytorch.mlls.sum_marginal_log_likelihood import SumMarginalLogLikelihood
         except ImportError as exc:
             raise UnsupportedProcessOptimizationError("multi-objective process optimization requires the official botorch dependency") from exc
-        X = torch.as_tensor(observed[space.control_columns].to_numpy(dtype=float), dtype=torch.double)
-        candidate_X = torch.as_tensor(unseen[space.control_columns].to_numpy(dtype=float), dtype=torch.double)
+        X_values, candidate_values = self._scaled_inputs(observed, unseen, space)
+        X = torch.as_tensor(X_values, dtype=torch.double)
+        candidate_X = torch.as_tensor(candidate_values, dtype=torch.double)
         models = []
         transformed_targets = []
         for item in objective.objectives:
@@ -65,7 +66,7 @@ class OfficialMultiObjectiveBoTorch:
             if item.sense == "minimize":
                 y = -y
             transformed_targets.append(y)
-            model = SingleTaskGP(X, torch.as_tensor(y[:, None], dtype=torch.double), input_transform=Normalize(X.shape[-1]), outcome_transform=Standardize(m=1))
+            model = SingleTaskGP(X, torch.as_tensor(y[:, None], dtype=torch.double), outcome_transform=Standardize(m=1))
             models.append(model)
         model = ModelListGP(*models)
         mll = SumMarginalLogLikelihood(model.likelihood, model)
@@ -132,6 +133,39 @@ class OfficialMultiObjectiveBoTorch:
                     low, high = constraint.threshold
                     filtered = filtered.loc[(values >= low) & (values <= high)]
         return filtered
+
+    @staticmethod
+    def _validate_constraint_semantics(
+        constraints: Sequence[ConstraintSpec], control_names: Sequence[str], target_names: Sequence[str],
+    ) -> None:
+        controls, targets = set(control_names), set(target_names)
+        for constraint in constraints:
+            if not constraint.hard:
+                raise UnsupportedProcessOptimizationError("soft process constraints are not implemented; use an explicit objective")
+            if constraint.name not in controls | targets:
+                raise UnsupportedProcessOptimizationError(
+                    f"constraint {constraint.name!r} must name a modeled outcome or finite-pool control"
+                )
+            if constraint.name in controls and constraint.type == "feasibility":
+                raise UnsupportedProcessOptimizationError("feasibility constraints require a modeled probability outcome")
+
+    @staticmethod
+    def _scaled_inputs(
+        observed: pd.DataFrame, unseen: pd.DataFrame, space: ProcessSearchSpace,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        controls = space.control_columns
+        pool = space.candidates[controls].apply(pd.to_numeric, errors="coerce")
+        history = observed[controls].apply(pd.to_numeric, errors="coerce")
+        candidates = unseen[controls].apply(pd.to_numeric, errors="coerce")
+        if any(frame.isna().any().any() or not np.isfinite(frame.to_numpy()).all() for frame in (pool, history, candidates)):
+            raise ValueError("official process qNEHVI requires finite numeric recipe controls")
+        lower, span = pool.min(), pool.max() - pool.min()
+        span = span.mask(span == 0, 1.0)
+        scaled_history = (history - lower) / span
+        scaled_candidates = (candidates - lower) / span
+        if ((scaled_history < -1e-12) | (scaled_history > 1 + 1e-12)).any().any():
+            raise ValueError("observed controls fall outside the audited finite recipe pool")
+        return scaled_history.to_numpy(), scaled_candidates.to_numpy()
 
     @staticmethod
     def _outcome_constraints(constraints: Sequence[ConstraintSpec], names: list[str], objectives: Sequence[object]):
