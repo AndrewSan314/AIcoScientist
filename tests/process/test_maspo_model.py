@@ -25,7 +25,7 @@ def test_maspo_model_encodes_masks_and_transitions_a_batch() -> None:
     transition = LegalStageTransition.from_source_stage(
         record, controls=torch.ones(2, 2), scalar_observations=torch.ones(2, 2),
         modality_inputs={"tab": torch.ones(2, 2), "signal": torch.ones(2, 3)},
-        modality_bindings={"tab": "tabular", "signal": "signal"},
+        modality_bindings={"tab": "tabular", "signal": "signal"}, test_only=True,
     )
     output = model(
         torch.zeros(2, 3),

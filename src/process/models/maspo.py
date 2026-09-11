@@ -19,6 +19,7 @@ class MASPOProcessStateModel(nn.Module):
         super().__init__()
         if not modality_input_dims or min(modality_input_dims.values()) <= 0 or embedding_dim <= 0:
             raise ValueError("at least one positive-dimension modality and embedding_dim are required")
+        self.embedding_dim = embedding_dim
         self.modality_encoders = nn.ModuleDict({name: nn.Sequential(nn.Linear(size, embedding_dim), nn.Tanh()) for name, size in modality_input_dims.items()})
         self.fusion = GatedMaskedFusion(embedding_dim)
         self.empty_modality_state = nn.Parameter(torch.empty(embedding_dim))

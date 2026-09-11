@@ -8,12 +8,12 @@ import pandas as pd
 import pytest
 import torch
 
-from src.process.contracts import MeasurementValue
+from src.process.contracts import MeasurementValue, ParameterValue
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.information_horizon import HorizonView, InformationHorizon
 from src.process.modalities import ModalityObservation, ModalityType
 from src.process.maspo import MASPOProcessOptimizationCoordinator
-from src.process.models import MASPOProcessStateModel, build_legal_stage_transitions, encode_legal_multimodal_state
+from src.process.models import MASPOProcessStateModel, SourceBackedInitialState, StageFeatureEncoder, build_legal_stage_transitions, encode_legal_multimodal_state
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.optimization.process_space import ProcessSearchSpace
 from src.process.stages import ProcessStage
@@ -46,10 +46,17 @@ def _multimodal_horizon(*, signal: ModalityObservation | None = None) -> Horizon
 
 def _model() -> MASPOProcessStateModel:
     torch.manual_seed(7)
-    return MASPOProcessStateModel(3, 2, 1, {"tabular": 2, "signal": 2}, embedding_dim=4)
+    return MASPOProcessStateModel(3, 2, 2, {"tabular": 2, "signal": 2}, embedding_dim=4)
 
 
 def _encode(horizon: HorizonView, model: MASPOProcessStateModel, *, signal: torch.Tensor | None = None, control: float = 100.0):
+    if control != 100.0:
+        record = horizon.source_stages[-1]
+        controls = dict(record.controls)
+        controls["speed"] = ParameterValue(control)
+        record = replace(record, controls=controls)
+        horizon = replace(horizon, source_stages=(record,), controls={"mixing.speed": controls["speed"]})
+    encoder = StageFeatureEncoder.from_horizon(horizon)
     inputs = {"mix-tab": torch.tensor([100.0, 5.0])}
     bindings = {"mix-tab": "tabular"}
     if any(item.modality_id == "mix-signal" for item in horizon.modalities):
@@ -58,14 +65,12 @@ def _encode(horizon: HorizonView, model: MASPOProcessStateModel, *, signal: torc
         inputs["mix-signal"] = signal
     transitions = build_legal_stage_transitions(
         horizon,
-        stage_inputs={
-            **({"form": (torch.tensor([0.6, 0.0]), torch.tensor([0.0]))} if "form" in horizon.source_stage_ids else {}),
-            "mix": (torch.tensor([control, 0.0]), torch.tensor([5.0])),
-        },
+        feature_encoder=encoder,
         modality_inputs=inputs, modality_bindings=bindings,
     )
     return encode_legal_multimodal_state(
-        horizon, model, stage_history=transitions, initial_state=torch.zeros(3),
+        horizon, model, feature_encoder=encoder, stage_history=transitions,
+        initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model-sha256", encoder_fingerprint=encoder.fingerprint),
         model_version="maspo-test-v1", model_fingerprint="model-sha256",
     )
 
@@ -101,6 +106,39 @@ def test_raw_anonymous_stage_tuple_is_not_a_public_history_input() -> None:
         )
 
 
+def test_production_rejects_injected_stage_tensors() -> None:
+    horizon = _multimodal_horizon()
+    with pytest.raises(ValueError, match="test-only"):
+        build_legal_stage_transitions(
+            horizon, stage_inputs={"mix": (torch.tensor([999.0, 999.0]), torch.tensor([999.0]))},
+            modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
+        )
+
+
+def test_stage_encoder_is_deterministic_and_source_values_are_not_injectable() -> None:
+    horizon = _multimodal_horizon()
+    encoder = StageFeatureEncoder.from_horizon(horizon)
+    changed_record = replace(horizon.source_stages[0], controls={"speed": ParameterValue(120.0)})
+    changed = replace(horizon, source_stages=(changed_record,), controls={"mixing.speed": changed_record.controls["speed"]})
+    changed_encoder = StageFeatureEncoder.from_horizon(changed)
+    assert encoder.fingerprint == changed_encoder.fingerprint
+    assert not torch.equal(encoder.encode_controls(horizon.source_stages[0]).tensor, changed_encoder.encode_controls(changed_record).tensor)
+    renamed = replace(horizon.source_stages[0], stage_id="different-source-id")
+    renamed_horizon = replace(horizon, source_stage_ids=("different-source-id",), source_stages=(renamed,))
+    assert encoder.fingerprint == StageFeatureEncoder.from_horizon(renamed_horizon).fingerprint
+
+
+def test_stage_encoder_handles_categorical_missing_values_with_a_traceable_schema() -> None:
+    run = process_run()
+    record = replace(run.stages[1], controls={"protocol": ParameterValue(None)}, intermediate_properties={})
+    horizon = HorizonView(ProcessStage.COATING, {"mixing.protocol": record.controls["protocol"]}, {}, tuple(), ("mix",), (record,))
+    encoder = StageFeatureEncoder.from_horizon(horizon, category_vocabularies={"mixing.control.protocol": ("fast", "slow", None)})
+    encoded = encoder.encode_controls(record)
+    assert encoded.tensor.tolist() == [1.0, 0.0, 0.0]
+    assert "mixing.control.protocol.category" in encoded.feature_names[0]
+    assert encoded.fingerprint and encoder.fingerprint
+
+
 def test_same_modalities_and_controls_at_different_stages_change_state() -> None:
     values = [100.0, 5.0]
     formulation_modality = ModalityObservation("sensor", ModalityType.PROCESS_TABULAR, ProcessStage.FORMULATION, values=values)
@@ -112,15 +150,19 @@ def test_same_modalities_and_controls_at_different_stages_change_state() -> None
     mixing_horizon = HorizonView(ProcessStage.COATING, {"mixing.speed": mixing.controls["speed"]}, {"mixing.viscosity": mixing.intermediate_properties["viscosity"]}, (mixing_modality,), ("mix",), (mixing,))
     model = _model()
 
+    first_encoder = StageFeatureEncoder.from_horizon(formulation_horizon, observation_dim=2)
+    second_encoder = StageFeatureEncoder.from_horizon(mixing_horizon, observation_dim=2)
     first = encode_legal_multimodal_state(
-        formulation_horizon, model, stage_inputs={"form": (torch.tensor([100.0, 0.0]), torch.tensor([5.0]))},
+        formulation_horizon, model, feature_encoder=first_encoder,
         modality_inputs={"sensor": torch.tensor(values)}, modality_bindings={"sensor": "tabular"},
-        initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+        initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=("form",), model_fingerprint="model", encoder_fingerprint=first_encoder.fingerprint),
+        model_version="v1", model_fingerprint="model",
     )
     second = encode_legal_multimodal_state(
-        mixing_horizon, model, stage_inputs={"mix": (torch.tensor([100.0, 0.0]), torch.tensor([5.0]))},
+        mixing_horizon, model, feature_encoder=second_encoder,
         modality_inputs={"sensor": torch.tensor(values)}, modality_bindings={"sensor": "tabular"},
-        initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+        initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=("mix",), model_fingerprint="model", encoder_fingerprint=second_encoder.fingerprint),
+        model_version="v1", model_fingerprint="model",
     )
 
     assert first.feature_values != second.feature_values
@@ -161,20 +203,16 @@ def test_future_modality_and_final_kpi_cannot_change_a_coating_state() -> None:
     model = _model()
     first_horizon = InformationHorizon(ProcessStage.COATING).project(run)
     second_horizon = InformationHorizon(ProcessStage.COATING).project(future_run)
+    first_encoder = StageFeatureEncoder.from_horizon(first_horizon)
+    second_encoder = StageFeatureEncoder.from_horizon(second_horizon)
     first = encode_legal_multimodal_state(
-        first_horizon, model, stage_inputs={
-            "form": (torch.tensor([0.6, 0.0]), torch.tensor([0.0])),
-            "mix": (torch.tensor([100.0, 0.0]), torch.tensor([5.0])),
-        }, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])},
-        modality_bindings={"mix-tab": "tabular"}, initial_state=torch.zeros(3),
+        first_horizon, model, feature_encoder=first_encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])},
+        modality_bindings={"mix-tab": "tabular"}, initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=first_horizon.source_stage_ids, model_fingerprint="model-sha256", encoder_fingerprint=first_encoder.fingerprint),
         model_version="maspo-test-v1", model_fingerprint="model-sha256",
     )
     second = encode_legal_multimodal_state(
-        second_horizon, model, stage_inputs={
-            "form": (torch.tensor([0.6, 0.0]), torch.tensor([0.0])),
-            "mix": (torch.tensor([100.0, 0.0]), torch.tensor([5.0])),
-        }, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])},
-        modality_bindings={"mix-tab": "tabular"}, initial_state=torch.zeros(3),
+        second_horizon, model, feature_encoder=second_encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])},
+        modality_bindings={"mix-tab": "tabular"}, initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=second_horizon.source_stage_ids, model_fingerprint="model-sha256", encoder_fingerprint=second_encoder.fingerprint),
         model_version="maspo-test-v1", model_fingerprint="model-sha256",
     )
 
@@ -221,22 +259,24 @@ def test_multimodal_state_rejects_a_future_bound_modality() -> None:
     drying = replace(run.stages[3], modalities=[future])
     horizon = HorizonView(ProcessStage.COATING, {"drying.temperature": drying.controls["temperature"]}, {"drying.dry_thickness": drying.intermediate_properties["dry_thickness"]}, (future,), ("dry",), (drying,))
     with pytest.raises(ValueError, match="source stage"):
+        encoder = StageFeatureEncoder.from_horizon(horizon)
         encode_legal_multimodal_state(
-            horizon, _model(), stage_inputs={"dry": (torch.tensor([100.0, 0.0]), torch.tensor([5.0]))},
+            horizon, _model(), feature_encoder=encoder,
             modality_inputs={"dry-signal": torch.tensor([1.0, 2.0])}, modality_bindings={"dry-signal": "signal"},
-            initial_state=torch.zeros(3), model_version="maspo-test-v1", model_fingerprint="model-sha256",
+            initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model-sha256", encoder_fingerprint=encoder.fingerprint),
+            model_version="maspo-test-v1", model_fingerprint="model-sha256",
         )
 
 
 def test_production_maspo_rejects_unvalidated_multimodal_state() -> None:
     run = process_run()
     model = _model()
+    horizon = InformationHorizon(ProcessStage.COATING).project(run)
+    encoder = StageFeatureEncoder.from_horizon(horizon)
     state = encode_legal_multimodal_state(
-        InformationHorizon(ProcessStage.COATING).project(run), model, stage_inputs={
-            "form": (torch.tensor([0.6, 0.0]), torch.tensor([0.0])),
-            "mix": (torch.tensor([100.0, 0.0]), torch.tensor([5.0])),
-        }, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
-        initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+        horizon, model, feature_encoder=encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
+        initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model", encoder_fingerprint=encoder.fingerprint),
+        model_version="v1", model_fingerprint="model",
     )
     with pytest.raises(ValueError, match="SOURCE_BACKED_VALIDATED"):
         MASPOProcessOptimizationCoordinator().optimize_remaining_process(
@@ -254,12 +294,9 @@ def test_production_maspo_rejects_unvalidated_multimodal_state() -> None:
 def test_legal_history_rejects_future_stage_id_and_changed_source_fingerprint() -> None:
     run = process_run()
     horizon = InformationHorizon(ProcessStage.COATING).project(run)
+    encoder = StageFeatureEncoder.from_horizon(horizon)
     transitions = build_legal_stage_transitions(
-        horizon,
-        stage_inputs={
-            "form": (torch.tensor([0.6, 0.0]), torch.tensor([0.0])),
-            "mix": (torch.tensor([100.0, 0.0]), torch.tensor([5.0])),
-        }, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
+        horizon, feature_encoder=encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
     )
     wrong_id = replace(
         transitions[0], source_stage_id="dry",
@@ -268,13 +305,13 @@ def test_legal_history_rejects_future_stage_id_and_changed_source_fingerprint() 
     with pytest.raises(ValueError, match="legal source stages"):
         encode_legal_multimodal_state(
             horizon, _model(), stage_history=(wrong_id, transitions[1]),
-            initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+            feature_encoder=encoder, initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model", encoder_fingerprint=encoder.fingerprint), model_version="v1", model_fingerprint="model",
         )
     altered = replace(transitions[0], provenance={**transitions[0].provenance, "source_stage_fingerprint": "changed"})
     with pytest.raises(ValueError, match="source stage fingerprint"):
         encode_legal_multimodal_state(
             horizon, _model(), stage_history=(altered, transitions[1]),
-            initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+            feature_encoder=encoder, initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model", encoder_fingerprint=encoder.fingerprint), model_version="v1", model_fingerprint="model",
         )
     future_provenance = replace(
         transitions[1],
@@ -283,5 +320,5 @@ def test_legal_history_rejects_future_stage_id_and_changed_source_fingerprint() 
     with pytest.raises(ValueError, match="modality provenance"):
         encode_legal_multimodal_state(
             horizon, _model(), stage_history=(transitions[0], future_provenance),
-            initial_state=torch.zeros(3), model_version="v1", model_fingerprint="model",
+            feature_encoder=encoder, initial_state=SourceBackedInitialState.from_tensor(torch.zeros(3), source_stage_ids=horizon.source_stage_ids, model_fingerprint="model", encoder_fingerprint=encoder.fingerprint), model_version="v1", model_fingerprint="model",
         )

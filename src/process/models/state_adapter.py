@@ -10,7 +10,7 @@ from ..information_horizon import HorizonView
 from ..optimization.state import ModelValidationStatus, OptimizationState, context_provenance_fingerprint
 from ..stages import stage_precedes
 from .maspo import MASPOProcessStateModel
-from .transitions import LegalStageTransition, source_stage_fingerprint
+from .transitions import LegalStageTransition, SourceBackedInitialState, StageFeatureEncoder, source_stage_fingerprint
 
 
 StageTransition = LegalStageTransition
@@ -19,26 +19,40 @@ StageTransition = LegalStageTransition
 def build_legal_stage_transitions(
     horizon: HorizonView,
     *,
-    stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]],
+    feature_encoder: StageFeatureEncoder | None = None,
     modality_inputs: Mapping[str, torch.Tensor],
     modality_bindings: Mapping[str, str],
+    stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
+    test_only: bool = False,
 ) -> tuple[LegalStageTransition, ...]:
-    """Bind model tensors to the source stages already carried by a HorizonView."""
+    """Encode source StageRecords; arbitrary tensors are retained only for explicit tests."""
     if tuple(record.stage_id for record in horizon.source_stages) != tuple(horizon.source_stage_ids):
         raise ValueError("HorizonView must carry source StageRecords in source_stage_ids order")
-    if set(stage_inputs) != set(horizon.source_stage_ids):
-        raise ValueError("stage inputs must cover exactly the legal source stages")
+    if stage_inputs is not None:
+        if not test_only:
+            raise ValueError("arbitrary stage tensors are test-only; pass test_only=True explicitly")
+        if set(stage_inputs) != set(horizon.source_stage_ids):
+            raise ValueError("stage inputs must cover exactly the legal source stages")
+        return tuple(
+            LegalStageTransition.from_source_stage(
+                record, controls=stage_inputs[record.stage_id][0],
+                scalar_observations=stage_inputs[record.stage_id][1],
+                modality_inputs=modality_inputs, modality_bindings=modality_bindings, test_only=True,
+            )
+            for record in horizon.source_stages
+        )
+    if feature_encoder is None:
+        raise ValueError("production stage transitions require a StageFeatureEncoder")
     return tuple(
-        LegalStageTransition.from_source_stage(
-            record, controls=stage_inputs[record.stage_id][0],
-            scalar_observations=stage_inputs[record.stage_id][1],
+        LegalStageTransition.from_encoded_source_stage(
+            record, encoder=feature_encoder,
             modality_inputs=modality_inputs, modality_bindings=modality_bindings,
         )
         for record in horizon.source_stages
     )
 
 
-def _validate_legal_history(horizon: HorizonView, transitions: tuple[LegalStageTransition, ...]) -> None:
+def _validate_legal_history(horizon: HorizonView, transitions: tuple[LegalStageTransition, ...], feature_encoder: StageFeatureEncoder | None) -> None:
     expected_ids = tuple(horizon.source_stage_ids)
     if tuple(item.source_stage_id for item in transitions) != expected_ids:
         raise ValueError("stage history must contain the legal source stages in HorizonView order")
@@ -71,6 +85,8 @@ def _validate_legal_history(horizon: HorizonView, transitions: tuple[LegalStageT
         expected_bindings = {modality.modality_id for modality in record.modalities}
         if not isinstance(bindings, Mapping) or set(bindings) != expected_bindings:
             raise ValueError("transition modality provenance is not bound to the source stage")
+        if feature_encoder is not None:
+            feature_encoder.validate_transition(record, transition)
     expected_modalities = tuple(modality.modality_id for record in horizon.source_stages for modality in record.modalities)
     if tuple(modality.modality_id for modality in horizon.modalities) != expected_modalities:
         raise ValueError("HorizonView modalities are not source-stage bound")
@@ -81,10 +97,11 @@ def encode_legal_multimodal_state(
     trained_model: MASPOProcessStateModel,
     *,
     stage_history: Iterable[LegalStageTransition] | None = None,
+    feature_encoder: StageFeatureEncoder | None = None,
     stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
     modality_inputs: Mapping[str, torch.Tensor] | None = None,
     modality_bindings: Mapping[str, str] | None = None,
-    initial_state: torch.Tensor | None = None,
+    initial_state: SourceBackedInitialState | torch.Tensor | None = None,
     model_version: str,
     model_fingerprint: str,
     validation_status: ModelValidationStatus = ModelValidationStatus.TRAINED_UNVALIDATED,
@@ -97,27 +114,55 @@ def encode_legal_multimodal_state(
     status = ModelValidationStatus(validation_status)
     if status == ModelValidationStatus.SOURCE_BACKED_VALIDATED and (not training_evidence_id or not dataset_fingerprint):
         raise ValueError("SOURCE_BACKED_VALIDATED requires training evidence and dataset fingerprint")
+    if stage_history is not None:
+        stage_history = tuple(stage_history)
+        if any(not isinstance(item, LegalStageTransition) for item in stage_history):
+            raise TypeError("stage_history accepts only source-bound LegalStageTransition values")
     if initial_state is None:
-        raise ValueError("multimodal optimization state requires an explicit source-backed initial_state")
+        raise ValueError("multimodal optimization state requires an explicit SourceBackedInitialState")
+    if isinstance(initial_state, SourceBackedInitialState):
+        if initial_state.source_stage_ids != tuple(horizon.source_stage_ids):
+            raise ValueError("initial state source IDs must match the HorizonView")
+        if initial_state.model_fingerprint != model_fingerprint:
+            raise ValueError("initial state model fingerprint does not match the requested model")
+        if feature_encoder is not None and initial_state.encoder_fingerprint != feature_encoder.fingerprint:
+            raise ValueError("initial state encoder fingerprint does not match the StageFeatureEncoder")
+        initial_tensor = initial_state.tensor
+    elif isinstance(initial_state, torch.Tensor):
+        if status != ModelValidationStatus.TEST_ONLY:
+            raise ValueError("anonymous initial tensors are test-only; use SourceBackedInitialState")
+        initial_tensor = initial_state
+    else:
+        raise TypeError("initial_state must be SourceBackedInitialState or a test-only tensor")
     if stage_history is None:
-        if stage_inputs is None or modality_inputs is None or modality_bindings is None:
-            raise ValueError("production multimodal encoding requires source-bound stage history or its source-stage inputs")
+        if modality_inputs is None or modality_bindings is None:
+            raise ValueError("multimodal encoding requires source modalities")
+        if feature_encoder is None and stage_inputs is None:
+            raise ValueError("production multimodal encoding requires a StageFeatureEncoder")
+        if stage_inputs is not None and status != ModelValidationStatus.TEST_ONLY:
+            raise ValueError("arbitrary stage tensors are test-only; use a StageFeatureEncoder")
         transitions = build_legal_stage_transitions(
-            horizon, stage_inputs=stage_inputs, modality_inputs=modality_inputs, modality_bindings=modality_bindings,
+            horizon, feature_encoder=feature_encoder, modality_inputs=modality_inputs, modality_bindings=modality_bindings,
+            stage_inputs=stage_inputs, test_only=status == ModelValidationStatus.TEST_ONLY,
         )
     else:
+        if feature_encoder is None and status != ModelValidationStatus.TEST_ONLY:
+            raise ValueError("stage history validation requires the source StageFeatureEncoder")
         transitions = tuple(stage_history)
     if any(not isinstance(item, LegalStageTransition) for item in transitions):
         raise TypeError("stage_history accepts only source-bound LegalStageTransition values")
-    _validate_legal_history(horizon, transitions)
-    if initial_state.ndim not in (1, 2) or initial_state.shape[-1] != trained_model.stage_model.stage_embedding.embedding_dim:
+    _validate_legal_history(horizon, transitions, feature_encoder)
+    if initial_tensor.ndim not in (1, 2) or initial_tensor.shape[-1] != trained_model.stage_model.stage_embedding.embedding_dim:
         raise ValueError("initial_state has the wrong shape for the MASPO StageAwareProcessModel")
+    expected_observation_dim = trained_model.stage_model.observation_dim - trained_model.embedding_dim
+    if feature_encoder is not None and (feature_encoder.control_dim != trained_model.stage_model.control_dim or feature_encoder.observation_dim != expected_observation_dim):
+        raise ValueError("StageFeatureEncoder dimensions do not match the MASPO model")
 
     was_training = trained_model.training
     trained_model.eval()
     try:
         with torch.no_grad():
-            state = trained_model.state_from_transitions(initial_state, transitions) if transitions else initial_state
+            state = trained_model.state_from_transitions(initial_tensor, transitions) if transitions else initial_tensor
     finally:
         trained_model.train(was_training)
     if state.ndim == 2:
@@ -135,16 +180,15 @@ def encode_legal_multimodal_state(
         for modality in transition.modality_observations
     }
     semantic_metadata: dict[str, Any] = {
-        "source_stage_ids": horizon.source_stage_ids,
         "model_fingerprint": model_fingerprint,
         "model_version": model_version,
-        "modality_availability": availability,
-        "modality_bindings": bindings,
+        "encoder_fingerprint": feature_encoder.fingerprint if feature_encoder is not None else "unsafe-test-only",
+        "encoder_dimensions": {"control": feature_encoder.control_dim, "observation": feature_encoder.observation_dim} if feature_encoder is not None else None,
+        "modality_schema": tuple(sorted(
+            (transition.stage.value, modality.modality_type.value, transition.provenance["modality_bindings"][modality.modality_id], not modality.is_missing)
+            for transition in transitions for modality in transition.modality_observations
+        )),
     }
-    if training_evidence_id is not None:
-        semantic_metadata["training_evidence_id"] = training_evidence_id
-    if dataset_fingerprint is not None:
-        semantic_metadata["dataset_fingerprint"] = dataset_fingerprint
     feature_names = tuple(f"context.state.{index}" for index in range(values.size))
     feature_values = {name: float(value) for name, value in zip(feature_names, values)}
     fingerprint = context_provenance_fingerprint(
@@ -155,10 +199,14 @@ def encode_legal_multimodal_state(
         source_stage_ids=horizon.source_stage_ids, provenance_fingerprint=fingerprint,
         representation_kind="multimodal_stage_state", provenance={
             "model_version": model_version, "model_fingerprint": model_fingerprint,
-            "training_evidence_id": training_evidence_id, "dataset_fingerprint": dataset_fingerprint,
             "modality_ids": tuple(availability), "modality_availability": availability,
             "modality_bindings": bindings, "semantic_fingerprint_inputs": semantic_metadata,
-            "source_transition_fingerprints": tuple(item.provenance["source_stage_fingerprint"] for item in transitions),
+            "audit_provenance": {
+                "source_stage_ids": horizon.source_stage_ids,
+                "source_transition_fingerprints": tuple(item.provenance["source_stage_fingerprint"] for item in transitions),
+                "initial_state_fingerprint": initial_state.provenance_fingerprint if isinstance(initial_state, SourceBackedInitialState) else None,
+            },
+            "training_evidence_id": training_evidence_id, "dataset_fingerprint": dataset_fingerprint,
             "validation_status": status.value,
         },
         validation_status=status,
