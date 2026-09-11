@@ -79,8 +79,28 @@ class StageFeatureEncoder:
         control_dim: int | None = None,
         observation_dim: int | None = None,
     ) -> "StageFeatureEncoder":
-        if not horizon.source_stages or tuple(record.stage_id for record in horizon.source_stages) != tuple(horizon.source_stage_ids):
+        return cls.fit(
+            horizon,
+            category_vocabularies=category_vocabularies,
+            control_dim=control_dim,
+            observation_dim=observation_dim,
+        )
+
+    @classmethod
+    def fit(
+        cls,
+        training_data: Any,
+        *,
+        category_vocabularies: Mapping[str, Sequence[object]] | None = None,
+        control_dim: int | None = None,
+        observation_dim: int | None = None,
+    ) -> "StageFeatureEncoder":
+        records = tuple(getattr(training_data, "source_stages", training_data))
+        source_ids = tuple(getattr(training_data, "source_stage_ids", (record.stage_id for record in records)))
+        if not records or tuple(record.stage_id for record in records) != source_ids:
             raise ValueError("StageFeatureEncoder requires source stages in HorizonView order")
+        if len({record.stage_type for record in records}) != len(records):
+            raise ValueError("StageFeatureEncoder requires one training schema per stage type")
         vocabularies = category_vocabularies or {}
         stages = tuple(
             _StageSpec(
@@ -88,7 +108,7 @@ class StageFeatureEncoder:
                 cls._fields(record, "control", record.controls, vocabularies),
                 cls._fields(record, "observation", record.intermediate_properties, vocabularies),
             )
-            for record in horizon.source_stages
+            for record in records
         )
         inferred_control_dim = max(sum(field.width for field in stage.controls) for stage in stages)
         inferred_observation_dim = max(sum(field.width for field in stage.observations) for stage in stages)
@@ -111,6 +131,34 @@ class StageFeatureEncoder:
         fingerprint = hashlib.sha256(json.dumps(schema, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
         return cls(stages, control_dim, observation_dim, fingerprint)
 
+    @classmethod
+    def from_training_data(cls, training_data: Any, **kwargs: Any) -> "StageFeatureEncoder":
+        return cls.fit(training_data, **kwargs)
+
+    @classmethod
+    def from_training(cls, training_data: Any, **kwargs: Any) -> "StageFeatureEncoder":
+        return cls.fit(training_data, **kwargs)
+
+    @property
+    def feature_schema(self) -> tuple[tuple[Any, ...], ...]:
+        return tuple(
+            (
+                stage.stage_type.value,
+                tuple((field.name, field.kind, field.categories) for field in stage.controls),
+                tuple((field.name, field.kind, field.categories) for field in stage.observations),
+            )
+            for stage in self.stages
+        )
+
+    @property
+    def category_vocabularies(self) -> dict[str, tuple[tuple[str, str], ...]]:
+        return {
+            field.name: field.categories
+            for stage in self.stages
+            for field in (*stage.controls, *stage.observations)
+            if field.kind == "categorical"
+        }
+
     @staticmethod
     def _fields(
         record: StageRecord,
@@ -131,7 +179,7 @@ class StageFeatureEncoder:
             if not isinstance(raw, Real) or isinstance(raw, bool):
                 if vocabulary is None:
                     raise ValueError(f"categorical source field {key!r} requires a source-supported vocabulary")
-                categories = tuple(sorted({_category(value) for value in (*vocabulary, raw)}))
+                categories = tuple(sorted({_category(value) for value in vocabulary}))
                 if not categories or _category(raw) not in categories:
                     raise ValueError(f"categorical source field {key!r} is unknown to its vocabulary")
                 result.append(_FieldSpec(key, "categorical", categories))
@@ -215,7 +263,10 @@ class SourceBackedInitialState:
         source_stage_ids: Sequence[str],
         model_fingerprint: str,
         encoder_fingerprint: str,
+        test_only: bool = False,
     ) -> "SourceBackedInitialState":
+        if not test_only:
+            raise ValueError("wrapping an arbitrary initial tensor is test-only")
         if not isinstance(tensor, torch.Tensor) or tensor.ndim not in (1, 2) or not torch.isfinite(tensor).all():
             raise ValueError("source-backed initial state must be a finite rank-1 or rank-2 tensor")
         ids = tuple(str(item) for item in source_stage_ids)
@@ -325,7 +376,7 @@ class LegalStageTransition:
         test_only: bool = False,
     ) -> "LegalStageTransition":
         if not test_only:
-            raise ValueError("arbitrary stage tensors are test-only; use StageFeatureEncoder.from_horizon")
+            raise ValueError("arbitrary stage tensors are test-only; use a frozen training StageFeatureEncoder")
         tokens, availability = cls._modality_payload(record, modality_inputs, modality_bindings)
         supplied = dict(provenance or {})
         reserved = {"source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings"}
