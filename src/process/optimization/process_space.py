@@ -76,12 +76,15 @@ class ProcessSearchSpace:
                 if ((encoded_observations[f"{prefix}_value"] < -1e-12) | (encoded_observations[f"{prefix}_value"] > 1 + 1e-12)).any():
                     raise ValueError(f"observed control {column!r} falls outside the audited finite recipe pool")
                 continue
-            categories = sorted(set(pool.fillna("__MISSING__").astype(str)))
-            history_categories = history.fillna("__MISSING__").astype(str)
+            def category_key(value: object) -> tuple[str, str]:
+                return ("missing", "") if pd.isna(value) else ("value", str(value))
+
+            categories = sorted(set(pool.map(category_key)))
+            history_categories = history.map(category_key)
             unknown = sorted(set(history_categories) - set(categories))
             if unknown:
                 raise ValueError(f"observations include unaudited {column!r} categories: {unknown}")
-            pool_categories = pool.fillna("__MISSING__").astype(str)
+            pool_categories = pool.map(category_key)
             for category_index, category in enumerate(categories):
                 feature = f"{prefix}_category_{category_index}"
                 encoded_pool[feature] = (pool_categories == category).astype(float)

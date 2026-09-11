@@ -30,3 +30,10 @@ def test_official_process_view_one_hot_encodes_only_source_categories() -> None:
 
     assert encoded_space.candidates[["control_0_category_0", "control_0_category_1"]].values.tolist() == [[1.0, 0.0], [0.0, 1.0]]
     assert observations.loc[0, "target"] == 1.0
+
+
+def test_official_process_view_keeps_a_real_missing_sentinel_category_distinct_from_absence() -> None:
+    space = ProcessSearchSpace(pd.DataFrame({"recipe_id": ["a", "b"], "protocol": ["__MISSING__", None]}))
+    _, encoded_space = space.official_botorch_view(pd.DataFrame({"recipe_id": ["a"], "protocol": ["__MISSING__"], "target": [1.0]}))
+
+    assert encoded_space.candidates[["control_0_category_0", "control_0_category_1"]].values.tolist() == [[0.0, 1.0], [1.0, 0.0]]
