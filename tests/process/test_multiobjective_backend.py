@@ -22,8 +22,10 @@ def test_multiobjective_rejects_unknown_constraint_instead_of_ignoring_it() -> N
 
 def test_multiobjective_scales_against_the_full_finite_recipe_pool() -> None:
     space = ProcessSearchSpace(pd.DataFrame({"recipe_id": ["a", "b", "c"], "speed": [10.0, 20.0, 30.0]}))
+    observations, encoded_space = space.official_botorch_view(
+        pd.DataFrame({"recipe_id": ["a", "b"], "speed": [10.0, 20.0], "capacity": [1.0, 2.0]})
+    )
     history, candidates = OfficialMultiObjectiveBoTorch._scaled_inputs(
-        pd.DataFrame({"recipe_id": ["a", "b"], "speed": [10.0, 20.0], "capacity": [1.0, 2.0]}),
-        pd.DataFrame({"recipe_id": ["c"], "speed": [30.0]}), space,
+        observations, encoded_space.candidates.loc[encoded_space.candidates["recipe_id"] == "c"], encoded_space,
     )
     assert history.tolist() == [[0.0], [0.5]] and candidates.tolist() == [[1.0]]

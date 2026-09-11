@@ -43,8 +43,10 @@ class OfficialMultiObjectiveBoTorch:
         observed = observations.dropna(subset=required).copy()
         if len(observed) < 2:
             raise ValueError("qNEHVI needs at least two fully observed source recipes")
-        unseen = space.candidates.loc[~space.candidates[space.id_column].isin(observed[space.id_column])].copy()
-        unseen = self._filter_hard_control_constraints(unseen, objective.constraints)
+        encoded_observed, encoded_space = space.official_botorch_view(observed)
+        unseen = encoded_space.candidates.loc[~encoded_space.candidates[encoded_space.id_column].isin(encoded_observed[encoded_space.id_column])].copy()
+        feasible_source_ids = self._filter_hard_control_constraints(space.candidates, objective.constraints)[space.id_column]
+        unseen = unseen.loc[unseen[encoded_space.id_column].isin(feasible_source_ids)].copy()
         if unseen.empty:
             raise ValueError("no unobserved feasible process recipe remains")
 
@@ -56,7 +58,7 @@ class OfficialMultiObjectiveBoTorch:
             from gpytorch.mlls.sum_marginal_log_likelihood import SumMarginalLogLikelihood
         except ImportError as exc:
             raise UnsupportedProcessOptimizationError("multi-objective process optimization requires the official botorch dependency") from exc
-        X_values, candidate_values = self._scaled_inputs(observed, unseen, space)
+        X_values, candidate_values = self._scaled_inputs(encoded_observed, unseen, encoded_space)
         X = torch.as_tensor(X_values, dtype=torch.double)
         candidate_X = torch.as_tensor(candidate_values, dtype=torch.double)
         models = []
@@ -102,12 +104,13 @@ class OfficialMultiObjectiveBoTorch:
                 item.target: Prediction(float(-means[index, pos] if item.sense == "minimize" else means[index, pos]), float(stds[index, pos]), item.units)
                 for pos, item in enumerate(objective.objectives)
             }
-            controls = unseen.iloc[index][space.control_columns].to_dict()
+            recipe_id = str(unseen.iloc[index][encoded_space.id_column])
+            controls = space.recipe(recipe_id)
             result.append(ProcessControlProposal(
-                proposal_id=f"process:{unseen.iloc[index][space.id_column]}", stage=None, controls=controls,
+                proposal_id=f"process:{recipe_id}", stage=None, controls=controls,
                 predicted_outputs=outputs, feasibility_probability=self._feasibility_probability(outputs, objective.constraints),
                 acquisition_value=float(scores[index]), pareto_rank=int(ranks[index]), model_version="botorch-qNEHVI",
-                data_fingerprint=self._fingerprint(observed), source_recipe_id=str(unseen.iloc[index][space.id_column]),
+                data_fingerprint=self._fingerprint(observed), source_recipe_id=recipe_id,
                 provenance={"acquisition": "qNoisyExpectedHypervolumeImprovement", "reference_point": reference.tolist(), "seed": seed},
             ))
         return result

@@ -4,7 +4,6 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
-import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
@@ -38,21 +37,8 @@ class ProcessOptimizationCoordinator:
         observations: pd.DataFrame,
         space: ProcessSearchSpace,
     ) -> tuple[pd.DataFrame, ProcessSearchSpace]:
-        """Map known finite recipe controls into [0, 1] without touching outcomes."""
-        columns = space.control_columns
-        candidates = space.candidates.copy()
-        numeric = candidates[columns].apply(pd.to_numeric, errors="coerce")
-        if numeric.isna().any().any() or not np.isfinite(numeric.to_numpy()).all():
-            raise ValueError("official process BoTorch requires finite numeric candidate controls")
-        lower, span = numeric.min(), numeric.max() - numeric.min()
-        span = span.mask(span == 0, 1.0)
-        candidates.loc[:, columns] = (numeric - lower) / span
-        scaled_observations = observations.copy()
-        for column in columns:
-            if column in scaled_observations:
-                values = pd.to_numeric(scaled_observations[column], errors="coerce")
-                scaled_observations[column] = (values - lower[column]) / span[column]
-        return scaled_observations, ProcessSearchSpace(candidates, id_column=space.id_column)
+        """Encode only audited finite-pool controls for the official backend."""
+        return space.official_botorch_view(observations)
 
     def propose_recipes(
         self,

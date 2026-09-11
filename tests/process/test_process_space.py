@@ -19,6 +19,14 @@ def test_official_process_scaling_uses_known_controls_without_changing_recipe_id
     scaled_observations, scaled_space = ProcessOptimizationCoordinator._scale_official_botorch_inputs(observations, space)
 
     assert scaled_space.candidates["recipe_id"].tolist() == ["a", "b"]
-    assert scaled_space.candidates["speed"].tolist() == [0.0, 1.0]
-    assert scaled_space.candidates["gap"].tolist() == [0.0, 0.0]
+    assert scaled_space.candidates["control_0_value"].tolist() == [0.0, 1.0]
+    assert scaled_space.candidates["control_1_value"].tolist() == [0.0, 0.0]
     assert scaled_observations.loc[0, "target"] == 1.0
+
+
+def test_official_process_view_one_hot_encodes_only_source_categories() -> None:
+    space = ProcessSearchSpace(pd.DataFrame({"recipe_id": ["a", "b"], "protocol": ["fast", "slow"]}))
+    observations, encoded_space = space.official_botorch_view(pd.DataFrame({"recipe_id": ["a"], "protocol": ["fast"], "target": [1.0]}))
+
+    assert encoded_space.candidates[["control_0_category_0", "control_0_category_1"]].values.tolist() == [[1.0, 0.0], [0.0, 1.0]]
+    assert observations.loc[0, "target"] == 1.0
