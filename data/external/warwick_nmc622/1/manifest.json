@@ -1,0 +1,11 @@
+{
+  "dataset": "warwick_nmc622",
+  "official_dataset_source": "https://data.mendeley.com/datasets/wwhm2frfmy/1",
+  "source_version": "1",
+  "source_doi": "10.17632/wwhm2frfmy.1",
+  "license": "CC0 1.0",
+  "downloaded_at": "2026-09-11",
+  "files": {
+    "Characteristics_of_Electrodes_and_Lithium-ion_Cells_at_Pilot-Plant_Manufacturing_Scale.zip": "bf93b0196d861838a7eeee8267d66a38cfda23306db76e7af6a10e79f077e9b3"
+  }
+}

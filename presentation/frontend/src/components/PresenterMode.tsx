@@ -4,15 +4,9 @@ import {
   ChevronRight, 
   X, 
   BookOpen, 
-  FlaskConical, 
-  Layers, 
-  BarChart3, 
-  Zap, 
-  GitBranch, 
-  ShieldCheck,
-  Compass
+  RotateCcw
 } from 'lucide-react';
-import { NavTab } from './Header';
+import { WorkspaceTab, DiscoveryFlowState, DatasetOption, RevealPhase } from '../types/mission_control';
 
 interface PresenterModeProps {
   currentScene: number;
@@ -22,13 +16,19 @@ interface PresenterModeProps {
   onSelectScene: (index: number) => void;
   onExit: () => void;
   onToggleNotes: () => void;
-  onJumpToTab: (tab: NavTab) => void;
+  onJumpToWorkspace: (workspace: WorkspaceTab, questionId?: number) => void;
 }
 
 export interface SceneMeta {
   index: number;
   title: string;
-  tab: NavTab;
+  workspace: WorkspaceTab;
+  flowState?: DiscoveryFlowState;
+  datasetOption?: DatasetOption;
+  questionId?: number;
+  stepIndex?: number;
+  revealPhase?: RevealPhase;
+  subtab?: 'architecture' | 'audit' | 'verification';
   tagline: string;
   keyMetric: string;
 }
@@ -36,59 +36,83 @@ export interface SceneMeta {
 export const SCENES: SceneMeta[] = [
   {
     index: 0,
-    title: 'The Research Question',
-    tab: 'overview',
-    tagline: '“Traditional optimization asks which material is best. We ask which experiment should be performed next, and why.”',
-    keyMetric: 'Hypothesis-Driven Decisions',
+    title: '1. What problem does AIcoScientist solve?',
+    workspace: 'discovery',
+    flowState: 'setup',
+    datasetOption: 'controlled_synthesis',
+    tagline: '“It chooses the next candidate × measurement experiment—not simply the material predicted to be best.”',
+    keyMetric: 'Next Experiment ≠ Best Material',
   },
   {
     index: 1,
-    title: 'Universal Architecture',
-    tab: 'architecture',
-    tagline: '“One reusable decision engine decoupling candidate schemas from multi-modal physical characterization.”',
-    keyMetric: '4 Scientific Domains',
+    title: '2. What should we test next?',
+    workspace: 'discovery',
+    flowState: 'results',
+    stepIndex: 1,
+    revealPhase: 'A_SCORED',
+    tagline: '“The Next Experiment card names the recorded candidate × measurement action and its score.”',
+    keyMetric: 'Recorded Selected Action',
   },
   {
     index: 2,
-    title: 'Decision Cockpit',
-    tab: 'cockpit',
-    tagline: '“Maintaining competing mechanistic hypotheses while jointly scoring candidate materials and measurement modalities.”',
-    keyMetric: 'HIG + Discovery - Cost',
+    title: '3. Why this experiment?',
+    workspace: 'discovery',
+    flowState: 'results',
+    stepIndex: 1,
+    revealPhase: 'A_SCORED',
+    tagline: '“Every candidate × measurement cell is a feasible experiment; the highlighted cell is the recorded choice.”',
+    keyMetric: 'Decision Matrix',
   },
   {
     index: 3,
-    title: 'The Scientific Wow Moment',
-    tab: 'cockpit',
-    tagline: '“Preregistration before reveal prevents retrospective bias and provides an immutable evidence trail.”',
-    keyMetric: 'Preregister → Reveal → Update',
+    title: '4. Lock prediction → reveal evidence → update model support',
+    workspace: 'discovery',
+    flowState: 'results',
+    stepIndex: 2,
+    revealPhase: 'D_UPDATED',
+    tagline: '“The expected outcome is recorded before the measurement, then evidence changes support for competing models.”',
+    keyMetric: 'Recorded Evidence Loop',
   },
   {
     index: 4,
-    title: 'Evaluation Breadth',
-    tab: 'benchmarks',
-    tagline: '“180 controlled trajectories across clean and stress worlds demonstrate rigorous policy trade-offs.”',
-    keyMetric: '180 Full Trajectories',
+    title: '5. Best candidate found in an optimization task',
+    workspace: 'discovery',
+    flowState: 'results',
+    datasetOption: 'electrolyte_search',
+    tagline: '“Best Found is separate from Next Experiment and is limited to a frozen surrogate benchmark.”',
+    keyMetric: 'Best Found So Far',
   },
   {
     index: 5,
-    title: 'A-Lab Evidence Atlas',
-    tab: 'alab',
-    tagline: '“Validating on 1,035 real inorganic synthesis samples while honestly reporting partial calibration and holdout boundaries.”',
-    keyMetric: '1,035 Real Samples',
+    title: '6. Does the decision strategy work in controlled worlds?',
+    workspace: 'benchmarks',
+    questionId: 1,
+    tagline: '“Controlled ground truth lets the benchmark test whether model-support updates and decisions behave as intended.”',
+    keyMetric: 'Controlled Validation',
   },
   {
     index: 6,
-    title: 'Electrolyte Screening Scale',
-    tab: 'electrolyte',
-    tagline: '“Screening a 333,333 virtual formulation space with bounded working-set execution and honest surrogate results.”',
-    keyMetric: '333,333 Candidates',
+    title: '7. Can the framework replay real historical records?',
+    workspace: 'benchmarks',
+    questionId: 4,
+    tagline: '“A-Lab is a historical physical-data replay, not a new autonomous laboratory execution.”',
+    keyMetric: 'A-Lab Historical Replay',
   },
   {
     index: 7,
-    title: 'Contributions & Readiness',
-    tab: 'readiness',
-    tagline: '“48 out of 50 boolean validation gates passed with complete evidence ledger provenance.”',
-    keyMetric: '48 / 50 Gates Pass',
+    title: '8. Can it scale candidate search?',
+    workspace: 'benchmarks',
+    questionId: 5,
+    tagline: '“333,333 virtual formulations are screened to a recorded working set and sequential surrogate queries.”',
+    keyMetric: 'Large-Space Surrogate Optimization',
+  },
+  {
+    index: 8,
+    title: '9. Evidence boundaries and next research step',
+    workspace: 'system',
+    subtab: 'verification',
+    tagline: '“The presentation distinguishes controlled validation, historical replay, and simulation from prospective autonomous experimentation.”',
+    keyMetric: 'Evidence & Limitations',
   },
 ];
 
@@ -105,108 +129,92 @@ export const PresenterMode: React.FC<PresenterModeProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'Space') {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
         e.preventDefault();
         onNextScene();
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         e.preventDefault();
         onPrevScene();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onExit();
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        onToggleNotes();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onNextScene, onPrevScene, onExit]);
-
-  const progressPercent = ((currentScene + 1) / totalScenes) * 100;
+  }, [onNextScene, onPrevScene, onExit, onToggleNotes]);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-slate-950 text-white border-b border-slate-800 shadow-xl">
-      {/* Progress Bar */}
-      <div className="h-1 w-full bg-slate-800">
-        <div 
-          className="h-full bg-emerald-500 transition-all duration-300 ease-out"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[#17201F] text-[#FCFCFA] border-b border-[#B91C1C]/40 shadow-md">
+      <div className="max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 h-14 flex items-center justify-between gap-4">
+        {/* Left: Brand & Scene Title */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#B91C1C] text-white text-2xs font-mono font-bold shrink-0">
+            <span>SCENE {currentScene + 1}/{totalScenes}</span>
+          </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-        {/* Left: Scene Status */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-400 font-mono text-xs font-bold">
-              SCENE {currentScene + 1}/{totalScenes}
-            </span>
-            <span className="font-bold text-sm tracking-tight text-slate-100 hidden sm:inline">
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-bold text-white truncate">
               {scene.title}
-            </span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-1">
-            {SCENES.map((s, idx) => (
-              <button
-                key={s.index}
-                onClick={() => onSelectScene(idx)}
-                className={`w-7 h-7 rounded text-xs font-mono font-medium transition cursor-pointer flex items-center justify-center ${
-                  idx === currentScene
-                    ? 'bg-emerald-600 text-white font-bold'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                }`}
-                title={`Jump to Scene ${idx + 1}: ${s.title}`}
-              >
-                {idx + 1}
-              </button>
-            ))}
+            </div>
+            <div className="text-2xs text-[#FECACA] hidden md:block truncate max-w-xl">
+              {scene.tagline}
+            </div>
           </div>
         </div>
 
-        {/* Center: Quote / Tagline */}
-        <div className="hidden lg:block max-w-xl text-center">
-          <p className="text-xs text-slate-300 italic truncate font-sans">
-            {scene.tagline}
-          </p>
+        {/* Center: Key Metric Badge */}
+        <div className="hidden lg:flex items-center">
+          <span className="px-2.5 py-1 rounded-full bg-[#B91C1C]/30 text-[#FECACA] border border-[#B91C1C]/50 text-2xs font-mono font-semibold">
+            {scene.keyMetric}
+          </span>
         </div>
 
-        {/* Right: Navigation Controls */}
-        <div className="flex items-center gap-2">
+        {/* Right: Controls & Actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Speaker Notes Toggle */}
           <button
             onClick={onToggleNotes}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition cursor-pointer"
-            title="Open Speaker Script"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#243331] hover:bg-[#2F4240] text-xs font-semibold text-[#FCFCFA] border border-[#3E5653] transition cursor-pointer"
+            title="Speaker notes (N)"
           >
-            <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+            <BookOpen className="w-3.5 h-3.5 text-[#FECACA]" />
             <span className="hidden sm:inline">Notes</span>
           </button>
 
-          <div className="flex items-center border border-slate-700 rounded-md overflow-hidden">
+          {/* Prev / Next Navigation */}
+          <div className="flex items-center bg-[#243331] rounded-lg border border-[#3E5653] p-0.5">
             <button
               onClick={onPrevScene}
               disabled={currentScene === 0}
-              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-xs transition cursor-pointer border-r border-slate-700 flex items-center gap-1"
-              title="Previous Scene (Left Arrow)"
+              className="p-1.5 rounded hover:bg-[#2F4240] text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Previous scene (Left Arrow)"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Prev</span>
             </button>
             <button
               onClick={onNextScene}
               disabled={currentScene === totalScenes - 1}
-              className="px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-semibold transition cursor-pointer flex items-center gap-1"
-              title="Next Scene (Right Arrow / Space)"
+              className="p-1.5 rounded hover:bg-[#2F4240] text-white disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+              title="Next scene (Right Arrow / Space)"
             >
-              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
+          {/* Exit Presenter Mode */}
           <button
             onClick={onExit}
-            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer ml-1"
-            title="Exit Presenter Mode (Esc)"
+            className="p-1.5 rounded-lg hover:bg-[#243331] text-[#FECACA] hover:text-white transition cursor-pointer"
+            title="Exit presenter mode (Esc)"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>

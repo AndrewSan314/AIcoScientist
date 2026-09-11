@@ -17,159 +17,157 @@ export const SpeakerNotesModal: React.FC<SpeakerNotesModalProps> = ({
   const scriptScenes = [
     {
       scene: 1,
-      title: 'The Research Question (1:00)',
-      lead: '“Traditional materials optimization asks which material performs best. We ask which experiment should be performed next, and why.”',
+      title: '1. What problem does AIcoScientist solve? (0:30)',
+      lead: '“AIcoScientist does not only rank materials. It decides which candidate × measurement experiment is most valuable to inspect next.”',
       talkingPoints: [
-        'Materials discovery is not just curve fitting or surrogate optimization; it is an active information acquisition loop under costly, multi-modal characterization.',
-        'Existing Bayesian optimization routines blindly pull the property lever. Real laboratories have diagnostic characterization tools (XRD, Rietveld refinement, microscopy) that can confirm or refute mechanisms.',
-        'AIcoScientist treats hypothesis testing and characterization selection as first-class decision actions alongside property measurements.',
+        'Keep the distinction explicit: Next Experiment is not Best Material Found.',
+        'The project has three evidence regimes: controlled inference, A-Lab historical replay, and electrolyte surrogate optimization.',
       ],
     },
     {
       scene: 2,
-      title: 'Universal Scientific Decision Loop (1:00)',
-      lead: '“One reusable mathematical abstraction across solid-state synthesis, battery electrolytes, and electrocatalysis.”',
+      title: '2. What should we test next? (0:40)',
+      lead: '“This card is a recorded candidate × measurement action under the selected source policy.”',
       talkingPoints: [
-        'Notice the central engine architecture: MaterialDomainAdapter cleanly decouples candidate chemistry schemas from the inference engine.',
-        'At each decision step, candidate materials and eligible characterization modalities are jointly enumerated.',
-        'Expected Hypothesis Information Gain (HIG) is calculated in nats via Monte Carlo sampling before allocating experimental budget.',
+        'Read candidate, measurement, recorded score, information gain, and cost first.',
+        'It means highest-priority recorded experiment—not that the candidate is the best material.',
       ],
     },
     {
       scene: 3,
-      title: 'Decision Cockpit & Competing Hypotheses (1:30)',
-      lead: '“Maintaining competing mechanistic hypotheses rather than a single black-box regression.”',
+      title: '3. Why this experiment? (0:45)',
+      lead: '“Each decision-matrix cell is one possible experiment; the highlighted cell is the recorded selected action.”',
       talkingPoints: [
-        'Look at the Left Zone: Three formal hypotheses (Phase Purity, Composition Homogeneity, Morphology Kinetics) with prior belief distribution.',
-        'Note the explicit disclaimer: These represent relative explanatory model weights among simplified competing models, not ontological truth.',
-        'Look at the Center Zone: Candidate space with real cost and prerequisite constraints. Refinement requires prior XRD; outcome tests consume physical sample.',
-        'Look at the Right Zone: The hero card chooses both candidate AND modality. The waterfall chart breaks down Net Score = w_hig · HIG + w_disc · Discovery - w_cost · Cost.',
+        'The policy balances scientific information, discovery value, and recorded measurement cost.',
+        'Information gain means expected reduction in uncertainty about which model best explains the system.',
       ],
     },
     {
       scene: 4,
-      title: 'The Preregister → Reveal → Update Loop (1:30)',
-      lead: '“Preregistration before reveal prevents scientific hindsight bias and guarantees auditability.”',
+      title: '4. Lock prediction → reveal evidence → update model support (0:50)',
+      lead: '“The prediction is recorded before the observation is revealed, so the update can be inspected without hindsight.”',
       talkingPoints: [
-        'State A: Action is selected, predictive distributions are simulated, but ground truth is strictly firewalled.',
-        'State B: Preregistration record is locked into the immutable evidence ledger with timestamp and event sequence.',
-        'State C: Evidence is revealed (real canonical descriptors or refinement phase fractions).',
-        'State D: Bayesian update in log space. Watch the posterior shift toward H1 as target phase fraction exceeds 0.94. Log Bayes factor confirms evidence diagnostic power.',
+        'Different models predict different outcomes; that disagreement makes a measurement informative.',
+        'Posterior model weight is model support from the evidence, not proof of a physical mechanism.',
       ],
     },
     {
       scene: 5,
-      title: 'Evaluation Breadth: 180 Controlled Trajectories (1:00)',
-      lead: '“Systematic benchmark across clean and stress worlds proves policy trade-offs.”',
+      title: '5. Best candidate found in an optimization task (0:40)',
+      lead: '“Optimization has a separate Best Found result. It is not the same thing as the next-experiment recommendation.”',
       talkingPoints: [
-        'We evaluated 180 full closed-loop trajectories across 6 policies, 6 worlds, and 5 seeds.',
-        'Pure HIG achieves near-instant MAP hypothesis recovery (mean 1.2 steps) but ignores discovery value.',
-        'Discovery-Only finds high-utility materials but achieves weaker hypothesis separation.',
-        'HYBRID balances information gain against discovery and experimental cost, achieving 100% recovery with bounded expenditure.',
-        'HIG sensitivity analysis shows MC32 provides rank correlation above 0.85, resolving Monte Carlo noise.',
+        'The electrolyte result is a frozen in-silico surrogate trajectory, not a new physical battery measurement.',
+        'The card exposes candidate ID, query index, best selected latent value, and regret when recorded.',
       ],
     },
     {
       scene: 6,
-      title: 'A-Lab Evidence Atlas & Scientific Rigor (1:00)',
-      lead: '“Evaluating on real inorganic synthesis data while honestly reporting boundaries.”',
+      title: '6. Controlled benchmark evidence (0:40)',
+      lead: '“Controlled worlds answer whether the decision strategy and belief updates work when benchmark ground truth is known.”',
       talkingPoints: [
-        'We mapped 1,035 real solid-state synthesis samples from the A-Lab Precursor Genome (CC BY 4.0).',
-        'Canonical XRD and Rietveld refinement are linked for 1,030 samples. Notice our honesty: SEM and EDS archives exist at precursor level but lack candidate sample ID linkage, so they are explicitly labeled NOT AVAILABLE.',
-        'Calibration evaluation reveals REFINEMENT coverage is partial (over-dispersed at 50% interval). We report this limitation as scientific rigor.',
-        'Chemistry-family generalization is evaluated across elemental holdouts and explicitly flagged as NOT ESTABLISHED.',
+        'Policy comparison, calibration, and sensitivity are supporting evidence after the core loop is understood.',
+        'Controlled success does not independently establish prospective physical-world validity.',
       ],
     },
     {
       scene: 7,
-      title: 'Electrolyte Discovery Scale (0:45)',
-      lead: '“Screening a 333,333-candidate virtual space with bounded closed-loop execution.”',
+      title: '7. A-Lab historical physical-data replay (0:40)',
+      lead: '“A-Lab replays real historical synthesis and characterization records; it is not live autonomous laboratory execution.”',
       talkingPoints: [
-        'Demonstrates our earlier battery electrolyte optimization work at massive scale.',
-        'Stage-1 multi-objective screening downsizes 333,333 virtual formulations into a 200-candidate working set in 2.5 seconds with zero latent optimum loss.',
-        'Honest negative result: In frozen ExtraTrees surrogate simulation, BoTorch EI achieves lower pure-property latent regret (0.0257 vs 0.0788), while Hybrid delivers superior cumulative information gain (1.58 nats vs 0.56 nats).',
+        'Source sample metadata stays prominent and unlinked modalities remain unavailable to the replay.',
+        'Calibration is a source artifact and its scope remains explicitly bounded.',
       ],
     },
     {
       scene: 8,
-      title: 'Scientific Contributions & Readiness (0:45)',
-      lead: '“48 out of 50 boolean validation gates passed with complete provenance.”',
+      title: '8. Large-space surrogate optimization (0:40)',
+      lead: '“333,333 virtual formulations are screened to a 200-candidate working set before sequential recorded surrogate queries.”',
       talkingPoints: [
-        'Every single metric shown tonight is backed by the 5,333 audit events recorded in the ledger.',
-        'The two failing gates represent authentic research boundaries: conservative refinement calibration and out-of-family generalization.',
-        'Summary: We have built a production-grade, mathematically grounded scientific decision framework ready for prospective physical laboratory trials.',
+        'Use this evidence to discuss scalability, not physical validation or causal mechanism discovery.',
+        'Attia and FeCoNi remain additional simulator/dataset benchmark evidence outside this primary scientific loop.',
+      ],
+    },
+    {
+      scene: 9,
+      title: '9. Evidence boundaries and next research step (0:30)',
+      lead: '“The current evidence is controlled validation, historical replay, and simulation—not a prospectively validated autonomous physical laboratory.”',
+      talkingPoints: [
+        'End by naming the evidence mode for every claim.',
+        'The next research step is prospective physical validation with pre-specified success criteria.',
       ],
     },
   ];
 
+  const currentScript = scriptScenes[activeSceneIndex] || scriptScenes[0];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex justify-end animate-fadeIn">
-      <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200">
-        {/* Header */}
-        <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+    <div className="fixed inset-0 z-50 bg-[#17201F]/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-[#FCFCFA] rounded-2xl max-w-2xl w-full border border-[#D9DFDB] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-[#D9DFDB] flex items-center justify-between bg-[#F4F3EE]">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-emerald-700" />
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Advisor Presentation Script & Talk Track</h2>
-              <p className="text-xs text-slate-500">6–8 Minute Structured Demonstration Guide</p>
-            </div>
+            <BookOpen className="w-5 h-5 text-[#DC2626]" />
+            <h2 className="text-base font-bold text-[#17201F]">Advisor Presentation Speaker Notes</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition"
+            className="p-1 text-[#66706C] hover:text-[#17201F] rounded transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-900 flex items-start gap-2">
-            <Clock className="w-4 h-4 text-emerald-700 mt-0.5 shrink-0" />
-            <div>
-              <strong>Presentation Tip:</strong> Deliver with calm scientific precision. Emphasize that every number is traceable to audited artifacts, and explain that our limitations (e.g. failing generalization gate) demonstrate rigorous scientific integrity.
+        {/* Scene Navigation Tabs */}
+        <div className="px-6 py-2.5 bg-white border-b border-[#D9DFDB] flex gap-1.5 overflow-x-auto">
+          {scriptScenes.map((s, idx) => (
+            <div
+              key={s.scene}
+              className={`px-3 py-1 text-2xs font-mono rounded-lg transition ${
+                idx === activeSceneIndex
+                  ? 'bg-[#FEF2F2] text-[#991B1B] font-bold border border-[#FECACA]'
+                  : 'text-[#66706C]'
+              }`}
+            >
+              Scene {s.scene}
             </div>
+          ))}
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto space-y-4 flex-1">
+          <div>
+            <div className="flex items-center gap-2 text-2xs font-mono text-[#DC2626] uppercase font-bold tracking-wider">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Target Duration: 1:00 min</span>
+            </div>
+            <h3 className="text-lg font-bold text-[#17201F] mt-1">{currentScript.title}</h3>
           </div>
 
-          <div className="space-y-4">
-            {scriptScenes.map((item, idx) => (
-              <div
-                key={item.scene}
-                className={`p-4 rounded-lg border transition ${
-                  activeSceneIndex === idx
-                    ? 'border-emerald-500 bg-emerald-50/20 shadow-xs ring-1 ring-emerald-400'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                    Scene {item.scene}
-                  </span>
-                  <span className="text-xs font-mono text-slate-400">{item.title.split('(')[1]?.replace(')', '') || ''}</span>
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 mb-2">{item.title.split('(')[0]}</h3>
-                <blockquote className="border-l-2 border-emerald-600 pl-3 py-1 my-2 bg-slate-50 text-xs italic text-slate-700 font-medium">
-                  {item.lead}
-                </blockquote>
-                <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-                  {item.talkingPoints.map((tp, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
-                      <span>{tp}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#991B1B] italic leading-relaxed">
+            {currentScript.lead}
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-[#17201F] uppercase font-mono tracking-wider">
+              Key Talking Points
+            </h4>
+            <ul className="space-y-2.5">
+              {currentScript.talkingPoints.map((point, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-xs text-[#66706C] leading-relaxed">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#B91C1C] mt-1.5 shrink-0" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500 font-mono">
-          <span>AIcoScientist Advisor Mission Control</span>
+        {/* Modal Footer */}
+        <div className="px-6 py-3 border-t border-[#D9DFDB] bg-[#F4F3EE] flex items-center justify-between text-2xs text-[#66706C]">
+          <span>Total presentation duration: ~6 minutes</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition font-sans font-medium"
+            className="px-4 py-1.5 bg-[#B91C1C] hover:bg-[#991B1B] text-white rounded-lg font-semibold transition cursor-pointer"
           >
             Close Notes
           </button>

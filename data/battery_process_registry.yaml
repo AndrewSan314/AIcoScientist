@@ -1,0 +1,116 @@
+datasets:
+  - id: drakopoulos_graphite
+    display_name: Graphite Process-15
+    chemistry: graphite Li-ion electrode
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.17632/4dh2h3tsf4.1
+    version: "1"
+    license: CC BY 4.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: 13
+    run_count: 13
+    process_stages: [FORMULATION, MIXING, COATING, DRYING, CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY]
+    control_variables: [drying_temperature_c, coating_speed_m_per_min, coating_gap_um, active_material_fraction_pct, conductive_additive_fraction_pct, binder_cmc_fraction_pct, binder_sbr_fraction_pct, additive_fraction_pct]
+    intermediate_targets: []
+    final_targets: [cell_capacity_mah]
+    grouping_keys: exact observed control tuple
+    known_missingness: sparse formulation fractions and temperature
+    known_leakage_fields: null
+    recommended_splits: [GROUP_BY_PROCESS_RECIPE, OOD_FACTOR_EXTREME]
+    optimization_capable: true
+    multimodal_capable: false
+    limitations: Raw files and schema must be audited before use.
+  - id: warwick_nmc622
+    display_name: Warwick NMC622 Pilot Multimodal
+    chemistry: NMC622 Li-ion electrode/cell
+    evidence_kind: PILOT_LINE_HISTORICAL
+    source_doi: 10.17632/wwhm2frfmy.1
+    version: "1"
+    license: CC0 1.0
+    source_paths: []
+    source_hashes: {}
+    sample_count: 18
+    run_count: 18
+    process_stages: [CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [PROCESS_TABULAR, SCALAR_METROLOGY]
+    control_variables: [target_coating_weight_gsm, roll_temperature_c, target_density_g_cm3, target_porosity_pct, roll_gap_um, number_of_passes]
+    intermediate_targets: [pre_calendering_thickness_um, pre_calendering_density_g_cm3, pre_calendering_porosity_pct]
+    final_targets: [calendered_density_g_cm3, calendered_porosity_pct]
+    grouping_keys: exact DOE control tuple
+    known_missingness: no missing fields among parsed source rows
+    known_leakage_fields: null
+    recommended_splits: [GROUP_BY_DOE_CONDITION]
+    optimization_capable: true
+    multimodal_capable: true
+    limitations: Source assets and field mapping must be audited before use.
+  - id: warwick_ultrasound
+    display_name: Warwick Ultrasonic Inline QC
+    chemistry: graphite anode / NMC622 cathode
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.17632/c62yn37d9h.4
+    version: "4"
+    license: CC BY 4.0
+    source_paths: [https://data.mendeley.com/public-api/zip/c62yn37d9h/download/4]
+    source_hashes: {frequency_domain_ultrasound_v4.zip: c8a8dbdcc0d7bbe2580ec1d3a0842d13706f794c6c13ee33b9eb1ade9056825d}
+    sample_count: 48
+    run_count: 48
+    process_stages: [CALENDERING, FINAL_CHARACTERIZATION]
+    modalities: [ULTRASOUND_SPECTRUM, PROCESS_TABULAR]
+    control_variables: [calendering_speed, web_speed, coat_weight, roll_gap]
+    intermediate_targets: [pre_calendering_thickness_um]
+    final_targets: [post_calendering_thickness_um, post_calendering_density_g_cm3]
+    grouping_keys: exact observed calendering control tuple
+    known_missingness: target density is absent where not reported by source
+    known_leakage_fields: post-calendering signals are unavailable before a calendering decision
+    recommended_splits: [LEAVE_ONE_PROCESS_SETTING_OUT]
+    optimization_capable: false
+    multimodal_capable: true
+    limitations: V4 paired spectra parsed; after-calendering signal remains unavailable at a CALENDERING decision horizon.
+  - id: naion_hte
+    display_name: Na-ion High-Throughput Process Chain
+    chemistry: sodium-ion
+    evidence_kind: PHYSICAL_HISTORICAL
+    source_doi: 10.5281/zenodo.7981011
+    version: "7981011"
+    license: not specified
+    source_paths: [https://zenodo.org/api/records/7981011/files/Na-upscaling.zip/content]
+    source_hashes: {Na-upscaling.zip: 881bf2f9f9fbf59cd2d05b3c996f94940c0e0abe89d9eae6106ea0bee4e7a4f5}
+    sample_count: 72
+    run_count: 72
+    process_stages: [FORMATION, FINAL_CHARACTERIZATION]
+    modalities: [FORMATION_CURVE, CYCLING_CURVE]
+    control_variables: []
+    intermediate_targets: []
+    final_targets: [last_observed_discharge_capacity_ah]
+    grouping_keys: top-level source protocol folder
+    known_missingness: no audited synthesis/coating/assembly settings in parsed source CSV files
+    known_leakage_fields: final cycling trace and last discharge capacity are unavailable at formation
+    recommended_splits: [GROUP_BY_BATCH, LATER_RUN_HOLDOUT]
+    optimization_capable: false
+    multimodal_capable: true
+    limitations: CSV traces are parsed; HDF5 counterparts and upstream manufacturing settings remain raw-only evidence.
+  - id: artistic
+    display_name: ARTISTIC Physics Stress
+    chemistry: lithium-ion electrode simulation
+    evidence_kind: SIMULATED_PHYSICS
+    source_doi: 10.5281/zenodo.5956128
+    version: "5956128"
+    license: CC BY-NC-SA 4.0
+    source_paths: [https://zenodo.org/records/5956128]
+    source_hashes: {}
+    sample_count: null
+    run_count: null
+    process_stages: [MIXING, DRYING, CALENDERING]
+    modalities: [PROCESS_TABULAR, XCT_VOLUME]
+    control_variables: null
+    intermediate_targets: null
+    final_targets: null
+    grouping_keys: simulation manifest
+    known_missingness: source files restricted; no run fields are available
+    known_leakage_fields: null
+    recommended_splits: [OOD_FACTOR_EXTREME]
+    optimization_capable: true
+    multimodal_capable: true
+    limitations: Zenodo record is audited, but files require authenticated access; simulated evidence only.

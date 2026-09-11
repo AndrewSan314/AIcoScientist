@@ -1,0 +1,9 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "source_doi": "10.17632/c62yn37d9h.4",
+  "source_version": "4",
+  "license": "CC BY 4.0",
+  "source_url": "https://data.mendeley.com/public-api/zip/c62yn37d9h/download/4",
+  "archive": "frequency_domain_ultrasound_v4.zip",
+  "sha256": "c8a8dbdcc0d7bbe2580ec1d3a0842d13706f794c6c13ee33b9eb1ade9056825d"
+}

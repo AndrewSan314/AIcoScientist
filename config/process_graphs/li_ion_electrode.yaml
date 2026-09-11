@@ -1,0 +1,23 @@
+nodes:
+  - formulation
+  - mixing_controls
+  - slurry_rheology
+  - coating_controls
+  - wet_thickness
+  - drying_controls
+  - dry_morphology
+  - calendering_controls
+  - porosity
+  - density
+  - formation_controls
+  - impedance
+  - capacity
+edges:
+  - [formulation, slurry_rheology]
+  - [mixing_controls, slurry_rheology]
+  - [slurry_rheology, coating_controls]
+  - [coating_controls, wet_thickness]
+  - [drying_controls, dry_morphology]
+  - [calendering_controls, porosity]
+  - [porosity, impedance]
+  - [impedance, capacity]

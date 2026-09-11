@@ -27,6 +27,7 @@ data/external/**/*.json
 data/external/**/raw/
 data/external/**/paper_code/
 data/external/**/processed/
+data/external/artistic/source/
 data/external/**/*.mat
 data/external/**/*.zip
 data/external/**/*.pkl
@@ -50,5 +51,6 @@ outputs/test_tmp/
 outputs/**/*trajectories.csv
 outputs/**/*per_step.csv
 outputs/**/cache/
+outputs/artistic_runs/
 scratch/
 *.pdf

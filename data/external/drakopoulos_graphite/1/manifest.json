@@ -1,0 +1,15 @@
+{
+  "dataset": "drakopoulos_graphite",
+  "official_dataset_source": "https://data.mendeley.com/datasets/4dh2h3tsf4/1",
+  "source_version": "1",
+  "source_doi": "10.17632/4dh2h3tsf4.1",
+  "license": "CC BY 4.0",
+  "downloaded_at": "2026-09-11",
+  "files": {
+    "alchemite_model_training.txt": "a0a9dc0ae007495e17ace302fbdc4766c556fe5e7cbef8cc2b9024c15bd61873",
+    "ASC-Cell_Data-Azar-Stavros.xlsx": "a49de219e8413871254e88bb9602169137255029e9ab37c7cd2e887155d7b4ed",
+    "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx": "a508e1654d8c39395285ce55b62dae521d45f083d1d1a8ee6f502b32777f93b2",
+    "ASC_results-live.xlsx": "2a12879bd9b62e528fd5e5e3ff486707073accfb896a8c3cd9e13d1495046801",
+    "AS-results-live.xlsx": "8199a7aa70935a9a5be228755d8fb52a53329f9aab453f336fa68e8c364e71b7"
+  }
+}

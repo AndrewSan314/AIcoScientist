@@ -1,38 +1,33 @@
 # Battery AI Co-Scientist
 
-The repository also contains an explicitly bounded A-Lab multimodal validation path. Its canonical replay source is [A-Lab Precursor Genome](https://github.com/lauren-walters/precursor-genome) (DOI [10.5281/zenodo.21285546](https://doi.org/10.5281/zenodo.21285546), CC BY 4.0), not the separate AmanchukwuLab `AL-anode-free` electrolyte dataset. Controlled worlds are methodology checks; they are not prospective or causal claims.
+**AIcoScientist is a multimodal battery-manufacturing process optimization platform. It links controllable manufacturing settings and heterogeneous measurements across production stages to intermediate product states and final cell performance, then uses uncertainty-aware constrained optimization to recommend improved process conditions.**
 
-Research-grade Bayesian optimization, probabilistic modeling, and closed-loop experimental design platform for battery materials synthesis and fast-charging protocol discovery.
+The system is validated first through source-backed offline replay, multimodal process benchmarks, and physics-simulated stress tests. Live factory control is an extension point, not a current claim. The older A-Lab/falsification work remains an explicitly bounded `LEGACY_RESEARCH_TRACK`, not the default battery process path.
 
 ```
-MATERIAL / PROCESS INPUTS (Pre-Experiment Controllable Variables)
+AUTHENTIC BATTERY PROCESS DATA
         ↓
-FABRICATION & SYNTHESIS
+TYPED STAGE-AWARE REPRESENTATION + INFORMATION HORIZON
         ↓
-POST-FABRICATION CHARACTERIZATION (Structure, Morphology, Spectroscopy)
+MULTIMODAL ENCODERS + MISSING-AWARE FUSION
         ↓
-BATTERY PERFORMANCE / PROPERTIES (Cycle Life, Retention, Energy Density)
+INTERMEDIATE + FINAL KPI PREDICTION WITH CALIBRATED UNCERTAINTY
         ↓
-PROBABILISTIC SURROGATE (RF, XGBoost, GP + Uncertainty Calibration)
+CONSTRAINED PROCESS-RECIPE OPTIMIZATION
         ↓
-BAYESIAN ACQUISITION ENGINE (True Joint-Posterior NEI, TuRBO, GP-UCB)
+OFFLINE NO-LOOKAHEAD REPLAY
         ↓
-EXPLAINABLE EXPERIMENT PROPOSAL (Reason Codes, Uncertainty Bounds)
-        ↓
-EXPERIMENTAL OBSERVATION / SIMULATOR ORACLE (Firewalled Evaluation)
-        ↓
-MODEL POSTERIOR UPDATE & RECURSIVE ACTIVE LEARNING
-        ↺
+REAL + PHYSICS-SIMULATED STRESS SUITE
 ```
 
 ---
 
 ## Capabilities & Key Features
 
-1. **Generic Scientific Workflow**: Domain-agnostic architecture separating controllable pre-experiment variables from post-experiment characterizations and target metrics.
+1. **Stage-aware process workflow**: Typed ordered stages keep controllable settings, observations, final KPIs, provenance, and missing modalities distinct.
 2. **True Joint-Posterior Monte Carlo NEI**: Canonical Noisy Expected Improvement drawing joint Gaussian fantasy realizations $\mathbf{f}_{\text{obs}} \sim \mathcal{N}(\boldsymbol{\mu}_{\text{obs}}, \mathbf{\Sigma}_{\text{obs}})$, handling observation noise and correlated posterior incumbents via Rao-Blackwellized Monte Carlo.
-3. **TuRBO Engine in Normalized Coordinates**: Trust Region Bayesian Optimization operating in normalized $[0, 1]^d$ hypercube space with dynamic expansion/contraction state machines, noise-tolerant improvement thresholds, and deterministic global escape exploration.
-4. **Adaptive Bayesian Optimization Controller**: Epistemic uncertainty-aware controller dynamically shifting between UCB exploration, True NEI exploitation, and uncertainty reduction based on convergence rate and budget horizon.
+3. **Process Recipe Search**: Source-identified finite recipe pools, exact controls, manufacturability constraints, and no silent optimizer fallback.
+4. **Multi-objective Process Optimization**: Official BoTorch qNEHVI supports Pareto process proposals when the required dependency and source-backed outputs are available.
 5. **Supervised Regression Suite**: Random Forest baseline, XGBoost challenger, and Gaussian Process surrogate with empirical uncertainty calibration (50%, 80%, 90%, 95% predictive interval coverage, Gaussian NLL, and standardized residuals).
 6. **Firewalled Closed-Loop Architecture**: Strict separation between optimization policies and evaluation oracles; zero leakage of latent simulator truths or regret into search algorithms.
 7. **Structured Explainability & Serialization**: Every proposed candidate includes structured reason codes (`reason_code`), human-interpretable rationales (`recommendation_reason`), feature distances to previous experiments, and full JSON state checkpointing (`save_state` / `load_state`).

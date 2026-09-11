@@ -18,6 +18,19 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 
 ---
 
+## 1.1 Scientific Dataset Registry & Campaign Resolver
+
+| Registry / UI Feature | Source Implementation / Artifact | Exact Source Key / Field | Behavioral Guarantee |
+| :--- | :--- | :--- | :--- |
+| **Dataset Registry Schema** | `presentation/data/dataset_registry.json` | Top-level `datasets` list (3 authentic entries) | Guaranteed authentic source links; zero fabricated presets |
+| **Controlled Alloy Benchmark** | `outputs/alab/multimodal/clean_controlled_worlds.json` | 12 candidates, 3 physical hypotheses, XRD/Refinement | In-silico benchmark with formal Bayesian bounds |
+| **A-Lab Precursor Genome Replay** | `data/external/precursor_genome_2026/ledger_precursor_genome.json` | 1,035 physical samples (`PG_0102` to `PG_1521`), DOI `10.5281/zenodo.21285546` | Historical laboratory replay; policy selection locked |
+| **Anode-Free Electrolyte Screening** | `outputs/electrolyte/benchmark/screening_quality_diagnostics.json` | 333,333 candidates $\to$ WS=200 in 2.535s; target `norm_capacity_3` | Surrogate screening; univariate ExtraTrees oracle |
+| **Pure Campaign Resolver** | `presentation/frontend/src/utils/campaignResolver.ts` | `resolveCampaign(datasetId, snapshotData)` | Pure functional resolution; fail-closed isolation of candidate pools |
+| **Observation Blinding Firewall** | `presentation/frontend/src/views/DiscoveryLabWorkspace.tsx` | State A $\to$ State B $\to$ State C $\to$ State D | Future sensor measurements blinded until explicit step advance |
+
+---
+
 ## 2. Research Overview (`/overview`)
 
 | UI Metric / Visual Element | Source Artifact Path | Exact Artifact Key / Field |
@@ -126,5 +139,20 @@ This document provides a strict, byte-for-byte verification mapping connecting e
 | :--- | :--- | :--- |
 | `GET /api/manifest` | `presentation/backend/server.py` | Serves SHA-256 hashes of all 11 source artifacts and dataset commit hashes |
 | `GET /api/health` | `presentation/backend/server.py` | Verifies presence of snapshot, manifest, and frontend production dist |
-| `GET /api/snapshot` | `presentation/backend/server.py` | Delivers verified 3.68 MB offline discovery snapshot |
 | `POST /api/diagnostic/smoke-recommend` | `presentation/backend/server.py` | Responsiveness diagnostic test endpoint; returns `mode: "DIAGNOSTIC_SMOKE_TEST"` |
+
+---
+
+## 9. Chart Component System (`presentation/frontend/src/components/charts/`)
+
+| Chart Component | Target Workspace & View | Underlying Source Artifact & Keys | Mathematical Formulation / Invariant |
+| :--- | :--- | :--- | :--- |
+| `HypothesisBeliefTrajectoryChart` | Discovery Lab (`/discovery`) | `flagship_campaign.steps[].beliefs_after` | Recharts Line: Sequential Bayesian posterior probability trajectories $P(H_i \mid e_{1:t}) \in [0, 1]$ over sequential campaign steps 0–4 with custom step points and event markers. |
+| `PredictiveDistributionChart` | Discovery Lab (`/discovery`) | `step.action_predictions[candidate_modality]` | Recharts Area: Gaussian density $p(y \mid a, H_k) = \mathcal{N}(\mu_{a,k}, \sigma_{a,k}^2)$. Includes pre-reveal **Observation Blinding Firewall** and post-reveal vertical observation marker. |
+| `CandidateModalityHeatmap` | Discovery Lab (`/discovery`) | `step.all_scored_actions` | Matrix Grid: 12 Candidates $\times$ 2 Modalities with metric switcher ($S(a)$, Raw HIG nats, Normalized HIG, Discovery Utility, Normalized Cost). |
+| `ScoreWaterfallChart` | Discovery Lab (`/discovery`) | `step.recommendation` components | Recharts Bar: Exact additive decomposition $S(a) = +w_H \widetilde{HIG}(a) + w_D \widetilde{D}(a) - w_C \widetilde{C}(a)$. Dimensionless signed scalar with additive delta verification check. |
+| `TradeoffScatterChart` | Discovery Lab (`/discovery`) | `step.all_scored_actions` | Recharts Scatter: 2D Pareto exploration comparing Expected HIG (nats) vs Discovery Utility with marker sizes proportional to measurement cost. |
+| `PolicyTrajectoryChart` | Evidence & Benchmarks (`/benchmarks`) | `benchmarks.policy_matrix` | Recharts Bar/Line: 6 policies compared across Clean and Stress worlds for 5 metrics (`recovery_rate_MAP`, `mean_final_true_hypothesis_probability`, `mean_entropy_reduction`, `mean_measurement_cost`, `steps_to_posterior_gt_0.8`). |
+| `CalibrationCoverageChart` | Evidence & Benchmarks (`/benchmarks`) | `alab.calibration_summary.observables` | Recharts Bar: Empirical coverage vs nominal targets (50% and 90% credible intervals) across XRD and Rietveld refinement observables, surfacing conservative over-dispersion. |
+| `ElectrolyteOptimizationChart` | Evidence & Benchmarks (`/benchmarks`) | `electrolyte.surrogate_benchmark.benchmark_results` | Recharts Line: 15-iteration optimization regret and entropy reduction trajectories comparing BoTorch EI, Hybrid, GP-UCB, and Falsification on ExtraTrees oracle. |
+
