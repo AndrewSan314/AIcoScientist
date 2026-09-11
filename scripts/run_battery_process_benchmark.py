@@ -50,11 +50,11 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
         try:
             frame = adapter.build_training_view(ProcessPredictionTask(target, ProcessStage.FINAL_CHARACTERIZATION))
         except ValueError as exc:
-            reports.append({"target": target, "status": "SKIPPED", "reason": str(exc)})
+            reports.append({"target": target, "status": "NOT_EVALUATED", "reason": str(exc)})
             continue
         X, y, groups = frame.features.to_numpy(), frame.targets.to_numpy(), frame.groups.to_numpy()
         if len(X) < 8 or len(set(groups)) < 4:
-            reports.append({"target": target, "status": "SKIPPED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
+            reports.append({"target": target, "status": "NOT_EVALUATED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
             continue
         outer = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed)
         train_calibration, test = next(outer.split(X, y, groups))
@@ -83,19 +83,19 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
 def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
     task_definition = REPLAY_TASKS.get(adapter.metadata().dataset_id)
     if task_definition is None:
-        return {"status": "SKIPPED", "reason": "no audited recipe-level replay target"}
+        return {"status": "NOT_EVALUATED", "reason": "no audited recipe-level replay target"}
     target, stage = task_definition
     task = ProcessOptimizationTask(target, stage)
     replay = adapter.build_replay_frame(task)
     if len(replay) <= 3:
-        return {"status": "SKIPPED", "reason": "fewer than four source recipes"}
+        return {"status": "NOT_EVALUATED", "reason": "fewer than four source recipes"}
     observed, hidden = replay.iloc[:3].copy(), replay.iloc[3:].copy()
     try:
         proposal = ProcessOptimizationCoordinator().propose_recipes(
             observed, adapter.build_optimization_space(task), ProcessOptimizationObjective([ObjectiveSpec(target, "maximize")]), seed=seed,
         )[0]
     except RuntimeError as exc:
-        return {"status": "SKIPPED_DEPENDENCY", "reason": str(exc)}
+        return {"status": "BLOCKED_EXTERNAL", "reason": str(exc)}
     observed, hidden, revealed = reveal_one(observed, hidden, recipe_id=proposal.source_recipe_id or "", id_column="recipe_id", target=target)
     best_so_far = float(observed[target].max())
     oracle_best = float(replay[target].max())
@@ -109,7 +109,7 @@ def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
 
 def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     if adapter.metadata().dataset_id != "warwick_ultrasound":
-        return {"status": "SKIPPED", "reason": "no source-backed paired process/spectrum task"}
+        return {"status": "NOT_EVALUATED", "reason": "no source-backed paired process/spectrum task"}
     rows = []
     encoder = SignalFeatureEncoder()
     for run in adapter.load_runs():
@@ -120,7 +120,7 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
             continue
         rows.append((dict(stage.controls), encoder.encode(spectrum.values["fft_magnitude"]), float(target.value), run.batch_id or run.run_id))
     if len(rows) < 8 or len({row[3] for row in rows}) < 4:
-        return {"status": "SKIPPED", "reason": "insufficient grouped paired process/spectrum rows"}
+        return {"status": "NOT_EVALUATED", "reason": "insufficient grouped paired process/spectrum rows"}
     columns = sorted({name for controls, _, _, _ in rows for name in controls})
     process = np.asarray([[float(controls[name].value) if name in controls else 0.0 for name in columns] + [float(name in controls) for name in columns] for controls, _, _, _ in rows])
     signal = np.asarray([features for _, features, _, _ in rows])
@@ -134,7 +134,7 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     return {
         "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
         "rows": len(rows), "groups": len(set(groups)), "reports": reports,
-        "gated_fusion": {"status": "IMPLEMENTED_NOT_CLAIMED", "reason": "GatedMaskedFusion is unit-tested; this small-N benchmark reports auditable scalar baselines without a superiority claim."},
+        "gated_fusion": {"status": "IMPLEMENTED_NOT_VALIDATED", "reason": "GatedMaskedFusion is unit-tested; this small-N benchmark reports auditable scalar baselines without a superiority claim."},
     }
 
 
@@ -147,11 +147,11 @@ def _stage_ablation(adapter, *, seed: int) -> dict[str, object]:
             try:
                 frame = adapter.build_training_view(ProcessPredictionTask(target, stage))
             except ValueError as exc:
-                reports.append({"target": target, "stage": stage.value, "status": "SKIPPED", "reason": str(exc)})
+                reports.append({"target": target, "stage": stage.value, "status": "NOT_EVALUATED", "reason": str(exc)})
                 continue
             X, y, groups = frame.features.to_numpy(), frame.targets.to_numpy(), frame.groups.to_numpy()
             if len(X) < 8 or len(set(groups)) < 4:
-                reports.append({"target": target, "stage": stage.value, "status": "SKIPPED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
+                reports.append({"target": target, "stage": stage.value, "status": "NOT_EVALUATED", "reason": "requires at least 8 rows and 4 independent groups", "rows": len(X), "groups": len(set(groups))})
                 continue
             train, test = next(GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed).split(X, y, groups))
             predicted, _ = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
@@ -159,27 +159,27 @@ def _stage_ablation(adapter, *, seed: int) -> dict[str, object]:
     return {
         "dataset_id": adapter.metadata().dataset_id,
         "reports": reports,
-        "stage_transition_model": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."},
+        "stage_transition_model": {"status": "IMPLEMENTED_NOT_VALIDATED", "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."},
     }
 
 
 def _extreme_ood_stress(adapter, *, seed: int) -> dict[str, object]:
     task_definition = OOD_TASKS.get(adapter.metadata().dataset_id)
     if task_definition is None:
-        return {"status": "SKIPPED", "reason": "no audited recipe control supports an extreme-condition holdout"}
+        return {"status": "NOT_EVALUATED", "reason": "no audited recipe control supports an extreme-condition holdout"}
     target, feature = task_definition
     try:
         frame = adapter.build_training_view(ProcessPredictionTask(target, ProcessStage.FINAL_CHARACTERIZATION))
     except ValueError as exc:
-        return {"status": "SKIPPED", "reason": str(exc)}
+        return {"status": "NOT_EVALUATED", "reason": str(exc)}
     if feature not in frame.features:
-        return {"status": "SKIPPED", "reason": f"source control {feature!r} is unavailable at this information horizon"}
+        return {"status": "NOT_EVALUATED", "reason": f"source control {feature!r} is unavailable at this information horizon"}
     values = frame.features[feature].to_numpy(dtype=float)
     held_out = np.isclose(values, values.min()) | np.isclose(values, values.max())
     train, test = np.flatnonzero(~held_out), np.flatnonzero(held_out)
     groups = frame.groups.to_numpy()
     if len(train) < 4 or len(test) < 2 or set(groups[train]) & set(groups[test]):
-        return {"status": "SKIPPED", "reason": "source extremes do not produce a disjoint grouped holdout", "train_rows": len(train), "test_rows": len(test)}
+        return {"status": "NOT_EVALUATED", "reason": "source extremes do not produce a disjoint grouped holdout", "train_rows": len(train), "test_rows": len(test)}
     X, y = frame.features.to_numpy(), frame.targets.to_numpy()
     predicted, _ = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
     return {
@@ -269,10 +269,10 @@ def main() -> None:
             artistic_pending = dataset_id == "artistic"
             blocked = {
                 "dataset_id": dataset_id,
-                "status": "BLOCKED_NO_VALIDATED_SIMULATION" if artistic_pending else "BLOCKED_SOURCE_ACCESS",
+                "status": "BLOCKED_EXTERNAL",
                 "reason": (["Pinned public ARTISTIC source is available, but no valid real LAMMPS execution has been normalized; simulated data are not fabricated."] if artistic_pending else []) + list(report.errors),
                 "simulation_manifest": {
-                    "status": "PREPARED_NOT_EXECUTED" if artistic_pending else "NOT_GENERATED",
+                    "status": "IMPLEMENTED_NOT_VALIDATED" if artistic_pending else "NOT_EVALUATED",
                     "reason": "a full source-backed ARTISTIC execution is required before model fitting" if artistic_pending else "source files require audit",
                 },
             }
