@@ -5,6 +5,7 @@ import hashlib
 import os
 import shutil
 import tempfile
+import time
 import uuid
 from dataclasses import replace
 from pathlib import Path
@@ -135,7 +136,14 @@ def _commit_directory(staged: Path, destination: Path) -> None:
     if destination.exists():
         os.replace(destination, backup)
     try:
-        os.replace(staged, destination)
+        for attempt in range(3):
+            try:
+                os.replace(staged, destination)
+                break
+            except PermissionError:
+                if attempt == 2:
+                    raise
+                time.sleep(0.05)
     except Exception:
         if destination.exists():
             shutil.rmtree(destination, ignore_errors=True)
