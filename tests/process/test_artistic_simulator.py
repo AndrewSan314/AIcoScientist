@@ -74,7 +74,7 @@ def pinned_source(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     source = tmp_path / "source"; root = source / "NMC" / "Updated version"; slurry = root / "Slurry"; slurry.mkdir(parents=True)
     (slurry / "user_inputs.txt").write_text("variable nAM_part equal @nAM_part@\n", encoding="utf-8")
     (slurry / "init_structure.txt").write_text("\n".join(f"variable n_AM{i} equal round(v_n_AM*v_p_AM6)" for i in range(7, 11)), encoding="utf-8")
-    (slurry / "in_slurry.run").write_text("dump 1 all custom 1000000 dump.atom id type x y z radius\nvariable run equal 20000000\nrun ${run}\n", encoding="utf-8")
+    (slurry / "in_slurry.run").write_text("thermo 15000\ndump 1 all custom 1000000 dump.atom id type x y z radius\nvariable run equal 20000000\nrun ${run}\n", encoding="utf-8")
     for name, files in {"Drying_homogeneous": ("in_evap_hom.run", "pores.py"), "Calendering": ("in_cal.run", "pores_cal.py", "Reformatting_cal_electrode.py")}.items():
         directory = root / name; directory.mkdir()
         for file in files: (directory / file).write_text("# source fixture\n", encoding="utf-8")
@@ -121,12 +121,15 @@ def test_short_horizon_is_explicit_workspace_patch_and_has_distinct_identity(pin
     rendered = (run / "workspace" / "in_slurry.run").read_text(encoding="utf-8")
     source = (pinned_source / "NMC" / "Updated version" / "Slurry" / "in_slurry.run").read_text(encoding="utf-8")
     assert "variable run equal 500000" in rendered and "custom 250000" in rendered
+    assert "thermo_modify flush yes" in rendered
     assert "variable run equal 20000000" in source and "custom 1000000" in source
     manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["fidelity_mode"] == "SHORT_HORIZON"
     assert manifest["requested_slurry_steps"] == 500_000
     assert manifest["reference_equivalence_status"] == "REFERENCE_NOT_AVAILABLE"
-    assert {patch["id"] for patch in manifest["patches"]} >= {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval"}
+    assert {patch["id"] for patch in manifest["patches"]} >= {
+        "short_horizon_slurry_steps", "short_horizon_checkpoint_interval", "short_horizon_thermo_flush",
+    }
     assert config.fidelity_identity != ArtisticRunConfig(source_root=pinned_source).fidelity_identity
 
 

@@ -105,6 +105,20 @@ class ArtisticRenderer:
             "before_sha256": hashlib.sha256(text.encode()).hexdigest(), "after_sha256": _sha256(path),
             "requested_steps": self.config.requested_slurry_steps,
         })
+        flush_pattern = re.compile(r"(?m)^(\s*thermo\s+\d+\s*(?:#.*)?)$")
+        flush_match = flush_pattern.search(rendered)
+        if not flush_match:
+            raise ValueError("short-horizon ARTISTIC patch target missing: thermo interval")
+        before_flush = rendered
+        flush_replacement = f"{flush_match.group(0)}\nthermo_modify flush yes"
+        rendered = rendered[:flush_match.start()] + flush_replacement + rendered[flush_match.end():]
+        path.write_text(rendered, encoding="utf-8", newline="\n")
+        state.patches.append({
+            "id": "short_horizon_thermo_flush", "path": "Slurry/in_slurry.run",
+            "original": flush_match.group(0), "new": flush_replacement,
+            "before_sha256": hashlib.sha256(before_flush.encode()).hexdigest(), "after_sha256": _sha256(path),
+            "reason": "flush each thermo record so live short-horizon progress is observable",
+        })
         dump_pattern = re.compile(r"(?m)^(\s*dump\s+\S+\s+.*?\bcustom\s+)1000000(\b.*)$")
         dump_match = dump_pattern.search(rendered)
         if dump_match and self.config.dump_interval_steps != 1_000_000:

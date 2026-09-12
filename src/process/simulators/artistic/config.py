@@ -160,7 +160,7 @@ def physics_config_fingerprint(
     patches: list[dict[str, object]] | tuple[dict[str, object], ...] = (),
 ) -> str:
     """Identity for physics-affecting inputs; horizon and dump-only patches are excluded."""
-    excluded = {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval"}
+    excluded = {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval", "short_horizon_thermo_flush"}
     known = {patch["id"]: patch for patch in VERIFIED_PHYSICS_PATCHES}
     normalized_patches = []
     for patch in patches:
