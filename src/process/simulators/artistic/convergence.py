@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any, Mapping, Sequence
 
@@ -10,6 +10,7 @@ from .config import FidelityMode, REFERENCE_SLURRY_STEPS
 
 class ConvergenceStatus(StrEnum):
     INSUFFICIENT_CHECKPOINTS = "INSUFFICIENT_CHECKPOINTS"
+    INSUFFICIENT_STEP_SPAN = "INSUFFICIENT_STEP_SPAN"
     STABILITY_OBSERVED = "STABILITY_OBSERVED"
     NOT_STABLE = "NOT_STABLE"
     REFERENCE_NOT_AVAILABLE = "REFERENCE_NOT_AVAILABLE"
@@ -65,6 +66,34 @@ class MetricTolerancePolicy:
             "absolute_tolerances": dict(sorted(self.absolute_tolerances.items())),
             "default_relative_tolerance": self.default_relative_tolerance,
             "near_zero_reference_threshold": self.near_zero_reference_threshold,
+            "required_metrics": list(self.required_metrics),
+        }
+
+
+@dataclass(frozen=True)
+class StabilityPolicy:
+    """Diagnostic-only stability policy; defaults are software safeguards, not validation claims."""
+
+    minimum_checkpoints: int = 10
+    minimum_step_span: int = 0
+    relative_tolerance: float = 0.01
+    required_metrics: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if int(self.minimum_checkpoints) < 1:
+            raise ValueError("minimum_checkpoints must be positive")
+        if int(self.minimum_step_span) < 0:
+            raise ValueError("minimum_step_span must be non-negative")
+        if not math.isfinite(float(self.relative_tolerance)) or self.relative_tolerance < 0:
+            raise ValueError("relative_tolerance must be finite and non-negative")
+        if len(set(self.required_metrics)) != len(self.required_metrics):
+            raise ValueError("required stability metrics must be unique")
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "minimum_checkpoints": self.minimum_checkpoints,
+            "minimum_step_span": self.minimum_step_span,
+            "relative_tolerance": self.relative_tolerance,
             "required_metrics": list(self.required_metrics),
         }
 
@@ -191,6 +220,7 @@ class ConvergenceReport:
     required_metrics: tuple[str, ...] = ()
     missing_metrics: tuple[str, ...] = ()
     tolerance_policy: Mapping[str, Any] = field(default_factory=dict)
+    stability_policy: Mapping[str, Any] = field(default_factory=dict)
 
 
 def checkpoints_from_manifest(manifest: Mapping[str, Any]) -> tuple[Checkpoint, ...]:
@@ -222,20 +252,36 @@ def checkpoints_from_manifest(manifest: Mapping[str, Any]) -> tuple[Checkpoint, 
     return tuple(sorted(result, key=lambda item: item.step))
 
 
-def stability_status(checkpoints: Sequence[Checkpoint], *, tolerance: float = 0.01, minimum_checkpoints: int = 3) -> ConvergenceStatus:
+def stability_status(
+    checkpoints: Sequence[Checkpoint], *, policy: StabilityPolicy | None = None,
+    tolerance: float | None = None, minimum_checkpoints: int | None = None,
+    minimum_step_span: int | None = None,
+) -> ConvergenceStatus:
+    policy = policy or StabilityPolicy()
+    overrides = {}
+    if tolerance is not None:
+        overrides["relative_tolerance"] = tolerance
+    if minimum_checkpoints is not None:
+        overrides["minimum_checkpoints"] = minimum_checkpoints
+    if minimum_step_span is not None:
+        overrides["minimum_step_span"] = minimum_step_span
+    if overrides:
+        policy = replace(policy, **overrides)
     ordered = tuple(sorted(checkpoints, key=lambda item: item.step))
-    if len(ordered) < minimum_checkpoints:
+    if len(ordered) < policy.minimum_checkpoints:
         return ConvergenceStatus.INSUFFICIENT_CHECKPOINTS
-    names = set(ordered[-1].metrics)
+    if ordered[-1].step - ordered[0].step < policy.minimum_step_span:
+        return ConvergenceStatus.INSUFFICIENT_STEP_SPAN
+    recent = ordered[-policy.minimum_checkpoints:]
+    names = policy.required_metrics or tuple(sorted(recent[-1].metrics))
     if not names:
         return ConvergenceStatus.INSUFFICIENT_CHECKPOINTS
-    recent = ordered[-minimum_checkpoints:]
     for name in names:
         values = [float(item.metrics[name]) for item in recent if name in item.metrics]
         if len(values) != len(recent):
             return ConvergenceStatus.INSUFFICIENT_CHECKPOINTS
         scale = max(abs(values[-1]), 1e-12)
-        if max(abs(value - values[-1]) for value in values[:-1]) / scale > tolerance:
+        if max(abs(value - values[-1]) for value in values[:-1]) / scale > policy.relative_tolerance:
             return ConvergenceStatus.NOT_STABLE
     return ConvergenceStatus.STABILITY_OBSERVED
 
@@ -281,7 +327,8 @@ def build_convergence_report(
     reference_steps: int = REFERENCE_SLURRY_STEPS,
     tolerance: float | None = None,
     tolerance_policy: MetricTolerancePolicy | None = None,
-    stability_tolerance: float = 0.01,
+    stability_tolerance: float | None = None,
+    stability_policy: StabilityPolicy | None = None,
 ) -> ConvergenceReport:
     short = tuple(sorted(short_evidence.checkpoints if short_evidence is not None else checkpoints, key=lambda item: item.step))
     if short_evidence is not None and requested_steps is None:
@@ -289,13 +336,16 @@ def build_convergence_report(
     available_metrics = tuple(sorted({name for item in short for name in item.metrics}))
     if tolerance_policy is None and tolerance is not None:
         tolerance_policy = MetricTolerancePolicy(default_relative_tolerance=tolerance)
-        stability_tolerance = tolerance
-    policy = tolerance_policy or MetricTolerancePolicy()
-    stable = stability_status(short, tolerance=stability_tolerance)
+    metric_policy = tolerance_policy or MetricTolerancePolicy()
+    if stability_policy is None:
+        stability_policy = StabilityPolicy(relative_tolerance=stability_tolerance if stability_tolerance is not None else (tolerance if tolerance is not None else 0.01))
+    elif stability_tolerance is not None:
+        stability_policy = replace(stability_policy, relative_tolerance=stability_tolerance)
+    stable = stability_status(short, policy=stability_policy)
     base = {
         "checkpoint_count": len(short), "requested_steps": requested_steps, "reference_steps": reference_steps,
         "available_metrics": available_metrics, "stability_status": stable,
-        "tolerance_policy": policy.as_dict(),
+        "tolerance_policy": metric_policy.as_dict(), "stability_policy": stability_policy.as_dict(),
     }
     if reference_steps != REFERENCE_SLURRY_STEPS:
         return ConvergenceReport(
@@ -336,16 +386,16 @@ def build_convergence_report(
             reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
             diagnostics=(reason,), **base,
         )
-    if not short or stable == ConvergenceStatus.INSUFFICIENT_CHECKPOINTS:
+    if not short or stable in {ConvergenceStatus.INSUFFICIENT_CHECKPOINTS, ConvergenceStatus.INSUFFICIENT_STEP_SPAN}:
         return ConvergenceReport(
-            ConvergenceStatus.INSUFFICIENT_CHECKPOINTS, reference_available=True,
+            stable, reference_available=True,
             reference_agreement_status=ReferenceAgreementStatus.REFERENCE_NOT_AVAILABLE,
-            diagnostics=("Short-horizon internal stability needs at least three metric-bearing checkpoints.",), **base,
+            diagnostics=(f"Short-horizon stability policy returned {stable.value}.",), **base,
         )
     short_latest = short[-1]
-    required_metrics = policy.metrics(short_latest, exact_reference)
+    required_metrics = metric_policy.metrics(short_latest, exact_reference)
     missing_metrics = tuple(sorted(set(required_metrics) - (set(short_latest.metrics) & set(exact_reference.metrics))))
-    comparisons = compare_to_reference(short_latest, exact_reference, reference_steps=reference_steps, tolerance_policy=policy)
+    comparisons = compare_to_reference(short_latest, exact_reference, reference_steps=reference_steps, tolerance_policy=metric_policy)
     if missing_metrics:
         agreement = ReferenceAgreementStatus.REFERENCE_METRIC_MISSING
         diagnostics = (f"Required reference metrics are missing from one side: {', '.join(missing_metrics)}.",)

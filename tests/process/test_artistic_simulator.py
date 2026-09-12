@@ -14,7 +14,7 @@ import src.process.simulators.artistic.provenance as provenance_module
 import src.process.simulators.artistic.runner as runner_module
 from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
-from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceRunEvidence, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
+from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceRunEvidence, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, StabilityPolicy, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
 from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
 from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints, parse_thermo_log
 from src.process.simulators.artistic.validation import output_errors
@@ -63,6 +63,10 @@ def _evidence(checkpoints: list[Checkpoint], mode: FidelityMode, steps: int, *, 
         requested_dynamic_steps=steps, dump_interval_steps=1_000_000, checkpoints=tuple(checkpoints),
         simulation_manifest_hash=f"manifest-{mode.value}-{steps}", successful=successful,
     )
+
+
+def _legacy_stability_policy() -> StabilityPolicy:
+    return StabilityPolicy(minimum_checkpoints=3)
 
 
 @pytest.fixture
@@ -154,14 +158,14 @@ def test_reference_execution_requires_explicit_confirmation(pinned_source: Path,
 
 def test_convergence_requires_stability_and_explicit_reference_agreement() -> None:
     short = [Checkpoint(500_000, {"density": 1.0}), Checkpoint(1_000_000, {"density": 1.001}), Checkpoint(2_000_000, {"density": 1.0005})]
-    assert stability_status(short) == ConvergenceStatus.STABILITY_OBSERVED
+    assert stability_status(short, policy=_legacy_stability_policy()) == ConvergenceStatus.STABILITY_OBSERVED
     report = build_convergence_report(short, requested_steps=2_000_000)
     assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
     reference = [Checkpoint(20_000_000, {"density": 1.0})]
     compared = build_convergence_report(
         short, requested_steps=2_000_000, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 2_000_000),
         reference_evidence=_evidence(reference, FidelityMode.REFERENCE, 20_000_000),
-        tolerance_policy=MetricTolerancePolicy(relative_tolerances={"density": 0.01}),
+        tolerance_policy=MetricTolerancePolicy(relative_tolerances={"density": 0.01}), stability_policy=_legacy_stability_policy(),
     )
     assert compared.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
     assert compared.available_metrics == ("density",)
@@ -172,10 +176,10 @@ def test_convergence_requires_stability_and_explicit_reference_agreement() -> No
 def test_convergence_rejects_far_or_unstable_short_runs() -> None:
     policy = MetricTolerancePolicy(default_relative_tolerance=0.01)
     stable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.001}), Checkpoint(3, {"density": 1.0005})]
-    far = build_convergence_report(stable, short_evidence=_evidence(stable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 2.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy)
+    far = build_convergence_report(stable, short_evidence=_evidence(stable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 2.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy, stability_policy=_legacy_stability_policy())
     assert far.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
     unstable = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.4}), Checkpoint(3, {"density": 1.0})]
-    close = build_convergence_report(unstable, short_evidence=_evidence(unstable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy)
+    close = build_convergence_report(unstable, short_evidence=_evidence(unstable, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy, stability_policy=_legacy_stability_policy())
     assert close.status == ConvergenceStatus.NOT_STABLE
     assert close.reference_agreement_status == ReferenceAgreementStatus.REFERENCE_WITHIN_TOLERANCE
 
@@ -184,14 +188,29 @@ def test_convergence_rejects_missing_metrics_missing_short_reference_and_undefin
     short = [Checkpoint(1, {"density": 1.0}), Checkpoint(2, {"density": 1.0}), Checkpoint(3, {"density": 1.0})]
     missing = build_convergence_report(
         short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0, "pressure": 2.0})], FidelityMode.REFERENCE, 20_000_000),
-        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01, required_metrics=("density", "pressure")),
+        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01, required_metrics=("density", "pressure")), stability_policy=_legacy_stability_policy(),
     )
     assert missing.status == ConvergenceStatus.REFERENCE_METRIC_MISSING
     assert missing.missing_metrics == ("pressure",)
     assert build_convergence_report(short, reference_checkpoints=[Checkpoint(19_000_000, {"density": 1.0})]).status == ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE
     assert build_convergence_report(short, reference_checkpoints=[Checkpoint(10, {"density": 1.0})], reference_steps=10).status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
-    undefined = build_convergence_report(short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000))
+    undefined = build_convergence_report(short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3), reference_evidence=_evidence([Checkpoint(20_000_000, {"density": 1.0})], FidelityMode.REFERENCE, 20_000_000), stability_policy=_legacy_stability_policy())
     assert undefined.status == ConvergenceStatus.REFERENCE_OUTSIDE_TOLERANCE
+
+
+def test_stability_policy_reports_checkpoint_and_span_diagnostics_without_reference_claims() -> None:
+    short = [Checkpoint(0, {"density": 1.0}), Checkpoint(10, {"density": 1.001}), Checkpoint(20, {"density": 1.0005})]
+    assert stability_status(short) == ConvergenceStatus.INSUFFICIENT_CHECKPOINTS
+    policy = StabilityPolicy(minimum_checkpoints=3, minimum_step_span=100, required_metrics=("density",))
+    assert stability_status(short, policy=policy) == ConvergenceStatus.INSUFFICIENT_STEP_SPAN
+    enough_span = [Checkpoint(0, {"density": 1.0}), Checkpoint(50, {"density": 1.001}), Checkpoint(100, {"density": 1.0005})]
+    assert stability_status(enough_span, policy=policy) == ConvergenceStatus.STABILITY_OBSERVED
+    unstable = [Checkpoint(0, {"density": 1.0}), Checkpoint(50, {"density": 1.5}), Checkpoint(100, {"density": 1.0})]
+    assert stability_status(unstable, policy=policy) == ConvergenceStatus.NOT_STABLE
+    report = build_convergence_report(enough_span, requested_steps=100, stability_policy=StabilityPolicy(minimum_checkpoints=3))
+    assert report.stability_status == ConvergenceStatus.STABILITY_OBSERVED
+    assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
+    assert report.stability_policy["minimum_checkpoints"] == 3
 
 
 def test_convergence_uses_absolute_tolerance_for_zero_reference() -> None:
@@ -199,7 +218,7 @@ def test_convergence_uses_absolute_tolerance_for_zero_reference() -> None:
     report = build_convergence_report(
         [Checkpoint(1, {"residual": 0.001}), Checkpoint(2, {"residual": 0.001}), Checkpoint(3, {"residual": 0.001})],
         short_evidence=_evidence([Checkpoint(1, {"residual": 0.001}), Checkpoint(2, {"residual": 0.001}), Checkpoint(3, {"residual": 0.001})], FidelityMode.SHORT_HORIZON, 3),
-        reference_evidence=_evidence([Checkpoint(20_000_000, {"residual": 0.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy,
+        reference_evidence=_evidence([Checkpoint(20_000_000, {"residual": 0.0})], FidelityMode.REFERENCE, 20_000_000), tolerance_policy=policy, stability_policy=_legacy_stability_policy(),
     )
     comparison = report.comparisons[0]
     assert report.status == ConvergenceStatus.VALIDATED_AGAINST_REFERENCE
@@ -212,7 +231,7 @@ def test_convergence_requires_compatible_typed_run_evidence() -> None:
     report = build_convergence_report(
         short, short_evidence=_evidence(short, FidelityMode.SHORT_HORIZON, 3, recipe="short-recipe"),
         reference_evidence=_evidence(reference, FidelityMode.REFERENCE, 20_000_000, recipe="reference-recipe"),
-        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01),
+        tolerance_policy=MetricTolerancePolicy(default_relative_tolerance=0.01), stability_policy=_legacy_stability_policy(),
     )
     assert report.status == ConvergenceStatus.INCOMPATIBLE_REFERENCE_EVIDENCE
     with pytest.raises(ValueError, match="cannot claim the reference horizon"):
