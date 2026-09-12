@@ -144,6 +144,9 @@ def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -
     assert plan.entries[0]["particle_preflight"]["total_particles"] == 21517
     assert plan.entries[0]["requested_dynamic_steps"] == 500_000
     assert plan.entries[0]["execution_mode"] == "local" and plan.entries[0]["fidelity_identity"]
+    assert plan.entries[0]["physics_config_fingerprint"]
+    assert len({entry["physics_config_fingerprint"] for entry in plan.entries}) == 1
+    assert {entry["fidelity_mode"] for entry in plan.entries} == {"SHORT_HORIZON"}
     assert ArtisticRunConfig().confirm_reference_execution is False
     with pytest.raises(ValueError, match="dump_interval_steps=1,000,000"):
         ArtisticRunConfig(dump_interval_steps=500_000)
@@ -211,6 +214,13 @@ def test_stability_policy_reports_checkpoint_and_span_diagnostics_without_refere
     assert report.stability_status == ConvergenceStatus.STABILITY_OBSERVED
     assert report.status == ConvergenceStatus.REFERENCE_NOT_AVAILABLE
     assert report.stability_policy["minimum_checkpoints"] == 3
+
+
+def test_stability_span_uses_only_the_recent_window() -> None:
+    checkpoints = [Checkpoint(0, {"density": 1.0}), Checkpoint(1_000_000, {"density": 1.0})]
+    checkpoints.extend(Checkpoint(1_000_000 + index * 1_000, {"density": 1.0}) for index in range(10))
+    policy = StabilityPolicy(minimum_checkpoints=10, minimum_step_span=100_000, required_metrics=("density",))
+    assert stability_status(checkpoints, policy=policy) == ConvergenceStatus.INSUFFICIENT_STEP_SPAN
 
 
 def test_convergence_uses_absolute_tolerance_for_zero_reference() -> None:

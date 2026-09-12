@@ -270,9 +270,9 @@ def stability_status(
     ordered = tuple(sorted(checkpoints, key=lambda item: item.step))
     if len(ordered) < policy.minimum_checkpoints:
         return ConvergenceStatus.INSUFFICIENT_CHECKPOINTS
-    if ordered[-1].step - ordered[0].step < policy.minimum_step_span:
-        return ConvergenceStatus.INSUFFICIENT_STEP_SPAN
     recent = ordered[-policy.minimum_checkpoints:]
+    if recent[-1].step - recent[0].step < policy.minimum_step_span:
+        return ConvergenceStatus.INSUFFICIENT_STEP_SPAN
     names = policy.required_metrics or tuple(sorted(recent[-1].metrics))
     if not names:
         return ConvergenceStatus.INSUFFICIENT_CHECKPOINTS

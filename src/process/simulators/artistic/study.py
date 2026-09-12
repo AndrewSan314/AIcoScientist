@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from typing import Iterable
 
-from .config import ArtisticRunConfig, FidelityMode, REFERENCE_SLURRY_STEPS
+from .config import PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, ArtisticRunConfig, FidelityMode, REFERENCE_SLURRY_STEPS, physics_config_fingerprint
 from .schemas import ArtisticRecipe, estimate_particles, recipe_fingerprint
 
 
@@ -35,13 +35,20 @@ def build_convergence_study_plan(
         raise ValueError("steps_per_second must be positive when supplied")
     entries: list[dict[str, object]] = []
     particles = estimate_particles(recipe).as_dict() if recipe is not None else None
+    recipe_id = recipe_fingerprint(recipe) if recipe is not None else None
+    physics_id = physics_config_fingerprint(
+        recipe_fingerprint=recipe_id, source_commit=PINNED_COMMIT, source_tree_hash=PINNED_SOURCE_TREE_HASH,
+    ) if recipe_id is not None else None
     for steps in selected:
         is_reference = steps == REFERENCE_SLURRY_STEPS
         mode = FidelityMode.REFERENCE if is_reference else FidelityMode.SHORT_HORIZON
         entries.append({
             "fidelity_mode": mode.value,
             "fidelity_identity": _fidelity_identity(mode, steps, config.dump_interval_steps),
-            "recipe_fingerprint": recipe_fingerprint(recipe) if recipe is not None else None,
+            "recipe_fingerprint": recipe_id,
+            "pinned_commit": PINNED_COMMIT,
+            "pinned_source_tree_hash": PINNED_SOURCE_TREE_HASH,
+            "physics_config_fingerprint": physics_id,
             "particle_preflight": particles,
             "execution_mode": config.execution_mode.value,
             "mpi_processes": config.mpi_processes,

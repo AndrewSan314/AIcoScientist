@@ -52,7 +52,11 @@ def main() -> int:
     parser.add_argument("--normalize-root", type=Path, default=Path("data/external/artistic") / PINNED_COMMIT)
     parser.add_argument("--no-normalize", action="store_true", help="Do not write a successful, validated run to the ARTISTIC adapter cache.")
     args = parser.parse_args()
-    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=FidelityMode(args.fidelity_mode), slurry_steps=args.slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference)
+    fidelity_mode = FidelityMode(args.fidelity_mode)
+    slurry_steps = args.slurry_steps
+    if args.study_dry_run and fidelity_mode == FidelityMode.SHORT_HORIZON and slurry_steps is None:
+        fidelity_mode = FidelityMode.REFERENCE
+    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=fidelity_mode, slurry_steps=slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference)
     simulator = ArtisticSimulator(config)
     recipe = _recipe(args.recipe)
     if args.study_dry_run:
