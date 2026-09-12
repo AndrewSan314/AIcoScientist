@@ -1,0 +1,26 @@
+# Replace path and mapping only; targets may never also appear in feature lists.
+output: outputs/maspo_pipeline_external
+dataset:
+  kind: csv
+  path: path/to/source_audited_process_data.csv
+  mapping:
+    dataset_name: source-audited-process-data
+    dataset_version: '1'
+    evidence_kind: EXTERNAL_TABULAR
+    sample_id: sample_id
+    run_id: run_id
+    recipe_id: recipe_id
+    group_id: recipe_fingerprint
+    stage: stage
+    fidelity: fidelity
+    controls: [coating_gap_um, drying_temperature_c]
+    observations: [drying_porosity]
+    previous_state: []
+    modality_state: []
+    targets: [capacity_retention]
+training:
+  targets: [capacity_retention]
+  model_type: extra_trees
+  seed: 42
+  objective_target: capacity_retention
+  objective_sense: maximize

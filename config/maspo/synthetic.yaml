@@ -1,0 +1,27 @@
+output: outputs/maspo_pipeline_synthetic
+dataset:
+  kind: synthetic
+  mapping:
+    dataset_name: synthetic-process-fixture
+    dataset_version: '1'
+    evidence_kind: SYNTHETIC_TEST_FIXTURE
+    sample_id: sample_id
+    run_id: run_id
+    recipe_id: recipe_id
+    group_id: group_id
+    stage: stage
+    fidelity: fidelity
+    requested_horizon: requested_horizon
+    controls: [cbd_fraction, calender_pressure]
+    observations: [drying_porosity]
+    previous_state: [slurry_viscosity]
+    modality_state: []
+    targets: [capacity_retention]
+    units: {capacity_retention: fraction}
+training:
+  targets: [capacity_retention]
+  model_type: gp
+  seed: 42
+  objective_target: capacity_retention
+  objective_sense: maximize
+  proposal_count: 3
