@@ -42,6 +42,15 @@ class FidelityMode(StrEnum):
 
 REFERENCE_SLURRY_STEPS = 20_000_000
 
+VERIFIED_PHYSICS_PATCHES = (
+    {
+        "id": "slurry_am_fraction_indices",
+        "version": "1",
+        "path": "Slurry/init_structure.txt",
+        "purpose": "bind n_AM7..10 to their corresponding particle fractions",
+    },
+)
+
 
 def _default_mpi_launcher() -> str:
     if os.name != "nt":
@@ -152,10 +161,15 @@ def physics_config_fingerprint(
 ) -> str:
     """Identity for physics-affecting inputs; horizon and dump-only patches are excluded."""
     excluded = {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval"}
-    normalized_patches = [
-        patch for patch in patches
-        if str(patch.get("id", "")) not in excluded
-    ]
+    known = {patch["id"]: patch for patch in VERIFIED_PHYSICS_PATCHES}
+    normalized_patches = []
+    for patch in patches:
+        patch_id = str(patch.get("id", ""))
+        if patch_id in excluded:
+            continue
+        normalized_patches.append(dict(known.get(patch_id, {
+            key: patch[key] for key in ("id", "version", "path", "purpose") if key in patch
+        })))
     payload = {
         "recipe_fingerprint": recipe_fingerprint, "source_commit": source_commit,
         "source_tree_hash": source_tree_hash, "physics_patches": normalized_patches,

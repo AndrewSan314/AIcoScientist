@@ -130,6 +130,28 @@ def test_short_horizon_is_explicit_workspace_patch_and_has_distinct_identity(pin
     assert config.fidelity_identity != ArtisticRunConfig(source_root=pinned_source).fidelity_identity
 
 
+def test_study_plan_physics_fingerprint_matches_prepared_run_and_patch_toggle(pinned_source: Path, tmp_path: Path) -> None:
+    recipe = _recipe()
+    enabled = ArtisticRunConfig(
+        source_root=pinned_source, output_root=tmp_path / "enabled", fidelity_mode=FidelityMode.SHORT_HORIZON,
+        slurry_steps=500_000, dump_interval_steps=250_000,
+    )
+    plan = build_convergence_study_plan(enabled, horizons=(500_000,), recipe=recipe)
+    run = ArtisticSimulator(enabled).prepare(recipe, run_id="short")
+    manifest = json.loads((run / "manifest.json").read_text(encoding="utf-8"))
+    assert plan.entries[0]["physics_config_fingerprint"] == manifest["physics_config_fingerprint"]
+
+    disabled = ArtisticRunConfig(
+        source_root=pinned_source, output_root=tmp_path / "disabled", apply_verified_patches=False,
+        fidelity_mode=FidelityMode.SHORT_HORIZON, slurry_steps=500_000, dump_interval_steps=250_000,
+    )
+    disabled_plan = build_convergence_study_plan(disabled, horizons=(500_000,), recipe=recipe)
+    disabled_run = ArtisticSimulator(disabled).prepare(recipe, run_id="short")
+    disabled_manifest = json.loads((disabled_run / "manifest.json").read_text(encoding="utf-8"))
+    assert disabled_plan.entries[0]["physics_config_fingerprint"] == disabled_manifest["physics_config_fingerprint"]
+    assert plan.entries[0]["physics_config_fingerprint"] != disabled_plan.entries[0]["physics_config_fingerprint"]
+
+
 def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -> None:
     with pytest.raises(ValueError, match="exactly 20,000,000"):
         ArtisticRunConfig(slurry_steps=500_000)

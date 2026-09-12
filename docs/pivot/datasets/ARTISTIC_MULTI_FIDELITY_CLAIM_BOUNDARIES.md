@@ -14,10 +14,10 @@ Thermo progress is parsed only from `slurry.log`; checkpoint records retain the 
 The default study planner prepares only 500k, 1M, and 2M dry-run entries with optional measured runtime estimates. For the published recipe, the explicit no-launch preparation command is:
 
 ```powershell
-python scripts/run_artistic_simulator.py config/artistic/published_reference_recipe.json --study-dry-run --mode mpi --mpi-processes 4 --steps-per-second 1000
+python scripts/run_artistic_simulator.py config/artistic/published_reference_recipe.json --study-dry-run --mode mpi --mpi-processes 4
 ```
 
-The base config is intentionally left in its valid `REFERENCE` mode; the planner assigns `SHORT_HORIZON` to 500k, 1M, and 2M entries. It reports 21,517 predicted particles for each horizon, the requested dynamics steps, dump/thermo interval, pinned source identities, a shared `physics_config_fingerprint`, and proportional runtime estimates when a measured rate is supplied. It never launches an automatic sweep.
+The base config is intentionally left in its valid `REFERENCE` mode; the planner assigns `SHORT_HORIZON` to 500k, 1M, and 2M entries. It reports 21,517 predicted particles for each horizon, the requested dynamics steps, dump/thermo interval, pinned source identities, and a shared `physics_config_fingerprint`. It never launches an automatic sweep. After a real run establishes a measured rate, supply it explicitly with `--steps-per-second <MEASURED_RATE>` for runtime estimates.
 
 After reviewing each preflight result, run the horizons explicitly with stable run IDs:
 
