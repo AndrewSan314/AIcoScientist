@@ -345,20 +345,23 @@ def _validate_historical_latent_provenance(
     current = state.provenance.get("semantic_fingerprint_inputs", {})
     expected = {
         "representation_kind": state.representation_kind,
-        "model_fingerprint": state.provenance.get("model_fingerprint") or current.get("model_fingerprint"),
-        "encoder_fingerprint": current.get("encoder_fingerprint"),
-        "model_version": state.provenance.get("model_version") or current.get("model_version"),
+        "model_artifact_fingerprint": state.provenance.get("model_artifact_fingerprint"),
         "latent_feature_schema": tuple(state.feature_names),
     }
     observed_schema = metadata.get("latent_feature_schema", metadata.get("feature_schema"))
     observed = {
         "representation_kind": metadata.get("representation_kind"),
-        "model_fingerprint": metadata.get("model_fingerprint"),
-        "encoder_fingerprint": metadata.get("encoder_fingerprint"),
-        "model_version": metadata.get("model_version"),
+        "model_artifact_fingerprint": metadata.get("model_artifact_fingerprint"),
         "latent_feature_schema": tuple(observed_schema) if isinstance(observed_schema, (list, tuple)) else observed_schema,
     }
     mismatches = [name for name, value in expected.items() if observed.get(name) != value]
+    for name, value in {
+        "model_fingerprint": state.provenance.get("model_fingerprint") or current.get("model_fingerprint"),
+        "encoder_fingerprint": current.get("encoder_fingerprint"),
+        "model_version": state.provenance.get("model_version") or current.get("model_version"),
+    }.items():
+        if name in metadata and metadata[name] != value:
+            mismatches.append(name)
     if not isinstance(metadata.get("dataset_fingerprint"), str) or not metadata["dataset_fingerprint"].strip():
         mismatches.append("dataset_fingerprint")
     current_dataset = state.provenance.get("dataset_fingerprint")
@@ -369,14 +372,12 @@ def _validate_historical_latent_provenance(
 
 
 def _latent_metadata_from_rows(observations: pd.DataFrame) -> Mapping[str, Any] | None:
-    names = (
-        "representation_kind", "model_fingerprint", "encoder_fingerprint", "model_version",
-        "latent_feature_schema", "dataset_fingerprint",
-    )
-    if any(name not in observations for name in names):
+    required_names = ("representation_kind", "model_artifact_fingerprint", "latent_feature_schema", "dataset_fingerprint")
+    optional_names = ("model_fingerprint", "encoder_fingerprint", "model_version")
+    if any(name not in observations for name in required_names):
         return None
     values: dict[str, Any] = {}
-    for name in names:
+    for name in (*required_names, *(name for name in optional_names if name in observations)):
         column = observations[name].tolist()
         if not column or any(item != column[0] for item in column[1:]):
             return None
