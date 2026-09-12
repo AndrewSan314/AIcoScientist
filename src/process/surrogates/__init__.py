@@ -7,6 +7,8 @@ from .core import (
     GenericTabularAdapter,
     ProcessSurrogate,
     ProcessSurrogateSample,
+    SurrogateDecisionContext,
+    SurrogateInputSchema,
     SplitManifest,
     SurrogateArtifact,
     split_groups,
@@ -14,5 +16,5 @@ from .core import (
 
 __all__ = [
     "DatasetManifest", "DatasetValidationReport", "ArtisticRunDirectoryAdapter", "GenericTabularAdapter", "ProcessSurrogate",
-    "ProcessSurrogateSample", "SplitManifest", "SurrogateArtifact", "split_groups",
+    "ProcessSurrogateSample", "SurrogateDecisionContext", "SurrogateInputSchema", "SplitManifest", "SurrogateArtifact", "split_groups",
 ]
