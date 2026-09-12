@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 import torch
 
 from ..information_horizon import HorizonView
+from ..modalities import ModalitySlotSpec
 from ..optimization.state import ModelValidationStatus, OptimizationState, context_provenance_fingerprint
 from ..stages import stage_precedes
 from .artifact import MASPOModelArtifact
@@ -22,13 +23,16 @@ def build_legal_stage_transitions(
     *,
     feature_encoder: StageFeatureEncoder | None = None,
     modality_inputs: Mapping[str, torch.Tensor],
-    modality_bindings: Mapping[str, str],
+    modality_bindings: Mapping[str, str] | None = None,
+    modality_slots: Sequence[ModalitySlotSpec] | None = None,
     stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
     test_only: bool = False,
 ) -> tuple[LegalStageTransition, ...]:
     """Encode source StageRecords; arbitrary tensors are retained only for explicit tests."""
     if tuple(record.stage_id for record in horizon.source_stages) != tuple(horizon.source_stage_ids):
         raise ValueError("HorizonView must carry source StageRecords in source_stage_ids order")
+    if not test_only and modality_slots is None:
+        raise ValueError("production stage transitions require semantic modality slots")
     if stage_inputs is not None:
         if not test_only:
             raise ValueError("arbitrary stage tensors are test-only; pass test_only=True explicitly")
@@ -38,7 +42,8 @@ def build_legal_stage_transitions(
             LegalStageTransition.from_source_stage(
                 record, controls=stage_inputs[record.stage_id][0],
                 scalar_observations=stage_inputs[record.stage_id][1],
-                modality_inputs=modality_inputs, modality_bindings=modality_bindings, test_only=True,
+                modality_inputs=modality_inputs, modality_bindings=modality_bindings,
+                modality_slots=modality_slots, test_only=True,
             )
             for record in horizon.source_stages
         )
@@ -48,12 +53,16 @@ def build_legal_stage_transitions(
         LegalStageTransition.from_encoded_source_stage(
             record, encoder=feature_encoder,
             modality_inputs=modality_inputs, modality_bindings=modality_bindings,
+            modality_slots=modality_slots,
         )
         for record in horizon.source_stages
     )
 
 
-def _validate_legal_history(horizon: HorizonView, transitions: tuple[LegalStageTransition, ...], feature_encoder: StageFeatureEncoder | None) -> None:
+def _validate_legal_history(
+    horizon: HorizonView, transitions: tuple[LegalStageTransition, ...],
+    feature_encoder: StageFeatureEncoder | None, modality_slots: Sequence[ModalitySlotSpec] | None = None,
+) -> None:
     expected_ids = tuple(horizon.source_stage_ids)
     if tuple(item.source_stage_id for item in transitions) != expected_ids:
         raise ValueError("stage history must contain the legal source stages in HorizonView order")
@@ -86,6 +95,26 @@ def _validate_legal_history(horizon: HorizonView, transitions: tuple[LegalStageT
         expected_bindings = {modality.modality_id for modality in record.modalities}
         if not isinstance(bindings, Mapping) or set(bindings) != expected_bindings:
             raise ValueError("transition modality provenance is not bound to the source stage")
+        if modality_slots is not None:
+            resolved, relevant = LegalStageTransition._resolve_modality_slots(record, tuple(modality_slots))
+            expected_slots = tuple(slot.as_tuple() for slot in relevant)
+            if transition.provenance.get("semantic_modality_slots") != expected_slots:
+                raise ValueError("transition semantic modality schema does not match the model artifact")
+            if dict(bindings) != {modality_id: slot.model_input_name for modality_id, slot in resolved.items()}:
+                raise ValueError("transition modality bindings are not resolved from the semantic slot schema")
+            expected_availability = {slot.model_input_name: False for slot in relevant}
+            modalities_by_id = {modality.modality_id: modality for modality in record.modalities}
+            for modality_id, slot in resolved.items():
+                if modalities_by_id[modality_id].is_missing and not slot.allowed_missing:
+                    raise ValueError(f"required semantic modality slot {slot.slot_name!r} is explicitly missing")
+                expected_availability[slot.model_input_name] = not modalities_by_id[modality_id].is_missing
+            if dict(transition.availability) != expected_availability:
+                raise ValueError("transition modality availability is not bound to the semantic slot schema")
+            for slot_name, value in transition.modality_inputs.items():
+                slot = next((item for item in relevant if item.model_input_name == slot_name), None)
+                if slot is None:
+                    raise ValueError("transition contains an unknown semantic model input")
+                LegalStageTransition._validate_modality_input(value, slot)
         if feature_encoder is not None:
             feature_encoder.validate_transition(record, transition)
     expected_modalities = tuple(modality.modality_id for record in horizon.source_stages for modality in record.modalities)
@@ -112,9 +141,14 @@ def encode_legal_multimodal_state(
     """Encode a source-bound legal history through a frozen MASPO model artifact."""
     artifact = trained_model if isinstance(trained_model, MASPOModelArtifact) else None
     model = artifact.model if artifact is not None else trained_model
+    modality_slots: Sequence[ModalitySlotSpec] | None = None
     if artifact is None and validation_status != ModelValidationStatus.TEST_ONLY:
         raise ValueError("production multimodal inference requires a MASPOModelArtifact")
     if artifact is not None:
+        artifact.verify_model_integrity()
+        modality_slots = artifact.semantic_modality_slots
+        if modality_bindings is not None:
+            raise ValueError("production inference resolves source modalities through semantic modality slots")
         if feature_encoder is not None and feature_encoder.fingerprint != artifact.encoder_fingerprint:
             raise ValueError("inference encoder fingerprint does not match the model artifact")
         feature_encoder = artifact.stage_feature_encoder
@@ -132,10 +166,6 @@ def encode_legal_multimodal_state(
             training_evidence_id = artifact.training_evidence_id
         if dataset_fingerprint is None:
             dataset_fingerprint = artifact.dataset_fingerprint
-        if modality_bindings is None:
-            modality_bindings = artifact.modality_bindings
-        elif dict(modality_bindings) != dict(artifact.modality_bindings):
-            raise ValueError("inference modality bindings do not match the model artifact")
     else:
         model_version = model_version or "test-only"
         model_fingerprint = model_fingerprint or "test-only"
@@ -172,7 +202,7 @@ def encode_legal_multimodal_state(
     else:
         raise TypeError("initial_state must be SourceBackedInitialState or a test-only tensor")
     if stage_history is None:
-        if modality_inputs is None or modality_bindings is None:
+        if modality_inputs is None or (modality_bindings is None and modality_slots is None):
             raise ValueError("multimodal encoding requires source modalities")
         if feature_encoder is None and stage_inputs is None:
             raise ValueError("production multimodal encoding requires a StageFeatureEncoder")
@@ -180,6 +210,7 @@ def encode_legal_multimodal_state(
             raise ValueError("arbitrary stage tensors are test-only; use a StageFeatureEncoder")
         transitions = build_legal_stage_transitions(
             horizon, feature_encoder=feature_encoder, modality_inputs=modality_inputs, modality_bindings=modality_bindings,
+            modality_slots=modality_slots,
             stage_inputs=stage_inputs, test_only=status == ModelValidationStatus.TEST_ONLY,
         )
     else:
@@ -188,7 +219,7 @@ def encode_legal_multimodal_state(
         transitions = tuple(stage_history)
     if any(not isinstance(item, LegalStageTransition) for item in transitions):
         raise TypeError("stage_history accepts only source-bound LegalStageTransition values")
-    _validate_legal_history(horizon, transitions, feature_encoder)
+    _validate_legal_history(horizon, transitions, feature_encoder, modality_slots)
     if initial_tensor.ndim not in (1, 2) or initial_tensor.shape[-1] != model.stage_model.stage_embedding.embedding_dim:
         raise ValueError("initial_state has the wrong shape for the MASPO StageAwareProcessModel")
     expected_observation_dim = model.stage_model.observation_dim - model.embedding_dim
@@ -216,6 +247,10 @@ def encode_legal_multimodal_state(
         for transition in transitions
         for modality in transition.modality_observations
     }
+    semantic_slots = tuple(slot.as_tuple() for slot in artifact.semantic_modality_slots) if artifact is not None else tuple(sorted(
+        (transition.stage.value, modality.modality_type.value, transition.provenance["modality_bindings"][modality.modality_id], not modality.is_missing)
+        for transition in transitions for modality in transition.modality_observations
+    ))
     semantic_metadata: dict[str, Any] = {
         "model_fingerprint": model_fingerprint,
         "model_version": model_version,
@@ -224,10 +259,8 @@ def encode_legal_multimodal_state(
         "encoder_dimensions": {"control": feature_encoder.control_dim, "observation": feature_encoder.observation_dim} if feature_encoder is not None else None,
         "model_artifact_fingerprint": artifact.artifact_fingerprint if artifact is not None else None,
         "initial_state_fingerprint": initial_state_fingerprint,
-        "modality_schema": tuple(sorted(
-            (transition.stage.value, modality.modality_type.value, transition.provenance["modality_bindings"][modality.modality_id], not modality.is_missing)
-            for transition in transitions for modality in transition.modality_observations
-        )),
+        "modality_schema": semantic_slots,
+        "modality_schema_fingerprint": artifact.modality_schema_fingerprint if artifact is not None else None,
     }
     feature_names = tuple(f"context.state.{index}" for index in range(values.size))
     feature_values = {name: float(value) for name, value in zip(feature_names, values)}

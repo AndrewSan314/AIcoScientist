@@ -11,8 +11,8 @@ import torch
 import pandas as pd
 
 from ..contracts import StageRecord
-from ..modalities import ModalityObservation
-from ..stages import ProcessStage
+from ..modalities import ModalityObservation, ModalitySlotSpec
+from ..stages import ProcessStage, STAGE_ORDER
 
 
 def source_stage_fingerprint(record: StageRecord) -> str:
@@ -48,6 +48,7 @@ class _FieldSpec:
     name: str
     kind: str
     categories: tuple[tuple[str, str], ...] = ()
+    allow_missing: bool = False
 
     @property
     def width(self) -> int:
@@ -78,12 +79,14 @@ class StageFeatureEncoder:
         category_vocabularies: Mapping[str, Sequence[object]] | None = None,
         control_dim: int | None = None,
         observation_dim: int | None = None,
+        optional_fields: Mapping[str, bool] | Sequence[str] | None = None,
     ) -> "StageFeatureEncoder":
         return cls.fit(
             horizon,
             category_vocabularies=category_vocabularies,
             control_dim=control_dim,
             observation_dim=observation_dim,
+            optional_fields=optional_fields,
         )
 
     @classmethod
@@ -94,21 +97,19 @@ class StageFeatureEncoder:
         category_vocabularies: Mapping[str, Sequence[object]] | None = None,
         control_dim: int | None = None,
         observation_dim: int | None = None,
+        optional_fields: Mapping[str, bool] | Sequence[str] | None = None,
     ) -> "StageFeatureEncoder":
-        records = tuple(getattr(training_data, "source_stages", training_data))
-        source_ids = tuple(getattr(training_data, "source_stage_ids", (record.stage_id for record in records)))
-        if not records or tuple(record.stage_id for record in records) != source_ids:
-            raise ValueError("StageFeatureEncoder requires source stages in HorizonView order")
-        if len({record.stage_type for record in records}) != len(records):
-            raise ValueError("StageFeatureEncoder requires one training schema per stage type")
+        records = cls._training_records(training_data)
         vocabularies = category_vocabularies or {}
+        optional = cls._optional_fields(optional_fields)
+        stage_types = tuple(sorted({record.stage_type for record in records}, key=STAGE_ORDER.__getitem__))
         stages = tuple(
             _StageSpec(
-                record.stage_type,
-                cls._fields(record, "control", record.controls, vocabularies),
-                cls._fields(record, "observation", record.intermediate_properties, vocabularies),
+                stage_type,
+                cls._field_specs(records, stage_type, "control", vocabularies, optional),
+                cls._field_specs(records, stage_type, "observation", vocabularies, optional),
             )
-            for record in records
+            for stage_type in stage_types
         )
         inferred_control_dim = max(sum(field.width for field in stage.controls) for stage in stages)
         inferred_observation_dim = max(sum(field.width for field in stage.observations) for stage in stages)
@@ -144,8 +145,8 @@ class StageFeatureEncoder:
         return tuple(
             (
                 stage.stage_type.value,
-                tuple((field.name, field.kind, field.categories) for field in stage.controls),
-                tuple((field.name, field.kind, field.categories) for field in stage.observations),
+                tuple((field.name, field.kind, field.categories, field.allow_missing) for field in stage.controls),
+                tuple((field.name, field.kind, field.categories, field.allow_missing) for field in stage.observations),
             )
             for stage in self.stages
         )
@@ -160,33 +161,74 @@ class StageFeatureEncoder:
         }
 
     @staticmethod
-    def _fields(
-        record: StageRecord,
-        scope: str,
-        fields: Mapping[str, Any],
-        vocabularies: Mapping[str, Sequence[object]],
+    def _training_records(training_data: Any) -> tuple[StageRecord, ...]:
+        if hasattr(training_data, "source_stages"):
+            datasets = (training_data,)
+        else:
+            try:
+                items = tuple(training_data)
+            except TypeError:
+                items = (training_data,)
+            datasets = items if items and all(hasattr(item, "source_stages") for item in items) else ()
+        if datasets:
+            records = []
+            for horizon in datasets:
+                source_stages = tuple(horizon.source_stages)
+                if tuple(record.stage_id for record in source_stages) != tuple(horizon.source_stage_ids):
+                    raise ValueError("StageFeatureEncoder requires source stages in HorizonView order")
+                records.extend(source_stages)
+        else:
+            records = list(items if "items" in locals() else (training_data,))
+        if not records:
+            raise ValueError("StageFeatureEncoder requires at least one training stage record")
+        return tuple(records)
+
+    @staticmethod
+    def _optional_fields(optional_fields: Mapping[str, bool] | Sequence[str] | None) -> set[str]:
+        if optional_fields is None:
+            return set()
+        if isinstance(optional_fields, Mapping):
+            return {str(name) for name, allowed in optional_fields.items() if allowed}
+        return {str(name) for name in optional_fields}
+
+    @staticmethod
+    def _field_specs(
+        records: Sequence[StageRecord], stage_type: ProcessStage, scope: str,
+        vocabularies: Mapping[str, Sequence[object]], optional_fields: set[str],
     ) -> tuple[_FieldSpec, ...]:
+        sources = tuple(
+            record.controls if scope == "control" else record.intermediate_properties
+            for record in records if record.stage_type == stage_type
+        )
+        names = tuple(sorted({name for source in sources for name in source}))
         result: list[_FieldSpec] = []
-        stage_name = record.stage_type.value.lower()
-        for name in sorted(fields):
-            raw = _field_value(fields[name])
+        stage_name = stage_type.value.lower()
+        for name in names:
             key = f"{stage_name}.{scope}.{name}"
             short_key = f"{stage_name}.{name}"
             vocabulary = vocabularies.get(key, vocabularies.get(short_key, vocabularies.get(name)))
-            if _missing(raw) and vocabulary is None:
-                result.append(_FieldSpec(key, "numeric"))
-                continue
-            if not isinstance(raw, Real) or isinstance(raw, bool):
-                if vocabulary is None:
-                    raise ValueError(f"categorical source field {key!r} requires a source-supported vocabulary")
-                categories = tuple(sorted({_category(value) for value in vocabulary}))
-                if not categories or _category(raw) not in categories:
+            values = tuple(_field_value(source[name]) for source in sources if name in source)
+            absent = len(values) != len(sources)
+            explicitly_missing = any(_missing(value) for value in values)
+            allow_missing = key in optional_fields or short_key in optional_fields or name in optional_fields or explicitly_missing
+            if absent and not allow_missing:
+                raise ValueError(f"inconsistent {stage_type.value} {scope} schema for {key!r}; declare it optional")
+            observed = tuple(value for value in values if not _missing(value))
+            if not observed and vocabulary is None:
+                raise ValueError(f"cannot infer the kind of source field {key!r} from missing-only training data")
+            kinds = {"numeric" if isinstance(value, Real) and not isinstance(value, bool) else "categorical" for value in observed}
+            if len(kinds) > 1:
+                raise ValueError(f"inconsistent {stage_type.value} {scope} schema for {key!r}: numeric and categorical values disagree")
+            kind = next(iter(kinds), "categorical" if vocabulary is not None else "numeric")
+            if kind == "categorical":
+                categories = tuple(sorted({_category(value) for value in ((*vocabulary,) if vocabulary is not None else ()) + observed}))
+                if not categories or any(_category(value) not in categories for value in values):
                     raise ValueError(f"categorical source field {key!r} is unknown to its vocabulary")
-                result.append(_FieldSpec(key, "categorical", categories))
+                result.append(_FieldSpec(key, kind, categories, allow_missing))
             else:
-                if not math.isfinite(float(raw)):
+                if any(not math.isfinite(float(value)) for value in observed):
                     raise ValueError(f"source field {key!r} contains a non-finite number")
-                result.append(_FieldSpec(key, "numeric"))
+                result.append(_FieldSpec(key, kind, (), allow_missing))
         return tuple(result)
 
     def _stage(self, record: StageRecord) -> _StageSpec:
@@ -196,8 +238,12 @@ class StageFeatureEncoder:
         stage = matches[0]
         control_names = tuple(f"{record.stage_type.value.lower()}.control.{name}" for name in sorted(record.controls))
         observation_names = tuple(f"{record.stage_type.value.lower()}.observation.{name}" for name in sorted(record.intermediate_properties))
-        if tuple(field.name for field in stage.controls) != control_names or tuple(field.name for field in stage.observations) != observation_names:
-            raise ValueError("source stage schema does not match the StageFeatureEncoder")
+        for specs, names, scope in ((stage.controls, control_names, "control"), (stage.observations, observation_names, "observation")):
+            expected = tuple(field.name for field in specs)
+            extra = tuple(name for name in names if name not in expected)
+            missing = tuple(field for field in specs if field.name not in names and not field.allow_missing)
+            if extra or missing:
+                raise ValueError("source stage schema does not match the StageFeatureEncoder")
         return stage
 
     def _encode_scope(self, record: StageRecord, scope: str) -> EncodedStageFeatures:
@@ -207,7 +253,10 @@ class StageFeatureEncoder:
         values: list[float] = []
         names: list[str] = []
         for spec in specs:
-            raw = _field_value(source[spec.name.rsplit(".", 1)[-1]])
+            field_name = spec.name.rsplit(".", 1)[-1]
+            raw = _field_value(source[field_name]) if field_name in source else None
+            if _missing(raw) and not spec.allow_missing:
+                raise ValueError(f"source stage field {spec.name!r} is missing but not optional")
             if spec.kind == "numeric":
                 values.extend([0.0, 0.0] if _missing(raw) else [float(raw), 1.0])
                 names.extend((f"{spec.name}.value", f"{spec.name}.observed"))
@@ -311,19 +360,77 @@ class LegalStageTransition:
                 raise ValueError(f"unavailable modality {name!r} must not have an encoded token")
 
     @staticmethod
-    def _modality_payload(record: StageRecord, modality_inputs: Mapping[str, torch.Tensor], modality_bindings: Mapping[str, str]) -> tuple[dict[str, torch.Tensor], dict[str, bool]]:
+    def _resolve_modality_slots(
+        record: StageRecord, modality_slots: Sequence[ModalitySlotSpec],
+    ) -> tuple[dict[str, ModalitySlotSpec], tuple[ModalitySlotSpec, ...]]:
+        relevant = tuple(sorted((slot for slot in modality_slots if slot.stage == record.stage_type), key=ModalitySlotSpec.as_tuple))
+        resolved: dict[str, ModalitySlotSpec] = {}
+        for modality in record.modalities:
+            matches = tuple(slot for slot in relevant if slot.matches(modality))
+            if len(matches) != 1:
+                reason = "no semantic slot" if not matches else "ambiguous semantic slots"
+                raise ValueError(f"source modality {modality.modality_id!r} has {reason}")
+            if modality.modality_id in resolved or matches[0].model_input_name in {slot.model_input_name for slot in resolved.values()}:
+                raise ValueError(f"source modality {modality.modality_id!r} does not resolve uniquely")
+            resolved[modality.modality_id] = matches[0]
+        for slot in relevant:
+            if slot.model_input_name not in {item.model_input_name for item in resolved.values()} and not slot.allowed_missing:
+                raise ValueError(f"required semantic modality slot {slot.slot_name!r} is missing")
+        return resolved, relevant
+
+    @staticmethod
+    def _validate_modality_input(value: torch.Tensor, slot: ModalitySlotSpec) -> None:
+        if not isinstance(value, torch.Tensor):
+            raise TypeError(f"modality input for slot {slot.slot_name!r} must be a torch.Tensor")
+        if value.ndim < 1 or value.shape[-1] != slot.expected_input_dim:
+            raise ValueError(
+                f"modality input for slot {slot.slot_name!r} has dimension {tuple(value.shape)}; "
+                f"expected final dimension {slot.expected_input_dim}"
+            )
+        if slot.expected_shape is not None and tuple(value.shape) != slot.expected_shape:
+            raise ValueError(f"modality input for slot {slot.slot_name!r} does not match expected shape {slot.expected_shape}")
+        if not torch.isfinite(value).all():
+            raise ValueError(f"modality input for slot {slot.slot_name!r} contains non-finite values")
+
+    @staticmethod
+    def _modality_payload(
+        record: StageRecord, modality_inputs: Mapping[str, torch.Tensor],
+        modality_bindings: Mapping[str, str] | None = None,
+        modality_slots: Sequence[ModalitySlotSpec] | None = None,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, bool], dict[str, str], tuple[ModalitySlotSpec, ...]]:
         tokens: dict[str, torch.Tensor] = {}
         availability: dict[str, bool] = {}
+        if modality_slots is not None:
+            resolved, relevant = LegalStageTransition._resolve_modality_slots(record, tuple(modality_slots))
+            bindings = {modality_id: slot.model_input_name for modality_id, slot in resolved.items()}
+            for modality in record.modalities:
+                slot = resolved[modality.modality_id]
+                if modality.is_missing and not slot.allowed_missing:
+                    raise ValueError(f"required semantic modality slot {slot.slot_name!r} is explicitly missing")
+                availability[slot.model_input_name] = not modality.is_missing
+                if not modality.is_missing:
+                    if modality.modality_id not in modality_inputs:
+                        raise ValueError(f"source modality {modality.modality_id!r} lacks encoder input")
+                    value = modality_inputs[modality.modality_id]
+                    LegalStageTransition._validate_modality_input(value, slot)
+                    tokens[slot.model_input_name] = value
+            for slot in relevant:
+                availability.setdefault(slot.model_input_name, False)
+            return tokens, availability, bindings, relevant
+        if modality_bindings is None:
+            raise ValueError("source modality encoding requires semantic modality slots")
+        bindings = {}
         for modality in record.modalities:
             model_name = modality_bindings.get(modality.modality_id)
             if model_name is None or model_name in availability:
                 raise ValueError(f"source modality {modality.modality_id!r} lacks a unique model binding")
             availability[model_name] = not modality.is_missing
+            bindings[modality.modality_id] = model_name
             if not modality.is_missing:
                 if modality.modality_id not in modality_inputs:
                     raise ValueError(f"source modality {modality.modality_id!r} lacks encoder input")
                 tokens[model_name] = modality_inputs[modality.modality_id]
-        return tokens, availability
+        return tokens, availability, bindings, ()
 
     @classmethod
     def from_encoded_source_stage(
@@ -332,15 +439,18 @@ class LegalStageTransition:
         *,
         encoder: StageFeatureEncoder,
         modality_inputs: Mapping[str, torch.Tensor],
-        modality_bindings: Mapping[str, str],
+        modality_bindings: Mapping[str, str] | None = None,
+        modality_slots: Sequence[ModalitySlotSpec] | None = None,
         provenance: Mapping[str, Any] | None = None,
     ) -> "LegalStageTransition":
         controls = encoder.encode_controls(record)
         observations = encoder.encode_observations(record)
-        tokens, availability = cls._modality_payload(record, modality_inputs, modality_bindings)
+        tokens, availability, bindings, resolved_slots = cls._modality_payload(
+            record, modality_inputs, modality_bindings, modality_slots,
+        )
         supplied = dict(provenance or {})
         reserved = {
-            "source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings",
+            "source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings", "semantic_modality_slots",
             "encoder_fingerprint", "control_feature_names", "observation_feature_names", "encoded_control_fingerprint", "encoded_observation_fingerprint",
         }
         if reserved & set(supplied):
@@ -354,7 +464,8 @@ class LegalStageTransition:
             "source_stage_fingerprint": source_stage_fingerprint(record),
             "control_names": tuple(record.controls),
             "scalar_observation_names": tuple(record.intermediate_properties),
-            "modality_bindings": {modality.modality_id: modality_bindings[modality.modality_id] for modality in record.modalities},
+            "modality_bindings": bindings,
+            "semantic_modality_slots": tuple(slot.as_tuple() for slot in resolved_slots),
             "encoder_fingerprint": encoder.fingerprint,
             "control_feature_names": controls.feature_names,
             "observation_feature_names": observations.feature_names,
@@ -371,15 +482,18 @@ class LegalStageTransition:
         controls: torch.Tensor,
         scalar_observations: torch.Tensor,
         modality_inputs: Mapping[str, torch.Tensor],
-        modality_bindings: Mapping[str, str],
+        modality_bindings: Mapping[str, str] | None = None,
+        modality_slots: Sequence[ModalitySlotSpec] | None = None,
         provenance: Mapping[str, Any] | None = None,
         test_only: bool = False,
     ) -> "LegalStageTransition":
         if not test_only:
             raise ValueError("arbitrary stage tensors are test-only; use a frozen training StageFeatureEncoder")
-        tokens, availability = cls._modality_payload(record, modality_inputs, modality_bindings)
+        tokens, availability, bindings, resolved_slots = cls._modality_payload(
+            record, modality_inputs, modality_bindings, modality_slots,
+        )
         supplied = dict(provenance or {})
-        reserved = {"source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings"}
+        reserved = {"source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings", "semantic_modality_slots"}
         if reserved & set(supplied):
             raise ValueError("source-bound transition provenance fields cannot be overridden")
         if {"final_kpi", "final_kpis", "final_outputs", "future_kpi", "future_metadata"} & set(supplied):
@@ -391,7 +505,8 @@ class LegalStageTransition:
             "source_stage_fingerprint": source_stage_fingerprint(record),
             "control_names": tuple(record.controls),
             "scalar_observation_names": tuple(record.intermediate_properties),
-            "modality_bindings": {modality.modality_id: modality_bindings[modality.modality_id] for modality in record.modalities},
+            "modality_bindings": bindings,
+            "semantic_modality_slots": tuple(slot.as_tuple() for slot in resolved_slots),
             "unsafe_test_only": True,
         }
         return cls(record.stage_id, record.stage_type, controls, scalar_observations, tuple(record.modalities), bound, tokens, availability)

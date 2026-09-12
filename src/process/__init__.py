@@ -7,7 +7,7 @@ from .contracts import BatteryProcessRun, MeasurementValue, ParameterValue, Prov
 from .evidence import EvidenceOption, EvidenceReplayResult, replay_blinded_evidence
 from .information_horizon import InformationHorizon, InformationHorizonError
 from .maspo import ContextualProcessState, MASPOPlan, MASPOProcessOptimizationCoordinator
-from .modalities import ModalityObservation, ModalityType
+from .modalities import ModalityObservation, ModalitySlotSpec, ModalityType
 from .models import LegalStageTransition, build_legal_stage_transitions, encode_legal_multimodal_state
 from .optimization.state import ModelValidationStatus, OptimizationState, canonical_control_action_id, context_provenance_fingerprint, contextual_candidate_instance_id
 from .robustness import RobustnessReport, evaluate_recipe_robustness
@@ -30,6 +30,7 @@ __all__ = [
     "MASPOProcessOptimizationCoordinator",
     "MeasurementValue",
     "ModalityObservation",
+    "ModalitySlotSpec",
     "ModalityType",
     "ParameterValue",
     "ProcessStage",

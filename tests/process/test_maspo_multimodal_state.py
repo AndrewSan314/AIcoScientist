@@ -11,9 +11,9 @@ import torch
 from src.process.contracts import MeasurementValue, ParameterValue
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.information_horizon import HorizonView, InformationHorizon
-from src.process.modalities import ModalityObservation, ModalityType
+from src.process.modalities import ModalityObservation, ModalitySlotSpec, ModalityType
 from src.process.maspo import MASPOProcessOptimizationCoordinator
-from src.process.models import MASPOModelArtifact, MASPOProcessStateModel, SourceBackedInitialState, StageFeatureEncoder, build_legal_stage_transitions, encode_legal_multimodal_state
+from src.process.models import MASPOModelArtifact, MASPOProcessStateModel, SourceBackedInitialState, StageFeatureEncoder, build_legal_stage_transitions, encode_legal_multimodal_state, model_weight_fingerprint
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.optimization.process_space import ProcessSearchSpace
 from src.process.stages import ProcessStage
@@ -49,10 +49,19 @@ def _model() -> MASPOProcessStateModel:
     return MASPOProcessStateModel(3, 2, 2, {"tabular": 2, "signal": 2}, embedding_dim=4)
 
 
-def _artifact(model: MASPOProcessStateModel, encoder: StageFeatureEncoder, bindings: dict[str, str]) -> MASPOModelArtifact:
+def _slots(bindings: dict[str, str], *, stage: ProcessStage = ProcessStage.MIXING) -> tuple[ModalitySlotSpec, ...]:
+    types = {"tabular": ModalityType.PROCESS_TABULAR, "signal": ModalityType.MACHINE_TIME_SERIES}
+    return tuple(
+        ModalitySlotSpec(f"{stage.value.lower()}.{model_name}", stage, types.get(model_name, ModalityType.PROCESS_TABULAR), model_name, 2)
+        for model_name in bindings.values()
+    )
+
+
+def _artifact(
+    model: MASPOProcessStateModel, encoder: StageFeatureEncoder, bindings: dict[str, str], *, stage: ProcessStage = ProcessStage.MIXING,
+) -> MASPOModelArtifact:
     return MASPOModelArtifact.from_training(
-        model, feature_encoder=encoder, model_version="maspo-test-v1", model_fingerprint="model-sha256",
-        modality_bindings=bindings, modality_schema=tuple(sorted(bindings.items())),
+        model, feature_encoder=encoder, model_version="maspo-test-v1", semantic_modality_slots=_slots(bindings, stage=stage),
     )
 
 
@@ -76,7 +85,7 @@ def _encode(horizon: HorizonView, model: MASPOProcessStateModel, *, signal: torc
     transitions = build_legal_stage_transitions(
         horizon,
         feature_encoder=encoder,
-        modality_inputs=inputs, modality_bindings=bindings,
+        modality_inputs=inputs, modality_slots=_slots(bindings),
     )
     artifact = _artifact(model, encoder, bindings)
     return encode_legal_multimodal_state(
@@ -120,7 +129,7 @@ def test_production_rejects_injected_stage_tensors() -> None:
     with pytest.raises(ValueError, match="test-only"):
         build_legal_stage_transitions(
             horizon, stage_inputs={"mix": (torch.tensor([999.0, 999.0]), torch.tensor([999.0]))},
-            modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
+            modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_slots=_slots({"mix-tab": "tabular"}),
         )
 
 
@@ -148,6 +157,40 @@ def test_stage_encoder_handles_categorical_missing_values_with_a_traceable_schem
     assert encoded.fingerprint and encoder.fingerprint
 
 
+def test_stage_encoder_fits_one_frozen_schema_from_multiple_training_records() -> None:
+    run = process_run()
+    first = replace(run.stages[1], stage_id="mix-1", controls={"speed": ParameterValue(100.0)})
+    second = replace(run.stages[1], stage_id="mix-2", controls={"speed": ParameterValue(120.0)})
+    encoder = StageFeatureEncoder.fit([first, second])
+    assert encoder.feature_schema[0][0] == ProcessStage.MIXING.value
+    assert encoder.encode_controls(first).feature_names == encoder.encode_controls(second).feature_names
+
+
+def test_stage_encoder_unions_training_categories_and_rejects_unseen_inference_values() -> None:
+    run = process_run()
+    first = replace(run.stages[1], stage_id="mix-1", controls={"protocol": ParameterValue("fast")}, intermediate_properties={})
+    second = replace(run.stages[1], stage_id="mix-2", controls={"protocol": ParameterValue("slow")}, intermediate_properties={})
+    encoder = StageFeatureEncoder.fit([first, second], observation_dim=1)
+    assert encoder.category_vocabularies["mixing.control.protocol"] == (("value", "fast"), ("value", "slow"))
+    unseen = replace(first, controls={"protocol": ParameterValue("unseen")})
+    with pytest.raises(ValueError, match="unknown to its vocabulary"):
+        encoder.encode_controls(unseen)
+
+
+def test_stage_encoder_rejects_incompatible_kinds_and_allows_declared_optional_fields() -> None:
+    run = process_run()
+    numeric = replace(run.stages[1], stage_id="mix-1", controls={"setting": ParameterValue(1.0)})
+    categorical = replace(run.stages[1], stage_id="mix-2", controls={"setting": ParameterValue("fast")})
+    with pytest.raises(ValueError, match="numeric and categorical"):
+        StageFeatureEncoder.fit([numeric, categorical])
+    present = replace(run.stages[1], stage_id="mix-1", controls={"speed": ParameterValue(100.0)})
+    absent = replace(run.stages[1], stage_id="mix-2", controls={})
+    with pytest.raises(ValueError, match="declare it optional"):
+        StageFeatureEncoder.fit([present, absent])
+    encoder = StageFeatureEncoder.fit([present, absent], optional_fields={"mixing.control.speed": True})
+    assert encoder.encode_controls(absent).tensor.tolist()[:2] == [0.0, 0.0]
+
+
 def test_same_modalities_and_controls_at_different_stages_change_state() -> None:
     values = [100.0, 5.0]
     formulation_modality = ModalityObservation("sensor", ModalityType.PROCESS_TABULAR, ProcessStage.FORMULATION, values=values)
@@ -161,15 +204,15 @@ def test_same_modalities_and_controls_at_different_stages_change_state() -> None
 
     first_encoder = StageFeatureEncoder.from_training_data(formulation_horizon, control_dim=2, observation_dim=2)
     second_encoder = StageFeatureEncoder.from_training_data(mixing_horizon, control_dim=2, observation_dim=2)
-    first_artifact = _artifact(model, first_encoder, {"sensor": "tabular"})
-    second_artifact = _artifact(model, second_encoder, {"sensor": "tabular"})
+    first_artifact = _artifact(model, first_encoder, {"sensor": "tabular"}, stage=ProcessStage.FORMULATION)
+    second_artifact = _artifact(model, second_encoder, {"sensor": "tabular"}, stage=ProcessStage.MIXING)
     first = encode_legal_multimodal_state(
         formulation_horizon, first_artifact,
-        modality_inputs={"sensor": torch.tensor(values)}, modality_bindings={"sensor": "tabular"},
+        modality_inputs={"sensor": torch.tensor(values)},
     )
     second = encode_legal_multimodal_state(
         mixing_horizon, second_artifact,
-        modality_inputs={"sensor": torch.tensor(values)}, modality_bindings={"sensor": "tabular"},
+        modality_inputs={"sensor": torch.tensor(values)},
     )
 
     assert first.feature_values != second.feature_values
@@ -245,6 +288,7 @@ def test_multimodal_state_features_reach_backend_while_controls_stay_controls() 
 
     metadata = {
         "representation_kind": state.representation_kind,
+        "model_artifact_fingerprint": state.provenance["model_artifact_fingerprint"],
         "model_fingerprint": state.provenance["model_fingerprint"],
         "encoder_fingerprint": state.provenance["semantic_fingerprint_inputs"]["encoder_fingerprint"],
         "model_version": state.provenance["model_version"],
@@ -275,6 +319,11 @@ def test_multimodal_state_features_reach_backend_while_controls_stay_controls() 
             horizon, space, observations, ProcessOptimizationObjective([ObjectiveSpec("capacity", "maximize")]),
             optimization_state=state, historical_latent_metadata={**metadata, "model_fingerprint": "other"},
         )
+    with pytest.raises(ValueError, match="model_artifact_fingerprint"):
+        coordinator._contextual_inputs(
+            horizon, space, observations, ProcessOptimizationObjective([ObjectiveSpec("capacity", "maximize")]),
+            optimization_state=state, historical_latent_metadata={**metadata, "model_artifact_fingerprint": "other"},
+        )
 
 
 def test_multimodal_state_rejects_a_future_bound_modality() -> None:
@@ -286,11 +335,11 @@ def test_multimodal_state_rejects_a_future_bound_modality() -> None:
         encoder = StageFeatureEncoder.from_training_data(horizon)
         artifact = MASPOModelArtifact.from_training(
             MASPOProcessStateModel(3, 2, 2, {"signal": 2}, embedding_dim=4), feature_encoder=encoder,
-            model_version="maspo-test-v1", model_fingerprint="model-sha256", modality_bindings={"dry-signal": "signal"},
+            model_version="maspo-test-v1", semantic_modality_slots=_slots({"dry-signal": "signal"}, stage=ProcessStage.DRYING),
         )
         encode_legal_multimodal_state(
             horizon, artifact,
-            modality_inputs={"dry-signal": torch.tensor([1.0, 2.0])}, modality_bindings={"dry-signal": "signal"},
+            modality_inputs={"dry-signal": torch.tensor([1.0, 2.0])},
         )
 
 
@@ -321,7 +370,7 @@ def test_legal_history_rejects_future_stage_id_and_changed_source_fingerprint() 
     horizon = InformationHorizon(ProcessStage.COATING).project(run)
     encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
     transitions = build_legal_stage_transitions(
-        horizon, feature_encoder=encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_bindings={"mix-tab": "tabular"},
+        horizon, feature_encoder=encoder, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])}, modality_slots=_slots({"mix-tab": "tabular"}),
     )
     artifact = _artifact(_model(), encoder, {"mix-tab": "tabular"})
     wrong_id = replace(
@@ -370,6 +419,124 @@ def test_model_artifact_freezes_encoder_and_owns_initial_state() -> None:
         changed_model.initial_state[0] = 1.0
     changed_artifact = _artifact(changed_model, encoder, {"mix-tab": "tabular"})
     assert changed_artifact.artifact_fingerprint != artifact.artifact_fingerprint
+
+
+def test_model_weight_fingerprint_is_state_dict_deterministic_and_ignores_train_mode() -> None:
+    model = _model()
+    fingerprint = model_weight_fingerprint(model)
+    model.train()
+    assert model_weight_fingerprint(model) == fingerprint
+    model.eval()
+    assert model_weight_fingerprint(model) == fingerprint
+    reloaded = _model()
+    reloaded.load_state_dict(model.state_dict())
+    assert model_weight_fingerprint(reloaded) == fingerprint
+    with torch.no_grad():
+        reloaded.stage_model.transition[0].weight[0, 0] += 1.0
+    assert model_weight_fingerprint(reloaded) != fingerprint
+
+
+def test_model_artifact_rejects_transition_weight_mutation_before_inference() -> None:
+    horizon = _multimodal_horizon()
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    artifact = _artifact(model, encoder, {"mix-tab": "tabular"})
+    encode_legal_multimodal_state(horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+    with torch.no_grad():
+        model.stage_model.transition[0].weight[0, 0] += 1.0
+    with pytest.raises(RuntimeError, match="integrity"):
+        encode_legal_multimodal_state(horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+
+
+def test_model_artifact_rejects_modality_encoder_and_initial_state_mutation() -> None:
+    horizon = _multimodal_horizon()
+    for mutate in ("modality", "initial"):
+        model = _model()
+        encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+        artifact = _artifact(model, encoder, {"mix-tab": "tabular"})
+        if mutate == "modality":
+            with torch.no_grad():
+                model.modality_encoders["tabular"][0].weight[0, 0] += 1.0
+        else:
+            with torch.no_grad():
+                model.initial_state[0] += 1.0
+        with pytest.raises(RuntimeError, match="integrity"):
+            encode_legal_multimodal_state(horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+
+
+def test_model_artifact_requires_computed_expected_weight_fingerprint() -> None:
+    horizon = _multimodal_horizon()
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    with pytest.raises(ValueError, match="expected_model_fingerprint"):
+        MASPOModelArtifact.from_training(
+            model, feature_encoder=encoder, model_version="maspo-test-v1",
+            expected_model_fingerprint="caller-defined", semantic_modality_slots=_slots({"mix-tab": "tabular"}),
+        )
+
+
+def test_semantic_modality_slot_accepts_a_new_source_instance_id() -> None:
+    original = _multimodal_horizon(signal=ModalityObservation("mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING, values=[0.0, 1.0]))
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(original, control_dim=2, observation_dim=2)
+    artifact = _artifact(model, encoder, {"mix-tab": "tabular", "mix-signal": "signal"})
+    new_signal = replace(original.source_stages[0].modalities[1], modality_id="mix-signal-run-847")
+    new_record = replace(original.source_stages[0], modalities=[original.source_stages[0].modalities[0], new_signal])
+    new_horizon = replace(original, source_stages=(new_record,), modalities=tuple(new_record.modalities))
+    state = encode_legal_multimodal_state(
+        new_horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0]), "mix-signal-run-847": torch.tensor([0.0, 1.0])},
+    )
+    assert state.provenance["modality_bindings"]["mix-signal-run-847"] == "signal"
+    assert artifact.artifact_fingerprint == _artifact(_model(), encoder, {"different-run-id": "tabular", "other-run-id": "signal"}).artifact_fingerprint
+
+
+def test_semantic_modality_slot_rejects_wrong_type_stage_and_dimension() -> None:
+    horizon = _multimodal_horizon()
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    artifact = _artifact(model, encoder, {"mix-tab": "tabular"})
+    for change, message in (({"modality_type": ModalityType.SEM_IMAGE}, "no semantic slot"),):
+        bad = replace(horizon.source_stages[0].modalities[0], **change)
+        bad_record = replace(horizon.source_stages[0], modalities=[bad])
+        bad_horizon = replace(horizon, source_stages=(bad_record,), modalities=(bad,))
+        with pytest.raises(ValueError, match=message):
+            encode_legal_multimodal_state(bad_horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+    wrong_stage_artifact = _artifact(model, encoder, {"mix-tab": "tabular"}, stage=ProcessStage.FORMULATION)
+    assert wrong_stage_artifact.artifact_fingerprint != artifact.artifact_fingerprint
+    with pytest.raises(ValueError, match="no semantic slot"):
+        encode_legal_multimodal_state(horizon, wrong_stage_artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+    with pytest.raises(ValueError, match="dimension"):
+        encode_legal_multimodal_state(horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0, 7.0])})
+
+
+def test_semantic_modality_slot_missing_and_ambiguous_policies_fail_closed() -> None:
+    missing = ModalityObservation("mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING, missing_reason="offline")
+    horizon = _multimodal_horizon(signal=missing)
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    artifact = _artifact(model, encoder, {"mix-tab": "tabular", "mix-signal": "signal"})
+    with patch.object(model, "fuse_observations", wraps=model.fuse_observations) as fused:
+        encode_legal_multimodal_state(horizon, artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
+    tokens, availability = fused.call_args.args
+    assert "signal" not in tokens and availability["signal"] is False
+
+    empty_record = replace(horizon.source_stages[0], modalities=[])
+    empty_horizon = replace(horizon, source_stages=(empty_record,), modalities=())
+    required_encoder = StageFeatureEncoder.from_training_data(empty_horizon, control_dim=2, observation_dim=2)
+    required_slot = ModalitySlotSpec("mixing.tabular", ProcessStage.MIXING, ModalityType.PROCESS_TABULAR, "tabular", 2, required=True, allowed_missing=False)
+    required_artifact = MASPOModelArtifact.from_training(model, feature_encoder=required_encoder, model_version="v1", semantic_modality_slots=(required_slot,))
+    with pytest.raises(ValueError, match="required semantic modality slot"):
+        encode_legal_multimodal_state(empty_horizon, required_artifact, modality_inputs={})
+
+    ambiguous_artifact = MASPOModelArtifact.from_training(
+        _model(), feature_encoder=encoder, model_version="v1",
+        semantic_modality_slots=(
+            ModalitySlotSpec("mixing.tabular-a", ProcessStage.MIXING, ModalityType.PROCESS_TABULAR, "tabular", 2),
+            ModalitySlotSpec("mixing.tabular-b", ProcessStage.MIXING, ModalityType.PROCESS_TABULAR, "signal", 2),
+        ),
+    )
+    with pytest.raises(ValueError, match="ambiguous semantic slots"):
+        encode_legal_multimodal_state(horizon, ambiguous_artifact, modality_inputs={"mix-tab": torch.tensor([100.0, 5.0])})
 
 
 def test_production_multimodal_inference_requires_artifact_and_unknown_categories_fail_closed() -> None:
