@@ -39,9 +39,14 @@ def test_synthetic_pipeline_is_grouped_auditable_and_frozen(tmp_path) -> None:
     assert not (groups[0] & groups[1] or groups[0] & groups[2] or groups[1] & groups[2])
     assert all((tmp_path / name).is_file() for name in ("dataset_manifest.json", "validation_report.json", "split_manifest.json", "surrogate.joblib", "surrogate.joblib.metadata.json", "predictions.csv", "metrics.json", "proposals.json", "revalidation_queue.json", "experiment_manifest.json", "report.md"))
     assert "SOFTWARE TEST ONLY" in (tmp_path / "report.md").read_text(encoding="utf-8")
-    for proposal in json.loads((tmp_path / "proposals.json").read_text(encoding="utf-8")):
+    proposals = json.loads((tmp_path / "proposals.json").read_text(encoding="utf-8"))
+    for proposal in proposals:
         assert set(proposal["controls"]) == {"cbd_fraction", "calender_pressure"}
         assert "context_fingerprint" in proposal["provenance"]
+    assert len({proposal["provenance"]["context_fingerprint"] for proposal in proposals}) == 1
+    metrics = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["offline_ranking"]["mode"] == "OFFLINE_RANKING_EVALUATION"
+    assert set(metrics["latency"]["total_decision_ms"]) == {"p50", "p95", "p99"}
 
 
 def test_target_cannot_be_exposed_as_feature() -> None:
