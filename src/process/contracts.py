@@ -19,12 +19,15 @@ class ProvenanceRecord:
     adapter_version: str | None = None
     adapter_git_sha: str | None = None
     processing_parameters: Mapping[str, Any] = field(default_factory=dict)
+    decoded_values_fingerprint: str | None = None
 
     def __post_init__(self) -> None:
         if not self.evidence_kind.strip():
             raise ValueError("evidence_kind is required")
         if any(not str(name).strip() or not str(digest).strip() for name, digest in self.raw_hashes.items()):
             raise ValueError("raw_hashes must map non-empty paths to non-empty digests")
+        if self.decoded_values_fingerprint is not None and not self.decoded_values_fingerprint.strip():
+            raise ValueError("decoded_values_fingerprint must be non-empty when supplied")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -36,6 +39,7 @@ class ProvenanceRecord:
             "adapter_version": self.adapter_version,
             "adapter_git_sha": self.adapter_git_sha,
             "processing_parameters": dict(self.processing_parameters),
+            "decoded_values_fingerprint": self.decoded_values_fingerprint,
         }
 
 

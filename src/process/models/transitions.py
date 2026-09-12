@@ -15,7 +15,6 @@ from ..modalities import (
     ModalityObservation,
     ModalitySlotSpec,
     SourceBoundModalityInput,
-    source_modality_fingerprint,
     tensor_fingerprint,
 )
 from ..stages import ProcessStage, STAGE_ORDER
@@ -437,24 +436,26 @@ class LegalStageTransition:
                     if not test_only:
                         if not isinstance(bound, SourceBoundModalityInput):
                             raise ValueError("production modality inputs must be SourceBoundModalityInput values")
-                        expected_source_fingerprint = source_modality_fingerprint(modality)
-                        if bound.source_modality_id != modality.modality_id or bound.source_modality_fingerprint != expected_source_fingerprint:
+                        expected_bound = SourceBoundModalityInput.from_observation(modality, slot)
+                        if bound.source_modality_id != expected_bound.source_modality_id or bound.source_modality_fingerprint != expected_bound.source_modality_fingerprint:
                             raise ValueError("encoded modality is not bound to the exact source observation")
-                        if bound.slot_name != slot.slot_name or bound.model_input_name != slot.model_input_name:
+                        if bound.slot_name != expected_bound.slot_name or bound.model_input_name != expected_bound.model_input_name:
                             raise ValueError("encoded modality semantic slot binding is invalid")
-                        if bound.preprocessing_fingerprint != slot.effective_preprocessing_fingerprint:
+                        if bound.preprocessing_fingerprint != expected_bound.preprocessing_fingerprint:
                             raise ValueError("encoded modality preprocessing fingerprint is invalid")
                         if bound.tensor_fingerprint != tensor_fingerprint(bound.tensor):
                             raise ValueError("encoded modality tensor was tampered after binding")
-                        value = bound.tensor
+                        if bound.tensor_fingerprint != expected_bound.tensor_fingerprint or not torch.equal(bound.tensor, expected_bound.tensor):
+                            raise ValueError("encoded modality tensor does not match trusted preprocessing output")
+                        value = expected_bound.tensor
                         modality_provenance[modality.modality_id] = {
-                            "source_modality_id": bound.source_modality_id,
-                            "source_modality_fingerprint": bound.source_modality_fingerprint,
-                            "semantic_slot": bound.slot_name,
-                            "model_input_name": bound.model_input_name,
-                            "preprocessing_fingerprint": bound.preprocessing_fingerprint,
-                            "encoded_tensor_fingerprint": bound.tensor_fingerprint,
-                            "source_kind": bound.source_kind,
+                            "source_modality_id": expected_bound.source_modality_id,
+                            "source_modality_fingerprint": expected_bound.source_modality_fingerprint,
+                            "semantic_slot": expected_bound.slot_name,
+                            "model_input_name": expected_bound.model_input_name,
+                            "preprocessing_fingerprint": expected_bound.preprocessing_fingerprint,
+                            "encoded_tensor_fingerprint": expected_bound.tensor_fingerprint,
+                            "source_kind": expected_bound.source_kind,
                         }
                     else:
                         value = bound.tensor if isinstance(bound, SourceBoundModalityInput) else bound

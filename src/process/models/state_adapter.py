@@ -136,8 +136,9 @@ def _validate_legal_history(
                         raise ValueError("transition semantic modality provenance is invalid")
                     if detail.get("preprocessing_fingerprint") != slot.effective_preprocessing_fingerprint:
                         raise ValueError("transition preprocessing fingerprint is invalid")
-                    if detail.get("encoded_tensor_fingerprint") != tensor_fingerprint(value):
-                        raise ValueError("transition encoded modality content was tampered")
+                    expected_bound = SourceBoundModalityInput.from_observation(modality, slot)
+                    if detail.get("encoded_tensor_fingerprint") != expected_bound.tensor_fingerprint or tensor_fingerprint(value) != expected_bound.tensor_fingerprint or not torch.equal(value, expected_bound.tensor):
+                        raise ValueError("transition encoded modality content was tampered or does not match trusted preprocessing output")
         if feature_encoder is not None:
             feature_encoder.validate_transition(record, transition)
     expected_modalities = tuple(modality.modality_id for record in horizon.source_stages for modality in record.modalities)

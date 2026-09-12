@@ -41,20 +41,28 @@ def _provenance_dict(provenance: Any) -> Mapping[str, Any]:
     return provenance if isinstance(provenance, Mapping) else {}
 
 
+def source_values_fingerprint(values: Any) -> str:
+    """Hash decoded source values using the canonical modality identity form."""
+    payload = json.dumps(_canonical(values), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
 def source_modality_fingerprint(observation: "ModalityObservation") -> str:
-    """Hash source identity without treating a pathname as file content identity."""
+    """Hash file content identity together with the values decoded from it."""
     provenance = _provenance_dict(observation.provenance)
     raw_hashes = provenance.get("raw_hashes")
     content_hash = provenance.get("content_hash") or provenance.get("source_content_hash")
+    decoded_values_fingerprint = source_values_fingerprint(observation.values)
     if observation.source_path:
         if not raw_hashes and not content_hash:
             raise ValueError("file-backed modality requires a source content hash for production binding")
         source_identity = {
             "content_hash": str(content_hash) if content_hash else None,
             "raw_hashes": _canonical(raw_hashes or {}),
+            "decoded_values_fingerprint": decoded_values_fingerprint,
         }
     else:
-        source_identity = {"values": _canonical(observation.values)}
+        source_identity = {"values_fingerprint": decoded_values_fingerprint}
     payload = {
         "modality_id": observation.modality_id,
         "modality_type": observation.modality_type.value,
@@ -256,6 +264,10 @@ class SourceBoundModalityInput:
             raise ValueError(f"no trusted preprocessing pipeline exists for slot {slot.slot_name!r}")
         if preprocessing != SOURCE_VALUES_PREPROCESSING_FINGERPRINT:
             raise ValueError(f"unsupported preprocessing contract for slot {slot.slot_name!r}")
+        if observation.source_path:
+            decoded_values_fingerprint = _provenance_dict(observation.provenance).get("decoded_values_fingerprint")
+            if decoded_values_fingerprint != source_values_fingerprint(observation.values):
+                raise ValueError("file-backed modality requires a trusted decoded_values_fingerprint")
         try:
             tensor = torch.as_tensor(observation.values, dtype=torch.float32)
         except (TypeError, ValueError, RuntimeError) as exc:

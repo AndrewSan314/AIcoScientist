@@ -11,7 +11,7 @@ import torch
 from src.process.contracts import MeasurementValue, ParameterValue, ProvenanceRecord
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.information_horizon import HorizonView, InformationHorizon
-from src.process.modalities import ModalityObservation, ModalitySlotSpec, ModalityType, SourceBoundModalityInput, source_modality_fingerprint
+from src.process.modalities import ModalityObservation, ModalitySlotSpec, ModalityType, SourceBoundModalityInput, source_modality_fingerprint, source_values_fingerprint, tensor_fingerprint
 from src.process.maspo import MASPOProcessOptimizationCoordinator
 from src.process.models import MASPOModelArtifact, MASPOProcessStateModel, SourceBackedInitialState, StageFeatureEncoder, build_legal_stage_transitions, encode_legal_multimodal_state, model_weight_fingerprint
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
@@ -123,6 +123,26 @@ def test_production_rejects_arbitrary_modality_tensor_injection() -> None:
         )
 
 
+def test_production_rejects_self_signed_forged_source_bound_tensor() -> None:
+    signal = ModalityObservation("mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING, values=[0.0, 1.0])
+    horizon = _multimodal_horizon(signal=signal)
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    slots = _slots({"mix-tab": "tabular", "mix-signal": "signal"})
+    by_input = {slot.model_input_name: slot for slot in slots}
+    tabular = horizon.modalities[0]
+    tabular_bound = SourceBoundModalityInput.from_observation(tabular, by_input["tabular"])
+    legitimate = SourceBoundModalityInput.from_observation(signal, by_input["signal"])
+    forged_tensor = torch.tensor([999.0, 123.0])
+    forged = replace(legitimate, tensor=forged_tensor, tensor_fingerprint=tensor_fingerprint(forged_tensor))
+    artifact = _artifact(_model(), encoder, {"mix-tab": "tabular", "mix-signal": "signal"})
+
+    with pytest.raises(ValueError, match="trusted preprocessing output"):
+        encode_legal_multimodal_state(
+            horizon, artifact,
+            modality_inputs={"mix-tab": tabular_bound, "mix-signal": forged},
+        )
+
+
 def test_source_bound_input_changes_with_source_values_and_rejects_tampering() -> None:
     signal = ModalityObservation("mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING, values=[0.0, 1.0])
     horizon = _multimodal_horizon(signal=signal)
@@ -137,6 +157,23 @@ def test_source_bound_input_changes_with_source_values_and_rejects_tampering() -
     transitions[0].modality_inputs["signal"][0] = 999.0
     artifact = _artifact(model, encoder, {"mix-tab": "tabular", "mix-signal": "signal"})
     with pytest.raises(ValueError, match="tampered"):
+        encode_legal_multimodal_state(horizon, artifact, stage_history=transitions)
+
+
+def test_history_rejects_self_signed_modality_replacement() -> None:
+    horizon = _multimodal_horizon(signal=ModalityObservation(
+        "mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING, values=[0.0, 1.0],
+    ))
+    model = _model()
+    encoder = StageFeatureEncoder.from_training_data(horizon, control_dim=2, observation_dim=2)
+    slots = _slots({"mix-tab": "tabular", "mix-signal": "signal"})
+    transitions = list(build_legal_stage_transitions(horizon, feature_encoder=encoder, modality_slots=slots))
+    forged_tensor = torch.tensor([999.0, 123.0])
+    transitions[0].modality_inputs["signal"] = forged_tensor
+    transitions[0].provenance["modality_provenance"]["mix-signal"]["encoded_tensor_fingerprint"] = tensor_fingerprint(forged_tensor)
+    artifact = _artifact(model, encoder, {"mix-tab": "tabular", "mix-signal": "signal"})
+
+    with pytest.raises(ValueError, match="trusted preprocessing output"):
         encode_legal_multimodal_state(horizon, artifact, stage_history=transitions)
 
 
@@ -156,6 +193,37 @@ def test_source_modality_fingerprint_changes_with_file_content_hash() -> None:
         provenance=ProvenanceRecord("instrument", raw_hashes={"signal.csv": "a"}),
     )
     second = replace(first, provenance=ProvenanceRecord("instrument", raw_hashes={"signal.csv": "b"}))
+    assert source_modality_fingerprint(first) != source_modality_fingerprint(second)
+
+
+def test_file_backed_source_binding_requires_decoded_values_identity() -> None:
+    values = [0.0, 1.0]
+    observation = ModalityObservation(
+        "mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING,
+        source_path="signal.csv", values=values,
+        provenance=ProvenanceRecord("instrument", raw_hashes={"signal.csv": "a"}),
+    )
+    slot = _slots({"mix-signal": "signal"})[0]
+    with pytest.raises(ValueError, match="decoded_values_fingerprint"):
+        SourceBoundModalityInput.from_observation(observation, slot)
+
+    bound = SourceBoundModalityInput.from_observation(
+        replace(observation, provenance=ProvenanceRecord(
+            "instrument", raw_hashes={"signal.csv": "a"},
+            decoded_values_fingerprint=source_values_fingerprint(values),
+        )),
+        slot,
+    )
+    assert bound.tensor.tolist() == values
+
+
+def test_file_backed_source_fingerprint_changes_with_decoded_values() -> None:
+    first = ModalityObservation(
+        "mix-signal", ModalityType.MACHINE_TIME_SERIES, ProcessStage.MIXING,
+        source_path="signal.csv", values=[0.0, 1.0],
+        provenance=ProvenanceRecord("instrument", raw_hashes={"signal.csv": "a"}),
+    )
+    second = replace(first, values=[4.0, 5.0])
     assert source_modality_fingerprint(first) != source_modality_fingerprint(second)
 
 
