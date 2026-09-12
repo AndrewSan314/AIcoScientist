@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from ..information_horizon import HorizonView
-from ..modalities import ModalitySlotSpec
+from ..modalities import ModalitySlotSpec, SourceBoundModalityInput, source_modality_fingerprint, tensor_fingerprint
 from ..optimization.state import ModelValidationStatus, OptimizationState, context_provenance_fingerprint
 from ..stages import stage_precedes
 from .artifact import MASPOModelArtifact
@@ -22,7 +22,7 @@ def build_legal_stage_transitions(
     horizon: HorizonView,
     *,
     feature_encoder: StageFeatureEncoder | None = None,
-    modality_inputs: Mapping[str, torch.Tensor],
+    modality_inputs: Mapping[str, SourceBoundModalityInput | torch.Tensor] | None = None,
     modality_bindings: Mapping[str, str] | None = None,
     modality_slots: Sequence[ModalitySlotSpec] | None = None,
     stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
@@ -110,11 +110,34 @@ def _validate_legal_history(
                 expected_availability[slot.model_input_name] = not modalities_by_id[modality_id].is_missing
             if dict(transition.availability) != expected_availability:
                 raise ValueError("transition modality availability is not bound to the semantic slot schema")
+            modality_provenance = transition.provenance.get("modality_provenance", {})
+            expected_provenance_ids = {modality_id for modality_id, modality in modalities_by_id.items() if not modality.is_missing}
+            unsafe_test_only = bool(transition.provenance.get("unsafe_test_only"))
+            if not unsafe_test_only:
+                if not isinstance(modality_provenance, Mapping):
+                    raise ValueError("transition modality content provenance is missing")
+                if set(modality_provenance) != expected_provenance_ids:
+                    raise ValueError("transition modality content provenance is not source-bound")
             for slot_name, value in transition.modality_inputs.items():
                 slot = next((item for item in relevant if item.model_input_name == slot_name), None)
                 if slot is None:
                     raise ValueError("transition contains an unknown semantic model input")
                 LegalStageTransition._validate_modality_input(value, slot)
+            if not unsafe_test_only:
+                for modality_id, slot in resolved.items():
+                    modality = modalities_by_id[modality_id]
+                    if modality.is_missing:
+                        continue
+                    detail = modality_provenance[modality_id]
+                    value = transition.modality_inputs[slot.model_input_name]
+                    if detail.get("source_modality_id") != modality_id or detail.get("source_modality_fingerprint") != source_modality_fingerprint(modality):
+                        raise ValueError("transition source modality fingerprint is not bound to the HorizonView")
+                    if detail.get("semantic_slot") != slot.slot_name or detail.get("model_input_name") != slot.model_input_name:
+                        raise ValueError("transition semantic modality provenance is invalid")
+                    if detail.get("preprocessing_fingerprint") != slot.effective_preprocessing_fingerprint:
+                        raise ValueError("transition preprocessing fingerprint is invalid")
+                    if detail.get("encoded_tensor_fingerprint") != tensor_fingerprint(value):
+                        raise ValueError("transition encoded modality content was tampered")
         if feature_encoder is not None:
             feature_encoder.validate_transition(record, transition)
     expected_modalities = tuple(modality.modality_id for record in horizon.source_stages for modality in record.modalities)
@@ -129,7 +152,7 @@ def encode_legal_multimodal_state(
     stage_history: Iterable[LegalStageTransition] | None = None,
     feature_encoder: StageFeatureEncoder | None = None,
     stage_inputs: Mapping[str, tuple[torch.Tensor, torch.Tensor]] | None = None,
-    modality_inputs: Mapping[str, torch.Tensor] | None = None,
+    modality_inputs: Mapping[str, SourceBoundModalityInput | torch.Tensor] | None = None,
     modality_bindings: Mapping[str, str] | None = None,
     initial_state: SourceBackedInitialState | torch.Tensor | None = None,
     model_version: str | None = None,
@@ -202,8 +225,10 @@ def encode_legal_multimodal_state(
     else:
         raise TypeError("initial_state must be SourceBackedInitialState or a test-only tensor")
     if stage_history is None:
-        if modality_inputs is None or (modality_bindings is None and modality_slots is None):
-            raise ValueError("multimodal encoding requires source modalities")
+        if status == ModelValidationStatus.TEST_ONLY and modality_inputs is None:
+            raise ValueError("test-only multimodal encoding requires explicit modality tensors")
+        if modality_bindings is None and modality_slots is None:
+            raise ValueError("multimodal encoding requires source modality slots")
         if feature_encoder is None and stage_inputs is None:
             raise ValueError("production multimodal encoding requires a StageFeatureEncoder")
         if stage_inputs is not None and status != ModelValidationStatus.TEST_ONLY:

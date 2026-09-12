@@ -11,7 +11,13 @@ import torch
 import pandas as pd
 
 from ..contracts import StageRecord
-from ..modalities import ModalityObservation, ModalitySlotSpec
+from ..modalities import (
+    ModalityObservation,
+    ModalitySlotSpec,
+    SourceBoundModalityInput,
+    source_modality_fingerprint,
+    tensor_fingerprint,
+)
 from ..stages import ProcessStage, STAGE_ORDER
 
 
@@ -221,7 +227,13 @@ class StageFeatureEncoder:
                 raise ValueError(f"inconsistent {stage_type.value} {scope} schema for {key!r}: numeric and categorical values disagree")
             kind = next(iter(kinds), "categorical" if vocabulary is not None else "numeric")
             if kind == "categorical":
-                categories = tuple(sorted({_category(value) for value in ((*vocabulary,) if vocabulary is not None else ()) + observed}))
+                category_values = ((*vocabulary,) if vocabulary is not None else ()) + observed
+                if allow_missing:
+                    category_values += (None,)
+                categories = tuple(sorted({
+                    _category(value) for value in category_values
+                    if allow_missing or not _missing(value)
+                }))
                 if not categories or any(_category(value) not in categories for value in values):
                     raise ValueError(f"categorical source field {key!r} is unknown to its vocabulary")
                 result.append(_FieldSpec(key, kind, categories, allow_missing))
@@ -374,7 +386,7 @@ class LegalStageTransition:
                 raise ValueError(f"source modality {modality.modality_id!r} does not resolve uniquely")
             resolved[modality.modality_id] = matches[0]
         for slot in relevant:
-            if slot.model_input_name not in {item.model_input_name for item in resolved.values()} and not slot.allowed_missing:
+            if slot.model_input_name not in {item.model_input_name for item in resolved.values()} and slot.required:
                 raise ValueError(f"required semantic modality slot {slot.slot_name!r} is missing")
         return resolved, relevant
 
@@ -394,15 +406,25 @@ class LegalStageTransition:
 
     @staticmethod
     def _modality_payload(
-        record: StageRecord, modality_inputs: Mapping[str, torch.Tensor],
+        record: StageRecord, modality_inputs: Mapping[str, SourceBoundModalityInput | torch.Tensor] | None,
         modality_bindings: Mapping[str, str] | None = None,
         modality_slots: Sequence[ModalitySlotSpec] | None = None,
-    ) -> tuple[dict[str, torch.Tensor], dict[str, bool], dict[str, str], tuple[ModalitySlotSpec, ...]]:
+        *, test_only: bool = False,
+    ) -> tuple[dict[str, torch.Tensor], dict[str, bool], dict[str, str], tuple[ModalitySlotSpec, ...], dict[str, dict[str, Any]]]:
         tokens: dict[str, torch.Tensor] = {}
         availability: dict[str, bool] = {}
+        modality_provenance: dict[str, dict[str, Any]] = {}
         if modality_slots is not None:
             resolved, relevant = LegalStageTransition._resolve_modality_slots(record, tuple(modality_slots))
             bindings = {modality_id: slot.model_input_name for modality_id, slot in resolved.items()}
+            if modality_inputs is None:
+                modality_inputs = {
+                    modality.modality_id: SourceBoundModalityInput.from_observation(modality, resolved[modality.modality_id])
+                    for modality in record.modalities if not modality.is_missing
+                }
+            extra = set(modality_inputs) - {modality.modality_id for modality in record.modalities}
+            if extra:
+                raise ValueError(f"modality inputs contain unknown source IDs: {sorted(extra)}")
             for modality in record.modalities:
                 slot = resolved[modality.modality_id]
                 if modality.is_missing and not slot.allowed_missing:
@@ -411,14 +433,40 @@ class LegalStageTransition:
                 if not modality.is_missing:
                     if modality.modality_id not in modality_inputs:
                         raise ValueError(f"source modality {modality.modality_id!r} lacks encoder input")
-                    value = modality_inputs[modality.modality_id]
+                    bound = modality_inputs[modality.modality_id]
+                    if not test_only:
+                        if not isinstance(bound, SourceBoundModalityInput):
+                            raise ValueError("production modality inputs must be SourceBoundModalityInput values")
+                        expected_source_fingerprint = source_modality_fingerprint(modality)
+                        if bound.source_modality_id != modality.modality_id or bound.source_modality_fingerprint != expected_source_fingerprint:
+                            raise ValueError("encoded modality is not bound to the exact source observation")
+                        if bound.slot_name != slot.slot_name or bound.model_input_name != slot.model_input_name:
+                            raise ValueError("encoded modality semantic slot binding is invalid")
+                        if bound.preprocessing_fingerprint != slot.effective_preprocessing_fingerprint:
+                            raise ValueError("encoded modality preprocessing fingerprint is invalid")
+                        if bound.tensor_fingerprint != tensor_fingerprint(bound.tensor):
+                            raise ValueError("encoded modality tensor was tampered after binding")
+                        value = bound.tensor
+                        modality_provenance[modality.modality_id] = {
+                            "source_modality_id": bound.source_modality_id,
+                            "source_modality_fingerprint": bound.source_modality_fingerprint,
+                            "semantic_slot": bound.slot_name,
+                            "model_input_name": bound.model_input_name,
+                            "preprocessing_fingerprint": bound.preprocessing_fingerprint,
+                            "encoded_tensor_fingerprint": bound.tensor_fingerprint,
+                            "source_kind": bound.source_kind,
+                        }
+                    else:
+                        value = bound.tensor if isinstance(bound, SourceBoundModalityInput) else bound
                     LegalStageTransition._validate_modality_input(value, slot)
                     tokens[slot.model_input_name] = value
             for slot in relevant:
                 availability.setdefault(slot.model_input_name, False)
-            return tokens, availability, bindings, relevant
+            return tokens, availability, bindings, relevant, modality_provenance
         if modality_bindings is None:
             raise ValueError("source modality encoding requires semantic modality slots")
+        if modality_inputs is None:
+            raise ValueError("test-only modality encoding requires explicit tensors")
         bindings = {}
         for modality in record.modalities:
             model_name = modality_bindings.get(modality.modality_id)
@@ -429,8 +477,9 @@ class LegalStageTransition:
             if not modality.is_missing:
                 if modality.modality_id not in modality_inputs:
                     raise ValueError(f"source modality {modality.modality_id!r} lacks encoder input")
-                tokens[model_name] = modality_inputs[modality.modality_id]
-        return tokens, availability, bindings, ()
+                value = modality_inputs[modality.modality_id]
+                tokens[model_name] = value.tensor if isinstance(value, SourceBoundModalityInput) else value
+        return tokens, availability, bindings, (), modality_provenance
 
     @classmethod
     def from_encoded_source_stage(
@@ -438,20 +487,21 @@ class LegalStageTransition:
         record: StageRecord,
         *,
         encoder: StageFeatureEncoder,
-        modality_inputs: Mapping[str, torch.Tensor],
+        modality_inputs: Mapping[str, SourceBoundModalityInput | torch.Tensor] | None = None,
         modality_bindings: Mapping[str, str] | None = None,
         modality_slots: Sequence[ModalitySlotSpec] | None = None,
         provenance: Mapping[str, Any] | None = None,
     ) -> "LegalStageTransition":
         controls = encoder.encode_controls(record)
         observations = encoder.encode_observations(record)
-        tokens, availability, bindings, resolved_slots = cls._modality_payload(
+        tokens, availability, bindings, resolved_slots, modality_provenance = cls._modality_payload(
             record, modality_inputs, modality_bindings, modality_slots,
+            test_only=False,
         )
         supplied = dict(provenance or {})
         reserved = {
             "source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings", "semantic_modality_slots",
-            "encoder_fingerprint", "control_feature_names", "observation_feature_names", "encoded_control_fingerprint", "encoded_observation_fingerprint",
+            "encoder_fingerprint", "control_feature_names", "observation_feature_names", "encoded_control_fingerprint", "encoded_observation_fingerprint", "modality_provenance",
         }
         if reserved & set(supplied):
             raise ValueError("source-bound transition provenance fields cannot be overridden")
@@ -466,6 +516,7 @@ class LegalStageTransition:
             "scalar_observation_names": tuple(record.intermediate_properties),
             "modality_bindings": bindings,
             "semantic_modality_slots": tuple(slot.as_tuple() for slot in resolved_slots),
+            "modality_provenance": modality_provenance,
             "encoder_fingerprint": encoder.fingerprint,
             "control_feature_names": controls.feature_names,
             "observation_feature_names": observations.feature_names,
@@ -481,7 +532,7 @@ class LegalStageTransition:
         *,
         controls: torch.Tensor,
         scalar_observations: torch.Tensor,
-        modality_inputs: Mapping[str, torch.Tensor],
+        modality_inputs: Mapping[str, SourceBoundModalityInput | torch.Tensor],
         modality_bindings: Mapping[str, str] | None = None,
         modality_slots: Sequence[ModalitySlotSpec] | None = None,
         provenance: Mapping[str, Any] | None = None,
@@ -489,8 +540,9 @@ class LegalStageTransition:
     ) -> "LegalStageTransition":
         if not test_only:
             raise ValueError("arbitrary stage tensors are test-only; use a frozen training StageFeatureEncoder")
-        tokens, availability, bindings, resolved_slots = cls._modality_payload(
+        tokens, availability, bindings, resolved_slots, _ = cls._modality_payload(
             record, modality_inputs, modality_bindings, modality_slots,
+            test_only=True,
         )
         supplied = dict(provenance or {})
         reserved = {"source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings", "semantic_modality_slots"}
