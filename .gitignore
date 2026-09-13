@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .pytest_tmp/
 .pytest_temp/
+.pytest_temp_retry/
 .venv/
 data/experiments.db
 models/*.pth
