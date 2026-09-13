@@ -81,15 +81,25 @@
   "run_id": "artistic-short-500k-rerun",
   "runtime": {
     "mpi_processes": 4,
-    "observed_steps_per_second": 35.716782963123194,
-    "projected_seconds_20m_from_start": 559960.8458760008,
-    "projected_seconds_by_horizon": {
-      "1000000": 27998.04229380004,
-      "2000000": 55996.08458760008,
-      "20000000": 559960.8458760008
+    "rough_total_stage_linear_projection": {
+      "measured": false,
+      "projected_seconds_20m_from_start": 559960.8458760008,
+      "projected_seconds_by_horizon": {
+        "1000000": 27998.04229380004,
+        "2000000": 55996.08458760008,
+        "20000000": 559960.8458760008
+      },
+      "projected_seconds_remaining_to_20m": 545961.8247291008,
+      "projection_method": "linear scaling from observed 500k total slurry-command walltime",
+      "timing_basis": "TOTAL_SLURRY_COMMAND"
     },
-    "projected_seconds_remaining_to_20m": 545961.8247291008,
-    "slurry_wall_seconds": 13999.02114690002
+    "throughput": {
+      "denominator_wall_seconds": 13999.02114690002,
+      "denominator_walltime_kind": "TOTAL_SLURRY_COMMAND",
+      "effective_total_stage_step_rate": 35.716782963123194,
+      "numerator_completed_dynamics_steps": 500000,
+      "pure_dynamics_rate_available": false
+    }
   },
   "schema_version": 1,
   "slurry_completion": {
