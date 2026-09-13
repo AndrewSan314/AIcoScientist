@@ -11,7 +11,7 @@ from scripts.run_maspo_pipeline import synthetic_frame
 from src.process.contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
 from src.process.stages import ProcessStage, STAGE_ORDER
 from src.process.surrogates.core import ArtisticRunDirectoryAdapter, GenericTabularAdapter, ProcessSurrogate, SurrogateArtifact, SurrogateDecisionContext, SurrogateInputSchema, TrainOnlyPreprocessor, evaluate, split_groups
-from src.process.surrogates.pipeline import ArtifactOptimizerBackend, PipelineConfig, run_pipeline
+from src.process.surrogates.pipeline import ArtifactOptimizerBackend, PipelineConfig, _experiment_id, _reference_validation, run_pipeline
 
 
 MAPPING = {
@@ -47,6 +47,29 @@ def test_synthetic_pipeline_is_grouped_auditable_and_frozen(tmp_path) -> None:
     metrics = json.loads((tmp_path / "metrics.json").read_text(encoding="utf-8"))
     assert metrics["offline_ranking"]["mode"] == "OFFLINE_RANKING_EVALUATION"
     assert set(metrics["latency"]["total_decision_ms"]) == {"p50", "p95", "p99"}
+    assert report["reference_fidelity_present"] is False
+    assert report["reference_validation_status"] == "NOT_AVAILABLE"
+
+
+def test_reference_presence_does_not_claim_validation_without_heldout_evidence() -> None:
+    _, manifest, split, train, _, absent = _parts()
+    assert absent.metadata()["reference_fidelity_present"] is False
+    assert absent.metadata()["reference_validation_status"] == "NOT_AVAILABLE"
+    reference_train = [replace(sample, fidelity="REFERENCE") for sample in train]
+    schema = SurrogateInputSchema.from_training_samples(reference_train, declared_fidelities=("REFERENCE",))
+    preprocessor = TrainOnlyPreprocessor().fit(reference_train, schema)
+    surrogate = ProcessSurrogate("extra_trees", seed=42).fit(preprocessor.transform(reference_train), {"capacity_retention": np.array([sample.targets["capacity_retention"] for sample in reference_train])})
+    present = SurrogateArtifact(surrogate, preprocessor, manifest.dataset_fingerprint, split.split_fingerprint, ("capacity_retention",), schema, {"capacity_retention": "fraction"})
+    assert present.metadata()["reference_fidelity_present"] is True
+    assert present.metadata()["reference_validation_status"] == "NOT_EVALUATED"
+    assert _reference_validation(reference_train, (), ())["status"] == "NOT_EVALUATED"
+    assert _reference_validation(reference_train, (), (reference_train[0],))["status"] == "EVALUATED"
+
+
+def test_experiment_id_binds_the_exact_surrogate_artifact() -> None:
+    first = _experiment_id("dataset", "split", "config", "artifact-a")
+    assert first == _experiment_id("dataset", "split", "config", "artifact-a")
+    assert first != _experiment_id("dataset", "split", "config", "artifact-b")
 
 
 def test_target_cannot_be_exposed_as_feature() -> None:

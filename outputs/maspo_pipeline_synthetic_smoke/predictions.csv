@@ -1,4 +1,4 @@
-sample_id,target,actual,predicted,std,split
+sample_id,target,actual,predicted,uncertainty,split
 synthetic-11-0,capacity_retention,0.8171968500000001,0.8172614353782924,0.0006913512979853967,validation
 synthetic-11-1,capacity_retention,0.8181944,0.8182521605682551,0.0006709284210024925,validation
 synthetic-3-0,capacity_retention,0.79944565,0.799539892129096,0.0013246100707601696,validation

@@ -1,37 +1,62 @@
 {
-  "decision": {
-    "oracle_actual": 0.7737985999999999,
+  "latency": {
+    "preprocessing_ms": {
+      "p50": 0.24344999997083505,
+      "p95": 0.3194350000399027,
+      "p99": 0.4035670000780554
+    },
+    "surrogate_prediction_ms": {
+      "p50": 0.6395999998858315,
+      "p95": 1.0718850000330349,
+      "p99": 1.1005370001248593
+    },
+    "total_decision_ms": {
+      "p50": 1.7642500000647487,
+      "p95": 2.1253350000506543,
+      "p99": 2.229227000038918
+    }
+  },
+  "offline_ranking": {
+    "mode": "OFFLINE_RANKING_EVALUATION",
     "oracle_sample_id": "synthetic-9-1",
-    "selected_actual": 0.7737985999999999,
     "selected_sample_id": "synthetic-9-1",
     "simple_regret": 0.0,
-    "top1_match": true
+    "spearman_rank_correlation": 1.0,
+    "status": "AVAILABLE",
+    "top1_match": true,
+    "top_k_recall": 1.0
   },
-  "latency_ms_per_prediction": 0.022853332726905744,
+  "reference_validation": {
+    "held_out_reference_sample_count": 0,
+    "reference_fidelity_present": false,
+    "status": "NOT_AVAILABLE"
+  },
   "test": {
     "capacity_retention": {
-      "coverage": {
+      "gaussian_nll": -5.811273973525874,
+      "interval_coverage": {
         "50": 1.0,
         "80": 1.0,
         "95": 1.0
       },
       "mae": 0.00036044227352928965,
-      "nll": -5.811273973525874,
       "r2": 0.9995334902846128,
-      "rmse": 0.00036119909856509715
+      "rmse": 0.00036119909856509715,
+      "uncertainty_kind": "GP_POSTERIOR_STD"
     }
   },
   "validation": {
     "capacity_retention": {
-      "coverage": {
+      "gaussian_nll": -5.746353702716013,
+      "interval_coverage": {
         "50": 1.0,
         "80": 1.0,
         "95": 1.0
       },
       "mae": 0.00016811157218706482,
-      "nll": -5.746353702716013,
       "r2": 0.9996073492891172,
-      "rmse": 0.0002117470350947148
+      "rmse": 0.0002117470350947148,
+      "uncertainty_kind": "GP_POSTERIOR_STD"
     }
   }
 }

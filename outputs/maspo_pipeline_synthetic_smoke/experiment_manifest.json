@@ -1,102 +1,140 @@
 {
   "artifact": {
-    "artifact_fingerprint": "915c1ea7612d40a8244ea2ec6dfd95186b18735f70645b6e91494bce2ea1a01c",
-    "dataset_fingerprint": "18d94b862770eecbba4911491bde9fbb1227d119dd9b5459fb7054bc1e6053c9",
-    "input_schema": [
-      "control::calender_pressure",
-      "control::cbd_fraction",
+    "artifact_file_sha256": "ba3008eebbc22adc935c06b04e83d1fd5e1022ebe67149703d0e67bca6d9c021",
+    "artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e",
+    "context_feature_names": [
       "fidelity::SYNTHETIC",
       "fidelity::requested_horizon",
       "observation::drying_porosity",
-      "previous::slurry_viscosity",
-      "control::calender_pressure__observed",
-      "control::cbd_fraction__observed",
-      "fidelity::SYNTHETIC__observed",
-      "fidelity::requested_horizon__observed",
-      "observation::drying_porosity__observed",
-      "previous::slurry_viscosity__observed"
+      "previous::slurry_viscosity"
     ],
+    "control_feature_names": [
+      "control::calender_pressure",
+      "control::cbd_fraction"
+    ],
+    "dataset_fingerprint": "9c4f14f3254d58b915d0c8d92f7ebf9b54fed71da9782eedc9b215bb6c3615ee",
+    "input_schema": {
+      "context_features": [
+        "fidelity::SYNTHETIC",
+        "fidelity::requested_horizon",
+        "observation::drying_porosity",
+        "previous::slurry_viscosity"
+      ],
+      "control_features": [
+        "control::calender_pressure",
+        "control::cbd_fraction"
+      ],
+      "feature_order": [
+        "control::calender_pressure",
+        "control::cbd_fraction",
+        "fidelity::SYNTHETIC",
+        "fidelity::requested_horizon",
+        "observation::drying_porosity",
+        "previous::slurry_viscosity"
+      ],
+      "fidelity_vocabulary": [
+        "SYNTHETIC"
+      ],
+      "schema_fingerprint": "c905e2578bbf32cc05e616904768fe15321a127f12da528de1b0b0ddf75c5246",
+      "schema_version": "2",
+      "stage_vocabulary": [
+        "CALENDERING"
+      ],
+      "supported_stage": "CALENDERING"
+    },
+    "input_schema_fingerprint": "c905e2578bbf32cc05e616904768fe15321a127f12da528de1b0b0ddf75c5246",
     "metrics": {
+      "offline_ranking": {
+        "mode": "OFFLINE_RANKING_EVALUATION",
+        "oracle_sample_id": "synthetic-9-1",
+        "selected_sample_id": "synthetic-9-1",
+        "simple_regret": 0.0,
+        "spearman_rank_correlation": 1.0,
+        "status": "AVAILABLE",
+        "top1_match": true,
+        "top_k_recall": 1.0
+      },
+      "reference_validation": {
+        "held_out_reference_sample_count": 0,
+        "reference_fidelity_present": false,
+        "status": "NOT_AVAILABLE"
+      },
       "residual_correction": "NOT_CONFIGURED",
       "test": {
         "capacity_retention": {
-          "coverage": {
+          "gaussian_nll": -5.811273973525874,
+          "interval_coverage": {
             "50": 1.0,
             "80": 1.0,
             "95": 1.0
           },
           "mae": 0.00036044227352928965,
-          "nll": -5.811273973525874,
           "r2": 0.9995334902846128,
-          "rmse": 0.00036119909856509715
+          "rmse": 0.00036119909856509715,
+          "uncertainty_kind": "GP_POSTERIOR_STD"
         }
       },
       "validation": {
         "capacity_retention": {
-          "coverage": {
+          "gaussian_nll": -5.746353702716013,
+          "interval_coverage": {
             "50": 1.0,
             "80": 1.0,
             "95": 1.0
           },
           "mae": 0.00016811157218706482,
-          "nll": -5.746353702716013,
           "r2": 0.9996073492891172,
-          "rmse": 0.0002117470350947148
+          "rmse": 0.0002117470350947148,
+          "uncertainty_kind": "GP_POSTERIOR_STD"
         }
       }
     },
+    "model_state_fingerprint": "1c9c65aee5b30f0e6095f6729c19c5d1e7e5324b36d96c7847cb2afd8a7be9a4",
     "model_type": "gp",
-    "model_version": "process-surrogate-v1",
-    "preprocessing_fingerprint": "555e75a62c7ca63b9dc90117d9d19b182330c0a544802c9f94fc3e7e3dc20531",
-    "split_fingerprint": "6d7a638219c53a805c5e5341ca01bb9743e30b20464ac48dbe91e70b4828d728",
+    "model_version": "process-surrogate-v2",
+    "preprocessor_state_fingerprint": "34fc1da4735108ab83ba9ba6c6431c90b218a7fabfa95c63e67d1f3c6f5b9de5",
+    "reference_fidelity_present": false,
+    "reference_validation_status": "NOT_AVAILABLE",
+    "serializer": "joblib:1.5.3",
+    "split_fingerprint": "2aee17fcc65469405fe8ee50ccc6266acf198fa5045e454b2299aa03ef93bce8",
+    "supported_fidelities": [
+      "SYNTHETIC"
+    ],
+    "supported_stage": "CALENDERING",
     "target_schema": [
       "capacity_retention"
     ],
-    "training_config_fingerprint": "917972cb29cacc477c5d2b1005d8d3ed71a46f133b4e9ddd50227e11521835df"
+    "target_units": {
+      "capacity_retention": "fraction"
+    },
+    "training_config_fingerprint": "87aafac7382cf841507c728e139735b7f399383c6716093b61f1a33475ae9120",
+    "uncertainty_kind": "GP_POSTERIOR_STD"
   },
-  "artifact_path": "outputs\\maspo_pipeline_synthetic_smoke\\surrogate.joblib",
+  "artifact_file_sha256": "ba3008eebbc22adc935c06b04e83d1fd5e1022ebe67149703d0e67bca6d9c021",
   "claims": [
     "Synthetic E2E validates software plumbing only; it is not scientific performance evidence.",
     "No ARTISTIC simulator was invoked by this pipeline."
   ],
-  "dataset_fingerprint": "18d94b862770eecbba4911491bde9fbb1227d119dd9b5459fb7054bc1e6053c9",
-  "metrics": {
-    "decision": {
-      "oracle_actual": 0.7737985999999999,
-      "oracle_sample_id": "synthetic-9-1",
-      "selected_actual": 0.7737985999999999,
-      "selected_sample_id": "synthetic-9-1",
-      "simple_regret": 0.0,
-      "top1_match": true
-    },
-    "latency_ms_per_prediction": 0.022853332726905744,
-    "test": {
-      "capacity_retention": {
-        "coverage": {
-          "50": 1.0,
-          "80": 1.0,
-          "95": 1.0
-        },
-        "mae": 0.00036044227352928965,
-        "nll": -5.811273973525874,
-        "r2": 0.9995334902846128,
-        "rmse": 0.00036119909856509715
-      }
-    },
-    "validation": {
-      "capacity_retention": {
-        "coverage": {
-          "50": 1.0,
-          "80": 1.0,
-          "95": 1.0
-        },
-        "mae": 0.00016811157218706482,
-        "nll": -5.746353702716013,
-        "r2": 0.9996073492891172,
-        "rmse": 0.0002117470350947148
-      }
-    }
+  "config_fingerprint": "2b94910d7dbfac7a659e73582b6b33ebc3eea45142a9fb9cbb6f3c3e24b038d7",
+  "created_at": "2026-09-13T03:10:12.040088+00:00",
+  "dataset_fingerprint": "9c4f14f3254d58b915d0c8d92f7ebf9b54fed71da9782eedc9b215bb6c3615ee",
+  "experiment_id": "6ad77631168c7e51",
+  "files": {
+    "metrics": "metrics.json",
+    "predictions": "predictions.csv",
+    "proposals": "proposals.json",
+    "report": "report.md",
+    "revalidation_queue": "revalidation_queue.json"
   },
-  "split_fingerprint": "6d7a638219c53a805c5e5341ca01bb9743e30b20464ac48dbe91e70b4828d728",
-  "status": "SUCCESS_SYNTHETIC_ONLY"
+  "git_commit": "d827e7a4926ff06e79e471a5167d72f33d59e1e1",
+  "reference_fidelity_present": false,
+  "reference_validation_status": "NOT_AVAILABLE",
+  "seed": 42,
+  "split_fingerprint": "2aee17fcc65469405fe8ee50ccc6266acf198fa5045e454b2299aa03ef93bce8",
+  "status": "SUCCESS_SYNTHETIC_ONLY",
+  "supported_fidelities": [
+    "SYNTHETIC"
+  ],
+  "supported_stage": "CALENDERING",
+  "surrogate_artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e"
 }
