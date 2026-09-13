@@ -16,8 +16,8 @@ from src.datasets.battery_process.artistic import ArtisticSimulationAdapter
 from src.process.simulators.base import SimulationResult, SimulationStatus
 from src.process.simulators.artistic import ArtisticRecipe, ArtisticRunConfig, ArtisticSimulator, CalenderingRecipe, Checkpoint, ConvergenceRunEvidence, ConvergenceStatus, DryingMode, FidelityMode, MetricTolerancePolicy, ParticleCountSafetyError, ReferenceAgreementStatus, SlurryRecipe, StabilityPolicy, build_convergence_report, build_convergence_study_plan, estimate_particles, stability_status
 from src.process.simulators.artistic.config import ExecutionMode, MPIEnvironmentError, PINNED_COMMIT, PINNED_SOURCE_TREE_HASH, SourcePinError, validate_mpi_environment
-from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints, parse_thermo_log
-from src.process.simulators.artistic.validation import output_errors
+from src.process.simulators.artistic.parser import ParsedArtisticOutput, parse_artistic_output, parse_thermo_checkpoints, parse_thermo_log, particle_counts_for_stage
+from src.process.simulators.artistic.validation import output_errors, stage_particle_count_errors
 from src.process.simulators.artistic.runner import _version
 from src.process.simulators.artistic.schemas import _lammps_round
 from src.process.information_horizon import InformationHorizon
@@ -598,6 +598,39 @@ def test_runner_stop_after_slurry_rejects_incomplete_dynamics(pinned_source: Pat
     result = simulator.execute(_recipe(), run_id="incomplete-slurry-cutoff")
     assert result.status == SimulationStatus.NUMERICAL_FAILURE
     assert "slurry dynamics did not reach the requested step count" in result.diagnostics
+
+
+def test_runner_stop_after_slurry_rejects_particle_loss_without_lost_atoms_log(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", fidelity_mode=FidelityMode.SHORT_HORIZON, slurry_steps=500_000, dump_interval_steps=50_000, stop_after="slurry"))
+    def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
+        for name, value in {"coord_in.data": _data(10), "coord_out_slurry.data": _data(9), "density_slurry.out": "1.0", "slurry.log": "Minimization stats\nStep Temp\n287300 300\n787300 300\nLoop time\n"}.items(): (workspace / name).write_text(value, encoding="utf-8")
+        commands.append({"stage": stage, "command": [input_file], "returncode": 0})
+    monkeypatch.setattr(simulator, "_invoke", invoke)
+    result = simulator.execute(_recipe(), run_id="lost-slurry-cutoff")
+    assert result.status == SimulationStatus.INVALID_PHYSICS_RUN
+    assert any("particle loss 0.1" in error for error in result.diagnostics)
+
+
+def test_runner_stop_after_slurry_fails_closed_when_particle_counts_are_unparseable(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", fidelity_mode=FidelityMode.SHORT_HORIZON, slurry_steps=500_000, dump_interval_steps=50_000, stop_after="slurry"))
+    def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
+        for name, value in {"coord_in.data": _data(10), "coord_out_slurry.data": "bad data", "density_slurry.out": "1.0", "slurry.log": "Minimization stats\nStep Temp\n287300 300\n787300 300\nLoop time\n"}.items(): (workspace / name).write_text(value, encoding="utf-8")
+        commands.append({"stage": stage, "command": [input_file], "returncode": 0})
+    monkeypatch.setattr(simulator, "_invoke", invoke)
+    result = simulator.execute(_recipe(), run_id="malformed-slurry-cutoff")
+    assert result.status == SimulationStatus.NUMERICAL_FAILURE
+    assert any("unable to parse slurry particle count" in error for error in result.diagnostics)
+
+
+def test_stage_particle_counts_use_completed_stage_and_respect_tolerance(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"; workspace.mkdir()
+    for name, atoms in {"coord_in.data": 10, "coord_out_slurry.data": 9, "coord_out_electrode.data": 8, "coord_out_cal.data": 7}.items(): (workspace / name).write_text(_data(atoms), encoding="utf-8")
+    assert particle_counts_for_stage(workspace, "slurry")[:2] == (10, 9)
+    assert particle_counts_for_stage(workspace, "drying")[:2] == (10, 8)
+    assert particle_counts_for_stage(workspace, "calendering")[:2] == (10, 7)
+    assert stage_particle_count_errors(workspace, "slurry", .1) == ()
+    assert "particle loss" in stage_particle_count_errors(workspace, "slurry", .09)[0]
+    assert parse_artistic_output(workspace).final_atoms == 7
 
 
 @pytest.mark.parametrize(("exception", "status"), [(subprocess.TimeoutExpired(["lmp"], 1), SimulationStatus.TIMEOUT), (subprocess.CalledProcessError(1, ["lmp"]), SimulationStatus.NUMERICAL_FAILURE)])

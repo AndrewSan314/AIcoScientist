@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
-from .parser import ParsedArtisticOutput
+from .parser import ParsedArtisticOutput, particle_counts_for_stage
 from .schemas import ArtisticRecipe
 
 
@@ -35,3 +35,14 @@ def output_errors(recipe: ArtisticRecipe, workspace: Path, parsed: ParsedArtisti
     if parsed.lost_fraction is not None and parsed.lost_fraction > lost_tolerance:
         errors.append(f"particle loss {parsed.lost_fraction:.6g} exceeds tolerance {lost_tolerance:.6g}")
     return tuple(dict.fromkeys(errors))
+
+
+def stage_particle_count_errors(workspace: Path, stage: str, lost_tolerance: float) -> tuple[str, ...]:
+    initial, final, errors = particle_counts_for_stage(workspace, stage)
+    if errors:
+        return errors
+    assert initial is not None and final is not None
+    lost_fraction = max(0.0, (initial - final) / initial) if initial else 0.0
+    if lost_fraction > lost_tolerance:
+        return (f"particle loss {lost_fraction:.6g} exceeds tolerance {lost_tolerance:.6g}",)
+    return ()

@@ -22,7 +22,7 @@ from .provenance import sha256 as _streaming_sha256
 from .provenance import source_provenance, write_json
 from .renderer import ArtisticRenderer, RenderState
 from .schemas import ArtisticRecipe, DryingMode, ParticleCountSafetyError, ParticleEstimate, estimate_particles, recipe_fingerprint
-from .validation import output_errors
+from .validation import output_errors, stage_particle_count_errors
 
 
 class ArtisticSimulator:
@@ -66,13 +66,14 @@ class ArtisticSimulator:
             if self.config.stop_after == "slurry":
                 parsed = parse_artistic_output(state.workspace)
                 errors = list(output_errors(ArtisticRecipe(slurry=recipe.slurry), state.workspace, parsed, self.config.lost_particle_tolerance))
+                errors.extend(stage_particle_count_errors(state.workspace, "slurry", self.config.lost_particle_tolerance))
                 progress = _progress(
                     state.workspace, commands, self.config.requested_slurry_steps, self.config.dump_interval_steps, None,
                     minimization_expected=_slurry_minimization_expected(state.workspace),
                 )
                 if progress["completed_slurry_steps"] != self.config.requested_slurry_steps:
                     errors.append("slurry dynamics did not reach the requested step count")
-                status = SimulationStatus.STAGE_CUTOFF if not errors else SimulationStatus.NUMERICAL_FAILURE
+                status = SimulationStatus.INVALID_PHYSICS_RUN if any("particle loss" in error for error in errors) else SimulationStatus.STAGE_CUTOFF if not errors else SimulationStatus.NUMERICAL_FAILURE
                 result = SimulationResult(status, run_id, state.workspace.parent, parsed.stages, diagnostics=tuple(errors))
             elif recipe.drying_mode == DryingMode.HOMOGENEOUS:
                 self.renderer.stage(state, "drying_homogeneous", recipe.template_values)

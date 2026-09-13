@@ -63,6 +63,21 @@ def parse_artistic_output(workspace: Path) -> ParsedArtisticOutput:
     return ParsedArtisticOutput(stages, final_kpis, diagnostics, initial_atoms, final_atoms, _lost_from_logs(workspace), tuple(errors))
 
 
+def particle_counts_for_stage(workspace: Path, stage: str) -> tuple[int | None, int | None, tuple[str, ...]]:
+    """Return input/output particle counts for one completed ARTISTIC stage."""
+    outputs = {"slurry": "coord_out_slurry.data", "drying": "coord_out_electrode.data", "calendering": "coord_out_cal.data"}
+    if stage not in outputs:
+        raise ValueError(f"unsupported ARTISTIC particle-count stage: {stage}")
+    errors: list[str] = []
+    initial = _lammps_atoms(workspace / "coord_in.data", errors)
+    final = _lammps_atoms(workspace / outputs[stage], errors)
+    if initial is None:
+        errors.append("unable to parse initial particle count: coord_in.data")
+    if final is None:
+        errors.append(f"unable to parse {stage} particle count: {outputs[stage]}")
+    return initial, final, tuple(dict.fromkeys(errors))
+
+
 @dataclass(frozen=True)
 class ThermoCheckpoint:
     raw_step: int
