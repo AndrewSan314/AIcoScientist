@@ -1,0 +1,11 @@
+{
+  "dataset_id": "artistic",
+  "status": "BLOCKED_SOURCE_ACCESS",
+  "reason": [
+    "artistic has not been source-audited. Expected data\\external\\artistic\\5956128\\processed\\1\\normalized_runs.json. Download immutable raw files, write hashes/manifest and map source fields before training."
+  ],
+  "simulation_manifest": {
+    "status": "NOT_GENERATED",
+    "reason": "official simulator raw files require source access"
+  }
+}

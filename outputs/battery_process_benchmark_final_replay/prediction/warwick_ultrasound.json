@@ -1,0 +1,48 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "reports": [
+    {
+      "target": "post_calendering_density_g_cm3",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 48,
+      "groups": 24,
+      "train_rows": 28,
+      "calibration_rows": 9,
+      "test_rows": 11,
+      "metrics": {
+        "mae": 0.08567279021857079,
+        "rmse": 0.10681497763404822,
+        "r2": 0.99099711418499
+      },
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.9090909090909091,
+        "calibration_residual_count": 9
+      }
+    },
+    {
+      "target": "post_calendering_thickness_um",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 48,
+      "groups": 24,
+      "train_rows": 28,
+      "calibration_rows": 9,
+      "test_rows": 11,
+      "metrics": {
+        "mae": 3.278333333333327,
+        "rmse": 4.37494505015996,
+        "r2": 0.965042151740042
+      },
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 1.0,
+        "calibration_residual_count": 9
+      }
+    }
+  ]
+}

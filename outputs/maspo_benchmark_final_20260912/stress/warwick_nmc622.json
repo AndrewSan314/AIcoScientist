@@ -1,0 +1,25 @@
+{
+  "status": "EVALUATED",
+  "target": "calendered_density_g_cm3",
+  "source_control": "calendering.roll_gap_um",
+  "split": "minimum-and-maximum source-control values held out as OOD recipes",
+  "process_dimension": 13,
+  "candidate_pool_size": 18,
+  "train_rows": 16,
+  "test_rows": 2,
+  "train_groups": 16,
+  "test_groups": 2,
+  "metrics": {
+    "mae": 0.0028867128174967505,
+    "rmse": 0.003208984791833306,
+    "r2": 0.9997776151221742
+  },
+  "missing_intermediate_observations": {
+    "status": "NOT_EVALUATED",
+    "reason": "the parsed source subset lacks source-linked repeated intermediate observations per recipe"
+  },
+  "multiobjective_frontier": {
+    "status": "NOT_EVALUATED",
+    "reason": "no prespecified, source-backed multiobjective target pair is registered for this replay task"
+  }
+}

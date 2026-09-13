@@ -1,0 +1,105 @@
+{
+  "artifact_file_sha256": "a3811d512d6f348374a3cd244e3dc09f57b3cfa3f4ae2f86335c29813c394078",
+  "artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e",
+  "context_feature_names": [
+    "fidelity::SYNTHETIC",
+    "fidelity::requested_horizon",
+    "observation::drying_porosity",
+    "previous::slurry_viscosity"
+  ],
+  "control_feature_names": [
+    "control::calender_pressure",
+    "control::cbd_fraction"
+  ],
+  "dataset_fingerprint": "9c4f14f3254d58b915d0c8d92f7ebf9b54fed71da9782eedc9b215bb6c3615ee",
+  "high_fidelity_validation": "UNAVAILABLE",
+  "input_schema": {
+    "context_features": [
+      "fidelity::SYNTHETIC",
+      "fidelity::requested_horizon",
+      "observation::drying_porosity",
+      "previous::slurry_viscosity"
+    ],
+    "control_features": [
+      "control::calender_pressure",
+      "control::cbd_fraction"
+    ],
+    "feature_order": [
+      "control::calender_pressure",
+      "control::cbd_fraction",
+      "fidelity::SYNTHETIC",
+      "fidelity::requested_horizon",
+      "observation::drying_porosity",
+      "previous::slurry_viscosity"
+    ],
+    "fidelity_vocabulary": [
+      "SYNTHETIC"
+    ],
+    "schema_fingerprint": "c905e2578bbf32cc05e616904768fe15321a127f12da528de1b0b0ddf75c5246",
+    "schema_version": "2",
+    "stage_vocabulary": [
+      "CALENDERING"
+    ],
+    "supported_stage": "CALENDERING"
+  },
+  "input_schema_fingerprint": "c905e2578bbf32cc05e616904768fe15321a127f12da528de1b0b0ddf75c5246",
+  "metrics": {
+    "offline_ranking": {
+      "mode": "OFFLINE_RANKING_EVALUATION",
+      "oracle_sample_id": "synthetic-9-1",
+      "selected_sample_id": "synthetic-9-1",
+      "simple_regret": 0.0,
+      "spearman_rank_correlation": 1.0,
+      "status": "AVAILABLE",
+      "top1_match": true,
+      "top_k_recall": 1.0
+    },
+    "residual_correction": "NOT_CONFIGURED",
+    "test": {
+      "capacity_retention": {
+        "gaussian_nll": -5.811273973525874,
+        "interval_coverage": {
+          "50": 1.0,
+          "80": 1.0,
+          "95": 1.0
+        },
+        "mae": 0.00036044227352928965,
+        "r2": 0.9995334902846128,
+        "rmse": 0.00036119909856509715,
+        "uncertainty_kind": "GP_POSTERIOR_STD"
+      }
+    },
+    "validation": {
+      "capacity_retention": {
+        "gaussian_nll": -5.746353702716013,
+        "interval_coverage": {
+          "50": 1.0,
+          "80": 1.0,
+          "95": 1.0
+        },
+        "mae": 0.00016811157218706482,
+        "r2": 0.9996073492891172,
+        "rmse": 0.0002117470350947148,
+        "uncertainty_kind": "GP_POSTERIOR_STD"
+      }
+    }
+  },
+  "model_state_fingerprint": "1c9c65aee5b30f0e6095f6729c19c5d1e7e5324b36d96c7847cb2afd8a7be9a4",
+  "model_type": "gp",
+  "model_version": "process-surrogate-v2",
+  "preprocessor_state_fingerprint": "34fc1da4735108ab83ba9ba6c6431c90b218a7fabfa95c63e67d1f3c6f5b9de5",
+  "serializer": "joblib:1.5.3",
+  "split_fingerprint": "2aee17fcc65469405fe8ee50ccc6266acf198fa5045e454b2299aa03ef93bce8",
+  "supported_fidelities": [
+    "SYNTHETIC"
+  ],
+  "supported_stage": "CALENDERING",
+  "target_schema": [
+    "capacity_retention"
+  ],
+  "target_units": {
+    "capacity_retention": "fraction"
+  },
+  "training_config_fingerprint": "87aafac7382cf841507c728e139735b7f399383c6716093b61f1a33475ae9120",
+  "uncertainty_kind": "GP_POSTERIOR_STD"
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "acquisition_value": 0.7744347904129847,
+    "candidate_instance_id": "synthetic-9-1",
+    "controls": {
+      "control::calender_pressure": 45.0,
+      "control::cbd_fraction": 0.048,
+      "fidelity::SYNTHETIC": 1.0,
+      "fidelity::requested_horizon": 100000.0,
+      "observation::drying_porosity": 0.36800000000000005,
+      "previous::slurry_viscosity": 1.38
+    },
+    "data_fingerprint": "b71593349711980eaed99711843977f1e65b13b9a3f0ca31cd9aa22fb5e81130",
+    "model_version": "frozen_process_surrogate:artifact_ucb",
+    "predicted_outputs": {
+      "capacity_retention": {
+        "mean": 0.7734400575673335,
+        "std": 0.0009947328456511664,
+        "units": null
+      }
+    },
+    "proposal_id": "process:synthetic-9-1",
+    "provenance": {
+      "artifact_fingerprint": "915c1ea7612d40a8244ea2ec6dfd95186b18735f70645b6e91494bce2ea1a01c",
+      "candidate_instance_id": "synthetic-9-1",
+      "objective_sense": "maximize"
+    },
+    "source_recipe_id": "synthetic-9-1"
+  },
+  {
+    "acquisition_value": 0.7734488574661874,
+    "candidate_instance_id": "synthetic-9-0",
+    "controls": {
+      "control::calender_pressure": 45.0,
+      "control::cbd_fraction": 0.048,
+      "fidelity::SYNTHETIC": 1.0,
+      "fidelity::requested_horizon": 100000.0,
+      "observation::drying_porosity": 0.36700000000000005,
+      "previous::slurry_viscosity": 1.38
+    },
+    "data_fingerprint": "b71593349711980eaed99711843977f1e65b13b9a3f0ca31cd9aa22fb5e81130",
+    "model_version": "frozen_process_surrogate:artifact_ucb",
+    "predicted_outputs": {
+      "capacity_retention": {
+        "mean": 0.7724095238276486,
+        "std": 0.0010393336385388292,
+        "units": null
+      }
+    },
+    "proposal_id": "process:synthetic-9-0",
+    "provenance": {
+      "artifact_fingerprint": "915c1ea7612d40a8244ea2ec6dfd95186b18735f70645b6e91494bce2ea1a01c",
+      "candidate_instance_id": "synthetic-9-0",
+      "objective_sense": "maximize"
+    },
+    "source_recipe_id": "synthetic-9-0"
+  },
+  {
+    "acquisition_value": 0.7668064955892993,
+    "candidate_instance_id": "synthetic-5-1",
+    "controls": {
+      "control::calender_pressure": 65.0,
+      "control::cbd_fraction": 0.04,
+      "fidelity::SYNTHETIC": 1.0,
+      "fidelity::requested_horizon": 100000.0,
+      "observation::drying_porosity": 0.35600000000000004,
+      "previous::slurry_viscosity": 1.3
+    },
+    "data_fingerprint": "b71593349711980eaed99711843977f1e65b13b9a3f0ca31cd9aa22fb5e81130",
+    "model_version": "frozen_process_surrogate:artifact_ucb",
+    "predicted_outputs": {
+      "capacity_retention": {
+        "mean": 0.7653131751865913,
+        "std": 0.0014933204027079822,
+        "units": null
+      }
+    },
+    "proposal_id": "process:synthetic-5-1",
+    "provenance": {
+      "artifact_fingerprint": "915c1ea7612d40a8244ea2ec6dfd95186b18735f70645b6e91494bce2ea1a01c",
+      "candidate_instance_id": "synthetic-5-1",
+      "objective_sense": "maximize"
+    },
+    "source_recipe_id": "synthetic-5-1"
+  }
+]

@@ -1,0 +1,101 @@
+[
+  {
+    "proposal": {
+      "acquisition_value": 1.1333242976476352,
+      "candidate_instance_id": "action-1",
+      "controls": {
+        "calender_pressure": 65.0,
+        "cbd_fraction": 0.04
+      },
+      "data_fingerprint": "47af13a5c69016d19071edb5f6abded38b336142e76e89ca92ba7782aea8703d",
+      "model_version": "frozen_process_surrogate:artifact_ucb",
+      "predicted_outputs": {
+        "capacity_retention": {
+          "mean": 0.7494086004169583,
+          "std": 0.3839156972306769,
+          "units": null
+        }
+      },
+      "proposal_id": "process:action-1",
+      "provenance": {
+        "artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e",
+        "candidate_instance_id": "action-1",
+        "context_fingerprint": "29c6329860b19f0c1d79fe1b974ad7e88748c3f531d409c51ef304b277e3b51d",
+        "context_stage": "CALENDERING",
+        "objective_sense": "maximize"
+      },
+      "source_recipe_id": "action-1"
+    },
+    "required_before_execution": [
+      "explicit user approval",
+      "published-domain ARTISTIC preflight"
+    ],
+    "status": "SYNTHETIC_TEST_ONLY"
+  },
+  {
+    "proposal": {
+      "acquisition_value": 1.0171160156008248,
+      "candidate_instance_id": "action-2",
+      "controls": {
+        "calender_pressure": 45.0,
+        "cbd_fraction": 0.048
+      },
+      "data_fingerprint": "47af13a5c69016d19071edb5f6abded38b336142e76e89ca92ba7782aea8703d",
+      "model_version": "frozen_process_surrogate:artifact_ucb",
+      "predicted_outputs": {
+        "capacity_retention": {
+          "mean": 0.8022266534248734,
+          "std": 0.21488936217595125,
+          "units": null
+        }
+      },
+      "proposal_id": "process:action-2",
+      "provenance": {
+        "artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e",
+        "candidate_instance_id": "action-2",
+        "context_fingerprint": "29c6329860b19f0c1d79fe1b974ad7e88748c3f531d409c51ef304b277e3b51d",
+        "context_stage": "CALENDERING",
+        "objective_sense": "maximize"
+      },
+      "source_recipe_id": "action-2"
+    },
+    "required_before_execution": [
+      "explicit user approval",
+      "published-domain ARTISTIC preflight"
+    ],
+    "status": "SYNTHETIC_TEST_ONLY"
+  },
+  {
+    "proposal": {
+      "acquisition_value": 0.7343383747835495,
+      "candidate_instance_id": "action-0",
+      "controls": {
+        "calender_pressure": 70.0,
+        "cbd_fraction": 0.057999999999999996
+      },
+      "data_fingerprint": "47af13a5c69016d19071edb5f6abded38b336142e76e89ca92ba7782aea8703d",
+      "model_version": "frozen_process_surrogate:artifact_ucb",
+      "predicted_outputs": {
+        "capacity_retention": {
+          "mean": 0.733429047485666,
+          "std": 0.0009093272978835504,
+          "units": null
+        }
+      },
+      "proposal_id": "process:action-0",
+      "provenance": {
+        "artifact_fingerprint": "e0449bea18995a8ed4b095695f68fda9e511af4da6156d0d8a66787b6dfbad4e",
+        "candidate_instance_id": "action-0",
+        "context_fingerprint": "29c6329860b19f0c1d79fe1b974ad7e88748c3f531d409c51ef304b277e3b51d",
+        "context_stage": "CALENDERING",
+        "objective_sense": "maximize"
+      },
+      "source_recipe_id": "action-0"
+    },
+    "required_before_execution": [
+      "explicit user approval",
+      "published-domain ARTISTIC preflight"
+    ],
+    "status": "SYNTHETIC_TEST_ONLY"
+  }
+]

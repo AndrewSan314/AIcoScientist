@@ -1,0 +1,54 @@
+{
+  "dataset": {
+    "dataset_id": "drakopoulos_graphite",
+    "display_name": "Graphite Process-15",
+    "chemistry": "graphite Li-ion electrode",
+    "evidence_kind": "PHYSICAL_HISTORICAL",
+    "source_doi": "10.17632/4dh2h3tsf4.1",
+    "version": "1",
+    "license": "CC BY 4.0",
+    "process_stages": [
+      "FORMULATION",
+      "MIXING",
+      "COATING",
+      "DRYING",
+      "CALENDERING",
+      "FINAL_CHARACTERIZATION"
+    ],
+    "modalities": [
+      "PROCESS_TABULAR",
+      "SCALAR_METROLOGY"
+    ],
+    "recommended_splits": [
+      "GROUP_BY_PROCESS_RECIPE",
+      "OOD_FACTOR_EXTREME"
+    ],
+    "optimization_capable": true,
+    "multimodal_capable": false,
+    "limitations": "Parser covers AS cells with numeric 372 mAh/g cell-capacity records; other source workbooks remain inventory-only."
+  },
+  "target": "cell_capacity_mah",
+  "stage": "COATING",
+  "seed": 42,
+  "proposal": {
+    "recipe_id": "AS-68",
+    "controls": {
+      "coating_speed_m_per_min": 100.0,
+      "coating_gap_um": 0.1
+    },
+    "prediction": {
+      "cell_capacity_mah": {
+        "mean": 3.9721478525946026,
+        "std": 2.135157655531342,
+        "units": null
+      }
+    }
+  },
+  "revealed": {
+    "step": 4,
+    "recipe_id": "AS-68",
+    "revealed_target": 8.860558852962102
+  },
+  "best_so_far": 8.860558852962102,
+  "remaining_hidden": 9
+}

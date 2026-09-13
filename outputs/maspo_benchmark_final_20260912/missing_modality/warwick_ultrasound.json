@@ -1,0 +1,13 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "status": "EVALUATED",
+  "policy": "An unavailable modality is omitted, never zero-filled.",
+  "process_only_reference": {
+    "mode": "process_only",
+    "metrics": {
+      "mae": 27.52233333333337,
+      "rmse": 36.18789918819513,
+      "r2": -0.07220563826997828
+    }
+  }
+}

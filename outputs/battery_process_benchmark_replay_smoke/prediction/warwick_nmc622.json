@@ -1,0 +1,48 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "evidence_kind": "PILOT_LINE_HISTORICAL",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.02953298754199727,
+        "rmse": 0.03307893640537316,
+        "r2": 0.95153624032835
+      },
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "calibration_residual_count": 4
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.6656151768800391,
+        "rmse": 0.7476515209406341,
+        "r2": 0.9509733191680857
+      },
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "calibration_residual_count": 4
+      }
+    }
+  ]
+}

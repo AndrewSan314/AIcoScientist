@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "dataset_id": "artistic",
+    "display_name": "ARTISTIC Physics Stress",
+    "chemistry": "lithium-ion electrode simulation",
+    "evidence_kind": "SIMULATED_PHYSICS",
+    "source_doi": "not applicable: pinned public GitHub source",
+    "version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+    "license": "CC BY-NC-SA 4.0",
+    "process_stages": [
+      "MIXING",
+      "DRYING",
+      "CALENDERING"
+    ],
+    "modalities": [
+      "PROCESS_TABULAR"
+    ],
+    "recommended_splits": [
+      "OOD_FACTOR_EXTREME"
+    ],
+    "optimization_capable": true,
+    "multimodal_capable": false,
+    "limitations": "Runs are public-source simulated physics, never physical observations; training is blocked until a validated real execution exists."
+  },
+  "validation": {
+    "valid": false,
+    "errors": [
+      "artistic has not been source-audited. Expected data\\external\\artistic\\5af9e0345673fac557c479ee8f4a0727e442c1fa\\processed\\3\\normalized_runs.json. Download immutable raw files, write hashes/manifest and map source fields before training."
+    ]
+  }
+}

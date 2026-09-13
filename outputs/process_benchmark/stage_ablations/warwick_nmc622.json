@@ -1,0 +1,69 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 18,
+      "groups": 18,
+      "feature_count": 3,
+      "metrics": {
+        "mae": 0.15472557578999896,
+        "rmse": 0.19530281873309083,
+        "r2": -0.6893944020466183
+      }
+    },
+    {
+      "target": "calendered_density_g_cm3",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 18,
+      "groups": 18,
+      "feature_count": 13,
+      "metrics": {
+        "mae": 0.02091049002899874,
+        "rmse": 0.02699781337233818,
+        "r2": 0.9677171989393197
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "stage": "CALENDERING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 18,
+      "groups": 18,
+      "feature_count": 3,
+      "metrics": {
+        "mae": 3.448132897789953,
+        "rmse": 4.330888900502566,
+        "r2": -0.6450842167858883
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 18,
+      "groups": 18,
+      "feature_count": 13,
+      "metrics": {
+        "mae": 0.4883924015200087,
+        "rmse": 0.630057332275718,
+        "r2": 0.9651827721388444
+      }
+    }
+  ],
+  "stage_transition_model": {
+    "status": "IMPLEMENTED_NOT_EVALUATED",
+    "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."
+  }
+}

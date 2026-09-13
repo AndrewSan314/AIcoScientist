@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "dataset_id": "warwick_nmc622",
+    "display_name": "Warwick NMC622 Pilot Multimodal",
+    "chemistry": "NMC622 Li-ion electrode/cell",
+    "evidence_kind": "PILOT_LINE_HISTORICAL",
+    "source_doi": "10.17632/wwhm2frfmy.1",
+    "version": "1",
+    "license": "CC0 1.0",
+    "process_stages": [
+      "CALENDERING",
+      "FINAL_CHARACTERIZATION"
+    ],
+    "modalities": [
+      "PROCESS_TABULAR",
+      "SCALAR_METROLOGY"
+    ],
+    "recommended_splits": [
+      "GROUP_BY_DOE_CONDITION"
+    ],
+    "optimization_capable": true,
+    "multimodal_capable": true,
+    "limitations": "Parser covers the audited Cathode intermediate-calendering table; electrochemical files remain independently auditable modalities."
+  },
+  "validation": {
+    "valid": true,
+    "errors": []
+  }
+}

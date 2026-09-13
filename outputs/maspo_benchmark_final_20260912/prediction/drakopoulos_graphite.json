@@ -1,0 +1,53 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "reports": [
+    {
+      "target": "cell_capacity_mah",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 13,
+      "groups": 13,
+      "train_rows": 6,
+      "calibration_rows": 3,
+      "test_rows": 4,
+      "metrics": {
+        "mae": 1.6442659543031746,
+        "rmse": 1.8184993035507202,
+        "r2": 0.7062957001875709
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 1.6442659543031746,
+            "rmse": 1.8184993035507202,
+            "r2": 0.7062957001875709
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 2.5904955347945355,
+            "rmse": 2.652424349776193,
+            "r2": 0.3751582517837162
+          }
+        },
+        {
+          "model": "GaussianProcessRegressor",
+          "metrics": {
+            "mae": 3.3854575788083827,
+            "rmse": 3.491876796130058,
+            "r2": -0.0829336547758126
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 1.0,
+        "calibration_residual_count": 3
+      }
+    }
+  ]
+}

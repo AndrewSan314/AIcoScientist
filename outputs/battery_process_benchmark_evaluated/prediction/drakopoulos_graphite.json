@@ -1,0 +1,27 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "reports": [
+    {
+      "target": "cell_capacity_mah",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 13,
+      "groups": 13,
+      "train_rows": 6,
+      "calibration_rows": 3,
+      "test_rows": 4,
+      "metrics": {
+        "mae": 2.2717281990911617,
+        "rmse": 2.7027129855999994,
+        "r2": 0.4853639952521307
+      },
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.75,
+        "calibration_residual_count": 3
+      }
+    }
+  ]
+}

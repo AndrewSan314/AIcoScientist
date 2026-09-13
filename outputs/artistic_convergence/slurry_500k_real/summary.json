@@ -1,0 +1,114 @@
+{
+  "artifact_sha256": {
+    "manifest.json": "4af265e17444b2b3c34f408b0af3b8302b1b45d71d68ee119135759c333e77ee",
+    "slurry_cutoff_manifest.json": "7658977b37ef5eb5ea1fac1cffa249f93f33214c4f804e29ebbb657eb5d9404f",
+    "workspace/coord_out_slurry.data": "d980ecfcbfb8b5017ad30f2e9f1b584e3320bfe4b0c9294044b1415c152dd57f",
+    "workspace/density_slurry.out": "c8e4d3b2bdc84e59b9e3875ba2823c48a98e28b694f7d7ed78b1d777cbd0fa08",
+    "workspace/in_slurry.run": "09a05a5c965a3984486f0d272f509d7b11fb04c25af9062539b2063469a81b08",
+    "workspace/slurry.log": "3da7d01446bd3b4768b83d28d935332af5acbb700ba6a041e5a78e755b3f61fc"
+  },
+  "canonical_manifest_status": "Numerical failure",
+  "classification": "SLURRY_CUTOFF_SUCCESS",
+  "cutoff_manifest_status": "SLURRY_CUTOFF_SUCCESS",
+  "fidelity": {
+    "mode": "SHORT_HORIZON",
+    "reference_equivalence_status": "REFERENCE_NOT_AVAILABLE",
+    "reference_steps": 20000000
+  },
+  "full_pipeline_complete": false,
+  "partial_drying_evidence": {
+    "artifacts": [
+      "dump_sol.com_0.atom",
+      "dump_sol.com_1000000.atom",
+      "dump_sol.com_80268.atom"
+    ],
+    "command": {
+      "command": [
+        "C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe",
+        "-n",
+        "4",
+        "lmp",
+        "-in",
+        "in_evap_hom.run"
+      ],
+      "ended_at": "2026-09-13T00:57:18.563536+00:00",
+      "log_sha256": "266db9b041fae8f7b17beedd6315ed4b98414734f35b0d20cba5a16248826e79",
+      "returncode": 1,
+      "stage": "drying_homogeneous",
+      "started_at": "2026-09-12T18:57:18.938601+00:00",
+      "wall_seconds": 21598.486523000058
+    },
+    "status": "INTENTIONALLY_TERMINATED_DURING_DRYING",
+    "use_restriction": "Audit-only partial evidence; not a completed drying result and not training evidence."
+  },
+  "provenance": {
+    "ai_co_scientist_commit": "adc8879595b801bde616882e19bae591b9f6ae72",
+    "checked_out_commit": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+    "fidelity_identity": "5f90a847e6817f917e31620e5bd8e3a747e5b59d1d9b0cff02ae8a204a952c05",
+    "mpi_environment": {
+      "execution_mode": "mpi",
+      "lammps_version": "Large-scale Atomic/Molecular Massively Parallel Simulator - 22 Jul 2025 - Update 4",
+      "mpi_implementation_version": "Microsoft MPI Startup Program [Version 10.1.12498.52]",
+      "mpi_launcher": "C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe",
+      "mpi_launcher_command": [
+        "C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe",
+        "-n",
+        "4",
+        "C:\\Users\\ADMIN\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\lmp.EXE",
+        "-log",
+        "none",
+        "-in",
+        "smoke.in"
+      ],
+      "mpi_processor_grids": [
+        [
+          1,
+          2,
+          2
+        ]
+      ],
+      "mpi_task_count": 4,
+      "requested_mpi_processes": 4,
+      "resolved_lammps_path": "C:\\Users\\ADMIN\\AppData\\Local\\Python\\pythoncore-3.14-64\\Scripts\\lmp.EXE",
+      "resolved_mpi_launcher": "C:\\Program Files\\Microsoft MPI\\Bin\\mpiexec.exe",
+      "smoke_returncode": 0,
+      "validated": true
+    },
+    "physics_config_fingerprint": "265febb10fbcba756a0484fa91eb75f7d69267f5a4e6d81e0315088edea69a0e",
+    "recipe_fingerprint": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+    "source_tree_hash": "e870c018acf8696424ae3ac9c36163f5bd3afb56"
+  },
+  "run_id": "artistic-short-500k-rerun",
+  "runtime": {
+    "mpi_processes": 4,
+    "observed_steps_per_second": 35.716782963123194,
+    "projected_seconds_20m_from_start": 559960.8458760008,
+    "projected_seconds_by_horizon": {
+      "1000000": 27998.04229380004,
+      "2000000": 55996.08458760008,
+      "20000000": 559960.8458760008
+    },
+    "projected_seconds_remaining_to_20m": 545961.8247291008,
+    "slurry_wall_seconds": 13999.02114690002
+  },
+  "schema_version": 1,
+  "slurry_completion": {
+    "completed_dynamic_steps": 500000,
+    "raw_dynamic_start": 287300,
+    "raw_final_step": 787300,
+    "requested_dynamic_steps": 500000,
+    "thermo_checkpoint_count": 35,
+    "thermo_parse_diagnostics": []
+  },
+  "slurry_density": 1.47883968570215,
+  "stability": {
+    "interpretation": "Diagnostic only; it is not reference-equivalence validation.",
+    "policy": {
+      "minimum_checkpoints": 10,
+      "minimum_step_span": 0,
+      "relative_tolerance": 0.01,
+      "required_metrics": []
+    },
+    "status": "NOT_STABLE"
+  }
+}

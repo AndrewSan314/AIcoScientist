@@ -1,0 +1,11 @@
+{
+  "dataset_id": "naion_hte",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "reports": [
+    {
+      "target": "last_observed_discharge_capacity_ah",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'last_observed_discharge_capacity_ah'"
+    }
+  ]
+}

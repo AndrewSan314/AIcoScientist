@@ -1,0 +1,44 @@
+{
+  "group_key": "group_id",
+  "source_dataset_fingerprint": "9c4f14f3254d58b915d0c8d92f7ebf9b54fed71da9782eedc9b215bb6c3615ee",
+  "split_fingerprint": "2aee17fcc65469405fe8ee50ccc6266acf198fa5045e454b2299aa03ef93bce8",
+  "split_seed": 42,
+  "test_ids": [
+    "synthetic-14-0",
+    "synthetic-14-1",
+    "synthetic-5-0",
+    "synthetic-5-1",
+    "synthetic-9-0",
+    "synthetic-9-1"
+  ],
+  "train_ids": [
+    "synthetic-0-0",
+    "synthetic-0-1",
+    "synthetic-1-0",
+    "synthetic-1-1",
+    "synthetic-10-0",
+    "synthetic-10-1",
+    "synthetic-12-0",
+    "synthetic-12-1",
+    "synthetic-13-0",
+    "synthetic-13-1",
+    "synthetic-15-0",
+    "synthetic-15-1",
+    "synthetic-2-0",
+    "synthetic-2-1",
+    "synthetic-6-0",
+    "synthetic-6-1",
+    "synthetic-7-0",
+    "synthetic-7-1",
+    "synthetic-8-0",
+    "synthetic-8-1"
+  ],
+  "validation_ids": [
+    "synthetic-11-0",
+    "synthetic-11-1",
+    "synthetic-3-0",
+    "synthetic-3-1",
+    "synthetic-4-0",
+    "synthetic-4-1"
+  ]
+}

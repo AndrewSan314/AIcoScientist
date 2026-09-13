@@ -1,0 +1,163 @@
+{
+  "suite": "BPSS",
+  "datasets": [
+    {
+      "metadata": {
+        "dataset_id": "drakopoulos_graphite",
+        "display_name": "Graphite Process-15",
+        "chemistry": "graphite Li-ion electrode",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.17632/4dh2h3tsf4.1",
+        "version": "1",
+        "license": "CC BY 4.0",
+        "process_stages": [
+          "FORMULATION",
+          "MIXING",
+          "COATING",
+          "DRYING",
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR",
+          "SCALAR_METROLOGY"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_PROCESS_RECIPE",
+          "OOD_FACTOR_EXTREME"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": false,
+        "limitations": "Parser covers AS cells with numeric 372 mAh/g cell-capacity records; other source workbooks remain inventory-only."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "warwick_nmc622",
+        "display_name": "Warwick NMC622 Pilot Multimodal",
+        "chemistry": "NMC622 Li-ion electrode/cell",
+        "evidence_kind": "PILOT_LINE_HISTORICAL",
+        "source_doi": "10.17632/wwhm2frfmy.1",
+        "version": "1",
+        "license": "CC0 1.0",
+        "process_stages": [
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR",
+          "SCALAR_METROLOGY"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_DOE_CONDITION"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": true,
+        "limitations": "Parser covers the audited Cathode intermediate-calendering table; electrochemical files remain independently auditable modalities."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "warwick_ultrasound",
+        "display_name": "Warwick Ultrasonic Inline QC",
+        "chemistry": "graphite anode / NMC622 cathode",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.17632/c62yn37d9h.4",
+        "version": "4",
+        "license": "CC BY 4.0",
+        "process_stages": [
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "ULTRASOUND_SPECTRUM",
+          "PROCESS_TABULAR"
+        ],
+        "recommended_splits": [
+          "LEAVE_ONE_PROCESS_SETTING_OUT"
+        ],
+        "optimization_capable": false,
+        "multimodal_capable": true,
+        "limitations": "Post-calender spectra are represented but are unavailable at a CALENDERING decision horizon."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "naion_hte",
+        "display_name": "Na-ion High-Throughput Process Chain",
+        "chemistry": "sodium-ion",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.5281/zenodo.7981011",
+        "version": "7981011",
+        "license": "not specified",
+        "process_stages": [
+          "FORMATION",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "FORMATION_CURVE",
+          "CYCLING_CURVE"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_BATCH",
+          "LATER_RUN_HOLDOUT"
+        ],
+        "optimization_capable": false,
+        "multimodal_capable": true,
+        "limitations": "Source archive provides cycling traces and protocol/batch identity, not audited synthesis, coating, or assembly settings."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "artistic",
+        "display_name": "ARTISTIC Physics Stress",
+        "chemistry": "lithium-ion electrode simulation",
+        "evidence_kind": "SIMULATED_PHYSICS",
+        "source_doi": "10.5281/zenodo.5956128",
+        "version": "unverified",
+        "license": "CC BY-NC-SA 4.0",
+        "process_stages": [
+          "MIXING",
+          "DRYING",
+          "CALENDERING"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR",
+          "XCT_VOLUME"
+        ],
+        "recommended_splits": [
+          "OOD_FACTOR_EXTREME"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": true,
+        "limitations": "Restricted source files; this is simulated evidence only."
+      },
+      "validation": {
+        "valid": false,
+        "errors": [
+          "artistic has not been source-audited. Expected data\\external\\artistic\\unverified\\processed\\1\\normalized_runs.json. Download immutable raw files, write hashes/manifest and map source fields before training."
+        ]
+      }
+    }
+  ],
+  "status": "AUDIT_ONLY",
+  "unavailable": [
+    "artistic"
+  ]
+}

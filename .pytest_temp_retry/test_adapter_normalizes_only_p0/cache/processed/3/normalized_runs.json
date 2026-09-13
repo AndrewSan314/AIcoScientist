@@ -1,0 +1,436 @@
+[
+  {
+    "run_id": "success",
+    "cell_id": null,
+    "batch_id": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+    "chemistry_id": "ARTISTIC_NMC",
+    "equipment_context": {
+      "simulator": "LAMMPS",
+      "runner": []
+    },
+    "environment_context": {
+      "executable_versions": {
+        "lammps": "LAMMPS test",
+        "python": "Python test"
+      },
+      "executable_identity": {
+        "lammps_command": "lmp-test"
+      }
+    },
+    "stages": [
+      {
+        "stage_id": "artistic-mixing",
+        "stage_type": "MIXING",
+        "sequence_index": 1,
+        "controls": {
+          "nAM_part": {
+            "value": 1,
+            "units": null,
+            "source_name": "nAM_part"
+          },
+          "diameterAM1": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM1"
+          },
+          "diameterAM2": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM2"
+          },
+          "diameterAM3": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM3"
+          },
+          "diameterAM4": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM4"
+          },
+          "diameterAM5": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM5"
+          },
+          "diameterAM6": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM6"
+          },
+          "diameterAM7": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM7"
+          },
+          "diameterAM8": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM8"
+          },
+          "diameterAM9": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM9"
+          },
+          "diameterAM10": {
+            "value": 5.0,
+            "units": null,
+            "source_name": "diameterAM10"
+          },
+          "percentAM1": {
+            "value": 1.0,
+            "units": null,
+            "source_name": "percentAM1"
+          },
+          "percentAM2": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM2"
+          },
+          "percentAM3": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM3"
+          },
+          "percentAM4": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM4"
+          },
+          "percentAM5": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM5"
+          },
+          "percentAM6": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM6"
+          },
+          "percentAM7": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM7"
+          },
+          "percentAM8": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM8"
+          },
+          "percentAM9": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM9"
+          },
+          "percentAM10": {
+            "value": 0.0,
+            "units": null,
+            "source_name": "percentAM10"
+          },
+          "diameterCB_solid": {
+            "value": 1.0,
+            "units": null,
+            "source_name": "diameterCB_solid"
+          },
+          "stl_ratio": {
+            "value": 0.5,
+            "units": null,
+            "source_name": "stl_ratio"
+          },
+          "dry_mass": {
+            "value": 0.1,
+            "units": null,
+            "source_name": "dry_mass"
+          },
+          "ratio_AM": {
+            "value": 0.9,
+            "units": null,
+            "source_name": "ratio_AM"
+          },
+          "ratio_CBD": {
+            "value": 0.1,
+            "units": null,
+            "source_name": "ratio_CBD"
+          },
+          "thickness": {
+            "value": 0,
+            "units": null,
+            "source_name": "thickness"
+          },
+          "CBD_nano": {
+            "value": 0.5,
+            "units": null,
+            "source_name": "CBD_nano"
+          }
+        },
+        "intermediate_properties": {
+          "slurry_density": {
+            "value": 1.0,
+            "units": null,
+            "uncertainty": null,
+            "source_name": "slurry_density"
+          }
+        },
+        "modalities": [],
+        "upstream_stage_id": null,
+        "timestamps": null,
+        "quality_flags": [],
+        "provenance": {
+          "evidence_kind": "SIMULATED_PHYSICS",
+          "source_url": "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git",
+          "source_doi": null,
+          "source_version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+          "raw_hashes": {
+            "workspace/in_slurry.run": "input-digest"
+          },
+          "adapter_version": "3",
+          "adapter_git_sha": null,
+          "processing_parameters": {
+            "simulation_manifest": "F:\\AI\\GTIP\\.pytest_temp_retry\\test_adapter_normalizes_only_p0\\success\\manifest.json",
+            "simulation_manifest_sha256": "4b6388757c0da8bda8fa1bb8152b7e0f1b9fdc4c7686298f8dab131c12521bc7",
+            "status": "Success",
+            "source_commit": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+            "source_tree_hash": "e870c018acf8696424ae3ac9c36163f5bd3afb56",
+            "patches": [
+              "workspace-only"
+            ],
+            "rendered_input_hashes": {
+              "workspace/in_slurry.run": "input-digest"
+            },
+            "physics_output_hashes": {
+              "workspace/coord_out_cal.data": "output-digest"
+            },
+            "stage_lineage": [
+              {
+                "boundary": "drying_to_calendering"
+              }
+            ],
+            "recipe_fingerprint": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+            "executable_versions": {
+              "lammps": "LAMMPS test",
+              "python": "Python test"
+            },
+            "executable_identity": {
+              "lammps_command": "lmp-test"
+            }
+          }
+        }
+      },
+      {
+        "stage_id": "artistic-drying",
+        "stage_type": "DRYING",
+        "sequence_index": 3,
+        "controls": {
+          "drying_mode": {
+            "value": "homogeneous",
+            "units": null,
+            "source_name": "drying_mode"
+          }
+        },
+        "intermediate_properties": {
+          "am_loading": {
+            "value": 2.0,
+            "units": null,
+            "uncertainty": null,
+            "source_name": "am_loading"
+          },
+          "drying_porosity_bulk_percent": {
+            "value": 10.0,
+            "units": null,
+            "uncertainty": null,
+            "source_name": "drying_porosity_bulk_percent"
+          },
+          "drying_porosity_all_percent": {
+            "value": 20.0,
+            "units": null,
+            "uncertainty": null,
+            "source_name": "drying_porosity_all_percent"
+          }
+        },
+        "modalities": [],
+        "upstream_stage_id": "artistic-mixing",
+        "timestamps": null,
+        "quality_flags": [],
+        "provenance": {
+          "evidence_kind": "SIMULATED_PHYSICS",
+          "source_url": "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git",
+          "source_doi": null,
+          "source_version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+          "raw_hashes": {
+            "workspace/in_slurry.run": "input-digest"
+          },
+          "adapter_version": "3",
+          "adapter_git_sha": null,
+          "processing_parameters": {
+            "simulation_manifest": "F:\\AI\\GTIP\\.pytest_temp_retry\\test_adapter_normalizes_only_p0\\success\\manifest.json",
+            "simulation_manifest_sha256": "4b6388757c0da8bda8fa1bb8152b7e0f1b9fdc4c7686298f8dab131c12521bc7",
+            "status": "Success",
+            "source_commit": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+            "source_tree_hash": "e870c018acf8696424ae3ac9c36163f5bd3afb56",
+            "patches": [
+              "workspace-only"
+            ],
+            "rendered_input_hashes": {
+              "workspace/in_slurry.run": "input-digest"
+            },
+            "physics_output_hashes": {
+              "workspace/coord_out_cal.data": "output-digest"
+            },
+            "stage_lineage": [
+              {
+                "boundary": "drying_to_calendering"
+              }
+            ],
+            "recipe_fingerprint": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+            "executable_versions": {
+              "lammps": "LAMMPS test",
+              "python": "Python test"
+            },
+            "executable_identity": {
+              "lammps_command": "lmp-test"
+            }
+          }
+        }
+      },
+      {
+        "stage_id": "artistic-calendering",
+        "stage_type": "CALENDERING",
+        "sequence_index": 4,
+        "controls": {
+          "compression_degree": {
+            "value": 0.25,
+            "units": null,
+            "source_name": "compression_degree"
+          },
+          "cbd_nanoporosity_decrease": {
+            "value": 0.05,
+            "units": null,
+            "source_name": "cbd_nanoporosity_decrease"
+          },
+          "relaxation": {
+            "value": true,
+            "units": null,
+            "source_name": "relaxation"
+          },
+          "perform_energy_minimization": {
+            "value": false,
+            "units": null,
+            "source_name": "perform_energy_minimization"
+          }
+        },
+        "intermediate_properties": {},
+        "modalities": [],
+        "upstream_stage_id": "artistic-drying",
+        "timestamps": null,
+        "quality_flags": [],
+        "provenance": {
+          "evidence_kind": "SIMULATED_PHYSICS",
+          "source_url": "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git",
+          "source_doi": null,
+          "source_version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+          "raw_hashes": {
+            "workspace/in_slurry.run": "input-digest"
+          },
+          "adapter_version": "3",
+          "adapter_git_sha": null,
+          "processing_parameters": {
+            "simulation_manifest": "F:\\AI\\GTIP\\.pytest_temp_retry\\test_adapter_normalizes_only_p0\\success\\manifest.json",
+            "simulation_manifest_sha256": "4b6388757c0da8bda8fa1bb8152b7e0f1b9fdc4c7686298f8dab131c12521bc7",
+            "status": "Success",
+            "source_commit": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+            "source_tree_hash": "e870c018acf8696424ae3ac9c36163f5bd3afb56",
+            "patches": [
+              "workspace-only"
+            ],
+            "rendered_input_hashes": {
+              "workspace/in_slurry.run": "input-digest"
+            },
+            "physics_output_hashes": {
+              "workspace/coord_out_cal.data": "output-digest"
+            },
+            "stage_lineage": [
+              {
+                "boundary": "drying_to_calendering"
+              }
+            ],
+            "recipe_fingerprint": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+            "executable_versions": {
+              "lammps": "LAMMPS test",
+              "python": "Python test"
+            },
+            "executable_identity": {
+              "lammps_command": "lmp-test"
+            }
+          }
+        }
+      }
+    ],
+    "final_kpis": {
+      "calendered_electrode_thickness": {
+        "value": 8.0,
+        "units": null,
+        "uncertainty": null,
+        "source_name": "calendered_electrode_thickness"
+      },
+      "calendered_cbd_nanoporosity": {
+        "value": 0.4,
+        "units": null,
+        "uncertainty": null,
+        "source_name": "calendered_cbd_nanoporosity"
+      },
+      "calendered_porosity_bulk_percent": {
+        "value": 5.0,
+        "units": null,
+        "uncertainty": null,
+        "source_name": "calendered_porosity_bulk_percent"
+      },
+      "calendered_porosity_all_percent": {
+        "value": 15.0,
+        "units": null,
+        "uncertainty": null,
+        "source_name": "calendered_porosity_all_percent"
+      }
+    },
+    "provenance": {
+      "evidence_kind": "SIMULATED_PHYSICS",
+      "source_url": "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git",
+      "source_doi": null,
+      "source_version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+      "raw_hashes": {
+        "workspace/in_slurry.run": "input-digest"
+      },
+      "adapter_version": "3",
+      "adapter_git_sha": null,
+      "processing_parameters": {
+        "simulation_manifest": "F:\\AI\\GTIP\\.pytest_temp_retry\\test_adapter_normalizes_only_p0\\success\\manifest.json",
+        "simulation_manifest_sha256": "4b6388757c0da8bda8fa1bb8152b7e0f1b9fdc4c7686298f8dab131c12521bc7",
+        "status": "Success",
+        "source_commit": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+        "source_tree_hash": "e870c018acf8696424ae3ac9c36163f5bd3afb56",
+        "patches": [
+          "workspace-only"
+        ],
+        "rendered_input_hashes": {
+          "workspace/in_slurry.run": "input-digest"
+        },
+        "physics_output_hashes": {
+          "workspace/coord_out_cal.data": "output-digest"
+        },
+        "stage_lineage": [
+          {
+            "boundary": "drying_to_calendering"
+          }
+        ],
+        "recipe_fingerprint": "a768b6d5ebbdab98d1ab92dc262e59990f64e30f663a5dbb67a22c19e98a22f9",
+        "executable_versions": {
+          "lammps": "LAMMPS test",
+          "python": "Python test"
+        },
+        "executable_identity": {
+          "lammps_command": "lmp-test"
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "adapter_name": "GenericTabularAdapter",
+  "adapter_version": "1",
+  "available_controls": [
+    "cbd_fraction",
+    "calender_pressure"
+  ],
+  "available_modalities": [],
+  "available_observations": [
+    "drying_porosity"
+  ],
+  "available_targets": [
+    "capacity_retention"
+  ],
+  "chemistry": null,
+  "dataset_fingerprint": "18d94b862770eecbba4911491bde9fbb1227d119dd9b5459fb7054bc1e6053c9",
+  "dataset_name": "synthetic-process-fixture",
+  "dataset_version": "1",
+  "fidelity_levels": [
+    "SYNTHETIC"
+  ],
+  "grouping_key": "group_id",
+  "leakage_grouping_policy": "GROUP_ISOLATED",
+  "process_stages": [
+    "CALENDERING"
+  ],
+  "sample_count": 32,
+  "source": "synthetic-fixture",
+  "source_hashes": {
+    "frame": "33b4231d7c3e13ab92c58ec9fad888e8aa1f95a6750a24c8ccd7e2dfd95354da"
+  },
+  "units": {
+    "capacity_retention": "fraction"
+  }
+}

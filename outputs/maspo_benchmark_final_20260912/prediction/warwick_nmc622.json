@@ -1,0 +1,84 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "evidence_kind": "PILOT_LINE_HISTORICAL",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.019862404922999045,
+        "rmse": 0.02535518645528136,
+        "r2": 0.9863103148376572
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 0.019862404922999045,
+            "rmse": 0.02535518645528136,
+            "r2": 0.9863103148376572
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 0.06127284971699813,
+            "rmse": 0.06911951942316107,
+            "r2": 0.8982671378938847
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.4,
+        "calibration_residual_count": 4
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.48313198675005753,
+        "rmse": 0.5930652759556302,
+        "r2": 0.9851685074017386
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 0.48313198675005753,
+            "rmse": 0.5930652759556302,
+            "r2": 0.9851685074017386
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 1.4735633659700014,
+            "rmse": 1.6369595035979148,
+            "r2": 0.887005907882444
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.2,
+        "calibration_residual_count": 4
+      }
+    }
+  ]
+}

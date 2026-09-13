@@ -1,0 +1,51 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "reports": [
+    {
+      "target": "post_calendering_density_g_cm3",
+      "stage": "CALENDERING",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'post_calendering_density_g_cm3'"
+    },
+    {
+      "target": "post_calendering_density_g_cm3",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 48,
+      "groups": 24,
+      "feature_count": 8,
+      "metrics": {
+        "mae": 0.057531783352699234,
+        "rmse": 0.06959875583024878,
+        "r2": 0.9961777385847355
+      }
+    },
+    {
+      "target": "post_calendering_thickness_um",
+      "stage": "CALENDERING",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'post_calendering_thickness_um'"
+    },
+    {
+      "target": "post_calendering_thickness_um",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 48,
+      "groups": 24,
+      "feature_count": 8,
+      "metrics": {
+        "mae": 2.9178787878787875,
+        "rmse": 4.068304997852983,
+        "r2": 0.9697708109853249
+      }
+    }
+  ],
+  "stage_transition_model": {
+    "status": "IMPLEMENTED_NOT_VALIDATED",
+    "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."
+  }
+}

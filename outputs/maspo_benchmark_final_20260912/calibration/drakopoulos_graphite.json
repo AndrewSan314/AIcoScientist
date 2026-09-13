@@ -1,0 +1,14 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "reports": [
+    {
+      "target": "cell_capacity_mah",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 1.0,
+        "calibration_residual_count": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "calibration_residual_count": 4
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "calibration_residual_count": 4
+      }
+    }
+  ]
+}

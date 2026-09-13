@@ -1,0 +1,100 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "reports": [
+    {
+      "target": "post_calendering_density_g_cm3",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 48,
+      "groups": 24,
+      "train_rows": 20,
+      "calibration_rows": 9,
+      "test_rows": 19,
+      "metrics": {
+        "mae": 0.11624978003376148,
+        "rmse": 0.13032552934986005,
+        "r2": 0.9755480738363684
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 0.11624978003376148,
+            "rmse": 0.13032552934986005,
+            "r2": 0.9755480738363684
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 0.10541772466173109,
+            "rmse": 0.12416702882829336,
+            "r2": 0.9778044117986509
+          }
+        },
+        {
+          "model": "GaussianProcessRegressor",
+          "metrics": {
+            "mae": 0.19768770163299307,
+            "rmse": 0.21132513423569316,
+            "r2": 0.9357080811987086
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.8947368421052632,
+        "calibration_residual_count": 9
+      }
+    },
+    {
+      "target": "post_calendering_thickness_um",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 48,
+      "groups": 24,
+      "train_rows": 20,
+      "calibration_rows": 9,
+      "test_rows": 19,
+      "metrics": {
+        "mae": 6.091315789473708,
+        "rmse": 7.454850661939067,
+        "r2": 0.9544981306656038
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 6.091315789473708,
+            "rmse": 7.454850661939067,
+            "r2": 0.9544981306656038
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 6.653947368421048,
+            "rmse": 7.13553500414101,
+            "r2": 0.9583126369056438
+          }
+        },
+        {
+          "model": "GaussianProcessRegressor",
+          "metrics": {
+            "mae": 10.914983306846532,
+            "rmse": 12.785985816105025,
+            "r2": 0.8661495672246875
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 1.0,
+        "calibration_residual_count": 9
+      }
+    }
+  ]
+}

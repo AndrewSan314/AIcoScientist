@@ -1,0 +1,57 @@
+{
+  "latency": {
+    "preprocessing_ms": {
+      "p50": 0.24020002456381917,
+      "p95": 0.4103199811652303,
+      "p99": 0.41822404135018587
+    },
+    "surrogate_prediction_ms": {
+      "p50": 0.6995500298216939,
+      "p95": 0.9893200010992588,
+      "p99": 1.1537840147502718
+    },
+    "total_decision_ms": {
+      "p50": 1.7502999980933964,
+      "p95": 2.4917549686506395,
+      "p99": 2.790511031635105
+    }
+  },
+  "offline_ranking": {
+    "mode": "OFFLINE_RANKING_EVALUATION",
+    "oracle_sample_id": "synthetic-9-1",
+    "selected_sample_id": "synthetic-9-1",
+    "simple_regret": 0.0,
+    "spearman_rank_correlation": 1.0,
+    "status": "AVAILABLE",
+    "top1_match": true,
+    "top_k_recall": 1.0
+  },
+  "test": {
+    "capacity_retention": {
+      "gaussian_nll": -5.811273973525874,
+      "interval_coverage": {
+        "50": 1.0,
+        "80": 1.0,
+        "95": 1.0
+      },
+      "mae": 0.00036044227352928965,
+      "r2": 0.9995334902846128,
+      "rmse": 0.00036119909856509715,
+      "uncertainty_kind": "GP_POSTERIOR_STD"
+    }
+  },
+  "validation": {
+    "capacity_retention": {
+      "gaussian_nll": -5.746353702716013,
+      "interval_coverage": {
+        "50": 1.0,
+        "80": 1.0,
+        "95": 1.0
+      },
+      "mae": 0.00016811157218706482,
+      "r2": 0.9996073492891172,
+      "rmse": 0.0002117470350947148,
+      "uncertainty_kind": "GP_POSTERIOR_STD"
+    }
+  }
+}

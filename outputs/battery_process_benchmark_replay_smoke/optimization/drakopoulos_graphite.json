@@ -1,0 +1,20 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "replays": [
+    {
+      "status": "REVEALED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "proposal_recipe_id": "AS-68",
+      "proposal_controls": {
+        "coating_speed_m_per_min": 100.0,
+        "coating_gap_um": 0.1
+      },
+      "revealed_recipe_id": "AS-68",
+      "revealed_target": 8.860558852962102,
+      "best_so_far": 8.860558852962102,
+      "remaining_hidden": 9
+    }
+  ]
+}

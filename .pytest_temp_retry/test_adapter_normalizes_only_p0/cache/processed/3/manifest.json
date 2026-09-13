@@ -1,0 +1,23 @@
+{
+  "dataset": "artistic",
+  "source_url": "https://github.com/ravinsingh166/Manufacturing-Model-Codes.git",
+  "source_doi": "not applicable: pinned public GitHub source",
+  "version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+  "license": "CC BY-NC-SA 4.0",
+  "downloaded_at": null,
+  "adapter_version": "3",
+  "adapter_git_sha": "56adacdd7171641a8e49b0a4456baca2da1402ab",
+  "schema_version": "3",
+  "processing_parameters": {
+    "normalization": "typed BatteryProcessRun JSON"
+  },
+  "raw_hashes": {
+    "success/physics_output_hashes/workspace/coord_out_cal.data": "output-digest",
+    "success/rendered_input_hashes/workspace/in_slurry.run": "input-digest",
+    "success/simulation_manifest.json": "4b6388757c0da8bda8fa1bb8152b7e0f1b9fdc4c7686298f8dab131c12521bc7"
+  },
+  "processed_hashes": {
+    "normalized_runs.json": "27a8992d2ce82d17b893cdd44919917924fcc3775312e9feaac2449d720a8b8f"
+  },
+  "processed_hash": "27a8992d2ce82d17b893cdd44919917924fcc3775312e9feaac2449d720a8b8f"
+}

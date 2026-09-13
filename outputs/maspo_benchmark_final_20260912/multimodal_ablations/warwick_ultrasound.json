@@ -1,0 +1,37 @@
+{
+  "status": "EVALUATED",
+  "target": "post_calendering_thickness_um",
+  "split": "grouped process-condition holdout",
+  "rows": 48,
+  "groups": 24,
+  "reports": [
+    {
+      "mode": "process_only",
+      "metrics": {
+        "mae": 27.52233333333337,
+        "rmse": 36.18789918819513,
+        "r2": -0.07220563826997828
+      }
+    },
+    {
+      "mode": "signal_only",
+      "metrics": {
+        "mae": 13.839473684210535,
+        "rmse": 19.89197407137211,
+        "r2": 0.6760282722408197
+      }
+    },
+    {
+      "mode": "naive_concatenation",
+      "metrics": {
+        "mae": 15.238596491228087,
+        "rmse": 22.455204153319382,
+        "r2": 0.5871565879265482
+      }
+    }
+  ],
+  "gated_fusion": {
+    "status": "IMPLEMENTED_NOT_VALIDATED",
+    "reason": "GatedMaskedFusion is unit-tested; this small-N benchmark reports auditable scalar baselines without a superiority claim."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "dataset_id": "warwick_ultrasound",
+  "reports": [
+    {
+      "target": "post_calendering_density_g_cm3",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.9090909090909091,
+        "calibration_residual_count": 9
+      }
+    },
+    {
+      "target": "post_calendering_thickness_um",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 1.0,
+        "calibration_residual_count": 9
+      }
+    }
+  ]
+}

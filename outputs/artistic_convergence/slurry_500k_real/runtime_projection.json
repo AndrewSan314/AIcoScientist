@@ -1,0 +1,12 @@
+{
+  "mpi_processes": 4,
+  "observed_steps_per_second": 35.716782963123194,
+  "projected_seconds_20m_from_start": 559960.8458760008,
+  "projected_seconds_by_horizon": {
+    "1000000": 27998.04229380004,
+    "2000000": 55996.08458760008,
+    "20000000": 559960.8458760008
+  },
+  "projected_seconds_remaining_to_20m": 545961.8247291008,
+  "slurry_wall_seconds": 13999.02114690002
+}

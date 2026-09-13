@@ -1,0 +1,23 @@
+{
+  "errors": [],
+  "fidelity_distribution": {
+    "SYNTHETIC": "32"
+  },
+  "field_summaries": {
+    "controls": {
+      "count": 2
+    },
+    "targets": {
+      "count": 1
+    }
+  },
+  "sample_count": 32,
+  "stage_distribution": {
+    "CALENDERING": "32"
+  },
+  "status": "VALID",
+  "target_availability": {
+    "capacity_retention": 32
+  },
+  "warnings": []
+}

@@ -1,0 +1,10 @@
+{
+  "dataset_id": "naion_hte",
+  "reports": [
+    {
+      "target": "last_observed_discharge_capacity_ah",
+      "status": "SKIPPED",
+      "interval": null
+    }
+  ]
+}

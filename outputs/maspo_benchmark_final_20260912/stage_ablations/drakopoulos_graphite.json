@@ -1,0 +1,90 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "reports": [
+    {
+      "target": "cell_capacity_mah",
+      "stage": "FORMULATION",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'cell_capacity_mah'"
+    },
+    {
+      "target": "cell_capacity_mah",
+      "stage": "MIXING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 13,
+      "groups": 13,
+      "feature_count": 5,
+      "metrics": {
+        "mae": 0.6661029334244739,
+        "rmse": 0.8991533505727387,
+        "r2": 0.9281955168644053
+      }
+    },
+    {
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 13,
+      "groups": 13,
+      "feature_count": 5,
+      "metrics": {
+        "mae": 0.6661029334244739,
+        "rmse": 0.8991533505727387,
+        "r2": 0.9281955168644053
+      }
+    },
+    {
+      "target": "cell_capacity_mah",
+      "stage": "DRYING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 13,
+      "groups": 13,
+      "feature_count": 7,
+      "metrics": {
+        "mae": 1.3756973213462678,
+        "rmse": 1.4471455282646482,
+        "r2": 0.8140019288856822
+      }
+    },
+    {
+      "target": "cell_capacity_mah",
+      "stage": "CALENDERING",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 13,
+      "groups": 13,
+      "feature_count": 7,
+      "metrics": {
+        "mae": 1.3756973213462678,
+        "rmse": 1.4471455282646482,
+        "r2": 0.8140019288856822
+      }
+    },
+    {
+      "target": "cell_capacity_mah",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout",
+      "rows": 13,
+      "groups": 13,
+      "feature_count": 7,
+      "metrics": {
+        "mae": 1.3756973213462678,
+        "rmse": 1.4471455282646482,
+        "r2": 0.8140019288856822
+      }
+    }
+  ],
+  "stage_transition_model": {
+    "status": "IMPLEMENTED_NOT_VALIDATED",
+    "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."
+  }
+}

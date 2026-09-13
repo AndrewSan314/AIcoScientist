@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "dataset_id": "warwick_ultrasound",
+    "display_name": "Warwick Ultrasonic Inline QC",
+    "chemistry": "graphite anode / NMC622 cathode",
+    "evidence_kind": "PHYSICAL_HISTORICAL",
+    "source_doi": "10.17632/c62yn37d9h.4",
+    "version": "4",
+    "license": "CC BY 4.0",
+    "process_stages": [
+      "CALENDERING",
+      "FINAL_CHARACTERIZATION"
+    ],
+    "modalities": [
+      "ULTRASOUND_SPECTRUM",
+      "PROCESS_TABULAR"
+    ],
+    "recommended_splits": [
+      "LEAVE_ONE_PROCESS_SETTING_OUT"
+    ],
+    "optimization_capable": false,
+    "multimodal_capable": true,
+    "limitations": "Post-calender spectra are represented but are unavailable at a CALENDERING decision horizon."
+  },
+  "validation": {
+    "valid": true,
+    "errors": []
+  }
+}

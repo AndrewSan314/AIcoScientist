@@ -1,0 +1,68 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "replays": [
+    {
+      "status": "REVEALED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+      "proposal_controls": {
+        "target_coating_weight_gsm": 182.73,
+        "roll_temperature_c": 85.0,
+        "target_density_g_cm3": 3.2,
+        "target_porosity_pct": 28.22,
+        "roll_gap_um": 466.0,
+        "number_of_passes": 2.0
+      },
+      "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+      "revealed_target": 3.109384341,
+      "best_so_far": 3.109384341,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.02941583599999964,
+      "remaining_hidden": 14
+    },
+    {
+      "status": "REVEALED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+      "proposal_controls": {
+        "target_coating_weight_gsm": 182.73,
+        "roll_temperature_c": 85.0,
+        "target_density_g_cm3": 3.2,
+        "target_porosity_pct": 28.22,
+        "roll_gap_um": 466.0,
+        "number_of_passes": 2.0
+      },
+      "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+      "revealed_target": 3.109384341,
+      "best_so_far": 3.109384341,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.02941583599999964,
+      "remaining_hidden": 14
+    },
+    {
+      "status": "REVEALED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+      "proposal_controls": {
+        "target_coating_weight_gsm": 182.73,
+        "roll_temperature_c": 85.0,
+        "target_density_g_cm3": 3.2,
+        "target_porosity_pct": 28.22,
+        "roll_gap_um": 466.0,
+        "number_of_passes": 2.0
+      },
+      "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+      "revealed_target": 3.109384341,
+      "best_so_far": 3.109384341,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.02941583599999964,
+      "remaining_hidden": 14
+    }
+  ]
+}
