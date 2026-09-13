@@ -8,6 +8,7 @@ from typing import Any, Protocol
 
 class SimulationStatus(StrEnum):
     SUCCESS = "Success"
+    STAGE_CUTOFF = "Stage cutoff"
     INVALID_PHYSICS_RUN = "Invalid physics run"
     NUMERICAL_FAILURE = "Numerical failure"
     TIMEOUT = "Timeout"

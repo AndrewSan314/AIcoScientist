@@ -46,6 +46,7 @@ def main() -> int:
     parser.add_argument("--slurry-steps", type=int, help="Explicit short-horizon slurry steps; reference mode is fixed at 20,000,000.")
     parser.add_argument("--dump-interval-steps", type=int, default=1_000_000)
     parser.add_argument("--confirm-reference", action="store_true", help="Confirm an expensive exact 20,000,000-step reference execution.")
+    parser.add_argument("--stop-after", choices=["slurry"], help="Stop successfully after validating the named completed stage.")
     parser.add_argument("--study-dry-run", action="store_true", help="Print the convergence study plan without launching simulations.")
     parser.add_argument("--study-horizons", type=int, nargs="+", help="Optional slurry horizons for --study-dry-run.")
     parser.add_argument("--steps-per-second", type=float, help="Optional measured rate for study runtime estimates.")
@@ -56,7 +57,7 @@ def main() -> int:
     slurry_steps = args.slurry_steps
     if args.study_dry_run and fidelity_mode == FidelityMode.SHORT_HORIZON and slurry_steps is None:
         fidelity_mode = FidelityMode.REFERENCE
-    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=fidelity_mode, slurry_steps=slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference)
+    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=fidelity_mode, slurry_steps=slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference, stop_after=args.stop_after)
     simulator = ArtisticSimulator(config)
     recipe = _recipe(args.recipe)
     if args.study_dry_run:
@@ -74,7 +75,7 @@ def main() -> int:
     if result.status.value == "Success" and not args.no_normalize:
         cache = ArtisticSimulationAdapter.normalize_successful(result, recipe, root=args.normalize_root)
     print(json.dumps({"run_id": result.run_id, "status": result.status, "directory": str(result.run_directory), "normalized_cache": str(cache) if cache else None, "diagnostics": result.diagnostics}, indent=2))
-    return 0 if result.status.value == "Success" else 1
+    return 0 if result.status.value in {"Success", "Stage cutoff"} else 1
 
 
 if __name__ == "__main__":

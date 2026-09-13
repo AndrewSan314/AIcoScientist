@@ -570,6 +570,36 @@ def test_runner_orders_postprocessing_and_records_lineage(pinned_source: Path, t
     assert result.final_outputs["calendered_electrode_thickness"] == 7.0
 
 
+def test_runner_stop_after_slurry_requires_completed_dynamics(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", fidelity_mode=FidelityMode.SHORT_HORIZON, slurry_steps=500_000, dump_interval_steps=50_000, stop_after="slurry")); calls: list[str] = []
+    def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
+        calls.append(stage)
+        (workspace / "coord_in.data").write_text(_data(), encoding="utf-8")
+        (workspace / "coord_out_slurry.data").write_text(_data(), encoding="utf-8")
+        (workspace / "density_slurry.out").write_text("1.0", encoding="utf-8")
+        (workspace / "slurry.log").write_text("Minimization stats\nStep Temp\n287300 300\n787300 300\nLoop time\n", encoding="utf-8")
+        commands.append({"stage": stage, "command": [input_file], "returncode": 0})
+    monkeypatch.setattr(simulator, "_invoke", invoke)
+    result = simulator.execute(_recipe(), run_id="slurry-cutoff")
+    manifest = json.loads((tmp_path / "runs" / "slurry-cutoff" / "manifest.json").read_text(encoding="utf-8"))
+    assert result.status == SimulationStatus.STAGE_CUTOFF
+    assert calls == ["slurry"]
+    assert result.stage_outputs == {"slurry": {"slurry_density": 1.0}}
+    assert manifest["full_pipeline_complete"] is False
+    assert manifest["stage_cutoff"] == {"stage": "slurry", "slurry_status": "SUCCESS", "downstream_status": "NOT_RUN"}
+
+
+def test_runner_stop_after_slurry_rejects_incomplete_dynamics(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", fidelity_mode=FidelityMode.SHORT_HORIZON, slurry_steps=500_000, dump_interval_steps=50_000, stop_after="slurry"))
+    def invoke(workspace: Path, stage: str, input_file: str, commands: list[dict[str, object]], *, python: bool = False) -> None:
+        for name, value in {"coord_in.data": _data(), "coord_out_slurry.data": _data(), "density_slurry.out": "1.0", "slurry.log": "Minimization stats\nStep Temp\n287300 300\n337300 300\nLoop time\n"}.items(): (workspace / name).write_text(value, encoding="utf-8")
+        commands.append({"stage": stage, "command": [input_file], "returncode": 0})
+    monkeypatch.setattr(simulator, "_invoke", invoke)
+    result = simulator.execute(_recipe(), run_id="incomplete-slurry-cutoff")
+    assert result.status == SimulationStatus.NUMERICAL_FAILURE
+    assert "slurry dynamics did not reach the requested step count" in result.diagnostics
+
+
 @pytest.mark.parametrize(("exception", "status"), [(subprocess.TimeoutExpired(["lmp"], 1), SimulationStatus.TIMEOUT), (subprocess.CalledProcessError(1, ["lmp"]), SimulationStatus.NUMERICAL_FAILURE)])
 def test_runner_never_promotes_timeout_or_numerical_failure(pinned_source: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, exception: Exception, status: SimulationStatus) -> None:
     simulator = ArtisticSimulator(ArtisticRunConfig(source_root=pinned_source, output_root=tmp_path / "runs", confirm_reference_execution=True))

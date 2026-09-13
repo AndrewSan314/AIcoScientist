@@ -78,6 +78,7 @@ class ArtisticRunConfig:
     slurry_steps: int | None = None
     dump_interval_steps: int = 1_000_000
     confirm_reference_execution: bool = False
+    stop_after: str | None = None
 
     def __post_init__(self) -> None:
         mode = FidelityMode(self.fidelity_mode)
@@ -88,6 +89,8 @@ class ArtisticRunConfig:
             raise ValueError("lost_particle_tolerance must be in [0, 1]")
         if self.dump_interval_steps < 1:
             raise ValueError("dump_interval_steps must be positive")
+        if self.stop_after not in (None, "slurry"):
+            raise ValueError("stop_after currently supports only 'slurry'")
         if mode == FidelityMode.REFERENCE:
             if self.slurry_steps is not None and self.slurry_steps != REFERENCE_SLURRY_STEPS:
                 raise ValueError(f"reference ARTISTIC fidelity requires exactly {REFERENCE_SLURRY_STEPS:,} slurry steps")

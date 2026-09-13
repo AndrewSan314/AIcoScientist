@@ -63,7 +63,18 @@ class ArtisticSimulator:
             self._invoke(state.workspace, "slurry", "in_slurry.run", commands)
             slurry_outputs = _hashes(state.workspace, "coord_out_slurry.data", "density_slurry.out")
             lineage.append({"boundary": "slurry_output", "output_hashes": slurry_outputs})
-            if recipe.drying_mode == DryingMode.HOMOGENEOUS:
+            if self.config.stop_after == "slurry":
+                parsed = parse_artistic_output(state.workspace)
+                errors = list(output_errors(ArtisticRecipe(slurry=recipe.slurry), state.workspace, parsed, self.config.lost_particle_tolerance))
+                progress = _progress(
+                    state.workspace, commands, self.config.requested_slurry_steps, self.config.dump_interval_steps, None,
+                    minimization_expected=_slurry_minimization_expected(state.workspace),
+                )
+                if progress["completed_slurry_steps"] != self.config.requested_slurry_steps:
+                    errors.append("slurry dynamics did not reach the requested step count")
+                status = SimulationStatus.STAGE_CUTOFF if not errors else SimulationStatus.NUMERICAL_FAILURE
+                result = SimulationResult(status, run_id, state.workspace.parent, parsed.stages, diagnostics=tuple(errors))
+            elif recipe.drying_mode == DryingMode.HOMOGENEOUS:
                 self.renderer.stage(state, "drying_homogeneous", recipe.template_values)
                 _assert_hashes(state.workspace, slurry_outputs)
                 lineage.append({"boundary": "slurry_to_drying", "upstream_output_hashes": slurry_outputs, "downstream_input_hashes": _hashes(state.workspace, *slurry_outputs)})
@@ -80,7 +91,7 @@ class ArtisticSimulator:
                 lineage.append({"boundary": "cbd_generation_to_drying", "upstream_output_hashes": cbd_outputs, "downstream_input_hashes": _hashes(state.workspace, *cbd_outputs)})
                 self._invoke(state.workspace, "drying_heterogeneous", "in_evaporation_freeze.run", commands)
                 self._invoke(state.workspace, "drying_porosity", "pores.py", commands, python=True)
-            if recipe.calendering:
+            if self.config.stop_after != "slurry" and recipe.calendering:
                 self.renderer.stage(state, "calendering", recipe.template_values)
                 drying_outputs = _hashes(state.workspace, "coord_out_electrode.data", "AM_loading.out", "porosity_bulk.out", "porosity_all.out")
                 _assert_hashes(state.workspace, {"coord_out_electrode.data": drying_outputs["coord_out_electrode.data"]})
@@ -88,10 +99,11 @@ class ArtisticSimulator:
                 self._invoke(state.workspace, "calendering_reformat", "Reformatting_cal_electrode.py", commands, python=True)
                 self._invoke(state.workspace, "calendering", "in_cal.run", commands)
                 self._invoke(state.workspace, "calendering_porosity", "pores_cal.py", commands, python=True)
-            parsed = parse_artistic_output(state.workspace)
-            errors = output_errors(recipe, state.workspace, parsed, self.config.lost_particle_tolerance)
-            status = SimulationStatus.INVALID_PHYSICS_RUN if any("particle loss" in error for error in errors) else SimulationStatus.NUMERICAL_FAILURE if errors else SimulationStatus.SUCCESS
-            result = SimulationResult(status, run_id, state.workspace.parent, parsed.stages, parsed.final_kpis, diagnostics=errors)
+            if self.config.stop_after != "slurry":
+                parsed = parse_artistic_output(state.workspace)
+                errors = output_errors(recipe, state.workspace, parsed, self.config.lost_particle_tolerance)
+                status = SimulationStatus.INVALID_PHYSICS_RUN if any("particle loss" in error for error in errors) else SimulationStatus.NUMERICAL_FAILURE if errors else SimulationStatus.SUCCESS
+                result = SimulationResult(status, run_id, state.workspace.parent, parsed.stages, parsed.final_kpis, diagnostics=errors)
         except MPIEnvironmentError as exc:
             mpi_environment = {**mpi_environment, **exc.metadata, "validation_error": str(exc), "validated": False}
             result = SimulationResult(SimulationStatus.ENVIRONMENT_ERROR, run_id, state.workspace.parent if state else self.config.output_root / run_id, diagnostics=(str(exc),))
@@ -170,6 +182,13 @@ class ArtisticSimulator:
                 patches=state.patches if state else (),
             ),
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
+            "requested_stop_after": self.config.stop_after,
+            "full_pipeline_complete": status == SimulationStatus.SUCCESS,
+            "stage_cutoff": {
+                "stage": "slurry",
+                "slurry_status": "SUCCESS",
+                "downstream_status": "NOT_RUN",
+            } if status == SimulationStatus.STAGE_CUTOFF else None,
         }
         progress = _progress(
             state.workspace if state else None, commands, self.config.requested_slurry_steps,
