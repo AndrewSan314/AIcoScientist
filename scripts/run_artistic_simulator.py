@@ -37,6 +37,7 @@ def main() -> int:
     parser.add_argument("--lammps-command", default="lmp")
     parser.add_argument("--mode", choices=[mode.value for mode in ExecutionMode], default=ExecutionMode.LOCAL.value)
     parser.add_argument("--mpi-processes", type=int, default=ArtisticRunConfig().mpi_processes)
+    parser.add_argument("--omp-threads", type=int, default=ArtisticRunConfig().omp_threads)
     parser.add_argument("--mpi-launcher", default=ArtisticRunConfig().mpi_launcher)
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--preflight", action="store_true", help="Report predicted ARTISTIC particle and memory requirements without rendering or running.")
@@ -57,7 +58,7 @@ def main() -> int:
     slurry_steps = args.slurry_steps
     if args.study_dry_run and fidelity_mode == FidelityMode.SHORT_HORIZON and slurry_steps is None:
         fidelity_mode = FidelityMode.REFERENCE
-    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=fidelity_mode, slurry_steps=slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference, stop_after=args.stop_after)
+    config = ArtisticRunConfig(source_root=args.source_root, output_root=args.output_root, lammps_command=args.lammps_command, execution_mode=ExecutionMode(args.mode), mpi_processes=args.mpi_processes, omp_threads=args.omp_threads, mpi_launcher=args.mpi_launcher, max_particle_count=args.max_particle_count, allow_unsafe_particle_count=args.allow_unsafe_particle_count, fidelity_mode=fidelity_mode, slurry_steps=slurry_steps, dump_interval_steps=args.dump_interval_steps, confirm_reference_execution=args.confirm_reference, stop_after=args.stop_after)
     simulator = ArtisticSimulator(config)
     recipe = _recipe(args.recipe)
     if args.study_dry_run:

@@ -67,6 +67,7 @@ class ArtisticRunConfig:
     execution_mode: ExecutionMode = ExecutionMode.LOCAL
     mpi_launcher: str = _default_mpi_launcher()
     mpi_processes: int = 1
+    omp_threads: int = 1
     slurm_submit: str = "sbatch"
     timeout_seconds: int = 86_400
     cleanup_timeout_seconds: float = 5.0
@@ -83,8 +84,8 @@ class ArtisticRunConfig:
     def __post_init__(self) -> None:
         mode = FidelityMode(self.fidelity_mode)
         object.__setattr__(self, "fidelity_mode", mode)
-        if self.mpi_processes < 1 or self.timeout_seconds < 1 or self.cleanup_timeout_seconds <= 0 or self.max_particle_count < 1:
-            raise ValueError("mpi_processes, timeout_seconds, cleanup_timeout_seconds, and max_particle_count must be positive")
+        if self.mpi_processes < 1 or self.omp_threads < 1 or self.timeout_seconds < 1 or self.cleanup_timeout_seconds <= 0 or self.max_particle_count < 1:
+            raise ValueError("mpi_processes, omp_threads, timeout_seconds, cleanup_timeout_seconds, and max_particle_count must be positive")
         if not 0 <= self.lost_particle_tolerance <= 1:
             raise ValueError("lost_particle_tolerance must be in [0, 1]")
         if self.dump_interval_steps < 1:
@@ -106,6 +107,10 @@ class ArtisticRunConfig:
     @property
     def requested_slurry_steps(self) -> int:
         return REFERENCE_SLURRY_STEPS if self.fidelity_mode == FidelityMode.REFERENCE else int(self.slurry_steps)
+
+    @property
+    def lammps_accelerator_args(self) -> tuple[str, ...]:
+        return ("-sf", "omp", "-pk", "omp", str(self.omp_threads)) if self.omp_threads > 1 else ()
 
     @property
     def fidelity_identity(self) -> str:
@@ -195,6 +200,7 @@ def validate_mpi_environment(config: ArtisticRunConfig) -> dict[str, object]:
     metadata: dict[str, object] = {
         "execution_mode": config.execution_mode.value,
         "requested_mpi_processes": config.mpi_processes,
+        "requested_omp_threads": config.omp_threads,
         "mpi_launcher": config.mpi_launcher,
         "resolved_mpi_launcher": resolved_launcher,
         "resolved_lammps_path": resolved_lammps,
@@ -207,7 +213,7 @@ def validate_mpi_environment(config: ArtisticRunConfig) -> dict[str, object]:
     if not resolved_lammps:
         raise MPIEnvironmentError(f"LAMMPS executable does not resolve: {config.lammps_command}", metadata)
 
-    command = [resolved_launcher, "-n", str(config.mpi_processes), resolved_lammps, "-log", "none", "-in", "smoke.in"]
+    command = [resolved_launcher, "-n", str(config.mpi_processes), resolved_lammps, *config.lammps_accelerator_args, "-log", "none", "-in", "smoke.in"]
     metadata["mpi_launcher_command"] = command
     smoke_input = "\n".join((
         "clear", "units lj", "atom_style atomic", "region box block 0 2 0 2 0 2", "create_box 1 box",
@@ -217,7 +223,7 @@ def validate_mpi_environment(config: ArtisticRunConfig) -> dict[str, object]:
         with tempfile.TemporaryDirectory(prefix="artistic-mpi-smoke-") as directory:
             smoke_dir = Path(directory)
             (smoke_dir / "smoke.in").write_text(smoke_input, encoding="utf-8", newline="\n")
-            result = subprocess.run(command, cwd=smoke_dir, capture_output=True, text=True, timeout=min(config.timeout_seconds, 120), check=False)
+            result = subprocess.run(command, cwd=smoke_dir, capture_output=True, text=True, timeout=min(config.timeout_seconds, 120), check=False, env={**os.environ, "OMP_NUM_THREADS": str(config.omp_threads)})
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise MPIEnvironmentError(f"MPI/LAMMPS smoke run failed: {exc}", metadata) from exc
     output = (result.stdout or "") + "\n" + (result.stderr or "")

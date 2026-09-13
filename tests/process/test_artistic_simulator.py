@@ -476,6 +476,27 @@ def test_mpi_validation_proves_one_distributed_job(monkeypatch: pytest.MonkeyPat
     assert metadata["resolved_lammps_path"] == paths["lmp"]
 
 
+def test_mpi_omp_uses_requested_workers(monkeypatch: pytest.MonkeyPatch) -> None:
+    paths = {"mpiexec": r"C:\mpi\mpiexec.exe", "lmp": r"C:\lammps\lmp.exe"}
+    monkeypatch.setattr(config_module.shutil, "which", lambda command: paths.get(command))
+    captured: dict[str, object] = {}
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "-in" in command:
+            captured["command"] = command
+            captured["env"] = kwargs["env"]
+            return subprocess.CompletedProcess(command, 0, "2 by 1 by 1 MPI processor grid\n", "")
+        return subprocess.CompletedProcess(command, 0, "version\n", "")
+
+    monkeypatch.setattr(config_module.subprocess, "run", fake_run)
+    config = ArtisticRunConfig(execution_mode=ExecutionMode.MPI, mpi_processes=2, omp_threads=4, mpi_launcher="mpiexec", lammps_command="lmp")
+    metadata = validate_mpi_environment(config)
+    assert ArtisticSimulator(config)._lammps_command("slurry.run") == ["mpiexec", "-n", "2", "lmp", "-sf", "omp", "-pk", "omp", "4", "-in", "slurry.run"]
+    assert captured["command"] == [paths["mpiexec"], "-n", "2", paths["lmp"], "-sf", "omp", "-pk", "omp", "4", "-log", "none", "-in", "smoke.in"]
+    assert captured["env"]["OMP_NUM_THREADS"] == "4"
+    assert metadata["requested_omp_threads"] == 4
+
+
 def test_mpi_validation_fails_closed_on_grid_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
     paths = {"mpiexec": r"C:\mpi\mpiexec.exe", "lmp": r"C:\lammps\lmp.exe"}
     monkeypatch.setattr(config_module.shutil, "which", lambda command: paths.get(command))

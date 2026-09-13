@@ -139,7 +139,7 @@ class ArtisticSimulator:
         process: subprocess.Popen[str] | None = None
         try:
             with log.open("w", encoding="utf-8", newline="\n") as stream:
-                process = subprocess.Popen(command, cwd=workspace, stdout=stream, stderr=subprocess.STDOUT, text=True, **process_options)
+                process = subprocess.Popen(command, cwd=workspace, stdout=stream, stderr=subprocess.STDOUT, text=True, env={**os.environ, "OMP_NUM_THREADS": str(self.config.omp_threads)}, **process_options)
                 try:
                     process.wait(timeout=self.config.timeout_seconds)
                 except subprocess.TimeoutExpired:
@@ -154,7 +154,7 @@ class ArtisticSimulator:
             raise subprocess.CalledProcessError(process.returncode, command, output=_tail(log))
 
     def _lammps_command(self, input_file: str) -> list[str]:
-        command = [self.config.lammps_command, "-in", input_file]
+        command = [self.config.lammps_command, *self.config.lammps_accelerator_args, "-in", input_file]
         if self.config.execution_mode == ExecutionMode.MPI:
             command = [self.config.mpi_launcher, "-n", str(self.config.mpi_processes), *command]
         return command
@@ -173,7 +173,7 @@ class ArtisticSimulator:
             **source, "run_id": run_id or run_directory.name, "license": "CC BY-NC-SA 4.0", "ai_co_scientist_commit": _git_head(),
             "recipe": _recipe_dict(recipe), "recipe_fingerprint": recipe_fingerprint(recipe), "particle_preflight": particle_estimate.as_dict(), "status": str(status) if status else "PREPARED_NOT_EXECUTED",
             "commands": commands, "executable_versions": {"python": sys.version, "numpy": _package_version("numpy"), "numba": _package_version("numba"), "lammps": _version(self.config.lammps_command)},
-            "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "python_executable": sys.executable},
+            "executable_identity": {"lammps_command": self.config.lammps_command, "lammps_path": shutil.which(self.config.lammps_command), "omp_threads": self.config.omp_threads, "lammps_accelerator_args": self.config.lammps_accelerator_args, "python_executable": sys.executable},
             "mpi_environment": mpi_environment or _initial_mpi_metadata(self.config),
             "rendered_source_file_hashes": state.source_hashes if state else {}, "patches": state.patches if state else [],
             "physics_config_fingerprint": physics_config_fingerprint(
@@ -239,6 +239,7 @@ def _initial_mpi_metadata(config: ArtisticRunConfig) -> dict[str, object]:
     return {
         "execution_mode": config.execution_mode.value,
         "requested_mpi_processes": config.mpi_processes,
+        "requested_omp_threads": config.omp_threads,
         "mpi_launcher": config.mpi_launcher,
         "mpi_launcher_command": [config.mpi_launcher, "-n", str(config.mpi_processes)],
         "resolved_mpi_launcher": launcher,
