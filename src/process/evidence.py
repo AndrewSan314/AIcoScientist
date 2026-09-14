@@ -41,9 +41,26 @@ class EvidenceReplayResult:
 
 
 class EvidenceAcquisitionPolicy(str, Enum):
+    RANDOM_LEGAL_EVIDENCE = "RANDOM_LEGAL_EVIDENCE"
+    CHEAPEST_LEGAL_EVIDENCE = "CHEAPEST_LEGAL_EVIDENCE"
     MAX_PREDICTIVE_VARIANCE_REDUCTION = "MAX_PREDICTIVE_VARIANCE_REDUCTION"
     EXPECTED_INFORMATION_VALUE_PER_COST = "EXPECTED_INFORMATION_VALUE_PER_COST"
     NO_ADDITIONAL_EVIDENCE = "NO_ADDITIONAL_EVIDENCE"
+
+
+@dataclass(frozen=True)
+class EvidencePolicyReplayEvaluation:
+    policy: EvidenceAcquisitionPolicy
+    selected_modality_id: str | None
+    evidence_cost: float
+    evidence_latency_seconds: float
+    final_decision_regret_before: float | None
+    final_decision_regret_after: float | None
+    prediction_error_before: float | None
+    prediction_error_after: float | None
+    predictive_uncertainty_before: float | None
+    predictive_uncertainty_after: float | None
+    utility_per_cost: float | None
 
 
 def _choose_scored_evidence(options: tuple[EvidenceOption, ...], estimates: Mapping[str, float], *, divide_by_cost: bool) -> EvidenceOption | None:
@@ -68,10 +85,19 @@ def choose_evidence(
     *,
     estimated_variance_reduction: Mapping[str, float] | None = None,
     estimated_decision_utility: Mapping[str, float] | None = None,
+    seed: int = 0,
 ) -> EvidenceOption | None:
     """Choose from declared pre-reveal estimates; this function never accesses withheld evidence."""
     if policy is EvidenceAcquisitionPolicy.NO_ADDITIONAL_EVIDENCE:
         return None
+    if any(not option.available or option.observed or not option.compatible for option in options):
+        raise ValueError("evidence policies reject unavailable, observed, or incompatible options")
+    if policy is EvidenceAcquisitionPolicy.RANDOM_LEGAL_EVIDENCE:
+        if len({option.modality_id for option in options}) != len(options):
+            raise ValueError("evidence option ids must be unique")
+        return sorted(options, key=lambda option: option.modality_id)[seed % len(options)] if options else None
+    if policy is EvidenceAcquisitionPolicy.CHEAPEST_LEGAL_EVIDENCE:
+        return min(options, default=None, key=lambda option: (option.cost, option.latency_seconds, option.modality_id))
     if policy is EvidenceAcquisitionPolicy.MAX_PREDICTIVE_VARIANCE_REDUCTION:
         if estimated_variance_reduction is None:
             raise ValueError("variance-reduction policy requires declared variance estimates")
@@ -81,6 +107,49 @@ def choose_evidence(
             raise ValueError("EVI-per-cost policy requires declared decision-utility estimates")
         return _choose_scored_evidence(options, estimated_decision_utility, divide_by_cost=True)
     raise ValueError(f"unsupported evidence acquisition policy: {policy!r}")
+
+
+def _optional_metric(metrics: Mapping[str, float], name: str) -> float | None:
+    value = metrics.get(name)
+    if value is None:
+        return None
+    value = float(value)
+    if not math.isfinite(value):
+        raise ValueError(f"evidence replay metric {name!r} must be finite")
+    return value
+
+
+def evaluate_blinded_evidence_policy(
+    visible_observations: Mapping[str, Any],
+    withheld_observations: Mapping[str, Any],
+    options: list[EvidenceOption],
+    *,
+    policy: EvidenceAcquisitionPolicy,
+    decision_stage: ProcessStage | HorizonView,
+    evaluate_visible: Callable[[Mapping[str, Any]], Mapping[str, float]],
+    estimated_variance_reduction: Mapping[str, float] | None = None,
+    estimated_decision_utility: Mapping[str, float] | None = None,
+    seed: int = 0,
+) -> EvidencePolicyReplayEvaluation:
+    """Evaluate an evidence policy through the same select-before-reveal firewall."""
+    before = dict(evaluate_visible(dict(visible_observations)))
+    replay = replay_blinded_evidence(
+        visible_observations,
+        withheld_observations,
+        options,
+        lambda _visible, choices: choose_evidence(choices, policy, estimated_variance_reduction=estimated_variance_reduction, estimated_decision_utility=estimated_decision_utility, seed=seed),
+        decision_stage=decision_stage,
+    )
+    after = dict(evaluate_visible(replay.visible_observations))
+    regret_before, regret_after = _optional_metric(before, "final_decision_regret"), _optional_metric(after, "final_decision_regret")
+    utility_per_cost = (regret_before - regret_after) / replay.acquired_cost if replay.acquired_cost and regret_before is not None and regret_after is not None else None
+    return EvidencePolicyReplayEvaluation(
+        policy, replay.selected_modality_id, replay.acquired_cost, replay.acquired_latency_seconds,
+        regret_before, regret_after,
+        _optional_metric(before, "prediction_error"), _optional_metric(after, "prediction_error"),
+        _optional_metric(before, "predictive_uncertainty"), _optional_metric(after, "predictive_uncertainty"),
+        utility_per_cost,
+    )
 
 
 def choose_cost_aware_evidence(

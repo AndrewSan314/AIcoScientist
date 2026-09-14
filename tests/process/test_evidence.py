@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.process.evidence import EvidenceAcquisitionPolicy, EvidenceOption, choose_cost_aware_evidence, choose_evidence, replay_blinded_evidence
+from src.process.evidence import EvidenceAcquisitionPolicy, EvidenceOption, choose_cost_aware_evidence, choose_evidence, evaluate_blinded_evidence_policy, replay_blinded_evidence
 from src.process.information_horizon import HorizonView
 from src.process.stages import ProcessStage
 
@@ -78,3 +78,20 @@ def test_evidence_policy_choices_are_pre_reveal_and_fail_closed() -> None:
     assert choose_evidence((cheap,), EvidenceAcquisitionPolicy.NO_ADDITIONAL_EVIDENCE) is None
     with pytest.raises(ValueError, match="unavailable"):
         choose_evidence((_option("hidden", available=False),), EvidenceAcquisitionPolicy.MAX_PREDICTIVE_VARIANCE_REDUCTION, estimated_variance_reduction={"hidden": 1.0})
+
+
+def test_blinded_evidence_policy_evaluation_records_pre_and_post_reveal_metrics() -> None:
+    cheap, expensive = _option("cheap", cost=1.0), _option("expensive", cost=4.0)
+    evaluation = evaluate_blinded_evidence_policy(
+        {"process": 1}, {"cheap": 2, "expensive": 3}, [cheap, expensive],
+        policy=EvidenceAcquisitionPolicy.EXPECTED_INFORMATION_VALUE_PER_COST,
+        decision_stage=ProcessStage.CALENDERING,
+        estimated_decision_utility={"cheap": 0.5, "expensive": 1.0},
+        evaluate_visible=lambda visible: {"final_decision_regret": float(3 - len(visible)), "prediction_error": float(2 - len(visible)), "predictive_uncertainty": float(4 - len(visible))},
+    )
+    assert evaluation.selected_modality_id == "cheap"
+    assert evaluation.final_decision_regret_before == 2.0
+    assert evaluation.final_decision_regret_after == 1.0
+    assert evaluation.utility_per_cost == 1.0
+    assert choose_evidence((cheap, expensive), EvidenceAcquisitionPolicy.CHEAPEST_LEGAL_EVIDENCE) == cheap
+    assert choose_evidence((cheap, expensive), EvidenceAcquisitionPolicy.RANDOM_LEGAL_EVIDENCE, seed=1) == expensive
