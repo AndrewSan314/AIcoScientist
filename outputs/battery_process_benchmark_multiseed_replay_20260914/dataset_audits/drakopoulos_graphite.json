@@ -1,0 +1,34 @@
+{
+  "metadata": {
+    "dataset_id": "drakopoulos_graphite",
+    "display_name": "Graphite Process-15",
+    "chemistry": "graphite Li-ion electrode",
+    "evidence_kind": "PHYSICAL_HISTORICAL",
+    "source_doi": "10.17632/4dh2h3tsf4.1",
+    "version": "1",
+    "license": "CC BY 4.0",
+    "process_stages": [
+      "FORMULATION",
+      "MIXING",
+      "COATING",
+      "DRYING",
+      "CALENDERING",
+      "FINAL_CHARACTERIZATION"
+    ],
+    "modalities": [
+      "PROCESS_TABULAR",
+      "SCALAR_METROLOGY"
+    ],
+    "recommended_splits": [
+      "GROUP_BY_PROCESS_RECIPE",
+      "OOD_FACTOR_EXTREME"
+    ],
+    "optimization_capable": true,
+    "multimodal_capable": false,
+    "limitations": "Parser covers AS cells with numeric 372 mAh/g cell-capacity records; other source workbooks remain inventory-only."
+  },
+  "validation": {
+    "valid": true,
+    "errors": []
+  }
+}

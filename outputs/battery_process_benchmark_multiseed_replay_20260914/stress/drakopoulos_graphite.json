@@ -1,0 +1,6 @@
+{
+  "status": "NOT_EVALUATED",
+  "reason": "source extremes do not produce a disjoint grouped holdout",
+  "train_rows": 1,
+  "test_rows": 12
+}
