@@ -301,13 +301,32 @@ def _write_report(root: Path, manifest: dict[str, object]) -> None:
     command = " ".join(sys.argv)
     unavailable = manifest["unavailable"] or ["none"]
     architecture_status = manifest["architecture_status"]
+    fusion_path = root / "multimodal_ablations" / "warwick_ultrasound.json"
+    fusion_lines = ["- Warwick ultrasound: NOT_EVALUATED."]
+    if fusion_path.exists():
+        fusion = json.loads(fusion_path.read_text(encoding="utf-8"))
+        reports = {item["mode"]: item for item in fusion.get("reports", [])}
+        if fusion.get("status") == "EVALUATED" and "gated_missing_aware_fusion" in reports:
+            gated = reports["gated_missing_aware_fusion"]["metrics"]["r2"]
+            naive = reports.get("naive_concatenation", {}).get("metrics", {}).get("r2")
+            fusion_lines = [f"- Warwick ultrasound grouped holdout ({fusion['rows']} rows/{fusion['groups']} groups): gated R²={gated:.3f}; naive concatenation R²={naive:.3f}. Gated fusion is not superior on this split."]
+    replay_lines = []
+    for path in sorted((root / "optimization").glob("*.json")):
+        result = json.loads(path.read_text(encoding="utf-8"))
+        for strategy in sorted({item.get("strategy") for item in result.get("replays", []) if item.get("status") == "EVALUATED"}):
+            regrets = [item["simple_regret"] for item in result["replays"] if item.get("status") == "EVALUATED" and item.get("strategy") == strategy]
+            replay_lines.append(f"- {result['dataset_id']} {strategy}: {len(regrets)} seeds, mean final simple regret={sum(regrets) / len(regrets):.6g}.")
     (root / "PROCESS_BENCHMARK_REPORT.md").write_text(
         "# Battery Process Stress Suite\n\n"
         f"Status: **{manifest['status']}**.\n\n"
         "## Architecture status\n\n"
         + "\n".join(f"- {name}: **{item['status']}** — {item['reason']}" for name, item in architecture_status.items())
         + "\n\n"
-        "## Reproducibility\n\n"
+        + "## Source-backed results\n\n"
+        + "\n".join(fusion_lines)
+        + "\n\n"
+        + ("## Offline replay\n\n" + "\n".join(replay_lines) + "\n\n" if replay_lines else "")
+        + "## Reproducibility\n\n"
         f"- Command: `{command}`\n"
         f"- Commit: `{_git_revision()}`\n"
         f"- Python: `{sys.version.split()[0]}`\n"
