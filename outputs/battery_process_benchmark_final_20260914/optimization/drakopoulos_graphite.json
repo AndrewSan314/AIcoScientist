@@ -1,0 +1,779 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "replays": [
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-21",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-21",
+          "revealed_target": 9.872701518770816,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.019939799996791407
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-58",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-58",
+          "revealed_target": 8.07160724441687,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.01720230000501033
+        }
+      ],
+      "best_so_far": 9.872701518770816,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.1748682891684332,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.03714210000180174,
+      "p50_decision_latency_seconds": 0.01857105000090087,
+      "p95_decision_latency_seconds": 0.019802924997202355
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-58",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-58",
+          "revealed_target": 8.07160724441687,
+          "best_so_far": 8.07160724441687,
+          "simple_regret": 2.97596256352238,
+          "decision_latency_seconds": 0.017075600000680424
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 9.21568442603717,
+          "simple_regret": 1.8318853819020795,
+          "decision_latency_seconds": 0.015155000000959262
+        }
+      ],
+      "best_so_far": 9.21568442603717,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.8318853819020795,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.032230600001639687,
+      "p50_decision_latency_seconds": 0.016115300000819843,
+      "p95_decision_latency_seconds": 0.016979570000694368
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-68",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 100.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-68",
+          "revealed_target": 8.860558852962102,
+          "best_so_far": 8.860558852962102,
+          "simple_regret": 2.187010954977147,
+          "decision_latency_seconds": 0.02148049999959767
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.018794500007061288
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.040275000006658956,
+      "p50_decision_latency_seconds": 0.020137500003329478,
+      "p95_decision_latency_seconds": 0.02134619999997085
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-21",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-21",
+          "revealed_target": 9.872701518770816,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 1.1930286999995587
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.1302278000075603
+        }
+      ],
+      "best_so_far": 9.872701518770816,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.1748682891684332,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 1.323256500007119,
+      "p50_decision_latency_seconds": 0.6616282500035595,
+      "p95_decision_latency_seconds": 1.1398886549999587
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-21",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-21",
+          "revealed_target": 9.872701518770816,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.1446565000078408
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.13405760000750888
+        }
+      ],
+      "best_so_far": 9.872701518770816,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.1748682891684332,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.2787141000153497,
+      "p50_decision_latency_seconds": 0.13935705000767484,
+      "p95_decision_latency_seconds": 0.1441265550078242
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-21",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 80.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-21",
+          "revealed_target": 9.872701518770816,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.13434639999468345
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 9.872701518770816,
+          "simple_regret": 1.1748682891684332,
+          "decision_latency_seconds": 0.14999099999840837
+        }
+      ],
+      "best_so_far": 9.872701518770816,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.1748682891684332,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.2843373999930918,
+      "p50_decision_latency_seconds": 0.1421686999965459,
+      "p95_decision_latency_seconds": 0.14920876999822213
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.14286229999561328
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.15654330000688788
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.29940560000250116,
+      "p50_decision_latency_seconds": 0.14970280000125058,
+      "p95_decision_latency_seconds": 0.15585925000632414
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.14588359999470413
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.15728039998793975
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.3031639999826439,
+      "p50_decision_latency_seconds": 0.15158199999132194,
+      "p95_decision_latency_seconds": 0.15671055998827796
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.13437970000086352
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.15836800000397488
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.2927477000048384,
+      "p50_decision_latency_seconds": 0.1463738500024192,
+      "p95_decision_latency_seconds": 0.1571685850038193
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.14157340000383556
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.15580310000223108
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.29737650000606664,
+      "p50_decision_latency_seconds": 0.14868825000303332,
+      "p95_decision_latency_seconds": 0.1550916150023113
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.13717679999535903
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.14884020001045428
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.2860170000058133,
+      "p50_decision_latency_seconds": 0.14300850000290666,
+      "p95_decision_latency_seconds": 0.14825703000969953
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.1452203999942867
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.15521630000148434
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.30043669999577105,
+      "p50_decision_latency_seconds": 0.15021834999788553,
+      "p95_decision_latency_seconds": 0.15471650500112447
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.16351149999536574
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.17334910000499804
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.3368606000003638,
+      "p50_decision_latency_seconds": 0.1684303000001819,
+      "p95_decision_latency_seconds": 0.17285722000451642
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.15570400000433438
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.1727581999875838
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.32846219999191817,
+      "p50_decision_latency_seconds": 0.16423109999595908,
+      "p95_decision_latency_seconds": 0.1719054899884213
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 6.620806476241125,
+          "simple_regret": 4.426763331698124,
+          "decision_latency_seconds": 0.16488670000398997
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.1778201999986777
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.3427069000026677,
+      "p50_decision_latency_seconds": 0.17135345000133384,
+      "p95_decision_latency_seconds": 0.17717352499894332
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 42,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-68",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 100.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-68",
+          "revealed_target": 8.860558852962102,
+          "best_so_far": 8.860558852962102,
+          "simple_regret": 2.187010954977147,
+          "decision_latency_seconds": 0.14274969999678433
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 8.860558852962102,
+          "simple_regret": 2.187010954977147,
+          "decision_latency_seconds": 0.1669283999945037
+        }
+      ],
+      "best_so_far": 8.860558852962102,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 2.187010954977147,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.30967809999128804,
+      "p50_decision_latency_seconds": 0.15483904999564402,
+      "p95_decision_latency_seconds": 0.16571946499461773
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 43,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 9.21568442603717,
+          "simple_regret": 1.8318853819020795,
+          "decision_latency_seconds": 0.13990999999805354
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-80",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.5
+          },
+          "revealed_recipe_id": "AS-80",
+          "revealed_target": 6.620806476241125,
+          "best_so_far": 9.21568442603717,
+          "simple_regret": 1.8318853819020795,
+          "decision_latency_seconds": 0.19661789998644963
+        }
+      ],
+      "best_so_far": 9.21568442603717,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 1.8318853819020795,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.33652789998450316,
+      "p50_decision_latency_seconds": 0.16826394999225158,
+      "p95_decision_latency_seconds": 0.1937825049870298
+    },
+    {
+      "status": "EVALUATED",
+      "target": "cell_capacity_mah",
+      "stage": "COATING",
+      "seed": 44,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "AS-104",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.3
+          },
+          "revealed_recipe_id": "AS-104",
+          "revealed_target": 11.047569807939249,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.13962389998778235
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "AS-72",
+          "proposal_controls": {
+            "coating_speed_m_per_min": 120.0,
+            "coating_gap_um": 0.1
+          },
+          "revealed_recipe_id": "AS-72",
+          "revealed_target": 9.21568442603717,
+          "best_so_far": 11.047569807939249,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.18129780000890605
+        }
+      ],
+      "best_so_far": 11.047569807939249,
+      "oracle_best": 11.047569807939249,
+      "simple_regret": 0.0,
+      "remaining_hidden": 8,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.3209216999966884,
+      "p50_decision_latency_seconds": 0.1604608499983442,
+      "p95_decision_latency_seconds": 0.17921410500784987
+    }
+  ]
+}

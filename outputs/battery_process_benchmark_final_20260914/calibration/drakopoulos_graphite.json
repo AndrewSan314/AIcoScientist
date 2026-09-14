@@ -1,0 +1,37 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "reports": [
+    {
+      "target": "cell_capacity_mah",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.75,
+        "mean_interval_width": 4.5584873042908285,
+        "calibration_residual_count": 3
+      },
+      "intervals": {
+        "50": {
+          "nominal_coverage": 0.5,
+          "empirical_coverage": 0.0,
+          "mean_interval_width": 0.6312685953012611
+        },
+        "80": {
+          "nominal_coverage": 0.8,
+          "empirical_coverage": 0.75,
+          "mean_interval_width": 4.5584873042908285
+        },
+        "90": {
+          "nominal_coverage": 0.9,
+          "empirical_coverage": 0.75,
+          "mean_interval_width": 4.5584873042908285
+        },
+        "95": {
+          "nominal_coverage": 0.95,
+          "empirical_coverage": 0.75,
+          "mean_interval_width": 4.5584873042908285
+        }
+      }
+    }
+  ]
+}
