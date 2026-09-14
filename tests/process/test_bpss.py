@@ -28,6 +28,7 @@ def test_ultrasound_gated_fusion_is_source_backed_and_reports_dropout_stress() -
     partial = [item for item in report["reports"] if item["mode"] == "gated_fusion_partial_signal_dropout"]
     assert [item["requested_dropout_rate"] for item in partial] == [0.10, 0.25, 0.50, 0.75]
     assert all(item["missing_modality"] == "ultrasound" and item["derived_stress"] for item in partial)
+    assert all(item["evidence_kind"] == "SIMULATED_STRESS" and item["dropped_source_run_ids"] and item["stress_transform_fingerprint"] for item in partial)
 
 
 def test_latency_report_records_warmup_and_tail_quantiles() -> None:

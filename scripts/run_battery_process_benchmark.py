@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import subprocess
@@ -248,14 +249,16 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
         spectrum = next((item for item in stage.modalities if item.modality_id.endswith("before_spectrum")), None) if stage else None
         if target is None or not isinstance(target.value, (int, float)) or spectrum is None:
             continue
-        rows.append((dict(stage.controls), encoder.encode(spectrum.values["fft_magnitude"]), float(target.value), run.batch_id or run.run_id))
+        rows.append((dict(stage.controls), encoder.encode(spectrum.values["fft_magnitude"]), float(target.value), run.batch_id or run.run_id, run.run_id, run.identity_fingerprint))
     if len(rows) < 8 or len({row[3] for row in rows}) < 4:
         return {"status": "NOT_EVALUATED", "reason": "insufficient grouped paired process/spectrum rows"}
-    columns = sorted({name for controls, _, _, _ in rows for name in controls})
-    process = np.asarray([[float(controls[name].value) if name in controls else 0.0 for name in columns] + [float(name in controls) for name in columns] for controls, _, _, _ in rows])
-    signal = np.asarray([features for _, features, _, _ in rows])
-    target = np.asarray([value for _, _, value, _ in rows])
-    groups = np.asarray([group for _, _, _, group in rows])
+    columns = sorted({name for controls, _, _, _, _, _ in rows for name in controls})
+    process = np.asarray([[float(controls[name].value) if name in controls else 0.0 for name in columns] + [float(name in controls) for name in columns] for controls, _, _, _, _, _ in rows])
+    signal = np.asarray([features for _, features, _, _, _, _ in rows])
+    target = np.asarray([value for _, _, value, _, _, _ in rows])
+    groups = np.asarray([group for _, _, _, group, _, _ in rows])
+    run_ids = np.asarray([run_id for _, _, _, _, run_id, _ in rows])
+    source_fingerprint = hashlib.sha256(json.dumps(sorted((run_id, fingerprint) for _, _, _, _, run_id, fingerprint in rows), separators=(",", ":")).encode()).hexdigest()
     train, test = next(GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=seed).split(process, target, groups))
     reports = []
     for name, features in {"process_only": process, "signal_only": signal, "naive_concatenation": np.column_stack((process, signal))}.items():
@@ -265,16 +268,19 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     reports.append({"mode": "gated_missing_aware_fusion", "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale))})
     cross_attention, cross_scale = _fit_cross_attention_fusion(process[train], signal[train], target[train], seed=seed)
     reports.append({"mode": "cross_attention_set_fusion", "experimental": True, "metrics": _metrics(target[test], _predict_gated_fusion(cross_attention, process[test], signal[test], cross_scale))})
-    reports.append({"mode": "gated_fusion_signal_dropout", "derived_stress": True, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=False))})
+    full_drop_ids = sorted(run_ids[test].tolist())
+    full_transform = {"kind": "ultrasound_availability_mask", "source_fingerprint": source_fingerprint, "seed": seed, "dropped_source_run_ids": full_drop_ids}
+    reports.append({"mode": "gated_fusion_signal_dropout", "derived_stress": True, "evidence_kind": "SIMULATED_STRESS", "stress_transform_fingerprint": hashlib.sha256(json.dumps(full_transform, sort_keys=True, separators=(",", ":")).encode()).hexdigest(), **full_transform, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=False))})
     rng = np.random.default_rng(seed)
     for rate in (0.10, 0.25, 0.50, 0.75):
         unavailable = rng.permutation(len(test))[:max(1, round(rate * len(test)))]
         available = np.ones(len(test), dtype=bool)
         available[unavailable] = False
-        reports.append({"mode": "gated_fusion_partial_signal_dropout", "derived_stress": True, "missing_modality": "ultrasound", "requested_dropout_rate": rate, "realized_dropout_rate": float((~available).mean()), "seed": seed, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=available))})
+        transform = {"kind": "ultrasound_availability_mask", "source_fingerprint": source_fingerprint, "seed": seed, "dropped_source_run_ids": sorted(run_ids[test[unavailable]].tolist()), "requested_dropout_rate": rate}
+        reports.append({"mode": "gated_fusion_partial_signal_dropout", "derived_stress": True, "evidence_kind": "SIMULATED_STRESS", "missing_modality": "ultrasound", "requested_dropout_rate": rate, "realized_dropout_rate": float((~available).mean()), "stress_transform_fingerprint": hashlib.sha256(json.dumps(transform, sort_keys=True, separators=(",", ":")).encode()).hexdigest(), **transform, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=available))})
     return {
         "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
-        "rows": len(rows), "groups": len(set(groups)), "reports": reports,
+        "rows": len(rows), "groups": len(set(groups)), "source_fingerprint": source_fingerprint, "reports": reports,
         "gated_fusion": {"status": "EVALUATED", "model": "GatedMaskedFusion with train-only standardized source descriptors", "reason": "Small grouped holdout; report only, without a superiority claim."},
         "cross_attention": {"status": "EVALUATED", "model": "CrossAttentionSetFusion with learned query and modality-type embeddings", "reason": "Experimental small-data comparator; report only, without a superiority claim."},
     }
