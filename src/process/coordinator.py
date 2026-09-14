@@ -80,8 +80,11 @@ class ProcessOptimizationCoordinator:
         *,
         n: int = 1,
         seed: int | None = None,
+        strategy: str | None = None,
     ) -> list[ProcessControlProposal]:
         if objective.is_multiobjective:
+            if strategy is not None:
+                raise UnsupportedProcessOptimizationError("multi-objective process strategy selection is unsupported; use the official qNEHVI path")
             backend = self.multiobjective_backend or OfficialMultiObjectiveBoTorch()
             return backend.propose(observations, space, objective, n=n, seed=seed)
         target = objective.objectives[0]
@@ -104,7 +107,7 @@ class ProcessOptimizationCoordinator:
             candidate_id_column=backend_space.id_column,
             n=n,
             seed=seed,
-            strategy="noisy_expected_improvement",
+            strategy=strategy or "noisy_expected_improvement",
         )
         fingerprint = hashlib.sha256(pd.util.hash_pandas_object(observations, index=True).values.tobytes()).hexdigest()
         source_candidates = constrained_space.candidates.set_index(constrained_space.id_column)

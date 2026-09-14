@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,7 @@ OOD_TASKS = {
     "drakopoulos_graphite": ("cell_capacity_mah", "coating.coating_speed_m_per_min"),
     "warwick_nmc622": ("calendered_density_g_cm3", "calendering.roll_gap_um"),
 }
+REPLAY_STRATEGIES = ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "thompson")
 
 
 def _metrics(actual: np.ndarray, predicted: np.ndarray) -> dict[str, float | None]:
@@ -89,30 +91,40 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
     return reports
 
 
-def _offline_replay(adapter, *, seed: int) -> dict[str, object]:
+def _offline_replay(adapter, *, seed: int, strategy: str, max_steps: int) -> dict[str, object]:
     task_definition = REPLAY_TASKS.get(adapter.metadata().dataset_id)
     if task_definition is None:
-        return {"status": "NOT_EVALUATED", "reason": "no audited recipe-level replay target"}
+        return {"status": "NOT_EVALUATED", "strategy": strategy, "reason": "no audited recipe-level replay target"}
     target, stage = task_definition
     task = ProcessOptimizationTask(target, stage)
     replay = adapter.build_replay_frame(task)
     if len(replay) <= 3:
-        return {"status": "NOT_EVALUATED", "reason": "fewer than four source recipes"}
+        return {"status": "NOT_EVALUATED", "strategy": strategy, "reason": "fewer than four source recipes"}
     observed, hidden = replay.iloc[:3].copy(), replay.iloc[3:].copy()
-    try:
-        proposal = ProcessOptimizationCoordinator().propose_recipes(
-            observed, adapter.build_optimization_space(task), ProcessOptimizationObjective([ObjectiveSpec(target, "maximize")]), seed=seed,
-        )[0]
-    except RuntimeError as exc:
-        return {"status": "BLOCKED_EXTERNAL", "reason": str(exc)}
-    observed, hidden, revealed = reveal_one(observed, hidden, recipe_id=proposal.source_recipe_id or "", id_column="recipe_id", target=target)
-    best_so_far = float(observed[target].max())
     oracle_best = float(replay[target].max())
+    trajectory = []
+    for step in range(min(max_steps, len(hidden))):
+        started = time.perf_counter()
+        try:
+            proposal = ProcessOptimizationCoordinator().propose_recipes(
+                observed, adapter.build_optimization_space(task), ProcessOptimizationObjective([ObjectiveSpec(target, "maximize")]), seed=seed + step, strategy=strategy,
+            )[0]
+        except RuntimeError as exc:
+            return {"status": "BLOCKED_EXTERNAL", "strategy": strategy, "reason": str(exc), "trajectory": trajectory}
+        latency = time.perf_counter() - started
+        observed, hidden, revealed = reveal_one(observed, hidden, recipe_id=proposal.source_recipe_id or "", id_column="recipe_id", target=target)
+        best_so_far = float(observed[target].max())
+        trajectory.append({
+            "decision": step + 1, "proposal_recipe_id": proposal.source_recipe_id, "proposal_controls": proposal.controls,
+            "revealed_recipe_id": revealed.recipe_id, "revealed_target": revealed.revealed_target,
+            "best_so_far": best_so_far, "simple_regret": max(0.0, oracle_best - best_so_far), "decision_latency_seconds": latency,
+        })
+    latencies = np.asarray([item["decision_latency_seconds"] for item in trajectory], dtype=float)
     return {
-        "status": "EVALUATED", "target": target, "stage": stage.value, "seed": seed,
-        "proposal_recipe_id": proposal.source_recipe_id, "proposal_controls": proposal.controls,
-        "revealed_recipe_id": revealed.recipe_id, "revealed_target": revealed.revealed_target,
-        "best_so_far": best_so_far, "oracle_best": oracle_best, "simple_regret": max(0.0, oracle_best - best_so_far), "remaining_hidden": len(hidden),
+        "status": "EVALUATED", "target": target, "stage": stage.value, "seed": seed, "strategy": strategy,
+        "trajectory": trajectory, "best_so_far": trajectory[-1]["best_so_far"], "oracle_best": oracle_best,
+        "simple_regret": trajectory[-1]["simple_regret"], "remaining_hidden": len(hidden), "process_decisions": len(trajectory),
+        "total_decision_latency_seconds": float(latencies.sum()), "p50_decision_latency_seconds": float(np.quantile(latencies, 0.5)), "p95_decision_latency_seconds": float(np.quantile(latencies, 0.95)),
     }
 
 
@@ -261,7 +273,11 @@ def main() -> None:
     parser.add_argument("--allow-unavailable", action="store_true", help="Write an audit-only manifest when raw source data have not been acquired.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--replay-seeds", type=int, default=3)
+    parser.add_argument("--replay-strategies", choices=REPLAY_STRATEGIES, nargs="+", default=REPLAY_STRATEGIES)
+    parser.add_argument("--replay-steps", type=int, default=3)
     args = parser.parse_args()
+    if args.replay_steps < 1:
+        parser.error("--replay-steps must be positive")
     root = args.output
     for directory in ("dataset_audits", "prediction", "calibration", "multimodal_ablations", "missing_modality", "stage_ablations", "optimization", "stress", "figures"):
         (root / directory).mkdir(parents=True, exist_ok=True)
@@ -302,14 +318,14 @@ def main() -> None:
         (root / "missing_modality" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "status": ablation["status"], "policy": "An unavailable modality is omitted, never zero-filled.", "process_only_reference": next((item for item in ablation.get("reports", []) if item["mode"] == "process_only"), None)}, indent=2), encoding="utf-8")
         (root / "stage_ablations" / f"{dataset_id}.json").write_text(json.dumps(_stage_ablation(adapter, seed=args.seed), indent=2), encoding="utf-8")
         (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(_extreme_ood_stress(adapter, seed=args.seed), indent=2), encoding="utf-8")
-        replays = [_offline_replay(adapter, seed=args.seed + offset) for offset in range(args.replay_seeds)]
+        replays = [_offline_replay(adapter, seed=args.seed + offset, strategy=strategy, max_steps=args.replay_steps) for strategy in args.replay_strategies for offset in range(args.replay_seeds)]
         (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
         if any(replay["status"] == "EVALUATED" for replay in replays):
             replayed.append(dataset_id)
     manifest = {
         "suite": "BPSS", "datasets": audits, "status": "PARTIAL" if unavailable else "READY", "unavailable": unavailable,
-        "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds,
+        "evaluated": evaluated, "replayed": replayed, "seed": args.seed, "replay_seeds": args.replay_seeds, "replay_strategies": args.replay_strategies, "replay_steps": args.replay_steps,
         "architecture_status": {
             "scalar_contextual_stage_optimizer": {
                 "status": "IMPLEMENTED_NOT_VALIDATED",
