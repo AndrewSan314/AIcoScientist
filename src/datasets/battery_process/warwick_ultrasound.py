@@ -16,6 +16,7 @@ class WarwickUltrasoundAdapter(NormalizedRunAdapter):
     """V4 FFT signal adapter; before/after signals remain distinct source modalities."""
 
     ADAPTER_VERSION = "2"
+    ACCEPTED_EVIDENCE_KINDS = ("PHYSICAL_HISTORICAL", "TEST_FIXTURE")
 
     def metadata(self) -> BatteryDatasetMetadata:
         return BatteryDatasetMetadata(
