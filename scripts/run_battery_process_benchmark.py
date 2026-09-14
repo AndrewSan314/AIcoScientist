@@ -8,6 +8,8 @@ import time
 from pathlib import Path
 
 import numpy as np
+import torch
+from torch import nn
 from sklearn.model_selection import GroupShuffleSplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -16,6 +18,7 @@ from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosG
 from src.datasets.battery_process.base import ProcessOptimizationTask, ProcessPredictionTask
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.evaluation import reveal_one
+from src.process.fusion import GatedMaskedFusion
 from src.process.fusion.encoders import SignalFeatureEncoder
 from src.process.models.flat_baseline import GaussianProcessBaseline, TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
@@ -128,6 +131,55 @@ def _offline_replay(adapter, *, seed: int, strategy: str, max_steps: int) -> dic
     }
 
 
+class _GatedFusionRegressor(nn.Module):
+    """Small source-benchmark head composed from the shared missing-aware fusion block."""
+
+    def __init__(self, process_dim: int, signal_dim: int, embedding_dim: int = 4) -> None:
+        super().__init__()
+        self.process = nn.Linear(process_dim, embedding_dim)
+        self.signal = nn.Linear(signal_dim, embedding_dim)
+        self.fusion = GatedMaskedFusion(embedding_dim)
+        self.head = nn.Linear(embedding_dim, 1)
+
+    def forward(self, process: torch.Tensor, signal: torch.Tensor, available: dict[str, torch.Tensor]) -> torch.Tensor:
+        tokens = {"process": torch.tanh(self.process(process))}
+        if available["signal"].bool().any():
+            tokens["signal"] = torch.tanh(self.signal(signal))
+        return self.head(self.fusion(tokens, available)).squeeze(-1)
+
+
+def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarray, *, seed: int) -> tuple[_GatedFusionRegressor, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]]:
+    process_mean, process_std = process.mean(axis=0), process.std(axis=0)
+    signal_mean, signal_std = signal.mean(axis=0), signal.std(axis=0)
+    process_std[process_std == 0] = 1.0; signal_std[signal_std == 0] = 1.0
+    process_scaled = (process - process_mean) / process_std
+    signal_scaled = (signal - signal_mean) / signal_std
+    target_mean, target_std = float(target.mean()), float(target.std()) or 1.0
+    torch.manual_seed(seed)
+    model = _GatedFusionRegressor(process.shape[1], signal.shape[1])
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.02, weight_decay=0.01)
+    inputs = torch.tensor(process_scaled, dtype=torch.float32), torch.tensor(signal_scaled, dtype=torch.float32)
+    labels = torch.tensor((target - target_mean) / target_std, dtype=torch.float32)
+    for epoch in range(200):
+        optimizer.zero_grad()
+        # Derived stress only: source signal tokens remain absent for masked rows.
+        available = {"process": torch.ones(len(target), dtype=torch.bool), "signal": torch.tensor([(index + epoch) % 4 != 0 for index in range(len(target))])}
+        loss = torch.mean((model(*inputs, available) - labels) ** 2)
+        loss.backward(); optimizer.step()
+    return model.eval(), (process_mean, process_std, signal_mean, signal_std, target_mean, target_std)
+
+
+def _predict_gated_fusion(model: _GatedFusionRegressor, process: np.ndarray, signal: np.ndarray, scale: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float], *, signal_available: bool = True) -> np.ndarray:
+    process_mean, process_std, signal_mean, signal_std, target_mean, target_std = scale
+    with torch.no_grad():
+        normalized = model(
+            torch.tensor((process - process_mean) / process_std, dtype=torch.float32),
+            torch.tensor((signal - signal_mean) / signal_std, dtype=torch.float32),
+            {"process": torch.ones(len(process), dtype=torch.bool), "signal": torch.full((len(process),), signal_available, dtype=torch.bool)},
+        ).numpy()
+    return normalized * target_std + target_mean
+
+
 def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     if adapter.metadata().dataset_id != "warwick_ultrasound":
         return {"status": "NOT_EVALUATED", "reason": "no source-backed paired process/spectrum task"}
@@ -152,10 +204,13 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     for name, features in {"process_only": process, "signal_only": signal, "naive_concatenation": np.column_stack((process, signal))}.items():
         prediction, _ = TreeEnsembleBaseline(random_state=seed).fit(features[train], target[train]).predict_distribution(features[test])
         reports.append({"mode": name, "metrics": _metrics(target[test], prediction)})
+    model, scale = _fit_gated_fusion(process[train], signal[train], target[train], seed=seed)
+    reports.append({"mode": "gated_missing_aware_fusion", "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale))})
+    reports.append({"mode": "gated_fusion_signal_dropout", "derived_stress": True, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=False))})
     return {
         "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
         "rows": len(rows), "groups": len(set(groups)), "reports": reports,
-        "gated_fusion": {"status": "IMPLEMENTED_NOT_VALIDATED", "reason": "GatedMaskedFusion is unit-tested; this small-N benchmark reports auditable scalar baselines without a superiority claim."},
+        "gated_fusion": {"status": "EVALUATED", "model": "GatedMaskedFusion with train-only standardized source descriptors", "reason": "Small grouped holdout; report only, without a superiority claim."},
     }
 
 

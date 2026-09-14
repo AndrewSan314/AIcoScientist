@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosGraphiteAdapter, NaIonHTEAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter
-from scripts.run_battery_process_benchmark import _metrics
+from scripts.run_battery_process_benchmark import _metrics, _ultrasound_ablation
 
 
 def test_bpss_has_independent_source_adapters_and_simulation_label() -> None:
@@ -15,3 +15,11 @@ def test_bpss_has_independent_source_adapters_and_simulation_label() -> None:
 def test_bpss_metrics_report_zero_error_for_exact_predictions() -> None:
     report = _metrics(np.array([1.0, 2.0]), np.array([1.0, 2.0]))
     assert report == {"mae": 0.0, "rmse": 0.0, "r2": 1.0}
+
+
+def test_ultrasound_gated_fusion_is_source_backed_and_reports_dropout_stress() -> None:
+    report = _ultrasound_ablation(WarwickUltrasoundAdapter(), seed=42)
+    modes = {item["mode"]: item for item in report["reports"]}
+    assert report["gated_fusion"]["status"] == "EVALUATED"
+    assert modes["gated_missing_aware_fusion"]["metrics"]["rmse"] >= 0
+    assert modes["gated_fusion_signal_dropout"]["derived_stress"] is True
