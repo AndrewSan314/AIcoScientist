@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import pytest
 
-from src.process.evidence import EvidenceOption, replay_blinded_evidence
+from src.process.evidence import EvidenceOption, choose_cost_aware_evidence, replay_blinded_evidence
 from src.process.information_horizon import HorizonView
 from src.process.stages import ProcessStage
 
 
 def _option(modality_id: str, stage: ProcessStage = ProcessStage.DRYING, **kwargs: object) -> EvidenceOption:
-    return EvidenceOption(modality_id, stage, kwargs.pop("available", True), 3.0, 2.0, reveals_source_observation=kwargs.pop("source", True), **kwargs)
+    return EvidenceOption(
+        modality_id, stage, kwargs.pop("available", True), kwargs.pop("cost", 3.0), kwargs.pop("latency_seconds", 2.0),
+        reveals_source_observation=kwargs.pop("source", True), **kwargs,
+    )
 
 
 def test_blinded_evidence_reveals_only_selected_source_observation() -> None:
@@ -57,3 +60,11 @@ def test_blinded_evidence_accepts_a_typed_horizon() -> None:
 def test_blinded_evidence_rejects_none_stage() -> None:
     with pytest.raises(TypeError, match="decision_stage"):
         replay_blinded_evidence({}, {}, [], lambda *_: None, decision_stage=None)  # type: ignore[arg-type]
+
+
+def test_cost_aware_policy_uses_declared_pre_reveal_utility() -> None:
+    cheap = _option("ultrasound", cost=1.0)
+    expensive = _option("sem", cost=4.0)
+    assert choose_cost_aware_evidence((cheap, expensive), {"ultrasound": 0.5, "sem": 1.0}) == cheap
+    with pytest.raises(ValueError, match="exactly"):
+        choose_cost_aware_evidence((cheap,), {"withheld": 1.0})

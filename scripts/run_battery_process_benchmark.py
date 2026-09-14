@@ -315,8 +315,8 @@ def main() -> None:
                 "reason": "Horizon-safe source-backed evidence replay is implemented and unit-tested; no adaptive policy performance is claimed.",
             },
             "adaptive_evidence_policy": {
-                "status": "NOT_EVALUATED",
-                "reason": "No adaptive evidence policy or EVI evaluation is implemented in this milestone.",
+                "status": "IMPLEMENTED_NOT_VALIDATED",
+                "reason": "Cost-aware heuristic selection and blinded source-backed reveal are implemented and unit-tested; no source-backed policy-performance or EVI claim is made.",
             },
         },
     }

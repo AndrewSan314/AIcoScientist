@@ -34,6 +34,24 @@ class EvidenceReplayResult:
     acquired_latency_seconds: float
 
 
+def choose_cost_aware_evidence(
+    options: tuple[EvidenceOption, ...],
+    estimated_utility: Mapping[str, float],
+) -> EvidenceOption | None:
+    """Select from declared, pre-reveal utility estimates; never inspect withheld data."""
+    option_ids = {option.modality_id for option in options}
+    if set(estimated_utility) != option_ids:
+        raise ValueError("estimated utility must be declared for exactly the available evidence options")
+    scored: list[tuple[float, str, EvidenceOption]] = []
+    for option in options:
+        utility = float(estimated_utility[option.modality_id])
+        if not math.isfinite(utility) or utility < 0:
+            raise ValueError("estimated evidence utility must be finite and non-negative")
+        if utility:
+            scored.append((utility / (option.cost or 1.0), option.modality_id, option))
+    return max(scored, default=(0.0, "", None), key=lambda item: (item[0], item[1]))[2]
+
+
 def replay_blinded_evidence(
     visible_observations: Mapping[str, Any],
     withheld_observations: Mapping[str, Any],
