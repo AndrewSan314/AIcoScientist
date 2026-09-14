@@ -190,6 +190,30 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
             ))
         return groups
 
+    @staticmethod
+    def _load_asc_calendering_map(raw_dir: Path) -> dict[str, bool]:
+        """Extract explicit calendering status per cell from ASC_results-live.xlsx."""
+        live_path = raw_dir / "ASC_results-live.xlsx"
+        if not live_path.is_file():
+            return {}
+        wb = openpyxl.load_workbook(live_path, data_only=True)
+        mapping: dict[str, bool] = {}
+        for sname in wb.sheetnames:
+            if not (sname.startswith("Sample ") or sname == "Sample1"):
+                continue
+            ws = wb[sname]
+            cur_state: bool | None = None
+            for r in range(1, ws.max_row + 1):
+                v0 = str(ws.cell(r, 1).value or "").strip().lower()
+                if "non" in v0 and "calendar" in v0:
+                    cur_state = False
+                elif "calendar" in v0 and "after" not in v0 and "before" not in v0:
+                    cur_state = True
+                c2 = str(ws.cell(r, 2).value or "").strip()
+                if c2.startswith("ASC-") and cur_state is not None:
+                    mapping[c2] = cur_state
+        return mapping
+
     def _raw_hashes(self) -> dict[str, str]:
         return {file.name: compute_file_sha256(file) for file in sorted(self.raw_dir.iterdir()) if file.is_file()}
 
@@ -237,29 +261,39 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
         col_d30 = _find_header_col(headers, r"d30\s*\(")
         col_cap = _find_header_col(headers, r"cell\s*capacity\s*\(")
 
-        # Fallback to audited column positions if header regex is ambiguous
-        if col_gap is None: col_gap = 15
-        if col_spd is None: col_spd = 14
-        if col_tmp is None: col_tmp = 13
-        if col_a is None: col_a = 17
-        if col_c is None: col_c = 18
-        if col_b1 is None: col_b1 = 19
-        if col_b2 is None: col_b2 = 20
-        if col_mass is None: col_mass = 9
-        if col_thk is None: col_thk = 7
-        if col_por is None: col_por = 11
-        if col_d30 is None: col_d30 = 42
-        if col_cap is None: col_cap = 10
+        # Fail-closed: no positional fallbacks. If regex fails, parsing stops.
+        required_asc_cols = {
+            "coating_gap_um": col_gap,
+            "coating_speed_m_per_min": col_spd,
+            "drying_temperature_c": col_tmp,
+            "active_material_fraction_pct": col_a,
+            "conductive_additive_fraction_pct": col_c,
+            "binder_cmc_fraction_pct": col_b1,
+            "binder_sbr_fraction_pct": col_b2,
+            "active_mass_mg": col_mass,
+            "electrode_thickness_um": col_thk,
+            "porosity_pct": col_por,
+            "discharge_d30": col_d30,
+            "cell_capacity": col_cap,
+        }
+        missing = [name for name, idx in required_asc_cols.items() if idx is None]
+        if missing:
+            raise SourceSemanticValidationError(
+                f"Required ASC columns not found via semantic regex: {missing}. "
+                f"Positional fallbacks are strictly prohibited."
+            )
 
-        cur_t, cur_s, cur_g, cur_ink = 60.0, 0.20, 150.0, "Sample1"
+        cur_t, cur_s, cur_g, cur_ink, cur_case = 60.0, 0.20, 150.0, "Sample1", "Case 39"
         asc_runs: list[BatteryProcessRun] = []
-        cell_index = 0
+        cal_map = self._load_asc_calendering_map(path.parent)
 
         for r in range(3, ws.max_row + 1):
             cid = ws.cell(r, 2).value
             case_val = ws.cell(r, 1).value
             if not cid and not case_val:
                 continue
+            if case_val:
+                cur_case = str(case_val).strip()
             if cid:
                 cid = str(cid).strip()
             ink = ws.cell(r, 12).value
@@ -290,9 +324,13 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
             _validate_sanity_bounds("binder_cmc_fraction_pct", b1, f"{cid}:b1_pct")
             _validate_sanity_bounds("binder_sbr_fraction_pct", b2, f"{cid}:b2_pct")
 
-            # Calendering in ASC: blocks of 3 cells alternate uncalendered / calendered
-            calendered = 1.0 if ((cell_index // 3) % 2 == 1) else 0.0
-            cell_index += 1
+            # Source-grounded calendering from ASC_results-live.xlsx
+            if cid not in cal_map:
+                raise SourceSemanticValidationError(
+                    f"CALENDERING_STATUS_AMBIGUOUS: Calendering status for cell {cid} (case {cur_case}) "
+                    f"could not be established from source metadata in ASC_results-live.xlsx."
+                )
+            calendered = 1.0 if cal_map[cid] else 0.0
 
             mass = float(ws.cell(r, col_mass).value) if ws.cell(r, col_mass).value is not None else None
             _validate_sanity_bounds("active_mass_mg", mass, f"{cid}:mass")
@@ -339,6 +377,21 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 base_prov.adapter_version,
                 processing_parameters={"partition": "PROSPECTIVE_MODEL_VALIDATION", "slurry_sample": cur_ink},
             )
+            cal_prov = ProvenanceRecord(
+                base_prov.evidence_kind,
+                base_prov.source_url,
+                base_prov.source_doi,
+                base_prov.source_version,
+                base_prov.raw_hashes,
+                base_prov.adapter_version,
+                processing_parameters={
+                    "partition": "PROSPECTIVE_MODEL_VALIDATION",
+                    "slurry_sample": cur_ink,
+                    "calendering_source": "ASC_results-live.xlsx:Sample_Sheet_Section",
+                    "source_case_id": cur_case,
+                    "mapping_rule": "EXPLICIT_SAMPLE_SHEET_CALENDARING_HEADING",
+                },
+            )
 
             metrology = {}
             if mass is not None: metrology["active_mass_mg"] = MeasurementValue(mass, "mg")
@@ -350,7 +403,7 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 StageRecord(f"{cid}:mixing", ProcessStage.MIXING, 1, mixing, {}, [], f"{cid}:formulation", provenance=prov),
                 StageRecord(f"{cid}:coating", ProcessStage.COATING, 2, coating, {}, [], f"{cid}:mixing", provenance=prov),
                 StageRecord(f"{cid}:drying", ProcessStage.DRYING, 3, drying, {}, [], f"{cid}:coating", provenance=prov),
-                StageRecord(f"{cid}:calendering", ProcessStage.CALENDERING, 4, calendering, metrology, [], f"{cid}:drying", provenance=prov),
+                StageRecord(f"{cid}:calendering", ProcessStage.CALENDERING, 4, calendering, metrology, [], f"{cid}:drying", provenance=cal_prov),
             ]
 
             final_kpis = {}
@@ -395,17 +448,31 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
             if "active mass" in h2.lower() and c >= 11: col_mass = c
             if "cell capacity" in h2.lower() and ("372" in h1 or c >= 11): col_cap = c
 
-        if col_gap is None: col_gap = 21
-        if col_spd is None: col_spd = 20
-        if col_tmp is None: col_tmp = 19
-        if col_a is None: col_a = 22
-        if col_c is None: col_c = 23
-        if col_b1 is None: col_b1 = 24
-        if col_b2 is None: col_b2 = 25
-        if col_add is None: col_add = 26
-        if col_mass is None: col_mass = 15
-        if col_cap is None: col_cap = 16
-        col_thk = 13
+        # Fail-closed: no positional fallbacks for AS workbook.
+        required_as_cols = {
+            "coating_gap_um": col_gap,
+            "coating_speed_m_per_min": col_spd,
+            "drying_temperature_c": col_tmp,
+            "active_material_fraction_pct": col_a,
+            "conductive_additive_fraction_pct": col_c,
+            "binder_cmc_fraction_pct": col_b1,
+            "binder_sbr_fraction_pct": col_b2,
+            "additive_fraction_pct": col_add,
+            "active_mass_mg": col_mass,
+            "cell_capacity": col_cap,
+        }
+        missing = [name for name, idx in required_as_cols.items() if idx is None]
+        if missing:
+            raise SourceSemanticValidationError(
+                f"Required AS columns not found via semantic regex: {missing}. "
+                f"Positional fallbacks are strictly prohibited."
+            )
+        col_thk = _find_header_col(headers, r"coated\s*anode.*thickness|^\s*thickness\s*\(")
+        if col_thk is None:
+            raise SourceSemanticValidationError(
+                "Required AS column 'electrode_thickness' not found via semantic regex. "
+                "Positional fallbacks are strictly prohibited."
+            )
 
         cur_t, cur_s, cur_g, cur_case = 80.0, 0.10, 300.0, "Case 12"
         as_runs: list[BatteryProcessRun] = []
@@ -490,6 +557,21 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 base_prov.adapter_version,
                 processing_parameters={"partition": "HISTORICAL_MODEL_DEVELOPMENT", "case": cur_case},
             )
+            as_cal_prov = ProvenanceRecord(
+                base_prov.evidence_kind,
+                base_prov.source_url,
+                base_prov.source_doi,
+                base_prov.source_version,
+                base_prov.raw_hashes,
+                base_prov.adapter_version,
+                processing_parameters={
+                    "partition": "HISTORICAL_MODEL_DEVELOPMENT",
+                    "case": cur_case,
+                    "calendering_source": "AS-Cell_Data:Column_2_Calendared",
+                    "source_case_id": cur_case,
+                    "mapping_rule": "NON_EMPTY_CALENDERED_CELL",
+                },
+            )
 
             metrology = {}
             if mass is not None: metrology["active_mass_mg"] = MeasurementValue(mass, "mg")
@@ -500,7 +582,7 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 StageRecord(f"{cid}:mixing", ProcessStage.MIXING, 1, mixing, {}, [], f"{cid}:formulation", provenance=prov),
                 StageRecord(f"{cid}:coating", ProcessStage.COATING, 2, coating, {}, [], f"{cid}:mixing", provenance=prov),
                 StageRecord(f"{cid}:drying", ProcessStage.DRYING, 3, drying, {}, [], f"{cid}:coating", provenance=prov),
-                StageRecord(f"{cid}:calendering", ProcessStage.CALENDERING, 4, calendering, metrology, [], f"{cid}:drying", provenance=prov),
+                StageRecord(f"{cid}:calendering", ProcessStage.CALENDERING, 4, calendering, metrology, [], f"{cid}:drying", provenance=as_cal_prov),
             ]
 
             final_kpis = {}
