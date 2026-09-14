@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 import torch
 
+from src.process.fusion import CrossAttentionSetFusion
 from src.process.fusion.gated_fusion import GatedMaskedFusion
 
 
@@ -21,3 +22,10 @@ def test_gated_fusion_supports_per_item_batch_masks() -> None:
     )
     assert output.shape == (2, 2)
     assert torch.allclose(output[0], torch.ones(2))
+
+
+def test_cross_attention_set_fusion_requires_declared_missingness() -> None:
+    fusion = CrossAttentionSetFusion(2, ("tabular", "signal"))
+    assert fusion({"tabular": torch.ones(2)}, {"tabular": True, "signal": False}).shape == (2,)
+    with pytest.raises(ValueError):
+        fusion({"tabular": torch.ones(2), "signal": torch.zeros(2)}, {"tabular": True, "signal": False})

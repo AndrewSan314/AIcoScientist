@@ -21,7 +21,9 @@ def test_ultrasound_gated_fusion_is_source_backed_and_reports_dropout_stress() -
     report = _ultrasound_ablation(WarwickUltrasoundAdapter(), seed=42)
     modes = {item["mode"]: item for item in report["reports"]}
     assert report["gated_fusion"]["status"] == "EVALUATED"
+    assert report["cross_attention"]["status"] == "EVALUATED"
     assert modes["gated_missing_aware_fusion"]["metrics"]["rmse"] >= 0
+    assert modes["cross_attention_set_fusion"]["experimental"] is True
     assert modes["gated_fusion_signal_dropout"]["derived_stress"] is True
     partial = [item for item in report["reports"] if item["mode"] == "gated_fusion_partial_signal_dropout"]
     assert [item["requested_dropout_rate"] for item in partial] == [0.10, 0.25, 0.50, 0.75]

@@ -18,7 +18,7 @@ from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosG
 from src.datasets.battery_process.base import ProcessOptimizationTask, ProcessPredictionTask
 from src.process.coordinator import ProcessOptimizationCoordinator
 from src.process.evaluation import reveal_one
-from src.process.fusion import GatedMaskedFusion
+from src.process.fusion import CrossAttentionSetFusion, GatedMaskedFusion
 from src.process.fusion.encoders import SignalFeatureEncoder
 from src.process.models.flat_baseline import GaussianProcessBaseline, TreeEnsembleBaseline
 from src.process.models.uncertainty import conformal_interval
@@ -148,7 +148,15 @@ class _GatedFusionRegressor(nn.Module):
         return self.head(self.fusion(tokens, available)).squeeze(-1)
 
 
-def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarray, *, seed: int) -> tuple[_GatedFusionRegressor, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]]:
+class _CrossAttentionFusionRegressor(_GatedFusionRegressor):
+    """Experimental learned-query set-fusion head for the same source-backed inputs."""
+
+    def __init__(self, process_dim: int, signal_dim: int, embedding_dim: int = 4) -> None:
+        super().__init__(process_dim, signal_dim, embedding_dim)
+        self.fusion = CrossAttentionSetFusion(embedding_dim, ("process", "signal"))
+
+
+def _fit_fusion(model_type: type[_GatedFusionRegressor], process: np.ndarray, signal: np.ndarray, target: np.ndarray, *, seed: int) -> tuple[_GatedFusionRegressor, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]]:
     process_mean, process_std = process.mean(axis=0), process.std(axis=0)
     signal_mean, signal_std = signal.mean(axis=0), signal.std(axis=0)
     process_std[process_std == 0] = 1.0; signal_std[signal_std == 0] = 1.0
@@ -156,7 +164,7 @@ def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarra
     signal_scaled = (signal - signal_mean) / signal_std
     target_mean, target_std = float(target.mean()), float(target.std()) or 1.0
     torch.manual_seed(seed)
-    model = _GatedFusionRegressor(process.shape[1], signal.shape[1])
+    model = model_type(process.shape[1], signal.shape[1])
     optimizer = torch.optim.Adam(model.parameters(), lr=0.02, weight_decay=0.01)
     inputs = torch.tensor(process_scaled, dtype=torch.float32), torch.tensor(signal_scaled, dtype=torch.float32)
     labels = torch.tensor((target - target_mean) / target_std, dtype=torch.float32)
@@ -167,6 +175,14 @@ def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarra
         loss = torch.mean((model(*inputs, available) - labels) ** 2)
         loss.backward(); optimizer.step()
     return model.eval(), (process_mean, process_std, signal_mean, signal_std, target_mean, target_std)
+
+
+def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarray, *, seed: int) -> tuple[_GatedFusionRegressor, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]]:
+    return _fit_fusion(_GatedFusionRegressor, process, signal, target, seed=seed)
+
+
+def _fit_cross_attention_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarray, *, seed: int) -> tuple[_GatedFusionRegressor, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]]:
+    return _fit_fusion(_CrossAttentionFusionRegressor, process, signal, target, seed=seed)
 
 
 def _predict_gated_fusion(model: _GatedFusionRegressor, process: np.ndarray, signal: np.ndarray, scale: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float], *, signal_available: bool | np.ndarray = True) -> np.ndarray:
@@ -209,6 +225,8 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
         reports.append({"mode": name, "metrics": _metrics(target[test], prediction)})
     model, scale = _fit_gated_fusion(process[train], signal[train], target[train], seed=seed)
     reports.append({"mode": "gated_missing_aware_fusion", "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale))})
+    cross_attention, cross_scale = _fit_cross_attention_fusion(process[train], signal[train], target[train], seed=seed)
+    reports.append({"mode": "cross_attention_set_fusion", "experimental": True, "metrics": _metrics(target[test], _predict_gated_fusion(cross_attention, process[test], signal[test], cross_scale))})
     reports.append({"mode": "gated_fusion_signal_dropout", "derived_stress": True, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=False))})
     rng = np.random.default_rng(seed)
     for rate in (0.10, 0.25, 0.50, 0.75):
@@ -220,6 +238,7 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
         "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
         "rows": len(rows), "groups": len(set(groups)), "reports": reports,
         "gated_fusion": {"status": "EVALUATED", "model": "GatedMaskedFusion with train-only standardized source descriptors", "reason": "Small grouped holdout; report only, without a superiority claim."},
+        "cross_attention": {"status": "EVALUATED", "model": "CrossAttentionSetFusion with learned query and modality-type embeddings", "reason": "Experimental small-data comparator; report only, without a superiority claim."},
     }
 
 
@@ -318,9 +337,11 @@ def _write_report(root: Path, manifest: dict[str, object]) -> None:
         if fusion.get("status") == "EVALUATED" and "gated_missing_aware_fusion" in reports:
             gated = reports["gated_missing_aware_fusion"]["metrics"]["r2"]
             naive = reports.get("naive_concatenation", {}).get("metrics", {}).get("r2")
+            cross = reports.get("cross_attention_set_fusion", {}).get("metrics", {}).get("r2")
             rates = [item["requested_dropout_rate"] for item in fusion.get("reports", []) if item.get("mode") == "gated_fusion_partial_signal_dropout"]
             stress = f" Derived ultrasound-masking stress rates: {', '.join(f'{rate:.0%}' for rate in rates)}." if rates else ""
-            fusion_lines = [f"- Warwick ultrasound grouped holdout ({fusion['rows']} rows/{fusion['groups']} groups): gated R²={gated:.3f}; naive concatenation R²={naive:.3f}. Gated fusion is not superior on this split.{stress}"]
+            experimental = f" Experimental cross-attention R²={cross:.3f}." if cross is not None else ""
+            fusion_lines = [f"- Warwick ultrasound grouped holdout ({fusion['rows']} rows/{fusion['groups']} groups): gated R²={gated:.3f}; naive concatenation R²={naive:.3f}. Gated fusion is not superior on this split.{experimental}{stress}"]
     replay_lines = []
     for path in sorted((root / "optimization").glob("*.json")):
         result = json.loads(path.read_text(encoding="utf-8"))
