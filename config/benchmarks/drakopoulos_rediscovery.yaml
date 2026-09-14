@@ -1,0 +1,53 @@
+# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration
+benchmark_name: "drakopoulos_graphite_offline_rediscovery"
+version: "1.0.0"
+
+dataset:
+  dataset_id: "drakopoulos_graphite"
+  display_name: "Graphite Process-15"
+  source_doi: "10.17632/4dh2h3tsf4.1"
+  evidence_kind: "PHYSICAL_HISTORICAL"
+  normalized_runs_path: "data/external/drakopoulos_graphite/1/processed/1/normalized_runs.json"
+
+target:
+  name: "cell_capacity_mah"
+  units: "mAh"
+  sense: "maximize"
+  source_column: "Cell Capacity (372 mAh/g)"
+
+optimization:
+  candidate_id_column: "run_id"
+  candidate_pool_size: 13
+  initial_design_size: 3
+  max_steps: 10
+  ucb_beta: 2.0
+  seeds:
+    - 11
+    - 23
+    - 42
+    - 67
+    - 101
+    - 137
+    - 179
+    - 223
+    - 281
+    - 353
+  policies:
+    - "random"
+    - "greedy"
+    - "gp_ucb"
+    - "expected_improvement"
+    - "noisy_expected_improvement"
+
+mode_1_specification:
+  mode: "SOURCE_OBSERVED_BEST_REDISCOVERY"
+  status: "ACTIVE"
+  ground_truth_best_recipe_id: "AS-104"
+  ground_truth_best_capacity_mah: 11.047570417935756
+  runner_up_recipe_id: "AS-46"
+  runner_up_capacity_mah: 10.920245398773007
+
+mode_2_specification:
+  mode: "PUBLISHED_VALIDATED_DESIGN_REDISCOVERY"
+  status: "PUBLISHED_OPTIMIZED_DESIGN_NOT_SOURCE_RECOVERABLE"
+  rationale: "Mendeley source release DOI 10.17632/4dh2h3tsf4.1 provides alchemite_model_training.txt, which configures proprietary Intellegens Alchemite API dataset upload and training without optimization proposals or output recipes. Companion ASC workbook contains unexecuted/partial rows lacking process parameters. No isolated published AI-designed electrode with verified ground truth outcome is recoverable from the open data repository."
