@@ -12,12 +12,29 @@ nodes:
   - formation_controls
   - impedance
   - capacity
+stage_map:
+  formulation: FORMULATION
+  mixing_controls: MIXING
+  slurry_rheology: MIXING
+  coating_controls: COATING
+  wet_thickness: COATING
+  drying_controls: DRYING
+  dry_morphology: DRYING
+  calendering_controls: CALENDERING
+  porosity: CALENDERING
+  density: CALENDERING
+  formation_controls: FORMATION
+  impedance: FINAL_CHARACTERIZATION
+  capacity: FINAL_CHARACTERIZATION
 edges:
   - [formulation, slurry_rheology]
   - [mixing_controls, slurry_rheology]
   - [slurry_rheology, coating_controls]
   - [coating_controls, wet_thickness]
+  - [wet_thickness, drying_controls]
   - [drying_controls, dry_morphology]
+  - [dry_morphology, calendering_controls]
   - [calendering_controls, porosity]
   - [porosity, impedance]
-  - [impedance, capacity]
+  - [impedance, formation_controls]
+  - [formation_controls, capacity]

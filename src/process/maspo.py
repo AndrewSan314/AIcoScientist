@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field, replace
 from numbers import Real
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Mapping, Sequence
 
@@ -11,6 +12,7 @@ import pandas as pd
 
 from .contracts import BatteryProcessRun
 from .coordinator import ProcessOptimizationCoordinator
+from .dependency_graph import ProcessDependencyGraph
 from .information_horizon import HorizonView
 from .optimization.process_objective import ProcessOptimizationObjective
 from .optimization.process_space import ProcessSearchSpace
@@ -66,6 +68,7 @@ class MASPOPlan:
     legal_state: HorizonView
     optimization_state: OptimizationState
     decision_latency_seconds: float
+    graph_provenance: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -126,9 +129,15 @@ class ContextualProcessState(OptimizationState):
 class MASPOProcessOptimizationCoordinator:
     """Stage-wise contextual receding-horizon wrapper around the official optimizer."""
 
-    def __init__(self, optimizer: ProcessOptimizationCoordinator | None = None, *, require_validated_multimodal_state: bool = True) -> None:
+    def __init__(self, optimizer: ProcessOptimizationCoordinator | None = None, *, require_validated_multimodal_state: bool = True, process_graph: ProcessDependencyGraph | None = None, graph_path: str | Path = "config/process_graphs/li_ion_electrode.yaml") -> None:
         self.optimizer = optimizer or ProcessOptimizationCoordinator()
         self.require_validated_multimodal_state = require_validated_multimodal_state
+        try:
+            self.process_graph = process_graph or ProcessDependencyGraph.from_yaml(graph_path)
+            self.graph_provenance = self.process_graph.provenance()
+        except (OSError, ValueError) as exc:
+            self.process_graph = None
+            self.graph_provenance = {"stage_order_source": "STAGE_ORDER_FALLBACK", "fallback_reason": str(exc)}
 
     def optimize_remaining_process(
         self,
@@ -157,7 +166,11 @@ class MASPOProcessOptimizationCoordinator:
             and optimization_state.validation_status != ModelValidationStatus.SOURCE_BACKED_VALIDATED
         ):
             raise ValueError("production MASPO requires SOURCE_BACKED_VALIDATED multimodal optimization state")
-        stages = tuple(sorted((stage for stage in remaining_control_spaces if STAGE_ORDER[stage] > STAGE_ORDER[current_stage]), key=STAGE_ORDER.__getitem__))
+        stages = (
+            tuple(stage for stage in self.process_graph.legal_successor_stages(current_stage) if stage in remaining_control_spaces)
+            if self.process_graph is not None
+            else tuple(sorted((stage for stage in remaining_control_spaces if STAGE_ORDER[stage] > STAGE_ORDER[current_stage]), key=STAGE_ORDER.__getitem__))
+        )
         if not stages:
             raise ValueError("no remaining process control stage exists after current_stage")
         next_stage = stages[0]
@@ -173,7 +186,7 @@ class MASPOProcessOptimizationCoordinator:
         return MASPOPlan(
             current_stage=current_stage, next_stage=next_stage, next_control=action,
             downstream_stages=stages[1:], legal_state=legal_state, optimization_state=state,
-            decision_latency_seconds=perf_counter() - started,
+            decision_latency_seconds=perf_counter() - started, graph_provenance=self.graph_provenance,
         )
 
     @staticmethod
