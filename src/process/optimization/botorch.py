@@ -114,7 +114,7 @@ class OfficialMultiObjectiveBoTorch:
                 provenance["source_recipe_ids"] = list(source_row["source_recipe_ids"])
             result.append(ProcessControlProposal(
                 proposal_id=f"process:{recipe_id}", stage=None, controls=controls,
-                predicted_outputs=outputs, feasibility_probability=self._feasibility_probability(outputs, objective.constraints),
+                predicted_outputs=outputs, feasibility_probability=None,
                 acquisition_value=float(scores[index]), pareto_rank=int(ranks[index]), model_version="botorch-qNEHVI",
                 data_fingerprint=self._fingerprint(observed), source_recipe_id=str(source_row[space.source_id_column]),
                 provenance=provenance,
@@ -223,13 +223,6 @@ class OfficialMultiObjectiveBoTorch:
         ranks = np.ones(len(means), dtype=int)
         ranks[is_non_dominated(values).cpu().numpy()] = 0
         return ranks
-
-    @staticmethod
-    def _feasibility_probability(outputs: dict[str, Prediction], constraints: Sequence[ConstraintSpec]) -> float | None:
-        relevant = [constraint for constraint in constraints if constraint.name in outputs]
-        if not relevant:
-            return None
-        return float(all(constraint.satisfied(outputs[constraint.name].mean) for constraint in relevant))
 
     @staticmethod
     def _fingerprint(observed: pd.DataFrame) -> str:

@@ -24,6 +24,7 @@ def test_bridge_preserves_source_identity_and_horizon_boundary():
     assert "coating.gap" not in sample.controls
     assert sample.modality_state["mixing.ultrasound_signal.observed"] == 0.0
     assert sample.provenance["raw_hashes"] == {"raw.csv": "abc"}
+    assert sample.provenance["chemistry_id"] == "NMC"
     assert bridge.manifest().source_hashes["run-0:raw.csv"] == "abc"
     assert bridge.validate().valid
 

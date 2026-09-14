@@ -94,7 +94,7 @@ class BatteryProcessSurrogateAdapter:
             controls=controls, observations=observations, modality_state=modality_state,
             fidelity=fidelity, requested_horizon=int(parameters["requested_slurry_steps"]) if parameters.get("requested_slurry_steps") else None,
             physics_config_fingerprint=parameters.get("physics_config_fingerprint"), targets={self.task.target: float(outcome.value)},
-            provenance={"run_identity_fingerprint": run.identity_fingerprint, "source_url": run.provenance.source_url, "source_doi": run.provenance.source_doi, "source_version": run.provenance.source_version, "raw_hashes": dict(run.provenance.raw_hashes), "horizon": {"decision_stage": self.task.decision_stage.value, "source_stage_ids": view.source_stage_ids}, "modalities": modalities},
+            provenance={"run_identity_fingerprint": run.identity_fingerprint, "chemistry_id": run.chemistry_id, "source_url": run.provenance.source_url, "source_doi": run.provenance.source_doi, "source_version": run.provenance.source_version, "raw_hashes": dict(run.provenance.raw_hashes), "horizon": {"decision_stage": self.task.decision_stage.value, "source_stage_ids": view.source_stage_ids}, "modalities": modalities},
         )
 
     def samples(self) -> list[ProcessSurrogateSample]:
