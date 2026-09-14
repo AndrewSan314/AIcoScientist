@@ -369,6 +369,32 @@ class RecipeAggregation:
         return grouped[[id_column, target_column] + ctrls].reset_index(drop=True)
 
 
+def filter_candidate_pool_for_high_loading(
+    candidate_pool: pd.DataFrame,
+    *,
+    min_active_mass_mg: float = 16.0,
+    mass_column: str = "mean_active_mass_mg",
+) -> pd.DataFrame:
+    """Filters candidate pool for high-loading electrode recipes based on retrospective mass.
+
+    Scientific firewall guarantee:
+    - Active mass is an observed metrology property, NOT a pre-manufacturing control.
+    - It is used strictly for offline benchmark eligibility/filtering, NEVER as an input feature.
+    - Preserves exact source-observed high-loading regimes (e.g. coating gap 200 um with mass >= 16 mg).
+    """
+    if mass_column not in candidate_pool.columns:
+        raise KeyError(f"Mass column '{mass_column}' not found in candidate pool.")
+    filtered = candidate_pool[candidate_pool[mass_column] >= min_active_mass_mg].copy()
+    if filtered.empty:
+        max_val = candidate_pool[mass_column].max() if not candidate_pool.empty else 0.0
+        raise ValueError(
+            f"No candidates satisfy high-loading threshold {mass_column} >= {min_active_mass_mg} mg. "
+            f"(Maximum observed mass in candidate pool: {max_val:.2f} mg. "
+            "Note: Drakopoulos 300 um cells in ASC have missing/unmeasured D30 cycle data)."
+        )
+    return filtered.reset_index(drop=True)
+
+
 class RediscoveryReplay:
     """Sequential Bayesian optimization closed-loop replay coordinator."""
 
@@ -386,6 +412,7 @@ class RediscoveryReplay:
         decision_stage: ProcessStage = ProcessStage.COATING,
         dataset_id: str = "drakopoulos_graphite",
         dataset_fingerprint: str | None = None,
+        benchmark_task: str = "UNCONSTRAINED_D30",
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
@@ -399,6 +426,7 @@ class RediscoveryReplay:
         self._top_k_targets = top_k_targets
         self._decision_stage = decision_stage
         self._dataset_id = dataset_id
+        self._benchmark_task = benchmark_task
         if dataset_fingerprint is None:
             raw_bytes = pd.util.hash_pandas_object(self._candidate_pool, index=True).values.tobytes()
             self._dataset_fingerprint = hashlib.sha256(raw_bytes).hexdigest()
@@ -816,6 +844,7 @@ def run_rediscovery_benchmark(
     decision_stage: ProcessStage = ProcessStage.COATING,
     dataset_id: str = "drakopoulos_graphite",
     dataset_fingerprint: str | None = None,
+    benchmark_task: str = "UNCONSTRAINED_D30",
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
     replay = RediscoveryReplay(
@@ -830,6 +859,7 @@ def run_rediscovery_benchmark(
         decision_stage=decision_stage,
         dataset_id=dataset_id,
         dataset_fingerprint=dataset_fingerprint,
+        benchmark_task=benchmark_task,
     )
 
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
@@ -854,6 +884,7 @@ def run_rediscovery_benchmark(
     analytic_top3 = calculate_hypergeometric_baseline(len(candidate_pool), initial_size, budget_for_analytic, top_k=top_k_targets)
 
     return {
+        "benchmark_task": benchmark_task,
         "candidate_id_column": candidate_id_column,
         "target_column": target_column,
         "control_columns": replay._control_columns,
@@ -889,6 +920,7 @@ class ProductionProcessRediscoveryRunner:
         decision_stage: ProcessStage = ProcessStage.COATING,
         dataset_id: str = "drakopoulos_graphite",
         dataset_fingerprint: str | None = None,
+        benchmark_task: str = "UNCONSTRAINED_D30",
     ) -> None:
         self.candidate_pool = candidate_pool.copy()
         self.candidate_id_column = candidate_id_column
@@ -899,6 +931,7 @@ class ProductionProcessRediscoveryRunner:
         self.decision_stage = decision_stage
         self.dataset_id = dataset_id
         self.dataset_fingerprint = dataset_fingerprint
+        self.benchmark_task = benchmark_task
 
     def run(
         self,
@@ -926,5 +959,42 @@ class ProductionProcessRediscoveryRunner:
             decision_stage=self.decision_stage,
             dataset_id=self.dataset_id,
             dataset_fingerprint=self.dataset_fingerprint,
+            benchmark_task=self.benchmark_task,
+        )
+
+    def run_high_loading(
+        self,
+        *,
+        min_active_mass_mg: float = 16.0,
+        policies: Sequence[str] = (
+            "AICOSCIENTIST_PROCESS_SURROGATE",
+            "DIRECT_BOTORCH_BASELINE",
+            "random",
+        ),
+        seeds: Sequence[int] = (11, 23, 42, 67, 101, 137, 179, 223, 281, 353),
+        initial_size: int = 3,
+        budget: int = 5,
+    ) -> dict[str, Any]:
+        """Runs high-loading electrode rediscovery benchmark filtering candidate pool by active mass."""
+        hl_pool = filter_candidate_pool_for_high_loading(
+            self.candidate_pool,
+            min_active_mass_mg=min_active_mass_mg,
+        )
+        return run_rediscovery_benchmark(
+            candidate_pool=hl_pool,
+            candidate_id_column=self.candidate_id_column,
+            target_column=self.target_column,
+            control_columns=self.control_columns,
+            minimize=False,
+            policies=policies,
+            seeds=seeds,
+            initial_size=initial_size,
+            max_steps=budget,
+            coordinator=self.coordinator,
+            top_k_targets=self.top_k_targets,
+            decision_stage=self.decision_stage,
+            dataset_id=self.dataset_id,
+            dataset_fingerprint=self.dataset_fingerprint,
+            benchmark_task="HIGH_LOADING_D30",
         )
 
