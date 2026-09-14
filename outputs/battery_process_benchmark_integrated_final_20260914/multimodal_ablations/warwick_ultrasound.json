@@ -1,0 +1,182 @@
+{
+  "status": "EVALUATED",
+  "target": "post_calendering_thickness_um",
+  "split": "grouped process-condition holdout",
+  "rows": 48,
+  "groups": 24,
+  "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+  "reports": [
+    {
+      "mode": "process_only",
+      "metrics": {
+        "mae": 14.120606060606034,
+        "rmse": 24.323972203104002,
+        "r2": -0.0806087618448681
+      }
+    },
+    {
+      "mode": "signal_only",
+      "metrics": {
+        "mae": 6.5877272727272524,
+        "rmse": 8.746523623992006,
+        "r2": 0.8602761851153045
+      }
+    },
+    {
+      "mode": "naive_concatenation",
+      "metrics": {
+        "mae": 4.013484848484833,
+        "rmse": 5.587909680368808,
+        "r2": 0.9429706734171911
+      }
+    },
+    {
+      "mode": "gated_missing_aware_fusion",
+      "metrics": {
+        "mae": 7.642690831964665,
+        "rmse": 10.672464021319247,
+        "r2": 0.7919686025260557
+      }
+    },
+    {
+      "mode": "cross_attention_set_fusion",
+      "experimental": true,
+      "metrics": {
+        "mae": 4.168916991262725,
+        "rmse": 5.739527078183297,
+        "r2": 0.9398339214969794
+      }
+    },
+    {
+      "mode": "gated_fusion_signal_dropout",
+      "derived_stress": true,
+      "evidence_kind": "SIMULATED_STRESS",
+      "stress_transform_fingerprint": "d694df692cd2db45b807085fdb520341fb70ad84d30d193cb4f9ed141e396333",
+      "kind": "ultrasound_availability_mask",
+      "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+      "seed": 42,
+      "dropped_source_run_ids": [
+        "Anode:GA_16",
+        "Anode:GA_17",
+        "Anode:GA_18",
+        "Anode:GA_19",
+        "Anode:GA_20",
+        "Anode:GA_21",
+        "Cathode:NMC622_12",
+        "Cathode:NMC622_13",
+        "Cathode:NMC622_15",
+        "Cathode:NMC622_6",
+        "Cathode:NMC622_9"
+      ],
+      "metrics": {
+        "mae": 14.91933233087713,
+        "rmse": 23.419043234330218,
+        "r2": -0.0017002552057778786
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "evidence_kind": "SIMULATED_STRESS",
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.1,
+      "realized_dropout_rate": 0.09090909090909091,
+      "stress_transform_fingerprint": "f6b681e72c005bdcd1ebbf53d6e5d616f5280570f2f0ed4cc272779c419fc815",
+      "kind": "ultrasound_availability_mask",
+      "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+      "seed": 42,
+      "dropped_source_run_ids": [
+        "Cathode:NMC622_12"
+      ],
+      "metrics": {
+        "mae": 7.921515378085048,
+        "rmse": 10.716738489214247,
+        "r2": 0.790238995541269
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "evidence_kind": "SIMULATED_STRESS",
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.25,
+      "realized_dropout_rate": 0.2727272727272727,
+      "stress_transform_fingerprint": "59ea4700be8a7ca2dcbc42614a6e417f22d460a03872ea7c0581f3801ab89b10",
+      "kind": "ultrasound_availability_mask",
+      "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+      "seed": 42,
+      "dropped_source_run_ids": [
+        "Anode:GA_18",
+        "Anode:GA_20",
+        "Cathode:NMC622_6"
+      ],
+      "metrics": {
+        "mae": 10.622362310236149,
+        "rmse": 17.963384515587823,
+        "r2": 0.4106465634137645
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "evidence_kind": "SIMULATED_STRESS",
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.5,
+      "realized_dropout_rate": 0.5454545454545454,
+      "stress_transform_fingerprint": "8272587be44ef626dad22845e5d4d708d64679ee2450cbc1dad2f4dbe1fb147d",
+      "kind": "ultrasound_availability_mask",
+      "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+      "seed": 42,
+      "dropped_source_run_ids": [
+        "Anode:GA_16",
+        "Anode:GA_20",
+        "Anode:GA_21",
+        "Cathode:NMC622_15",
+        "Cathode:NMC622_6",
+        "Cathode:NMC622_9"
+      ],
+      "metrics": {
+        "mae": 10.629204258774266,
+        "rmse": 17.702425272048675,
+        "r2": 0.427645598158361
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "evidence_kind": "SIMULATED_STRESS",
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.75,
+      "realized_dropout_rate": 0.7272727272727273,
+      "stress_transform_fingerprint": "7b8aa6d7777624e89fcaac5446b5ab2381636c57947f4590a1390b5907be2aaa",
+      "kind": "ultrasound_availability_mask",
+      "source_fingerprint": "e8cc6ea2231d013927af86da7cbea90910161c23a811569e45b0e4e2b28474a9",
+      "seed": 42,
+      "dropped_source_run_ids": [
+        "Anode:GA_17",
+        "Anode:GA_18",
+        "Anode:GA_20",
+        "Cathode:NMC622_12",
+        "Cathode:NMC622_13",
+        "Cathode:NMC622_15",
+        "Cathode:NMC622_6",
+        "Cathode:NMC622_9"
+      ],
+      "metrics": {
+        "mae": 15.947552074085582,
+        "rmse": 24.016833967410168,
+        "r2": -0.0534914108980491
+      }
+    }
+  ],
+  "gated_fusion": {
+    "status": "EVALUATED",
+    "model": "GatedMaskedFusion with train-only standardized source descriptors",
+    "reason": "Small grouped holdout; report only, without a superiority claim."
+  },
+  "cross_attention": {
+    "status": "EVALUATED",
+    "model": "CrossAttentionSetFusion with learned query and modality-type embeddings",
+    "reason": "Experimental small-data comparator; report only, without a superiority claim."
+  }
+}

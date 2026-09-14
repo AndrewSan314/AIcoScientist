@@ -1,0 +1,4 @@
+{
+  "status": "IMPLEMENTED_NOT_EVALUATED",
+  "reason": "Paired low-to-high residual correction is unit-tested and rejects unmatched/incompatible pairs; no compatible paired BPSS evidence is available for evaluation."
+}

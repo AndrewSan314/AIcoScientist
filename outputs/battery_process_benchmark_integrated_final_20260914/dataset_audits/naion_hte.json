@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "dataset_id": "naion_hte",
+    "display_name": "Na-ion High-Throughput Process Chain",
+    "chemistry": "sodium-ion",
+    "evidence_kind": "PHYSICAL_HISTORICAL",
+    "source_doi": "10.5281/zenodo.7981011",
+    "version": "7981011",
+    "license": "not specified",
+    "process_stages": [
+      "FORMATION",
+      "FINAL_CHARACTERIZATION"
+    ],
+    "modalities": [
+      "FORMATION_CURVE",
+      "CYCLING_CURVE"
+    ],
+    "recommended_splits": [
+      "GROUP_BY_BATCH",
+      "LATER_RUN_HOLDOUT"
+    ],
+    "optimization_capable": false,
+    "multimodal_capable": true,
+    "limitations": "Source archive provides cycling traces and protocol/batch identity, not audited synthesis, coating, or assembly settings."
+  },
+  "validation": {
+    "valid": true,
+    "errors": []
+  }
+}

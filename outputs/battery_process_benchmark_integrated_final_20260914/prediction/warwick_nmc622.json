@@ -1,0 +1,130 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "evidence_kind": "PILOT_LINE_HISTORICAL",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.02953298754199727,
+        "rmse": 0.03307893640537316,
+        "r2": 0.95153624032835
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 0.02953298754199727,
+            "rmse": 0.03307893640537316,
+            "r2": 0.95153624032835
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 0.056935409399997014,
+            "rmse": 0.066493627232596,
+            "r2": 0.8041723208625651
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "mean_interval_width": 0.06337490881998153,
+        "calibration_residual_count": 4
+      },
+      "intervals": {
+        "50": {
+          "nominal_coverage": 0.5,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.053853219629983684
+        },
+        "80": {
+          "nominal_coverage": 0.8,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        },
+        "90": {
+          "nominal_coverage": 0.9,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        },
+        "95": {
+          "nominal_coverage": 0.95,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        }
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "status": "EVALUATED",
+      "model": "ExtraTreesRegressor",
+      "split": "grouped holdout with disjoint grouped calibration",
+      "rows": 18,
+      "groups": 18,
+      "train_rows": 9,
+      "calibration_rows": 4,
+      "test_rows": 5,
+      "metrics": {
+        "mae": 0.6656151768800391,
+        "rmse": 0.7476515209406341,
+        "r2": 0.9509733191680857
+      },
+      "baselines": [
+        {
+          "model": "ExtraTreesRegressor",
+          "metrics": {
+            "mae": 0.6656151768800391,
+            "rmse": 0.7476515209406341,
+            "r2": 0.9509733191680857
+          }
+        },
+        {
+          "model": "RandomForestRegressor",
+          "metrics": {
+            "mae": 1.262102423240016,
+            "rmse": 1.5092857700790994,
+            "r2": 0.800208501357565
+          }
+        }
+      ],
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "mean_interval_width": 1.4421508534000935,
+        "calibration_residual_count": 4
+      },
+      "intervals": {
+        "50": {
+          "nominal_coverage": 0.5,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.210998413500036
+        },
+        "80": {
+          "nominal_coverage": 0.8,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        },
+        "90": {
+          "nominal_coverage": 0.9,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        },
+        "95": {
+          "nominal_coverage": 0.95,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        }
+      }
+    }
+  ]
+}

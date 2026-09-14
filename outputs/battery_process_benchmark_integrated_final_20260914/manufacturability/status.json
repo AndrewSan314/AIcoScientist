@@ -1,0 +1,4 @@
+{
+  "status": "IMPLEMENTED_NOT_EVALUATED",
+  "reason": "The learned feasibility model exists, but BPSS adapters do not expose an audited process-failure label set for evaluation."
+}

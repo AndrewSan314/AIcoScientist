@@ -1,0 +1,4 @@
+{
+  "status": "IMPLEMENTED_NOT_EVALUATED",
+  "reason": "Official qNEHVI support is unit-tested, but no registered BPSS task has a prespecified source-backed objective pair and reference point."
+}

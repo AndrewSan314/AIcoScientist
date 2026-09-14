@@ -1,0 +1,69 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "reports": [
+    {
+      "target": "calendered_density_g_cm3",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "mean_interval_width": 0.06337490881998153,
+        "calibration_residual_count": 4
+      },
+      "intervals": {
+        "50": {
+          "nominal_coverage": 0.5,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.053853219629983684
+        },
+        "80": {
+          "nominal_coverage": 0.8,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        },
+        "90": {
+          "nominal_coverage": 0.9,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        },
+        "95": {
+          "nominal_coverage": 0.95,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 0.06337490881998153
+        }
+      }
+    },
+    {
+      "target": "calendered_porosity_pct",
+      "status": "EVALUATED",
+      "interval": {
+        "nominal_coverage": 0.9,
+        "empirical_coverage": 0.6,
+        "mean_interval_width": 1.4421508534000935,
+        "calibration_residual_count": 4
+      },
+      "intervals": {
+        "50": {
+          "nominal_coverage": 0.5,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.210998413500036
+        },
+        "80": {
+          "nominal_coverage": 0.8,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        },
+        "90": {
+          "nominal_coverage": 0.9,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        },
+        "95": {
+          "nominal_coverage": 0.95,
+          "empirical_coverage": 0.6,
+          "mean_interval_width": 1.4421508534000935
+        }
+      }
+    }
+  ]
+}
