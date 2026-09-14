@@ -1,0 +1,186 @@
+{
+  "alchemite_model_training.txt": {
+    "file_name": "alchemite_model_training.txt",
+    "size_bytes": 4555,
+    "sha256": "a0a9dc0ae007495e17ace302fbdc4766c556fe5e7cbef8cc2b9024c15bd61873",
+    "is_excel": false,
+    "readable": true,
+    "line_count": 130,
+    "description": "Python REST API client script for training Alchemite neural network model on Mendeley graphite data."
+  },
+  "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx": {
+    "file_name": "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx",
+    "size_bytes": 1232029,
+    "sha256": "a508e1654d8c39395285ce55b62dae521d45f083d1d1a8ee6f502b32777f93b2",
+    "is_excel": true,
+    "sheet_names": [
+      "FInal_All_Cell_Data"
+    ],
+    "readable": true,
+    "sheets_summary": {
+      "FInal_All_Cell_Data": {
+        "max_row": 2258,
+        "max_col": 2885
+      }
+    },
+    "header_structure": "Row 1 (Broad Category), Row 2 (Detailed variable and units). Merged cells vertically/horizontally.",
+    "date_range_or_batch": "Campaign dates: Jan 2021 correction (25-01-2021). Cases 12 to 38 (27 protocols). 143 cell rows.",
+    "missing_value_markers": [
+      "None",
+      "empty cell",
+      "-",
+      "#DIV/0!",
+      "#VALUE!"
+    ]
+  },
+  "AS-results-live.xlsx": {
+    "file_name": "AS-results-live.xlsx",
+    "size_bytes": 200384,
+    "sha256": "8199a7aa70935a9a5be228755d8fb52a53329f9aab453f336fa68e8c364e71b7",
+    "is_excel": true,
+    "readable": false,
+    "error": "BadZipFile: File is not a zip file",
+    "diagnostic": "Zip central directory / EOCD truncated in original Mendeley repository download (200,384 bytes). Local file headers present for 67 internal entries."
+  },
+  "ASC-Cell_Data-Azar-Stavros.xlsx": {
+    "file_name": "ASC-Cell_Data-Azar-Stavros.xlsx",
+    "size_bytes": 69985,
+    "sha256": "a49de219e8413871254e88bb9602169137255029e9ab37c7cd2e887155d7b4ed",
+    "is_excel": true,
+    "sheet_names": [
+      "FInal_All_Cell_Data"
+    ],
+    "readable": true,
+    "sheets_summary": {
+      "FInal_All_Cell_Data": {
+        "max_row": 268,
+        "max_col": 44
+      }
+    },
+    "header_structure": "Row 1 (Category), Row 2 (Variable name with units). Cases 39 to 74 (36 cases, 19 slurry samples, 108 cell rows).",
+    "date_range_or_batch": "Nextrode project batch October-November 2020. Cells ASC-1 to ASC-108.",
+    "missing_value_markers": [
+      "None",
+      "empty cell",
+      "-",
+      "#DIV/0!"
+    ]
+  },
+  "ASC_results-live.xlsx": {
+    "file_name": "ASC_results-live.xlsx",
+    "size_bytes": 200765,
+    "sha256": "2a12879bd9b62e528fd5e5e3ff486707073accfb896a8c3cd9e13d1495046801",
+    "is_excel": true,
+    "sheet_names": [
+      "ToC",
+      "Sample 19",
+      "Sample 18",
+      "Sample 17",
+      "Sample 16",
+      "Sample 15",
+      "Sample 14",
+      "Sample 13",
+      "Sample 12",
+      "Sample 11",
+      "Sample 10",
+      "Sample 9",
+      "Sample 8",
+      "Sample 7",
+      "Sample 6",
+      "Sample 5",
+      "Sample 4",
+      "Sample 3",
+      "Sample 2",
+      "Sample1"
+    ],
+    "readable": true,
+    "sheets_summary": {
+      "ToC": {
+        "max_row": 19,
+        "max_col": 8
+      },
+      "Sample 19": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 18": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 17": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 16": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 15": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 14": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 13": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 12": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 11": {
+        "max_row": 61,
+        "max_col": 23
+      },
+      "Sample 10": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 9": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 8": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 7": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 6": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 5": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 4": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 3": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample 2": {
+        "max_row": 63,
+        "max_col": 23
+      },
+      "Sample1": {
+        "max_row": 63,
+        "max_col": 23
+      }
+    },
+    "header_structure": "Sheet ToC maps Sample 1..19 to cell IDs ASC-1..108. Sample sheets 1..19 contain detailed slurry formulation, wet/dry weights, and solids %.",
+    "date_range_or_batch": "October 26, 2020 to November 5, 2020 (batches 261020, 031120, 051120).",
+    "missing_value_markers": [
+      "None",
+      "empty cell"
+    ]
+  }
+}

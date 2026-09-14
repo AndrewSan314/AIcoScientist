@@ -1,24 +1,26 @@
-# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration
-benchmark_name: "drakopoulos_graphite_offline_rediscovery"
-version: "1.0.0"
+# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration (v2)
+benchmark_name: "drakopoulos_graphite_offline_rediscovery_v2"
+version: "2.0.0"
 
 dataset:
   dataset_id: "drakopoulos_graphite"
   display_name: "Graphite Process-15"
   source_doi: "10.17632/4dh2h3tsf4.1"
   evidence_kind: "PHYSICAL_HISTORICAL"
-  normalized_runs_path: "data/external/drakopoulos_graphite/1/processed/1/normalized_runs.json"
+  normalized_runs_path: "data/external/drakopoulos_graphite/1/processed/2/normalized_runs.json"
+  partition: "PROSPECTIVE_MODEL_VALIDATION"
 
 target:
-  name: "cell_capacity_mah"
-  units: "mAh"
+  name: "discharge_specific_capacity_cycle30_mah_g"
+  units: "mAh/g"
   sense: "maximize"
-  source_column: "Cell Capacity (372 mAh/g)"
+  source_column: "Discharge Specific Capacity Cycle 30 (D30_mAh / Active_Mass_mg * 1000)"
 
 optimization:
-  candidate_id_column: "run_id"
-  candidate_pool_size: 13
+  candidate_id_column: "recipe_id"
+  candidate_pool_size: 26
   initial_design_size: 3
+  budget_primary: 5
   max_steps: 10
   ucb_beta: 2.0
   seeds:
@@ -33,21 +35,30 @@ optimization:
     - 281
     - 353
   policies:
+    - "AICOSCIENTIST_PROCESS_ENGINE"
+    - "DIRECT_BOTORCH_BASELINE"
     - "random"
-    - "greedy"
-    - "gp_ucb"
-    - "expected_improvement"
-    - "noisy_expected_improvement"
+    - "aicointel_greedy"
+    - "aicointel_ucb"
 
 mode_1_specification:
   mode: "SOURCE_OBSERVED_BEST_REDISCOVERY"
   status: "ACTIVE"
-  ground_truth_best_recipe_id: "AS-104"
-  ground_truth_best_capacity_mah: 11.047570417935756
-  runner_up_recipe_id: "AS-46"
-  runner_up_capacity_mah: 10.920245398773007
+  ground_truth_best_recipe_id: "protocol-d3602183e567"
+  ground_truth_best_source_case: "Case 56 (Calendered)"
+  ground_truth_best_cells:
+    - "ASC-52"
+    - "ASC-53"
+    - "ASC-54"
+  ground_truth_best_capacity_mah_g: 402.25
+  ground_truth_best_std_mah_g: 1.76
+  runner_up_recipe_id: "protocol-fd150c39c22f"
+  runner_up_capacity_mah_g: 392.51
+  third_place_recipe_id: "protocol-04acc12b3f71"
+  third_place_capacity_mah_g: 384.31
 
 mode_2_specification:
   mode: "PUBLISHED_VALIDATED_DESIGN_REDISCOVERY"
-  status: "PUBLISHED_OPTIMIZED_DESIGN_NOT_SOURCE_RECOVERABLE"
-  rationale: "Mendeley source release DOI 10.17632/4dh2h3tsf4.1 provides alchemite_model_training.txt, which configures proprietary Intellegens Alchemite API dataset upload and training without optimization proposals or output recipes. Companion ASC workbook contains unexecuted/partial rows lacking process parameters. No isolated published AI-designed electrode with verified ground truth outcome is recoverable from the open data repository."
+  status: "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING"
+  rationale: "Mendeley source release DOI 10.17632/4dh2h3tsf4.1 provides alchemite_model_training.txt which configures proprietary Intellegens Alchemite API upload and training without optimization proposals or output recipes. In Drakopoulos et al. (2021) Tables S5-S6, Alchemite design represents an aggregate comparative set rather than an isolated recoverable single-cell ID distinct from the Nextrode series. Offline rediscovery fails closed with qualifier PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING."
+

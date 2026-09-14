@@ -1,0 +1,262 @@
+{
+  "dataset": "drakopoulos_graphite",
+  "subsets": {
+    "ASC": {
+      "cell_count": 108,
+      "coating_gap_um": {
+        "count": 108,
+        "min": 100.0,
+        "mean": 180.5556,
+        "max": 300.0,
+        "std": 56.8597
+      },
+      "coating_speed_m_per_min": {
+        "count": 108,
+        "min": 0.1,
+        "mean": 0.2694,
+        "max": 0.4,
+        "std": 0.115
+      },
+      "drying_temperature_c": {
+        "count": 108,
+        "min": 60.0,
+        "mean": 72.2222,
+        "max": 100.0,
+        "std": 13.1468
+      },
+      "active_material_fraction_pct": {
+        "count": 108,
+        "min": 95.2093,
+        "mean": 95.3226,
+        "max": 95.5167,
+        "std": 0.1378
+      },
+      "conductive_additive_fraction_pct": {
+        "count": 108,
+        "min": 1.0034,
+        "mean": 1.0092,
+        "max": 1.0158,
+        "std": 0.0048
+      },
+      "binder_cmc_fraction_pct": {
+        "count": 108,
+        "min": 1.4989,
+        "mean": 1.5066,
+        "max": 1.511,
+        "std": 0.0047
+      },
+      "binder_sbr_fraction_pct": {
+        "count": 108,
+        "min": 2.2483,
+        "mean": 2.2589,
+        "max": 2.2754,
+        "std": 0.0116
+      },
+      "active_mass_mg": {
+        "count": 108,
+        "min": 7.2097,
+        "mean": 16.472,
+        "max": 32.5617,
+        "std": 5.7513
+      },
+      "electrode_thickness_um": {
+        "count": 108,
+        "min": 46.5,
+        "mean": 95.2417,
+        "max": 196.0,
+        "std": 33.6794
+      },
+      "porosity_pct": {
+        "count": 108,
+        "min": 21.01,
+        "mean": 46.2315,
+        "max": 60.45,
+        "std": 11.0545
+      },
+      "cell_capacity_mah": {
+        "count": 108,
+        "min": 2.682,
+        "mean": 6.1276,
+        "max": 12.1129,
+        "std": 2.1395
+      },
+      "d30_mah": {
+        "count": 69,
+        "min": 0.0001,
+        "mean": 2.999,
+        "max": 5.8234,
+        "std": 1.3962
+      },
+      "discharge_specific_capacity_cycle30_mah_g": {
+        "count": 69,
+        "min": 0.005,
+        "mean": 229.9857,
+        "max": 403.7933,
+        "std": 124.0459
+      }
+    },
+    "AS": {
+      "cell_count": 143,
+      "coating_gap_um": {
+        "count": 143,
+        "min": 70.0,
+        "mean": 277.0629,
+        "max": 300.0,
+        "std": 63.5965
+      },
+      "coating_speed_m_per_min": {
+        "count": 143,
+        "min": 0.1,
+        "mean": 0.1336,
+        "max": 0.5,
+        "std": 0.1003
+      },
+      "drying_temperature_c": {
+        "count": 143,
+        "min": 80.0,
+        "mean": 90.0699,
+        "max": 120.0,
+        "std": 16.7038
+      },
+      "active_material_fraction_pct": {
+        "count": 143,
+        "min": 93.413,
+        "mean": 94.3651,
+        "max": 94.9163,
+        "std": 0.3356
+      },
+      "conductive_additive_fraction_pct": {
+        "count": 143,
+        "min": 1.9627,
+        "mean": 2.3734,
+        "max": 2.5131,
+        "std": 0.2202
+      },
+      "binder_cmc_fraction_pct": {
+        "count": 143,
+        "min": 0.7524,
+        "mean": 1.2464,
+        "max": 2.0022,
+        "std": 0.2867
+      },
+      "binder_sbr_fraction_pct": {
+        "count": 143,
+        "min": 1.0054,
+        "mean": 1.7603,
+        "max": 2.2527,
+        "std": 0.2866
+      },
+      "additive_fraction_pct": {
+        "count": 143,
+        "min": 0.0,
+        "mean": 0.2548,
+        "max": 1.6281,
+        "std": 0.4711
+      },
+      "active_mass_mg": {
+        "count": 143,
+        "min": 2.1252,
+        "mean": 17.9868,
+        "max": 32.1607,
+        "std": 7.2568
+      },
+      "electrode_thickness_um": {
+        "count": 143,
+        "min": 16.4,
+        "mean": 99.1084,
+        "max": 191.6,
+        "std": 41.6656
+      },
+      "cell_capacity_mah": {
+        "count": 143,
+        "min": 0.7906,
+        "mean": 6.6911,
+        "max": 11.9638,
+        "std": 2.6995
+      },
+      "d20_mah": {
+        "count": 106,
+        "min": 0.0,
+        "mean": 2.4787,
+        "max": 7.0904,
+        "std": 1.9477
+      },
+      "d50_mah": {
+        "count": 102,
+        "min": 0.0,
+        "mean": 0.5052,
+        "max": 4.1283,
+        "std": 0.7097
+      },
+      "discharge_specific_capacity_cycle30_mah_g": {
+        "count": 0,
+        "min": null,
+        "mean": null,
+        "max": null,
+        "std": null
+      }
+    }
+  },
+  "physical_sanity_bounds": {
+    "coating_gap_um": {
+      "min": 50.0,
+      "max": 400.0,
+      "units": "um"
+    },
+    "coating_speed_m_per_min": {
+      "min": 0.05,
+      "max": 1.0,
+      "units": "m/min"
+    },
+    "drying_temperature_c": {
+      "min": 50.0,
+      "max": 150.0,
+      "units": "C"
+    },
+    "active_material_fraction_pct": {
+      "min": 85.0,
+      "max": 98.0,
+      "units": "%"
+    },
+    "conductive_additive_fraction_pct": {
+      "min": 0.5,
+      "max": 8.0,
+      "units": "%"
+    },
+    "binder_cmc_fraction_pct": {
+      "min": 0.5,
+      "max": 5.0,
+      "units": "%"
+    },
+    "binder_sbr_fraction_pct": {
+      "min": 0.5,
+      "max": 5.0,
+      "units": "%"
+    },
+    "active_mass_mg": {
+      "min": 1.0,
+      "max": 50.0,
+      "units": "mg"
+    },
+    "electrode_thickness_um": {
+      "min": 10.0,
+      "max": 300.0,
+      "units": "um"
+    },
+    "porosity_pct": {
+      "min": 15.0,
+      "max": 70.0,
+      "units": "%"
+    },
+    "cell_capacity_mah": {
+      "min": 0.0,
+      "max": 20.0,
+      "units": "mAh"
+    },
+    "discharge_specific_capacity_cycle30_mah_g": {
+      "min": 0.0,
+      "max": 400.0,
+      "units": "mAh/g"
+    }
+  }
+}

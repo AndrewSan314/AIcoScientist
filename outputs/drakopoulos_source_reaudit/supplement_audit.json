@@ -1,0 +1,53 @@
+{
+  "paper_doi": "10.1016/j.xcrp.2021.100683",
+  "paper_title": "Formulation and manufacturing optimization of lithium-ion graphite-based electrodes via machine learning",
+  "paper_authors": "Stavros X. Drakopoulos, Azarmidokht Gholamipour-Shirazi, Paul MacDonald, Robert C. Parini, Carl D. Reynolds, David L. Burnett, Ben Pye, Kieran B. O'Regan, Guanmei Wang, Thomas M. Whitehead, Gareth J. Conduit, Alexandru Cazacu, Emma Kendrick",
+  "journal": "Cell Reports Physical Science 2, 100683, December 22, 2021",
+  "supplementary_tables_audit": {
+    "Table_S1": {
+      "description": "27 formulation / manufacturing protocols of the historical model development campaign (corresponds exactly to Cases 12 to 38 in AS-Cell_Data)",
+      "cell_count": 85,
+      "status": "GROUNDED_IN_AS_WORKBOOK"
+    },
+    "Table_S2": {
+      "description": "Detailed slurry mixing procedures (dry mix, binder addition, planetary mixing speed/time)",
+      "status": "PROCESS_QUALITATIVE"
+    },
+    "Table_S3": {
+      "description": "Experimental performance summary of the historical screening cells (formation, C/5 capacity, retention)",
+      "status": "GROUNDED_IN_AS_WORKBOOK"
+    },
+    "Table_S4": {
+      "description": "Baseline model benchmark comparison on 5-fold cross validation: Lasso, Random Forest, vs Alchemite neural network",
+      "status": "MODEL_EVALUATION"
+    },
+    "Table_S5": {
+      "description": "Independent variables of the design space and specifications for the AI-designed electrode: formulation constrained within observed range (graphite ~95%, C45 ~1%, CMC ~1.5%, SBR ~2.25%, CMC:SBR 2:3 ratio; coating gap 100-200 um, speed 0.2-0.4 m/min, drying temperature 60-100 C, calendered)",
+      "status": "ALCHEMITE_DESIGN_SPECIFICATION"
+    },
+    "Table_S6": {
+      "description": "Comparison between Alchemite model prediction and experimental validation cell(s). The paper reports that AI-designed prospective validation cells achieved at least 2.5x higher D30 than unoptimized cells of equivalent active mass.",
+      "status": "VALIDATION_COMPARISON"
+    }
+  },
+  "partitions": {
+    "Partition_A_HISTORICAL_MODEL_DEVELOPMENT": {
+      "description": "Historical 27 protocols (Cases 12 to 38, AS-1 to AS-143, 85 valid training cells). Used to fit initial machine learning models.",
+      "source_workbook": "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx",
+      "target_availability": "Contains formation cycles and D1, D2, D5, D10, D20, D50. Does NOT contain D30.",
+      "role_in_benchmark": "Available for pre-training or historical surrogate warm start."
+    },
+    "Partition_B_PROSPECTIVE_MODEL_VALIDATION": {
+      "description": "Nextrode campaign with Alchemite (Cases 39 to 74, ASC-1 to ASC-108, 19 slurry samples, 36 cases, 108 cells).",
+      "source_workbook": "ASC-Cell_Data-Azar-Stavros.xlsx and ASC_results-live.xlsx",
+      "target_availability": "Explicitly contains D30(mAh) for 72 cells (69 with positive discharge capacity), enabling exact calculation of discharge_specific_capacity_cycle30_mah_g.",
+      "role_in_benchmark": "Primary candidate pool for sequential closed-loop rediscovery benchmark where D30 target is known retrospectively."
+    },
+    "Partition_C_PUBLISHED_ALCHEMITE_DESIGN_VALIDATION": {
+      "description": "The specific physical cell(s) manufactured from the Alchemite design reported in Table S6.",
+      "status": "SOURCE_TIE_AUDIT",
+      "source_grounding_result": "The Alchemite-designed electrode corresponds to the optimized regime identified in Partition B (Sample 10 / Case 56-58: 95.24% graphite, 1.01% C45, 1.50% CMC, 2.25% SBR, gap 100 um, speed 0.2-0.4 m/min, 60 C drying, calendered), where D30 reaches 384-402 mAh/g. However, because Table S6 in the paper is reported as an aggregated validation comparison rather than a distinct single-row cell ID distinct from the Nextrode series, Mode 2 rediscovery must be reported with precise scientific caveats.",
+      "fail_closed_code": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING"
+    }
+  }
+}

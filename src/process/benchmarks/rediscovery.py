@@ -12,12 +12,16 @@ from dataclasses import asdict, dataclass, field
 import logging
 from typing import Any, Callable, Mapping, Sequence
 
+import math
 import numpy as np
 import pandas as pd
 
 from src.optimization.backend import resolve_strategy
 from src.optimization.botorch_backend import BoTorchBackend
 from src.optimization.objective import OptimizationObjective
+from src.process.coordinator import ProcessOptimizationCoordinator
+from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
+from src.process.optimization.process_space import ProcessSearchSpace
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +56,8 @@ class RediscoveryTrajectory:
     initial_best_value: float = 0.0
     rediscovered: bool = False
     experiments_to_best: int | None = None
+    top3_rediscovered: bool = False
+    experiments_to_top3: int | None = None
     final_simple_regret: float = 0.0
     final_cumulative_regret: float = 0.0
 
@@ -65,6 +71,8 @@ class RediscoveryTrajectory:
             "initial_best_value": self.initial_best_value,
             "rediscovered": self.rediscovered,
             "experiments_to_best": self.experiments_to_best,
+            "top3_rediscovered": self.top3_rediscovered,
+            "experiments_to_top3": self.experiments_to_top3,
             "final_simple_regret": self.final_simple_regret,
             "final_cumulative_regret": self.final_cumulative_regret,
             "steps": [asdict(s) for s in self.steps],
@@ -85,9 +93,44 @@ class PolicySummary:
     mean_cumulative_regret: float
     std_cumulative_regret: float
     hit_rate_at_step: dict[int, float]
+    hit_rate_at_1: float = 0.0
+    hit_rate_at_3: float = 0.0
+    hit_rate_at_5: float = 0.0
+    top3_hit_rate_at_5: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def calculate_hypergeometric_baseline(
+    total_candidates: int,
+    initial_size: int,
+    budget: int,
+    top_k: int = 1,
+) -> dict[int, float]:
+    """Calculates exact analytical probability of selecting at least one of top_k targets.
+
+    Pool initially has total_candidates.
+    initial_size candidates are drawn excluding the top_k targets.
+    Remaining pool has N_rem = total_candidates - initial_size candidates, containing top_k targets.
+    At step s in [1, budget], s candidates have been drawn sequentially without replacement.
+
+    P(at least 1 of top_k in s draws) = 1 - [comb(N_rem - top_k, s) / comb(N_rem, s)]
+    """
+    n_rem = total_candidates - initial_size
+    if n_rem <= 0 or top_k <= 0:
+        return {s: 0.0 for s in range(1, budget + 1)}
+
+    curve: dict[int, float] = {}
+    for s in range(1, budget + 1):
+        if s > n_rem or (n_rem - top_k) < s:
+            curve[s] = 1.0
+            continue
+        ways_to_miss = math.comb(n_rem - top_k, s)
+        total_ways = math.comb(n_rem, s)
+        prob = 1.0 - (ways_to_miss / total_ways)
+        curve[s] = float(prob)
+    return curve
 
 
 class BlindExperimentalOracle:
@@ -307,6 +350,8 @@ class RediscoveryReplay:
         control_columns: Sequence[str] | None = None,
         minimize: bool = False,
         backend: Any | None = None,
+        coordinator: Any | None = None,
+        top_k_targets: int = 3,
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
@@ -314,6 +359,8 @@ class RediscoveryReplay:
         self._control_columns = control_columns
         self._minimize = minimize
         self._backend = backend or BoTorchBackend()
+        self._coordinator = coordinator
+        self._top_k_targets = top_k_targets
 
     def _create_oracle(self) -> BlindExperimentalOracle:
         return BlindExperimentalOracle(
@@ -344,6 +391,12 @@ class RediscoveryReplay:
         oracle = self._create_oracle()
         hidden_best = oracle.hidden_best_id
         all_candidate_ids = oracle.visible_candidates()[oracle.candidate_id_column].tolist()
+
+        sorted_pool = self._candidate_pool.sort_values(
+            by=self._target_column,
+            ascending=self._minimize,
+        )
+        top_k_ids = set(sorted_pool[self._candidate_id_column].head(self._top_k_targets).astype(str))
 
         # Filter out hidden best from pool eligible for initial design
         initial_eligible_pool = [cid for cid in all_candidate_ids if cid != hidden_best]
@@ -378,7 +431,13 @@ class RediscoveryReplay:
         budget = max_steps if max_steps is not None else oracle.num_unrevealed
         cumulative_regret = 0.0
 
-        canonical_strat = resolve_strategy(strategy)
+        canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
+
+        is_coordinator_policy = (
+            self._coordinator is not None
+            or strategy.upper() in ("AICOSCIENTIST_PROCESS_ENGINE", "PRODUCTION_COORDINATOR", "COORDINATOR")
+            or strategy.lower().startswith("aicointel_")
+        )
 
         for step in range(1, budget + 1):
             if oracle.num_unrevealed == 0:
@@ -393,7 +452,7 @@ class RediscoveryReplay:
             acq_val: float | None = None
             hidden_rank: int = 1
 
-            if canonical_strat == "random":
+            if canonical_strat == "random" and not is_coordinator_policy:
                 step_rng = np.random.default_rng(seed * 1000 + step)
                 visible_ids = visible[oracle.candidate_id_column].tolist()
                 selected_id = str(step_rng.choice(visible_ids))
@@ -404,31 +463,101 @@ class RediscoveryReplay:
                     hidden_rank = perm.index(hidden_best) + 1
                 else:
                     hidden_rank = 1
+            elif is_coordinator_policy:
+                coord = self._coordinator or ProcessOptimizationCoordinator()
+                full_space = ProcessSearchSpace.from_finite_pool(
+                    self._candidate_pool[[oracle.candidate_id_column] + oracle.control_columns],
+                    id_column=oracle.candidate_id_column,
+                )
+                obj = ProcessOptimizationObjective(
+                    objectives=[
+                        ObjectiveSpec(
+                            target=oracle.target_column,
+                            sense="minimize" if self._minimize else "maximize",
+                            units="mAh/g",
+                        )
+                    ]
+                )
+                coord_strat = "noisy_expected_improvement"
+                if strategy.startswith("aicointel_"):
+                    coord_strat = strategy.replace("aicointel_", "")
+                    if coord_strat == "nei":
+                        coord_strat = "noisy_expected_improvement"
+                    elif coord_strat == "ei":
+                        coord_strat = "expected_improvement"
+                    elif coord_strat == "ucb":
+                        coord_strat = "gp_ucb"
+
+                proposals = coord.propose_recipes(
+                    observations=revealed,
+                    space=full_space,
+                    objective=obj,
+                    n=len(full_space.candidates),
+                    seed=seed * 1000 + step,
+                    strategy=coord_strat,
+                )
+                if not proposals:
+                    raise RuntimeError("ProcessOptimizationCoordinator returned empty proposal list.")
+
+                visible_ids = set(visible[oracle.candidate_id_column].astype(str))
+                unrevealed_proposals = [
+                    p for p in proposals
+                    if str(p.candidate_instance_id or p.source_recipe_id) in visible_ids
+                ]
+                if not unrevealed_proposals:
+                    raise RuntimeError("No unrevealed proposals returned by ProcessOptimizationCoordinator.")
+
+                top_prop = unrevealed_proposals[0]
+                selected_id = str(top_prop.candidate_instance_id or top_prop.source_recipe_id)
+                pred_obj = top_prop.predicted_outputs.get(oracle.target_column)
+                pred_mean = pred_obj.mean if pred_obj else None
+                pred_std = pred_obj.std if pred_obj else None
+                acq_val = top_prop.acquisition_value
+
+                prop_ids = [str(p.candidate_instance_id or p.source_recipe_id) for p in unrevealed_proposals]
+                if hidden_best in prop_ids:
+                    hidden_rank = prop_ids.index(hidden_best) + 1
+                else:
+                    hidden_rank = 1
             else:
                 obj = OptimizationObjective(target_name=oracle.target_column, minimize=self._minimize)
+                strat_raw = strategy.strip()
+                strat_lower = strat_raw.lower()
+                if strat_lower in ("direct_botorch_baseline", "direct_botorch"):
+                    direct_strat = "noisy_expected_improvement"
+                elif strat_lower.startswith("direct_botorch_"):
+                    direct_strat = strat_raw[len("direct_botorch_"):]
+                else:
+                    direct_strat = strat_raw
+                direct_strat = resolve_strategy(direct_strat)
                 proposals = self._backend.propose(
                     observations=revealed,
-                    candidate_pool=visible,
+                    candidate_pool=self._candidate_pool[[oracle.candidate_id_column] + oracle.control_columns],
                     objective=obj,
                     feature_columns=oracle.control_columns,
                     candidate_id_column=oracle.candidate_id_column,
-                    n=len(visible),
+                    n=len(self._candidate_pool),
                     seed=seed * 1000 + step,
-                    strategy=strategy,
+                    strategy=direct_strat,
                     beta=beta,
                 )
 
                 if not proposals:
                     raise RuntimeError("Surrogate proposal returned empty candidate list.")
 
-                top_prop = proposals[0]
+                visible_ids = set(visible[oracle.candidate_id_column].astype(str))
+                unrevealed_proposals = [p for p in proposals if str(p.candidate_id) in visible_ids]
+                if not unrevealed_proposals:
+                    raise RuntimeError("No unrevealed proposals returned by optimizer backend.")
+
+                top_prop = unrevealed_proposals[0]
                 selected_id = str(top_prop.candidate_id)
                 pred_mean = top_prop.predicted_mean
                 pred_std = top_prop.predicted_std
                 acq_val = top_prop.acquisition_value
 
                 # Find surrogate rank of hidden best among unrevealed candidates
-                prop_ids = [str(p.candidate_id) for p in proposals]
+                prop_ids = [str(p.candidate_id) for p in unrevealed_proposals]
                 if hidden_best in prop_ids:
                     hidden_rank = prop_ids.index(hidden_best) + 1
                 else:
@@ -442,6 +571,10 @@ class RediscoveryReplay:
             if is_hidden and not trajectory.rediscovered:
                 trajectory.rediscovered = True
                 trajectory.experiments_to_best = step
+
+            if selected_id in top_k_ids and not trajectory.top3_rediscovered:
+                trajectory.top3_rediscovered = True
+                trajectory.experiments_to_top3 = step
 
             if self._minimize:
                 best_so_far = min(best_so_far, revealed_val)
@@ -505,6 +638,12 @@ def summarize_trajectories(trajectories: Sequence[RediscoveryTrajectory]) -> Pol
         )
         hit_rate_at_step[step_idx] = hits / num_seeds
 
+    top3_hits_at_5 = sum(
+        1 for t in trajectories
+        if getattr(t, "experiments_to_top3", None) is not None and t.experiments_to_top3 <= 5
+    )
+    top3_rate_5 = top3_hits_at_5 / num_seeds if num_seeds > 0 else 0.0
+
     return PolicySummary(
         policy=policy,
         num_seeds=num_seeds,
@@ -516,6 +655,10 @@ def summarize_trajectories(trajectories: Sequence[RediscoveryTrajectory]) -> Pol
         mean_cumulative_regret=mean_cum_regret,
         std_cumulative_regret=std_cum_regret,
         hit_rate_at_step=hit_rate_at_step,
+        hit_rate_at_1=hit_rate_at_step.get(1, 0.0),
+        hit_rate_at_3=hit_rate_at_step.get(3, 0.0),
+        hit_rate_at_5=hit_rate_at_step.get(5, 0.0),
+        top3_hit_rate_at_5=top3_rate_5,
     )
 
 
@@ -531,6 +674,8 @@ def run_rediscovery_benchmark(
     initial_size: int = 3,
     max_steps: int | None = None,
     backend: Any | None = None,
+    coordinator: Any | None = None,
+    top_k_targets: int = 3,
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
     replay = RediscoveryReplay(
@@ -540,6 +685,8 @@ def run_rediscovery_benchmark(
         control_columns=control_columns,
         minimize=minimize,
         backend=backend,
+        coordinator=coordinator,
+        top_k_targets=top_k_targets,
     )
 
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
@@ -559,6 +706,10 @@ def run_rediscovery_benchmark(
         summary = summarize_trajectories(pol_trajectories)
         policy_summaries.append(summary)
 
+    budget_for_analytic = max_steps if max_steps is not None else (len(candidate_pool) - initial_size)
+    analytic_top1 = calculate_hypergeometric_baseline(len(candidate_pool), initial_size, budget_for_analytic, top_k=1)
+    analytic_top3 = calculate_hypergeometric_baseline(len(candidate_pool), initial_size, budget_for_analytic, top_k=top_k_targets)
+
     return {
         "candidate_id_column": candidate_id_column,
         "target_column": target_column,
@@ -568,9 +719,60 @@ def run_rediscovery_benchmark(
         "initial_size": initial_size,
         "seeds": list(seeds),
         "policies": list(policies),
+        "analytic_hypergeometric": {
+            "top1_hit_rate_by_step": analytic_top1,
+            "top3_hit_rate_by_step": analytic_top3,
+        },
         "trajectories": {
             pol: [t.to_dict() for t in trajs]
             for pol, trajs in all_trajectories.items()
         },
         "summaries": [s.to_dict() for s in policy_summaries],
     }
+
+
+class ProductionProcessRediscoveryRunner:
+    """Production runner executing offline closed-loop rediscovery through ProcessOptimizationCoordinator."""
+
+    def __init__(
+        self,
+        candidate_pool: pd.DataFrame,
+        *,
+        candidate_id_column: str = "recipe_id",
+        target_column: str = "discharge_specific_capacity_cycle30_mah_g",
+        control_columns: Sequence[str] | None = None,
+        coordinator: ProcessOptimizationCoordinator | None = None,
+        top_k_targets: int = 3,
+    ) -> None:
+        self.candidate_pool = candidate_pool.copy()
+        self.candidate_id_column = candidate_id_column
+        self.target_column = target_column
+        self.control_columns = control_columns
+        self.coordinator = coordinator or ProcessOptimizationCoordinator()
+        self.top_k_targets = top_k_targets
+
+    def run(
+        self,
+        policies: Sequence[str] = (
+            "AICOSCIENTIST_PROCESS_ENGINE",
+            "DIRECT_BOTORCH_BASELINE",
+            "random",
+        ),
+        seeds: Sequence[int] = (11, 23, 42, 67, 101, 137, 179, 223, 281, 353),
+        initial_size: int = 3,
+        budget: int = 5,
+    ) -> dict[str, Any]:
+        return run_rediscovery_benchmark(
+            candidate_pool=self.candidate_pool,
+            candidate_id_column=self.candidate_id_column,
+            target_column=self.target_column,
+            control_columns=self.control_columns,
+            minimize=False,
+            policies=policies,
+            seeds=seeds,
+            initial_size=initial_size,
+            max_steps=budget,
+            coordinator=self.coordinator,
+            top_k_targets=self.top_k_targets,
+        )
+
