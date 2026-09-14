@@ -66,6 +66,8 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
                 "completed_slurry_steps": int(completed_steps),
                 "last_raw_lammps_step": result.provenance.get("progress", {}).get("last_raw_lammps_step") if isinstance(result.provenance.get("progress"), dict) else None,
                 "dump_interval_steps": result.provenance.get("dump_interval_steps"), "fidelity_identity": result.provenance.get("fidelity_identity"),
+                "short_horizon_protocol": result.provenance.get("short_horizon_protocol") or ("COMPRESSED_RAMP" if fidelity_mode == FidelityMode.SHORT_HORIZON.value else None),
+                "protocol_schedule": result.provenance.get("protocol_schedule"),
                 "physics_config_fingerprint": result.provenance.get("physics_config_fingerprint"),
                 "simulation_manifest_hash": result.provenance.get("simulation_manifest_hash"),
                 "reference_equivalence_status": result.provenance.get("reference_equivalence_status", "NOT_EVALUATED"),
@@ -109,7 +111,7 @@ class ArtisticSimulationAdapter(NormalizedRunAdapter):
         manifest_rel = Path("raw") / "simulation_manifests" / f"{result.run_id}-{manifest_hash}.json"
         manifest_fidelity = {key: source_manifest[key] for key in (
             "fidelity_mode", "reference_slurry_steps", "requested_slurry_steps", "completed_slurry_steps",
-            "dump_interval_steps", "fidelity_identity", "reference_equivalence_status",
+            "dump_interval_steps", "fidelity_identity", "short_horizon_protocol", "protocol_schedule", "reference_equivalence_status",
             "physics_config_fingerprint", "simulation_manifest_hash",
         ) if key in source_manifest}
         provenance = {**result.provenance, **manifest_fidelity, "simulation_manifest_sha256": manifest_hash, "normalized_simulation_manifest": manifest_rel.as_posix()}

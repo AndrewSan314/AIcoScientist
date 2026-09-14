@@ -104,6 +104,8 @@ class ArtisticRenderer:
             "original": match.group(0), "new": replacement,
             "before_sha256": hashlib.sha256(text.encode()).hexdigest(), "after_sha256": _sha256(path),
             "requested_steps": self.config.requested_slurry_steps,
+            "short_horizon_protocol": self.config.effective_short_horizon_protocol.value,
+            "protocol_schedule": self.config.protocol_schedule,
         })
         flush_pattern = re.compile(r"(?m)^(\s*thermo\s+\d+\s*(?:#.*)?)$")
         flush_match = flush_pattern.search(rendered)

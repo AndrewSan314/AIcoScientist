@@ -170,7 +170,7 @@ def test_fidelity_validation_and_study_plan_are_fail_closed_and_dry_run_only() -
     assert plan.entries[0]["requested_dynamic_steps"] == 500_000
     assert plan.entries[0]["execution_mode"] == "local" and plan.entries[0]["fidelity_identity"]
     assert plan.entries[0]["physics_config_fingerprint"]
-    assert len({entry["physics_config_fingerprint"] for entry in plan.entries}) == 1
+    assert len({entry["physics_config_fingerprint"] for entry in plan.entries}) == len(plan.entries)
     assert {entry["fidelity_mode"] for entry in plan.entries} == {"SHORT_HORIZON"}
     assert ArtisticRunConfig().confirm_reference_execution is False
     with pytest.raises(ValueError, match="dump_interval_steps=1,000,000"):

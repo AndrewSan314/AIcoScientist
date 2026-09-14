@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from typing import Mapping
 
 
 PINNED_COMMIT = "5af9e0345673fac557c479ee8f4a0727e442c1fa"
@@ -38,6 +39,11 @@ class ExecutionMode(StrEnum):
 class FidelityMode(StrEnum):
     REFERENCE = "REFERENCE"
     SHORT_HORIZON = "SHORT_HORIZON"
+
+
+class ShortHorizonProtocol(StrEnum):
+    COMPRESSED_RAMP = "COMPRESSED_RAMP"
+    REFERENCE_SCHEDULE_TRUNCATION = "REFERENCE_SCHEDULE_TRUNCATION"
 
 
 REFERENCE_SLURRY_STEPS = 20_000_000
@@ -76,6 +82,7 @@ class ArtisticRunConfig:
     max_particle_count: int = 1_000_000
     allow_unsafe_particle_count: bool = False
     fidelity_mode: FidelityMode = FidelityMode.REFERENCE
+    short_horizon_protocol: ShortHorizonProtocol | None = None
     slurry_steps: int | None = None
     dump_interval_steps: int = 1_000_000
     confirm_reference_execution: bool = False
@@ -84,6 +91,8 @@ class ArtisticRunConfig:
     def __post_init__(self) -> None:
         mode = FidelityMode(self.fidelity_mode)
         object.__setattr__(self, "fidelity_mode", mode)
+        protocol = ShortHorizonProtocol(self.short_horizon_protocol) if self.short_horizon_protocol is not None else None
+        object.__setattr__(self, "short_horizon_protocol", protocol)
         if self.mpi_processes < 1 or self.omp_threads < 1 or self.timeout_seconds < 1 or self.cleanup_timeout_seconds <= 0 or self.max_particle_count < 1:
             raise ValueError("mpi_processes, omp_threads, timeout_seconds, cleanup_timeout_seconds, and max_particle_count must be positive")
         if not 0 <= self.lost_particle_tolerance <= 1:
@@ -99,6 +108,10 @@ class ArtisticRunConfig:
                 raise ValueError("reference ARTISTIC fidelity requires dump_interval_steps=1,000,000")
         elif self.slurry_steps is None or not 0 < self.slurry_steps < REFERENCE_SLURRY_STEPS:
             raise ValueError(f"short-horizon ARTISTIC fidelity requires explicit slurry_steps below {REFERENCE_SLURRY_STEPS:,}")
+        if mode == FidelityMode.SHORT_HORIZON and protocol not in (None, ShortHorizonProtocol.COMPRESSED_RAMP):
+            raise ValueError("REFERENCE_SCHEDULE_TRUNCATION is not implementable by the pinned ARTISTIC run command; use COMPRESSED_RAMP")
+        if mode == FidelityMode.REFERENCE and protocol is not None:
+            raise ValueError("short_horizon_protocol applies only to SHORT_HORIZON")
 
     @property
     def source_tree(self) -> Path:
@@ -107,6 +120,14 @@ class ArtisticRunConfig:
     @property
     def requested_slurry_steps(self) -> int:
         return REFERENCE_SLURRY_STEPS if self.fidelity_mode == FidelityMode.REFERENCE else int(self.slurry_steps)
+
+    @property
+    def effective_short_horizon_protocol(self) -> ShortHorizonProtocol | None:
+        return ShortHorizonProtocol.COMPRESSED_RAMP if self.fidelity_mode == FidelityMode.SHORT_HORIZON else None
+
+    @property
+    def protocol_schedule(self) -> dict[str, object]:
+        return protocol_schedule(self.fidelity_mode, self.requested_slurry_steps, self.effective_short_horizon_protocol)
 
     @property
     def lammps_accelerator_args(self) -> tuple[str, ...]:
@@ -119,6 +140,7 @@ class ArtisticRunConfig:
             "reference_slurry_steps": REFERENCE_SLURRY_STEPS,
             "requested_slurry_steps": self.requested_slurry_steps,
             "dump_interval_steps": self.dump_interval_steps,
+            "protocol_schedule": self.protocol_schedule,
         }
         return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
@@ -166,8 +188,9 @@ def _command_version(command: str) -> str:
 def physics_config_fingerprint(
     *, recipe_fingerprint: str, source_commit: str, source_tree_hash: str,
     patches: list[dict[str, object]] | tuple[dict[str, object], ...] = (),
+    protocol_schedule: Mapping[str, object] | None = None,
 ) -> str:
-    """Identity for physics-affecting inputs; horizon and dump-only patches are excluded."""
+    """Identity for physics-affecting inputs, including the NPT forcing schedule."""
     excluded = {"short_horizon_slurry_steps", "short_horizon_checkpoint_interval", "short_horizon_thermo_flush"}
     known = {patch["id"]: patch for patch in VERIFIED_PHYSICS_PATCHES}
     normalized_patches = []
@@ -181,8 +204,18 @@ def physics_config_fingerprint(
     payload = {
         "recipe_fingerprint": recipe_fingerprint, "source_commit": source_commit,
         "source_tree_hash": source_tree_hash, "physics_patches": normalized_patches,
+        "protocol_schedule": dict(protocol_schedule or {}),
     }
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+
+
+def protocol_schedule(mode: FidelityMode, steps: int, protocol: ShortHorizonProtocol | None = None) -> dict[str, object]:
+    if mode == FidelityMode.SHORT_HORIZON:
+        protocol = protocol or ShortHorizonProtocol.COMPRESSED_RAMP
+        if protocol != ShortHorizonProtocol.COMPRESSED_RAMP:
+            raise ValueError("only COMPRESSED_RAMP is supported by the pinned ARTISTIC run command")
+        return {"kind": protocol.value, "forcing": "NPT_ISO_0_TO_100_OVER_RUN_COMMAND", "ramp_steps": steps}
+    return {"kind": "REFERENCE_FULL_SCHEDULE", "forcing": "NPT_ISO_0_TO_100_OVER_RUN_COMMAND", "ramp_steps": REFERENCE_SLURRY_STEPS}
 
 
 def _processor_grids(output: str) -> list[tuple[int, int, int]]:

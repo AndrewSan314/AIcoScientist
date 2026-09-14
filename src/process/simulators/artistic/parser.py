@@ -18,6 +18,7 @@ _BOUNDS = re.compile(r"^\s*(\S+)\s+(\S+)\s+[xyz]lo\s+[xyz]hi\s*$")
 _LOST = re.compile(r"Lost atoms:\s*original\s+(\d+)\s+current\s+(\d+)", re.I)
 _THERMO_HEADER = re.compile(r"^\s*Step(?:\s|$)", re.I)
 _THERMO_ROW = re.compile(r"^\s*(\d+)(?:\s|$)")
+_LOOP_TIME = re.compile(r"^\s*Loop time of\s+([0-9.eE+-]+)\s+on\s+\d+\s+procs(?:\s+for\s+(\d+)\s+steps)?", re.I)
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,16 @@ class _ThermoBlock:
 class ThermoParseResult:
     checkpoints: tuple[ThermoCheckpoint, ...]
     diagnostics: tuple[str, ...] = ()
+    timings: tuple["LoopTiming", ...] = ()
+
+
+@dataclass(frozen=True)
+class LoopTiming:
+    phase: str
+    wall_seconds: float
+    reported_steps: int | None
+    source_log: str
+    line_number: int
 
 
 def parse_thermo_log(
@@ -113,6 +124,7 @@ def parse_thermo_log(
     blocks: list[_ThermoBlock] = []
     current: _ThermoBlock | None = None
     minimization_marker: int | None = None
+    loop_timings: list[tuple[int, float, int | None]] = []
     loop_since_header = False
     for line_number, line in enumerate(log.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
         if minimization_marker is None and re.search(r"\bMinimization stats\b", line, re.I):
@@ -128,7 +140,17 @@ def parse_thermo_log(
                 blocks.append(current)
             loop_since_header = False
             continue
-        if line.strip().startswith("Loop time"):
+        loop = _LOOP_TIME.match(line)
+        if loop:
+            try:
+                seconds = float(loop.group(1))
+            except ValueError:
+                diagnostics.append(f"{log.name}:{line_number}: malformed Loop time")
+                seconds = math.nan
+            if math.isfinite(seconds) and seconds >= 0:
+                loop_timings.append((line_number, seconds, int(loop.group(2)) if loop.group(2) else None))
+            else:
+                diagnostics.append(f"{log.name}:{line_number}: non-finite Loop time")
             loop_since_header = True
             current = None
             continue
@@ -182,7 +204,9 @@ def parse_thermo_log(
         checkpoints.append(ThermoCheckpoint(raw_step, metrics, stage, log.name, dynamics_step, phase))
     if minimization_expected and minimization_marker is None and boundary == len(blocks):
         diagnostics.append(f"{log.name}: minimization completed without a dynamics thermo block")
-    return ThermoParseResult(tuple(checkpoints), tuple(diagnostics))
+    dynamics_line = blocks[boundary].start_line if boundary < len(blocks) else None
+    timings = tuple(LoopTiming("minimization" if dynamics_line is not None and line < dynamics_line else "dynamics", seconds, steps, log.name, line) for line, seconds, steps in loop_timings)
+    return ThermoParseResult(tuple(checkpoints), tuple(diagnostics), timings)
 
 
 def parse_thermo_checkpoints(

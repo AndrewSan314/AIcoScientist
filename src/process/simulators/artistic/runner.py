@@ -181,6 +181,7 @@ class ArtisticSimulator:
                 source_commit=str(source.get("checked_out_commit", "")),
                 source_tree_hash=str(source.get("source_tree_hash", "")),
                 patches=state.patches if state else (),
+                protocol_schedule=self.config.protocol_schedule,
             ),
             "output_hashes": outputs, "stage_lineage": lineage or [], "diagnostics": list(diagnostics),
             "requested_stop_after": self.config.stop_after,
@@ -203,6 +204,8 @@ class ArtisticSimulator:
             "completed_slurry_steps": progress["completed_slurry_steps"],
             "dump_interval_steps": self.config.dump_interval_steps,
             "fidelity_identity": self.config.fidelity_identity,
+            "short_horizon_protocol": self.config.effective_short_horizon_protocol.value if self.config.effective_short_horizon_protocol else None,
+            "protocol_schedule": self.config.protocol_schedule,
             "early_termination": progress["early_termination"],
             "progress": progress,
             "checkpoints": progress["checkpoints"],
@@ -349,6 +352,10 @@ def _progress(
     completed = max((item.dynamics_step for item in dynamic_checkpoints), default=0)
     raw_completed = max((item.raw_step for item in checkpoints), default=None)
     wall_seconds = sum(float(command.get("wall_seconds", 0.0)) for command in commands if command.get("stage") == "slurry")
+    minimization_seconds = sum(item.wall_seconds for item in parsed.timings if item.phase == "minimization") if parsed else 0.0
+    dynamics_seconds = sum(item.wall_seconds for item in parsed.timings if item.phase == "dynamics") if parsed else 0.0
+    has_minimization = bool(parsed and any(item.phase == "minimization" for item in parsed.timings))
+    has_dynamics = bool(parsed and any(item.phase == "dynamics" for item in parsed.timings))
     return {
         "requested_slurry_steps": requested_steps,
         "requested_steps": requested_steps,
@@ -363,10 +370,15 @@ def _progress(
         "last_thermo_step": raw_completed,
         "last_thermo_step_semantics": "raw_lammps_step",
         "wall_seconds": wall_seconds,
-        "dynamics_wall_seconds": None,
-        "steps_per_second": None,
+        "minimization_wall_seconds": minimization_seconds if has_minimization else None,
+        "dynamics_wall_seconds": dynamics_seconds if has_dynamics else None,
+        "total_slurry_command_wall_seconds": wall_seconds,
+        "dynamics_steps": completed,
+        "dynamics_steps_per_second": completed / dynamics_seconds if dynamics_seconds > 0 else None,
+        "parsed_loop_wall_seconds": minimization_seconds + dynamics_seconds if parsed and parsed.timings else None,
+        "steps_per_second": completed / dynamics_seconds if dynamics_seconds > 0 else None,
         "estimated_remaining_seconds": None,
-        "eta_limitation": "slurry command timing cannot be separated between minimization and dynamics",
+        "eta_limitation": "dynamics timing is unavailable" if not has_dynamics else None,
         "early_termination": status is not None and completed < requested_steps,
     }
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from . import config as config_module
-from .config import ArtisticRunConfig, FidelityMode, REFERENCE_SLURRY_STEPS, physics_config_fingerprint
+from .config import ArtisticRunConfig, FidelityMode, REFERENCE_SLURRY_STEPS, physics_config_fingerprint, protocol_schedule
 from .schemas import ArtisticRecipe, estimate_particles, recipe_fingerprint
 
 
@@ -39,13 +39,11 @@ def build_convergence_study_plan(
     recipe_id = recipe_fingerprint(recipe) if recipe is not None else None
     pinned_commit = config_module.PINNED_COMMIT
     pinned_source_tree_hash = config_module.PINNED_SOURCE_TREE_HASH
-    physics_id = physics_config_fingerprint(
-        recipe_fingerprint=recipe_id, source_commit=pinned_commit, source_tree_hash=pinned_source_tree_hash,
-        patches=config_module.VERIFIED_PHYSICS_PATCHES if config.apply_verified_patches else (),
-    ) if recipe_id is not None else None
     for steps in selected:
         is_reference = steps == REFERENCE_SLURRY_STEPS
         mode = FidelityMode.REFERENCE if is_reference else FidelityMode.SHORT_HORIZON
+        schedule = protocol_schedule(mode, steps)
+        physics_id = physics_config_fingerprint(recipe_fingerprint=recipe_id, source_commit=pinned_commit, source_tree_hash=pinned_source_tree_hash, patches=config_module.VERIFIED_PHYSICS_PATCHES if config.apply_verified_patches else (), protocol_schedule=schedule) if recipe_id is not None else None
         entries.append({
             "fidelity_mode": mode.value,
             "fidelity_identity": _fidelity_identity(mode, steps, config.dump_interval_steps),
@@ -53,6 +51,8 @@ def build_convergence_study_plan(
             "pinned_commit": pinned_commit,
             "pinned_source_tree_hash": pinned_source_tree_hash,
             "physics_config_fingerprint": physics_id,
+            "short_horizon_protocol": schedule["kind"] if not is_reference else None,
+            "protocol_schedule": schedule,
             "particle_preflight": particles,
             "execution_mode": config.execution_mode.value,
             "mpi_processes": config.mpi_processes,
@@ -69,6 +69,6 @@ def build_convergence_study_plan(
 def _fidelity_identity(mode: FidelityMode, steps: int, dump_interval_steps: int) -> str:
     payload = {
         "mode": mode.value, "reference_slurry_steps": REFERENCE_SLURRY_STEPS,
-        "requested_slurry_steps": steps, "dump_interval_steps": dump_interval_steps,
+        "requested_slurry_steps": steps, "dump_interval_steps": dump_interval_steps, "protocol_schedule": protocol_schedule(mode, steps),
     }
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
