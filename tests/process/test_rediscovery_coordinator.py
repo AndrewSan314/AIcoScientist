@@ -33,8 +33,11 @@ def test_calculate_hypergeometric_baseline_exact() -> None:
 
 def test_calculate_hypergeometric_baseline_top3() -> None:
     curve = calculate_hypergeometric_baseline(total_candidates=10, initial_size=2, budget=2, top_k=3)
-    assert pytest.approx(curve[1], abs=1e-5) == 0.375
-    assert pytest.approx(curve[2], abs=1e-5) == 18.0 / 28.0
+    # Exact unconditional expectation conditioning on initial design excluding only top-1:
+    # step 1: 23 / 72 (~0.31944)
+    # step 2: 9 / 16 (0.5625)
+    assert pytest.approx(curve[1], abs=1e-5) == 23.0 / 72.0
+    assert pytest.approx(curve[2], abs=1e-5) == 9.0 / 16.0
 
 
 def test_rediscovery_coordinator_policy(mock_recipe_pool: pd.DataFrame) -> None:

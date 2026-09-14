@@ -141,26 +141,94 @@ def calculate_hypergeometric_baseline(
 ) -> dict[int, float]:
     """Calculates exact analytical probability of selecting at least one of top_k targets.
 
-    Pool initially has total_candidates.
-    initial_size candidates are drawn excluding the top_k targets.
-    Remaining pool has N_rem = total_candidates - initial_size candidates, containing top_k targets.
-    At step s in [1, budget], s candidates have been drawn sequentially without replacement.
-
-    P(at least 1 of top_k in s draws) = 1 - [comb(N_rem - top_k, s) / comb(N_rem, s)]
+    Semantics matching benchmark initial design:
+    - Pool initially has total_candidates.
+    - Initial design of initial_size candidates is drawn excluding the top-1 hidden best.
+    - For top_1: exactly 1 target exists among remaining candidates; prob at step s is s / N_rem.
+    - For top_k (k > 1):
+      Initial design draws initial_size candidates from (N - 1) candidates containing (k - 1) top-k targets.
+      Hypergeometric expectation across possible numbers m of top-k targets in initial design:
+      P(m) = [comb(k-1, m) * comb((N-1)-(k-1), N_init-m)] / comb(N-1, N_init).
+      Unrevealed pool has N_rem = N - N_init candidates containing k_rem = k - m targets.
+      P(hit at step s | m) = 1 - [comb(N_rem - k_rem, s) / comb(N_rem, s)].
+      Unconditional P(hit at step s) = sum_m P(m) * P(hit at step s | m).
     """
     n_rem = total_candidates - initial_size
-    if n_rem <= 0 or top_k <= 0:
+    if n_rem <= 0 or top_k <= 0 or total_candidates <= 0:
         return {s: 0.0 for s in range(1, budget + 1)}
 
     curve: dict[int, float] = {}
+    if top_k == 1:
+        for s in range(1, budget + 1):
+            curve[s] = min(1.0, float(s) / float(n_rem))
+        return curve
+
+    # Exact unconditional formula for top_k > 1
+    k_other = top_k - 1
+    n_other = total_candidates - 1
+    total_init_ways = math.comb(n_other, initial_size)
+
     for s in range(1, budget + 1):
-        if s > n_rem or (n_rem - top_k) < s:
+        if s >= n_rem:
             curve[s] = 1.0
             continue
-        ways_to_miss = math.comb(n_rem - top_k, s)
-        total_ways = math.comb(n_rem, s)
-        prob = 1.0 - (ways_to_miss / total_ways)
-        curve[s] = float(prob)
+        prob_s = 0.0
+        max_m = min(k_other, initial_size)
+        for m in range(max_m + 1):
+            ways_m = math.comb(k_other, m) * math.comb(n_other - k_other, initial_size - m)
+            p_m = ways_m / total_init_ways
+            k_rem = top_k - m  # Hidden best is always unrevealed, so k_rem >= 1
+            if s > n_rem - k_rem:
+                p_hit_given_m = 1.0
+            else:
+                ways_to_miss = math.comb(n_rem - k_rem, s)
+                total_draws = math.comb(n_rem, s)
+                p_hit_given_m = 1.0 - (ways_to_miss / total_draws)
+            prob_s += p_m * p_hit_given_m
+        curve[s] = float(min(1.0, prob_s))
+
+    return curve
+
+
+def calculate_conditional_hypergeometric_baseline(
+    total_candidates: int,
+    initial_designs_remaining_targets: Sequence[int],
+    budget: int,
+    initial_size: int = 3,
+) -> dict[int, float]:
+    """Calculates exact analytical probability of selecting at least one top-k target,
+    conditioned on the exact initial designs evaluated across seeds.
+
+    Args:
+        total_candidates: Total size of candidate pool N.
+        initial_designs_remaining_targets: List containing the number of unrevealed top-k targets
+            remaining in the candidate pool for each empirical seed's initial design.
+        budget: Sequential experiment budget B.
+        initial_size: Size of initial design N_init.
+    """
+    n_rem = total_candidates - initial_size
+    if n_rem <= 0 or not initial_designs_remaining_targets:
+        return {s: 0.0 for s in range(1, budget + 1)}
+
+    curve: dict[int, float] = {}
+    num_seeds = len(initial_designs_remaining_targets)
+
+    for s in range(1, budget + 1):
+        if s >= n_rem:
+            curve[s] = 1.0
+            continue
+        total_draws = math.comb(n_rem, s)
+        seed_probs = []
+        for k_rem in initial_designs_remaining_targets:
+            if k_rem <= 0:
+                seed_probs.append(0.0)
+            elif s > n_rem - k_rem:
+                seed_probs.append(1.0)
+            else:
+                ways_to_miss = math.comb(n_rem - k_rem, s)
+                seed_probs.append(1.0 - (ways_to_miss / total_draws))
+        curve[s] = float(sum(seed_probs) / num_seeds)
+
     return curve
 
 
@@ -883,6 +951,21 @@ def run_rediscovery_benchmark(
     analytic_top1 = calculate_hypergeometric_baseline(len(candidate_pool), initial_size, budget_for_analytic, top_k=1)
     analytic_top3 = calculate_hypergeometric_baseline(len(candidate_pool), initial_size, budget_for_analytic, top_k=top_k_targets)
 
+    sorted_pool = candidate_pool.sort_values(by=target_column, ascending=minimize)
+    top_k_ids = set(sorted_pool[candidate_id_column].head(top_k_targets).astype(str))
+    first_pol = policies[0]
+    first_trajs = all_trajectories[first_pol]
+    remaining_targets_by_seed = [
+        len([cid for cid in top_k_ids if cid not in t.initial_candidate_ids])
+        for t in first_trajs
+    ]
+    cond_analytic_top3 = calculate_conditional_hypergeometric_baseline(
+        total_candidates=len(candidate_pool),
+        initial_designs_remaining_targets=remaining_targets_by_seed,
+        budget=budget_for_analytic,
+        initial_size=initial_size,
+    )
+
     return {
         "benchmark_task": benchmark_task,
         "candidate_id_column": candidate_id_column,
@@ -895,7 +978,9 @@ def run_rediscovery_benchmark(
         "policies": list(policies),
         "analytic_hypergeometric": {
             "top1_hit_rate_by_step": analytic_top1,
-            "top3_hit_rate_by_step": analytic_top3,
+            "top3_hit_rate_by_step": cond_analytic_top3,
+            "top3_unconditional_by_step": analytic_top3,
+            "top3_conditional_by_step": cond_analytic_top3,
         },
         "trajectories": {
             pol: [t.to_dict() for t in trajs]
