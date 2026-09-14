@@ -52,6 +52,7 @@ def main() -> int:
     parser.add_argument("--stage", choices=[stage.value for stage in ProcessStage])
     parser.add_argument("--target")
     parser.add_argument("--model-type", choices=("gp", "extra_trees"), default="gp")
+    parser.add_argument("--model-family", choices=("stage_specific_surrogate", "stage_aware_multimodal_surrogate"), default="stage_specific_surrogate")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
@@ -60,7 +61,10 @@ def main() -> int:
     if args.dataset:
         if not args.stage or not args.target:
             parser.error("--dataset requires --stage and --target")
-        config = PipelineConfig(targets=(args.target,), model_type=args.model_type, seed=args.seed)
+        if args.model_family == "stage_aware_multimodal_surrogate":
+            print(json.dumps({"status": "IMPLEMENTED_NOT_EVALUATABLE_ON_THIS_DATASET", "model_family": args.model_family, "reason": "the CLI requires source-declared modality slots; call train_stage_aware_multimodal with a declared slot schema"}, indent=2))
+            return 0
+        config = PipelineConfig(targets=(args.target,), model_family=args.model_family, model_type=args.model_type, seed=args.seed)
         report = run_pipeline(BatteryProcessSurrogateAdapter.from_registered(args.dataset, stage=ProcessStage(args.stage), target=args.target, root=args.dataset_root), args.output or Path("outputs/maspo_pipeline"), config)
         print(json.dumps(report, indent=2, sort_keys=True, default=str))
         return 0
@@ -69,7 +73,7 @@ def main() -> int:
         raise ValueError("pipeline config must be a mapping")
     training, dataset = dict(raw.get("training", {})), dict(raw.get("dataset", {}))
     config = PipelineConfig(
-        targets=tuple(training["targets"]), model_type=str(training.get("model_type", "gp")), seed=int(training.get("seed", 42)),
+        targets=tuple(training["targets"]), model_family=str(training.get("model_family", "stage_specific_surrogate")), model_type=str(training.get("model_type", "gp")), seed=int(training.get("seed", 42)),
         validation_fraction=float(training.get("validation_fraction", 0.2)), test_fraction=float(training.get("test_fraction", 0.2)),
         objective_target=training.get("objective_target"), objective_sense=str(training.get("objective_sense", "maximize")),
         proposal_count=int(training.get("proposal_count", 3)), exploration_beta=float(training.get("exploration_beta", 1.0)),

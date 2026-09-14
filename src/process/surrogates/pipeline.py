@@ -24,6 +24,7 @@ from .core import DatasetAdapter, ProcessSurrogate, ProcessSurrogateSample, Surr
 @dataclass(frozen=True)
 class PipelineConfig:
     targets: tuple[str, ...]
+    model_family: str = "stage_specific_surrogate"
     model_type: str = "gp"
     seed: int = 42
     validation_fraction: float = .2
@@ -35,7 +36,7 @@ class PipelineConfig:
     target_units: Mapping[str, str] | None = None
 
     def __post_init__(self) -> None:
-        if not self.targets or self.model_type not in {"gp", "extra_trees"} or self.objective_sense not in {"maximize", "minimize"}: raise ValueError("targets, model type, and objective sense are invalid")
+        if not self.targets or self.model_family not in {"stage_specific_surrogate", "stage_aware_multimodal_surrogate"} or self.model_type not in {"gp", "extra_trees"} or self.objective_sense not in {"maximize", "minimize"}: raise ValueError("targets, model family, model type, and objective sense are invalid")
         if self.objective_target is not None and self.objective_target not in self.targets: raise ValueError("objective target must be one of the fitted targets")
 
 
