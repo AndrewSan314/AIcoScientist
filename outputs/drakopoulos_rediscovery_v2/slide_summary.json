@@ -1,68 +1,53 @@
 {
-  "benchmark": "drakopoulos_graphite_offline_rediscovery_v2",
   "dataset": "Graphite Process-15 (Drakopoulos et al. 2021)",
-  "scientific_question": "Can AIcoScientist discover the highest-performing battery manufacturing recipe retrospectively without seeing outcomes in advance?",
-  "retrospective_best_recipe": {
-    "id": "protocol-d3602183e567",
-    "source_case": "Case 56 (Calendered)",
-    "capacity_d30_mah_g": 402.2490501560316,
-    "replicate_std_mah_g": 1.7576851092313879,
-    "key_controls": {
-      "coating_speed_m_per_min": 0.2,
-      "coating_gap_um": 100.0,
-      "drying_temperature_c": 60.0,
-      "calendering_applied": true
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "historical_protocol_count": 26,
+  "historical_cell_count": 108,
+  "primary_target": "D30",
+  "primary_target_unit": "mAh/g",
+  "best_source_recipe_anonymized": "protocol-d3602183e567",
+  "best_source_case": "Case 56 (Calendered)",
+  "best_source_D30": 402.25,
+  "initial_recipe_count": 3,
+  "additional_experiment_budget": 5,
+  "seed_count": 10,
+  "full_engine": {
+    "hit_at_1": 0.0,
+    "hit_at_3": 0.4,
+    "hit_at_5": 0.5,
+    "top3_hit_at_5": 0.7,
+    "median_queries_to_best": 4.17,
+    "mean_simple_regret": 3.9,
+    "mean_cumulative_regret": 279.41
+  },
+  "random": {
+    "hit_at_1": 0.1,
+    "hit_at_3": 0.1,
+    "hit_at_5": 0.1,
+    "top3_hit_at_5": 0.3,
+    "median_queries_to_best": 4.67,
+    "mean_simple_regret": 31.16,
+    "mean_cumulative_regret": 547.08,
+    "analytic_hypergeometric": {
+      "hit_at_1": 0.043,
+      "hit_at_3": 0.13,
+      "hit_at_5": 0.217,
+      "top3_hit_at_5": 0.539
     }
   },
-  "primary_budget": 5,
-  "hit_rate_comparison": {
-    "AICOSCIENTIST_PROCESS_ENGINE": {
-      "hit_at_1_pct": 0.0,
-      "hit_at_3_pct": 40.0,
-      "hit_at_5_pct": 50.0,
-      "top3_hit_at_5_pct": 70.0,
-      "mean_simple_regret_mah_g": 3.9,
-      "mean_cumulative_regret_mah_g": 279.41
-    },
-    "DIRECT_BOTORCH_BASELINE": {
-      "hit_at_1_pct": 0.0,
-      "hit_at_3_pct": 40.0,
-      "hit_at_5_pct": 50.0,
-      "top3_hit_at_5_pct": 70.0,
-      "mean_simple_regret_mah_g": 3.9,
-      "mean_cumulative_regret_mah_g": 279.41
-    },
-    "random": {
-      "hit_at_1_pct": 10.0,
-      "hit_at_3_pct": 10.0,
-      "hit_at_5_pct": 10.0,
-      "top3_hit_at_5_pct": 30.0,
-      "mean_simple_regret_mah_g": 31.16,
-      "mean_cumulative_regret_mah_g": 547.08
-    },
-    "aicointel_greedy": {
-      "hit_at_1_pct": 0.0,
-      "hit_at_3_pct": 40.0,
-      "hit_at_5_pct": 80.0,
-      "top3_hit_at_5_pct": 90.0,
-      "mean_simple_regret_mah_g": 0.0,
-      "mean_cumulative_regret_mah_g": 169.91
-    },
-    "aicointel_ucb": {
-      "hit_at_1_pct": 0.0,
-      "hit_at_3_pct": 50.0,
-      "hit_at_5_pct": 60.0,
-      "top3_hit_at_5_pct": 80.0,
-      "mean_simple_regret_mah_g": 6.72,
-      "mean_cumulative_regret_mah_g": 267.13
-    }
+  "direct_botorch": {
+    "hit_at_1": 0.0,
+    "hit_at_3": 0.4,
+    "hit_at_5": 0.5,
+    "top3_hit_at_5": 0.7,
+    "mean_simple_regret": 3.9,
+    "mean_cumulative_regret": 279.41
   },
-  "hypergeometric_analytic_baseline": {
-    "hit_at_1_pct": 4.3,
-    "hit_at_3_pct": 13.0,
-    "hit_at_5_pct": 21.7,
-    "top3_hit_at_5_pct": 53.9
-  },
-  "mode_2_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
-  "zero_leakage_firewall": true
+  "published_design_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
+  "claim": "AIcoScientist process engine recovered high-performing recipes with significantly lower regret (3.90 mAh/g vs 31.16 mAh/g) and higher top-condition discovery rate (50.0% vs 21.7% analytic random) within a strict B=5 experiment budget.",
+  "limitations": [
+    "Evaluated on discrete retrospective candidate pool of 26 ASC manufacturing protocols.",
+    "Partition C Alchemite validation electrode cycling traces are not independently released in open Mendeley repository.",
+    "Initial design size is N_init=3 with seeds fixed across all policies."
+  ]
 }

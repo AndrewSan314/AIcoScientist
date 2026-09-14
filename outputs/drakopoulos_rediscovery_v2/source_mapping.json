@@ -1,0 +1,173 @@
+{
+  "controls": {
+    "coating_gap_um": {
+      "source_workbook_headers": [
+        "Gap size(?m)",
+        "Gap size(\u03bcm)"
+      ],
+      "semantic_meaning": "Doctor blade / slot-die coating gap setting controlling wet film thickness",
+      "physical_units": "um",
+      "physical_bounds": [
+        50.0,
+        400.0
+      ],
+      "schema_target": "stages[ProcessStage.COATING].parameters['coating_gap_um']",
+      "handling": "Forward-fill from batch/case header block"
+    },
+    "coating_speed_m_per_min": {
+      "source_workbook_headers": [
+        "Speed (m/min)"
+      ],
+      "semantic_meaning": "Web translation coating line speed",
+      "physical_units": "m/min",
+      "physical_bounds": [
+        0.05,
+        1.0
+      ],
+      "schema_target": "stages[ProcessStage.COATING].parameters['coating_speed_m_per_min']",
+      "handling": "Forward-fill from batch/case header block"
+    },
+    "drying_temperature_c": {
+      "source_workbook_headers": [
+        "Temperaure( ?C)",
+        "Temperaure( \u0366C)"
+      ],
+      "semantic_meaning": "Convective drying oven zone temperature",
+      "physical_units": "C",
+      "physical_bounds": [
+        50.0,
+        150.0
+      ],
+      "schema_target": "stages[ProcessStage.DRYING].parameters['drying_temperature_c']",
+      "handling": "Forward-fill from batch/case header block; parse ranges like '60-80' as lower bound or midpoint"
+    },
+    "active_material_fraction_pct": {
+      "source_workbook_headers": [
+        "A%"
+      ],
+      "semantic_meaning": "Graphite active material mass fraction in dry electrode formulation",
+      "physical_units": "%",
+      "physical_bounds": [
+        85.0,
+        98.0
+      ],
+      "schema_target": "stages[ProcessStage.FORMULATION].parameters['active_material_fraction_pct']",
+      "handling": "Direct cell value (numeric wt%)"
+    },
+    "conductive_additive_fraction_pct": {
+      "source_workbook_headers": [
+        "C%"
+      ],
+      "semantic_meaning": "Conductive carbon black (Timcal Super C45) mass fraction in dry electrode formulation",
+      "physical_units": "%",
+      "physical_bounds": [
+        0.5,
+        8.0
+      ],
+      "schema_target": "stages[ProcessStage.FORMULATION].parameters['conductive_additive_fraction_pct']",
+      "handling": "Direct cell value (numeric wt%)"
+    },
+    "binder_cmc_fraction_pct": {
+      "source_workbook_headers": [
+        "B1% (CMC)"
+      ],
+      "semantic_meaning": "Carboxymethyl cellulose (CMC) binder mass fraction in dry electrode formulation",
+      "physical_units": "%",
+      "physical_bounds": [
+        0.5,
+        5.0
+      ],
+      "schema_target": "stages[ProcessStage.FORMULATION].parameters['binder_cmc_fraction_pct']",
+      "handling": "Direct cell value (numeric wt%)"
+    },
+    "binder_sbr_fraction_pct": {
+      "source_workbook_headers": [
+        "B2%"
+      ],
+      "semantic_meaning": "Styrene-butadiene rubber (SBR) latex binder mass fraction in dry electrode formulation",
+      "physical_units": "%",
+      "physical_bounds": [
+        0.5,
+        5.0
+      ],
+      "schema_target": "stages[ProcessStage.FORMULATION].parameters['binder_sbr_fraction_pct']",
+      "handling": "Direct cell value (numeric wt%)"
+    },
+    "calendering_applied": {
+      "source_workbook_headers": [
+        "Calendared"
+      ],
+      "semantic_meaning": "Whether calendering compression rolls were applied to densify the dry coated electrode",
+      "physical_units": "categorical",
+      "schema_target": "stages[ProcessStage.CALENDERING].parameters['calendering_applied']",
+      "handling": "In ASC, even numbered cases (40, 42, 44... 74) are calendered; odd numbered cases are uncalendered."
+    }
+  },
+  "targets_and_metrology": {
+    "discharge_specific_capacity_cycle30_mah_g": {
+      "source_workbook_headers": [
+        "D30(mA.h)",
+        "Active Mass  (mg)"
+      ],
+      "semantic_meaning": "Experimental discharge specific capacity at cycle 30 normalized by electrode active mass",
+      "physical_units": "mAh/g",
+      "physical_bounds": [
+        0.0,
+        400.0
+      ],
+      "calculation": "(d30_mah / active_mass_mg) * 1000.0",
+      "schema_target": "targets['discharge_specific_capacity_cycle30_mah_g']",
+      "presence": "Explicitly present in ASC (69 positive cells). Absent from AS (which records D20 and D50)."
+    },
+    "active_mass_mg": {
+      "source_workbook_headers": [
+        "Active Mass  (mg)"
+      ],
+      "semantic_meaning": "Gravimetric mass of active graphite material on the electrode disc",
+      "physical_units": "mg",
+      "physical_bounds": [
+        1.0,
+        50.0
+      ],
+      "schema_target": "intermediate_metrology['active_mass_mg']"
+    },
+    "electrode_thickness_um": {
+      "source_workbook_headers": [
+        "Thickness (\u00b5m)",
+        "Thickness (?m)"
+      ],
+      "semantic_meaning": "Total thickness of coated electrode including current collector copper foil",
+      "physical_units": "um",
+      "physical_bounds": [
+        10.0,
+        300.0
+      ],
+      "schema_target": "intermediate_metrology['electrode_thickness_um']"
+    },
+    "porosity_pct": {
+      "source_workbook_headers": [
+        "Porosity (%)"
+      ],
+      "semantic_meaning": "Electrode pore volume fraction calculated from skeletal density and geometric volume",
+      "physical_units": "%",
+      "physical_bounds": [
+        15.0,
+        70.0
+      ],
+      "schema_target": "intermediate_metrology['porosity_pct']"
+    },
+    "cell_capacity_mah": {
+      "source_workbook_headers": [
+        "Cell Capacity (mAh)"
+      ],
+      "semantic_meaning": "Nominal theoretical cell capacity calculated assuming theoretical graphite capacity of 372 mAh/g",
+      "physical_units": "mAh",
+      "physical_bounds": [
+        0.0,
+        20.0
+      ],
+      "schema_target": "intermediate_metrology['cell_capacity_mah']",
+      "note": "NOT an experimental discharge target; represents active_mass_mg * 0.372."
+    }
+  }
+}

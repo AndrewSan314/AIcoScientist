@@ -1,0 +1,59 @@
+{
+  "benchmark_name": "drakopoulos_graphite_offline_rediscovery_v2",
+  "version": "2.0.0",
+  "paper_doi": "10.1016/j.xcrp.2021.100683",
+  "data_doi": "10.17632/4dh2h3tsf4.1",
+  "dataset_id": "drakopoulos_graphite",
+  "source_partition": "PROSPECTIVE_MODEL_VALIDATION",
+  "raw_file_sha256": {
+    "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx": "a508e1654d8c39395285ce55b62dae521d45f083d1d1a8ee6f502b32777f93b2",
+    "ASC-Cell_Data-Azar-Stavros.xlsx": "a49de219e8413871254e88bb9602169137255029e9ab37c7cd2e887155d7b4ed",
+    "AS-results-live.xlsx": "8199a7aa70935a9a5be228755d8fb52a53329f9aab453f336fa68e8c364e71b7",
+    "ASC_results-live.xlsx": "2a12879bd9b62e528fd5e5e3ff486707073accfb896a8c3cd9e13d1495046801"
+  },
+  "supplement_sha256": "official_cell_reports_physical_science_supplement_s1_s6",
+  "adapter_version": "2.0.0",
+  "normalized_data_fingerprint": "251_runs_108_asc_143_as_valid",
+  "recipe_table_fingerprint": "436926d59455999d16e137617601f322a8474f10a30e672888a8412128913de8",
+  "target_mapping": {
+    "canonical_name": "discharge_specific_capacity_cycle30_mah_g",
+    "unit": "mAh/g",
+    "formula": "D30_mAh / Active_Mass_mg * 1000"
+  },
+  "control_columns": [
+    "coating_speed_m_per_min",
+    "coating_gap_um",
+    "drying_temperature_c",
+    "calendering_applied",
+    "active_material_fraction_pct",
+    "binder_cmc_fraction_pct",
+    "binder_sbr_fraction_pct",
+    "conductive_additive_fraction_pct",
+    "mixing_solids_pct"
+  ],
+  "git_commit": "e2fcd04",
+  "seed_list": [
+    11,
+    23,
+    42,
+    67,
+    101,
+    137,
+    179,
+    223,
+    281,
+    353
+  ],
+  "primary_budget": 5,
+  "candidate_pool_size": 26,
+  "engine_paths": [
+    "AICOSCIENTIST_PROCESS_ENGINE",
+    "DIRECT_BOTORCH_BASELINE",
+    "random",
+    "aicointel_greedy",
+    "aicointel_ucb"
+  ],
+  "mode_1_status": "COMPLETED",
+  "mode_2_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
+  "anti_cheating_firewall": "STRICT_BLIND_EXPERIMENTAL_ORACLE"
+}

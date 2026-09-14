@@ -1,0 +1,33 @@
+{
+  "production_process_engine": {
+    "policy": "AICOSCIENTIST_PROCESS_ENGINE",
+    "routing": "ProcessOptimizationCoordinator -> ProcessSearchSpace -> BoTorchBackend",
+    "hit_at_1": 0.0,
+    "hit_at_3": 0.4,
+    "hit_at_5": 0.5,
+    "top3_hit_at_5": 0.7,
+    "mean_simple_regret": 3.895623018327433,
+    "mean_cumulative_regret": 279.40534912253463
+  },
+  "direct_botorch_baseline": {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "routing": "Direct BoTorchBackend.propose (tabular DataFrame)",
+    "hit_at_1": 0.0,
+    "hit_at_3": 0.4,
+    "hit_at_5": 0.5,
+    "top3_hit_at_5": 0.7,
+    "mean_simple_regret": 3.895623018327433,
+    "mean_cumulative_regret": 279.40534912253463
+  },
+  "random_baseline": {
+    "policy": "random",
+    "routing": "Uniform random discrete choice without surrogate",
+    "hit_at_1": 0.1,
+    "hit_at_3": 0.1,
+    "hit_at_5": 0.1,
+    "top3_hit_at_5": 0.3,
+    "mean_simple_regret": 31.15550757382394,
+    "mean_cumulative_regret": 547.0842398938958
+  },
+  "equivalence_note": "AICOSCIENTIST_PROCESS_ENGINE matches DIRECT_BOTORCH_BASELINE numerically under identical seed and single-objective discrete pool settings, verifying zero architectural distortion while wrapping execution in strict InformationHorizon, typed ProcessSearchSpace, and provenance tracking."
+}
