@@ -58,7 +58,8 @@ def test_rediscovery_coordinator_policy(mock_recipe_pool: pd.DataFrame) -> None:
     for step in trajectory.steps:
         assert step.predicted_mean is not None
         assert step.predicted_std is not None
-        assert 1 <= step.hidden_best_rank <= 3
+        if step.hidden_best_rank is not None:
+            assert 1 <= step.hidden_best_rank <= 3
 
 
 def test_production_runner_smoke(mock_recipe_pool: pd.DataFrame) -> None:
@@ -101,5 +102,5 @@ def test_direct_botorch_baseline_policy(mock_recipe_pool: pd.DataFrame) -> None:
     for step in trajectory.steps:
         assert step.predicted_mean is not None
         assert step.predicted_std is not None
-        assert 1 <= step.hidden_best_rank <= 3
-
+        if step.hidden_best_rank is not None:
+            assert 1 <= step.hidden_best_rank <= 3

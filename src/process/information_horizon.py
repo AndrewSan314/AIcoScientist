@@ -29,6 +29,12 @@ class InformationHorizon:
     stage: ProcessStage
     include_decision_stage_controls: bool = False
 
+    def can_observe_stage(self, stage: ProcessStage) -> bool:
+        """Returns True if given stage is observable under this horizon."""
+        if self.include_decision_stage_controls and stage == self.stage:
+            return True
+        return stage_precedes(stage, self.stage)
+
     def visible_stages(self, run: BatteryProcessRun) -> list[StageRecord]:
         return [record for record in run.stages if stage_precedes(record.stage_type, self.stage)]
 

@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass, field
 import logging
 from typing import Any, Callable, Mapping, Sequence
 
+import hashlib
 import math
 import numpy as np
 import pandas as pd
@@ -20,10 +21,32 @@ from src.optimization.backend import resolve_strategy
 from src.optimization.botorch_backend import BoTorchBackend
 from src.optimization.objective import OptimizationObjective
 from src.process.coordinator import ProcessOptimizationCoordinator
+from src.process.information_horizon import InformationHorizon
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.optimization.process_space import ProcessSearchSpace
+from src.process.stages import ProcessStage
+from src.process.surrogates.core import (
+    ProcessSurrogate,
+    ProcessSurrogateSample,
+    SurrogateArtifact,
+    SurrogateInputSchema,
+    TrainOnlyPreprocessor,
+)
 
 logger = logging.getLogger(__name__)
+
+STAGE_OF_CONTROL: dict[str, ProcessStage] = {
+    "active_material_fraction_pct": ProcessStage.FORMULATION,
+    "conductive_additive_fraction_pct": ProcessStage.FORMULATION,
+    "binder_cmc_fraction_pct": ProcessStage.FORMULATION,
+    "binder_sbr_fraction_pct": ProcessStage.FORMULATION,
+    "additive_fraction_pct": ProcessStage.FORMULATION,
+    "mixing_solids_pct": ProcessStage.MIXING,
+    "coating_speed_m_per_min": ProcessStage.COATING,
+    "coating_gap_um": ProcessStage.COATING,
+    "drying_temperature_c": ProcessStage.DRYING,
+    "calendering_applied": ProcessStage.CALENDERING,
+}
 
 
 @dataclass(frozen=True)
@@ -36,11 +59,16 @@ class ReplayStepRecord:
     best_so_far: float
     simple_regret: float
     cumulative_regret: float
-    hidden_best_rank: int
+    hidden_best_rank: int | None
     is_hidden_best: bool
     predicted_mean: float | None = None
     predicted_std: float | None = None
     acquisition_value: float | None = None
+    engine_path: str = "DIRECT_BOTORCH_BASELINE"
+    surrogate_artifact_fingerprint: str | None = None
+    dataset_fingerprint: str | None = None
+    information_horizon: str | None = None
+    training_view_summary: dict[str, Any] | None = None
 
 
 @dataclass
@@ -60,11 +88,13 @@ class RediscoveryTrajectory:
     experiments_to_top3: int | None = None
     final_simple_regret: float = 0.0
     final_cumulative_regret: float = 0.0
+    engine_path: str = "DIRECT_BOTORCH_BASELINE"
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "policy": self.policy,
             "seed": self.seed,
+            "engine_path": self.engine_path,
             "initial_candidate_ids": list(self.initial_candidate_ids),
             "hidden_best_id": self.hidden_best_id,
             "hidden_best_value": self.hidden_best_value,
@@ -97,6 +127,7 @@ class PolicySummary:
     hit_rate_at_3: float = 0.0
     hit_rate_at_5: float = 0.0
     top3_hit_rate_at_5: float = 0.0
+    engine_path: str = "DIRECT_BOTORCH_BASELINE"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -352,15 +383,27 @@ class RediscoveryReplay:
         backend: Any | None = None,
         coordinator: Any | None = None,
         top_k_targets: int = 3,
+        decision_stage: ProcessStage = ProcessStage.COATING,
+        dataset_id: str = "drakopoulos_graphite",
+        dataset_fingerprint: str | None = None,
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
         self._target_column = target_column
-        self._control_columns = control_columns
+        self._control_columns = list(control_columns) if control_columns is not None else [
+            c for c in candidate_pool.columns if c not in (candidate_id_column, target_column)
+        ]
         self._minimize = minimize
         self._backend = backend or BoTorchBackend()
         self._coordinator = coordinator
         self._top_k_targets = top_k_targets
+        self._decision_stage = decision_stage
+        self._dataset_id = dataset_id
+        if dataset_fingerprint is None:
+            raw_bytes = pd.util.hash_pandas_object(self._candidate_pool, index=True).values.tobytes()
+            self._dataset_fingerprint = hashlib.sha256(raw_bytes).hexdigest()
+        else:
+            self._dataset_fingerprint = dataset_fingerprint
 
     def _create_oracle(self) -> BlindExperimentalOracle:
         return BlindExperimentalOracle(
@@ -419,6 +462,33 @@ class RediscoveryReplay:
         best_so_far = min(initial_values) if self._minimize else max(initial_values)
         initial_best_value = best_so_far
 
+        canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
+
+        is_process_surrogate = (
+            strategy.upper() in (
+                "AICOSCIENTIST_PROCESS_SURROGATE",
+                "AICOSCIENTIST_PROCESS_ENGINE",
+                "PRODUCTION_COORDINATOR",
+                "COORDINATOR",
+            )
+            or strategy.lower().startswith("aicointel_")
+            or self._coordinator is not None
+        )
+        is_direct_botorch = (
+            strategy.upper().startswith("DIRECT_BOTORCH")
+            or strategy.lower() in ("direct_botorch_baseline", "direct_botorch")
+        )
+        is_random = (canonical_strat == "random" and not is_process_surrogate)
+
+        if is_process_surrogate:
+            traj_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
+        elif is_direct_botorch:
+            traj_engine_path = "DIRECT_BOTORCH_BASELINE"
+        elif is_random:
+            traj_engine_path = "RANDOM_BASELINE"
+        else:
+            traj_engine_path = "DIRECT_BOTORCH_BASELINE"
+
         trajectory = RediscoveryTrajectory(
             policy=strategy,
             seed=seed,
@@ -426,18 +496,11 @@ class RediscoveryReplay:
             hidden_best_id=hidden_best,
             hidden_best_value=oracle.hidden_best_value,
             initial_best_value=initial_best_value,
+            engine_path=traj_engine_path,
         )
 
         budget = max_steps if max_steps is not None else oracle.num_unrevealed
         cumulative_regret = 0.0
-
-        canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
-
-        is_coordinator_policy = (
-            self._coordinator is not None
-            or strategy.upper() in ("AICOSCIENTIST_PROCESS_ENGINE", "PRODUCTION_COORDINATOR", "COORDINATOR")
-            or strategy.lower().startswith("aicointel_")
-        )
 
         for step in range(1, budget + 1):
             if oracle.num_unrevealed == 0:
@@ -450,34 +513,96 @@ class RediscoveryReplay:
             pred_mean: float | None = None
             pred_std: float | None = None
             acq_val: float | None = None
-            hidden_rank: int = 1
+            hidden_rank: int | None = None
 
-            if canonical_strat == "random" and not is_coordinator_policy:
+            step_engine_path = traj_engine_path
+            surrogate_artifact_fp: str | None = None
+            horizon_str: str | None = None
+            training_view_summary: dict[str, Any] | None = None
+
+            if is_random:
                 step_rng = np.random.default_rng(seed * 1000 + step)
                 visible_ids = visible[oracle.candidate_id_column].tolist()
                 selected_id = str(step_rng.choice(visible_ids))
                 if hidden_best in visible_ids:
-                    # Deterministic pseudo-rank among remaining candidates under random
                     perm = list(visible_ids)
                     step_rng.shuffle(perm)
                     hidden_rank = perm.index(hidden_best) + 1
                 else:
-                    hidden_rank = 1
-            elif is_coordinator_policy:
-                coord = self._coordinator or ProcessOptimizationCoordinator()
-                full_space = ProcessSearchSpace.from_finite_pool(
-                    self._candidate_pool[[oracle.candidate_id_column] + oracle.control_columns],
-                    id_column=oracle.candidate_id_column,
-                )
-                obj = ProcessOptimizationObjective(
-                    objectives=[
-                        ObjectiveSpec(
-                            target=oracle.target_column,
-                            sense="minimize" if self._minimize else "maximize",
-                            units="mAh/g",
+                    hidden_rank = None
+            elif is_process_surrogate:
+                step_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
+                horizon = InformationHorizon(self._decision_stage, include_decision_stage_controls=True)
+                horizon_str = f"InformationHorizon({self._decision_stage.value})"
+                observable_ctrls = [
+                    c for c in self._control_columns
+                    if horizon.can_observe_stage(STAGE_OF_CONTROL.get(c, self._decision_stage))
+                ]
+                if not observable_ctrls:
+                    observable_ctrls = list(self._control_columns)
+
+                samples: list[ProcessSurrogateSample] = []
+                for _, row in revealed.iterrows():
+                    cid = str(row[oracle.candidate_id_column])
+                    ctrls = {c: float(row[c]) for c in observable_ctrls if c in row and pd.notna(row[c])}
+                    val = float(row[oracle.target_column])
+                    samples.append(
+                        ProcessSurrogateSample(
+                            sample_id=cid,
+                            run_id=cid,
+                            recipe_id=cid,
+                            source_dataset=self._dataset_id,
+                            source_evidence_kind="PHYSICAL_HISTORICAL",
+                            stage=self._decision_stage,
+                            group_id=cid,
+                            controls=ctrls,
+                            targets={oracle.target_column: val},
+                            fidelity="EXPERIMENTAL",
+                            dataset_manifest_fingerprint=self._dataset_fingerprint,
                         )
-                    ]
+                    )
+
+                schema = SurrogateInputSchema.from_training_samples(samples, declared_fidelities=["EXPERIMENTAL"])
+                preprocessor = TrainOnlyPreprocessor().fit(samples, schema)
+                X_train = preprocessor.transform(samples)
+                surrogate = ProcessSurrogate(model_type="gp", seed=seed * 1000 + step)
+                surrogate.fit(X_train, targets={oracle.target_column: np.array([s.targets[oracle.target_column] for s in samples])})
+                split_fp = hashlib.sha256(f"split_{seed}_{step}".encode()).hexdigest()
+                artifact = SurrogateArtifact(
+                    surrogate=surrogate,
+                    preprocessor=preprocessor,
+                    dataset_fingerprint=self._dataset_fingerprint,
+                    split_fingerprint=split_fp,
+                    target_names=(oracle.target_column,),
+                    input_schema=schema,
+                    target_units={oracle.target_column: "mAh/g"},
+                    model_version="process-surrogate-v3",
+                    training_config={"seed": seed * 1000 + step, "step": step},
                 )
+                artifact.verify_integrity()
+                surrogate_artifact_fp = artifact.artifact_fingerprint
+                training_view_summary = {
+                    "num_revealed_samples": len(samples),
+                    "observable_controls": observable_ctrls,
+                    "decision_stage": self._decision_stage.value,
+                    "features": list(preprocessor.output_names),
+                }
+
+                # Predict on unrevealed visible candidates
+                visible_ids = visible[oracle.candidate_id_column].astype(str).tolist()
+                cand_rows = []
+                for _, row in visible.iterrows():
+                    v_dict = {"fidelity::EXPERIMENTAL": 1.0}
+                    for c in observable_ctrls:
+                        if c in row and pd.notna(row[c]):
+                            v_dict[f"control::{c}"] = float(row[c])
+                    cand_rows.append(v_dict)
+
+                X_cands = preprocessor.transform_values(cand_rows)
+                dist = surrogate.predict_distribution(X_cands)
+                means = dist[oracle.target_column][0]
+                stds = dist[oracle.target_column][1]
+
                 coord_strat = "noisy_expected_improvement"
                 if strategy.startswith("aicointel_"):
                     coord_strat = strategy.replace("aicointel_", "")
@@ -488,38 +613,43 @@ class RediscoveryReplay:
                     elif coord_strat == "ucb":
                         coord_strat = "gp_ucb"
 
-                proposals = coord.propose_recipes(
-                    observations=revealed,
-                    space=full_space,
-                    objective=obj,
-                    n=len(full_space.candidates),
-                    seed=seed * 1000 + step,
-                    strategy=coord_strat,
-                )
-                if not proposals:
-                    raise RuntimeError("ProcessOptimizationCoordinator returned empty proposal list.")
+                scored_candidates = []
+                for i, cid in enumerate(visible_ids):
+                    m = float(means[i])
+                    s = max(float(stds[i]), 1e-8)
+                    if coord_strat in ("ucb", "gp_ucb"):
+                        acq = m - beta * s if self._minimize else m + beta * s
+                    elif coord_strat == "greedy":
+                        acq = -m if self._minimize else m
+                    else:  # expected improvement
+                        diff = (best_so_far - m) if self._minimize else (m - best_so_far)
+                        z = diff / s
+                        phi = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+                        pdf = (1.0 / math.sqrt(2.0 * math.pi)) * math.exp(-0.5 * z * z)
+                        acq = diff * phi + s * pdf
+                    scored_candidates.append({
+                        "id": cid,
+                        "mean": m,
+                        "std": s,
+                        "acq": acq,
+                    })
 
-                visible_ids = set(visible[oracle.candidate_id_column].astype(str))
-                unrevealed_proposals = [
-                    p for p in proposals
-                    if str(p.candidate_instance_id or p.source_recipe_id) in visible_ids
-                ]
-                if not unrevealed_proposals:
-                    raise RuntimeError("No unrevealed proposals returned by ProcessOptimizationCoordinator.")
+                scored_candidates.sort(key=lambda x: x["acq"], reverse=True)
+                top_cand = scored_candidates[0]
+                selected_id = top_cand["id"]
+                pred_mean = top_cand["mean"]
+                pred_std = top_cand["std"]
+                acq_val = top_cand["acq"]
 
-                top_prop = unrevealed_proposals[0]
-                selected_id = str(top_prop.candidate_instance_id or top_prop.source_recipe_id)
-                pred_obj = top_prop.predicted_outputs.get(oracle.target_column)
-                pred_mean = pred_obj.mean if pred_obj else None
-                pred_std = pred_obj.std if pred_obj else None
-                acq_val = top_prop.acquisition_value
-
-                prop_ids = [str(p.candidate_instance_id or p.source_recipe_id) for p in unrevealed_proposals]
+                prop_ids = [c["id"] for c in scored_candidates]
                 if hidden_best in prop_ids:
                     hidden_rank = prop_ids.index(hidden_best) + 1
                 else:
-                    hidden_rank = 1
+                    hidden_rank = None
             else:
+                step_engine_path = "DIRECT_BOTORCH_BASELINE"
+                horizon_str = "NONE (FLAT TABLE)"
+                training_view_summary = {"backend": "BoTorchBackend", "num_observations": len(revealed)}
                 obj = OptimizationObjective(target_name=oracle.target_column, minimize=self._minimize)
                 strat_raw = strategy.strip()
                 strat_lower = strat_raw.lower()
@@ -561,7 +691,7 @@ class RediscoveryReplay:
                 if hidden_best in prop_ids:
                     hidden_rank = prop_ids.index(hidden_best) + 1
                 else:
-                    hidden_rank = 1
+                    hidden_rank = None
 
             # Reveal selected candidate
             record = oracle.reveal(selected_id)
@@ -597,6 +727,11 @@ class RediscoveryReplay:
                 predicted_mean=pred_mean,
                 predicted_std=pred_std,
                 acquisition_value=acq_val,
+                engine_path=step_engine_path,
+                surrogate_artifact_fingerprint=surrogate_artifact_fp,
+                dataset_fingerprint=self._dataset_fingerprint,
+                information_horizon=horizon_str,
+                training_view_summary=training_view_summary,
             )
             trajectory.steps.append(step_record)
 
@@ -612,6 +747,7 @@ def summarize_trajectories(trajectories: Sequence[RediscoveryTrajectory]) -> Pol
         raise ValueError("Cannot summarize empty trajectory list.")
 
     policy = trajectories[0].policy
+    engine_path = trajectories[0].engine_path
     num_seeds = len(trajectories)
     rediscovered_count = sum(1 for t in trajectories if t.rediscovered)
     success_rate = rediscovered_count / num_seeds
@@ -659,6 +795,7 @@ def summarize_trajectories(trajectories: Sequence[RediscoveryTrajectory]) -> Pol
         hit_rate_at_3=hit_rate_at_step.get(3, 0.0),
         hit_rate_at_5=hit_rate_at_step.get(5, 0.0),
         top3_hit_rate_at_5=top3_rate_5,
+        engine_path=engine_path,
     )
 
 
@@ -676,6 +813,9 @@ def run_rediscovery_benchmark(
     backend: Any | None = None,
     coordinator: Any | None = None,
     top_k_targets: int = 3,
+    decision_stage: ProcessStage = ProcessStage.COATING,
+    dataset_id: str = "drakopoulos_graphite",
+    dataset_fingerprint: str | None = None,
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
     replay = RediscoveryReplay(
@@ -687,6 +827,9 @@ def run_rediscovery_benchmark(
         backend=backend,
         coordinator=coordinator,
         top_k_targets=top_k_targets,
+        decision_stage=decision_stage,
+        dataset_id=dataset_id,
+        dataset_fingerprint=dataset_fingerprint,
     )
 
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
@@ -732,7 +875,7 @@ def run_rediscovery_benchmark(
 
 
 class ProductionProcessRediscoveryRunner:
-    """Production runner executing offline closed-loop rediscovery through ProcessOptimizationCoordinator."""
+    """Production runner executing offline closed-loop rediscovery through ProcessSurrogate / ProcessOptimizationCoordinator."""
 
     def __init__(
         self,
@@ -743,6 +886,9 @@ class ProductionProcessRediscoveryRunner:
         control_columns: Sequence[str] | None = None,
         coordinator: ProcessOptimizationCoordinator | None = None,
         top_k_targets: int = 3,
+        decision_stage: ProcessStage = ProcessStage.COATING,
+        dataset_id: str = "drakopoulos_graphite",
+        dataset_fingerprint: str | None = None,
     ) -> None:
         self.candidate_pool = candidate_pool.copy()
         self.candidate_id_column = candidate_id_column
@@ -750,11 +896,14 @@ class ProductionProcessRediscoveryRunner:
         self.control_columns = control_columns
         self.coordinator = coordinator or ProcessOptimizationCoordinator()
         self.top_k_targets = top_k_targets
+        self.decision_stage = decision_stage
+        self.dataset_id = dataset_id
+        self.dataset_fingerprint = dataset_fingerprint
 
     def run(
         self,
         policies: Sequence[str] = (
-            "AICOSCIENTIST_PROCESS_ENGINE",
+            "AICOSCIENTIST_PROCESS_SURROGATE",
             "DIRECT_BOTORCH_BASELINE",
             "random",
         ),
@@ -774,5 +923,8 @@ class ProductionProcessRediscoveryRunner:
             max_steps=budget,
             coordinator=self.coordinator,
             top_k_targets=self.top_k_targets,
+            decision_stage=self.decision_stage,
+            dataset_id=self.dataset_id,
+            dataset_fingerprint=self.dataset_fingerprint,
         )
 
