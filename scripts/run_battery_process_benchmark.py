@@ -169,13 +169,16 @@ def _fit_gated_fusion(process: np.ndarray, signal: np.ndarray, target: np.ndarra
     return model.eval(), (process_mean, process_std, signal_mean, signal_std, target_mean, target_std)
 
 
-def _predict_gated_fusion(model: _GatedFusionRegressor, process: np.ndarray, signal: np.ndarray, scale: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float], *, signal_available: bool = True) -> np.ndarray:
+def _predict_gated_fusion(model: _GatedFusionRegressor, process: np.ndarray, signal: np.ndarray, scale: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float], *, signal_available: bool | np.ndarray = True) -> np.ndarray:
     process_mean, process_std, signal_mean, signal_std, target_mean, target_std = scale
+    if isinstance(signal_available, np.ndarray) and signal_available.shape != (len(process),):
+        raise ValueError("signal availability must match the prediction rows")
+    available = torch.as_tensor(signal_available, dtype=torch.bool) if isinstance(signal_available, np.ndarray) else torch.full((len(process),), signal_available, dtype=torch.bool)
     with torch.no_grad():
         normalized = model(
             torch.tensor((process - process_mean) / process_std, dtype=torch.float32),
             torch.tensor((signal - signal_mean) / signal_std, dtype=torch.float32),
-            {"process": torch.ones(len(process), dtype=torch.bool), "signal": torch.full((len(process),), signal_available, dtype=torch.bool)},
+            {"process": torch.ones(len(process), dtype=torch.bool), "signal": available},
         ).numpy()
     return normalized * target_std + target_mean
 
@@ -207,6 +210,12 @@ def _ultrasound_ablation(adapter, *, seed: int) -> dict[str, object]:
     model, scale = _fit_gated_fusion(process[train], signal[train], target[train], seed=seed)
     reports.append({"mode": "gated_missing_aware_fusion", "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale))})
     reports.append({"mode": "gated_fusion_signal_dropout", "derived_stress": True, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=False))})
+    rng = np.random.default_rng(seed)
+    for rate in (0.10, 0.25, 0.50, 0.75):
+        unavailable = rng.permutation(len(test))[:max(1, round(rate * len(test)))]
+        available = np.ones(len(test), dtype=bool)
+        available[unavailable] = False
+        reports.append({"mode": "gated_fusion_partial_signal_dropout", "derived_stress": True, "missing_modality": "ultrasound", "requested_dropout_rate": rate, "realized_dropout_rate": float((~available).mean()), "seed": seed, "metrics": _metrics(target[test], _predict_gated_fusion(model, process[test], signal[test], scale, signal_available=available))})
     return {
         "status": "EVALUATED", "target": "post_calendering_thickness_um", "split": "grouped process-condition holdout",
         "rows": len(rows), "groups": len(set(groups)), "reports": reports,
@@ -309,7 +318,9 @@ def _write_report(root: Path, manifest: dict[str, object]) -> None:
         if fusion.get("status") == "EVALUATED" and "gated_missing_aware_fusion" in reports:
             gated = reports["gated_missing_aware_fusion"]["metrics"]["r2"]
             naive = reports.get("naive_concatenation", {}).get("metrics", {}).get("r2")
-            fusion_lines = [f"- Warwick ultrasound grouped holdout ({fusion['rows']} rows/{fusion['groups']} groups): gated R²={gated:.3f}; naive concatenation R²={naive:.3f}. Gated fusion is not superior on this split."]
+            rates = [item["requested_dropout_rate"] for item in fusion.get("reports", []) if item.get("mode") == "gated_fusion_partial_signal_dropout"]
+            stress = f" Derived ultrasound-masking stress rates: {', '.join(f'{rate:.0%}' for rate in rates)}." if rates else ""
+            fusion_lines = [f"- Warwick ultrasound grouped holdout ({fusion['rows']} rows/{fusion['groups']} groups): gated R²={gated:.3f}; naive concatenation R²={naive:.3f}. Gated fusion is not superior on this split.{stress}"]
     replay_lines = []
     for path in sorted((root / "optimization").glob("*.json")):
         result = json.loads(path.read_text(encoding="utf-8"))
