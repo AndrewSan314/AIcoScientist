@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from src.datasets.battery_process import ArtisticSimulationAdapter, DrakopoulosGraphiteAdapter, NaIonHTEAdapter, WarwickNMC622Adapter, WarwickUltrasoundAdapter
-from scripts.run_battery_process_benchmark import _metrics, _ultrasound_ablation
+from scripts.run_battery_process_benchmark import _latency_report, _metrics, _ultrasound_ablation
 
 
 def test_bpss_has_independent_source_adapters_and_simulation_label() -> None:
@@ -28,3 +28,10 @@ def test_ultrasound_gated_fusion_is_source_backed_and_reports_dropout_stress() -
     partial = [item for item in report["reports"] if item["mode"] == "gated_fusion_partial_signal_dropout"]
     assert [item["requested_dropout_rate"] for item in partial] == [0.10, 0.25, 0.50, 0.75]
     assert all(item["missing_modality"] == "ultrasound" and item["derived_stress"] for item in partial)
+
+
+def test_latency_report_records_warmup_and_tail_quantiles() -> None:
+    report = _latency_report([{"status": "EVALUATED", "candidate_pool_size": 5, "warmup_decision_latency_seconds": 0.01, "trajectory": [{"decision_latency_seconds": 0.02}, {"decision_latency_seconds": 0.03}]}])
+    assert report["status"] == "EVALUATED"
+    assert report["warmup"]["count"] == 1
+    assert report["optimizer_proposal"]["p99_ms"] >= report["optimizer_proposal"]["p95_ms"]

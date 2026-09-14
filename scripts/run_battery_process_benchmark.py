@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import subprocess
 import sys
 import time
@@ -36,6 +37,15 @@ OOD_TASKS = {
     "warwick_nmc622": ("calendered_density_g_cm3", "calendering.roll_gap_um"),
 }
 REPLAY_STRATEGIES = ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement", "thompson")
+CAPABILITY_SECTIONS = {
+    "multiobjective": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Official qNEHVI support is unit-tested, but no registered BPSS task has a prespecified source-backed objective pair and reference point."},
+    "constraints": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Hard scalar constraint semantics are unit-tested; no BPSS replay currently registers a source-backed modeled outcome constraint."},
+    "manufacturability": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "The learned feasibility model exists, but BPSS adapters do not expose an audited process-failure label set for evaluation."},
+    "evidence_acquisition": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Three pre-reveal policies are unit-tested, but no BPSS adapter registers multiple legal source-backed evidence options at one decision horizon."},
+    "multifidelity": {"status": "NOT_AVAILABLE", "reason": "No compatible paired low/high-fidelity BPSS evidence is available for a correction benchmark."},
+    "robustness": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Robustness utilities are available, but no source-backed perturbation protocol is registered for these BPSS tasks."},
+    "explainability": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Stage ablations and process-graph path attribution are available; no source-backed local-recommendation attribution task is registered."},
+}
 
 
 def _metrics(actual: np.ndarray, predicted: np.ndarray) -> dict[str, float | None]:
@@ -106,6 +116,14 @@ def _offline_replay(adapter, *, seed: int, strategy: str, max_steps: int) -> dic
     observed, hidden = replay.iloc[:3].copy(), replay.iloc[3:].copy()
     oracle_best = float(replay[target].max())
     trajectory = []
+    warmup_started = time.perf_counter()
+    try:
+        ProcessOptimizationCoordinator().propose_recipes(
+            observed, adapter.build_optimization_space(task), ProcessOptimizationObjective([ObjectiveSpec(target, "maximize")]), seed=seed, strategy=strategy,
+        )
+    except RuntimeError as exc:
+        return {"status": "BLOCKED_EXTERNAL", "strategy": strategy, "reason": str(exc), "trajectory": trajectory}
+    warmup_latency = time.perf_counter() - warmup_started
     for step in range(min(max_steps, len(hidden))):
         started = time.perf_counter()
         try:
@@ -127,7 +145,27 @@ def _offline_replay(adapter, *, seed: int, strategy: str, max_steps: int) -> dic
         "status": "EVALUATED", "target": target, "stage": stage.value, "seed": seed, "strategy": strategy,
         "trajectory": trajectory, "best_so_far": trajectory[-1]["best_so_far"], "oracle_best": oracle_best,
         "simple_regret": trajectory[-1]["simple_regret"], "remaining_hidden": len(hidden), "process_decisions": len(trajectory),
-        "total_decision_latency_seconds": float(latencies.sum()), "p50_decision_latency_seconds": float(np.quantile(latencies, 0.5)), "p95_decision_latency_seconds": float(np.quantile(latencies, 0.95)),
+        "candidate_pool_size": len(replay), "warmup_decision_latency_seconds": warmup_latency,
+        "total_decision_latency_seconds": float(latencies.sum()), "p50_decision_latency_seconds": float(np.quantile(latencies, 0.5)), "p95_decision_latency_seconds": float(np.quantile(latencies, 0.95)), "p99_decision_latency_seconds": float(np.quantile(latencies, 0.99)),
+    }
+
+
+def _latency_report(replays: list[dict[str, object]]) -> dict[str, object]:
+    completed = [replay for replay in replays if replay.get("status") == "EVALUATED"]
+    decisions = [item["decision_latency_seconds"] for replay in completed for item in replay["trajectory"]]
+    if not decisions:
+        return {"status": "NOT_EVALUATED", "reason": "no source-backed offline decision replay completed"}
+    values = np.asarray(decisions, dtype=float)
+    warmups = np.asarray([replay["warmup_decision_latency_seconds"] for replay in completed], dtype=float)
+    return {
+        "status": "EVALUATED",
+        "scope": "Offline source-backed optimizer proposal latency; excludes raw I/O and hardware control.",
+        "hardware": {"os": platform.platform(), "processor": platform.processor() or "unknown", "python": sys.version.split()[0]},
+        "candidate_pool_sizes": sorted({replay["candidate_pool_size"] for replay in completed}), "batch_size": 1,
+        "model_artifact_fingerprint": None, "model_artifact_note": "Offline replay fits the selected surrogate per decision; no frozen artifact is used.",
+        "warmup": {"count": len(warmups), "p50_ms": float(np.quantile(warmups, 0.5) * 1000), "p95_ms": float(np.quantile(warmups, 0.95) * 1000), "p99_ms": float(np.quantile(warmups, 0.99) * 1000)},
+        "optimizer_proposal": {"count": len(values), "p50_ms": float(np.quantile(values, 0.5) * 1000), "p95_ms": float(np.quantile(values, 0.95) * 1000), "p99_ms": float(np.quantile(values, 0.99) * 1000)},
+        "unmeasured_components": ["modality_encoders", "fusion", "stage_state_model", "evidence_selection"],
     }
 
 
@@ -385,7 +423,7 @@ def main() -> None:
     if args.replay_steps < 1:
         parser.error("--replay-steps must be positive")
     root = args.output
-    for directory in ("dataset_audits", "prediction", "calibration", "multimodal_ablations", "missing_modality", "stage_ablations", "optimization", "stress", "figures"):
+    for directory in ("dataset_audits", "prediction", "calibration", "multimodal_ablations", "missing_modality", "stage_ablations", "optimization", "stress", "latency", "figures", *CAPABILITY_SECTIONS):
         (root / directory).mkdir(parents=True, exist_ok=True)
     audits = []
     unavailable = []
@@ -413,6 +451,7 @@ def main() -> None:
             }
             (root / "stage_ablations" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
             (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
+            (root / "latency" / f"{dataset_id}.json").write_text(json.dumps(blocked, indent=2), encoding="utf-8")
             continue
         predictions = _grouped_prediction(adapter, seed=args.seed)
         prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
@@ -426,6 +465,7 @@ def main() -> None:
         (root / "stress" / f"{dataset_id}.json").write_text(json.dumps(_extreme_ood_stress(adapter, seed=args.seed), indent=2), encoding="utf-8")
         replays = [_offline_replay(adapter, seed=args.seed + offset, strategy=strategy, max_steps=args.replay_steps) for strategy in args.replay_strategies for offset in range(args.replay_seeds)]
         (root / "optimization" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "replays": replays}, indent=2), encoding="utf-8")
+        (root / "latency" / f"{dataset_id}.json").write_text(json.dumps(_latency_report(replays), indent=2), encoding="utf-8")
         evaluated.append(dataset_id)
         if any(replay["status"] == "EVALUATED" for replay in replays):
             replayed.append(dataset_id)
@@ -447,10 +487,13 @@ def main() -> None:
             },
             "adaptive_evidence_policy": {
                 "status": "IMPLEMENTED_NOT_VALIDATED",
-                "reason": "Cost-aware heuristic selection and blinded source-backed reveal are implemented and unit-tested; no source-backed policy-performance or EVI claim is made.",
+                "reason": "Three pre-reveal evidence policies and blinded source-backed reveal are implemented and unit-tested; no source-backed policy-performance or EVI claim is made.",
             },
         },
+        "capability_sections": CAPABILITY_SECTIONS,
     }
+    for section, status in CAPABILITY_SECTIONS.items():
+        (root / section / "status.json").write_text(json.dumps(status, indent=2), encoding="utf-8")
     (root / "manifest.json").write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     _write_prediction_figure(prediction_artifacts, root / "figures")
     _write_report(root, manifest)
