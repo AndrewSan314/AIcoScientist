@@ -1,0 +1,12 @@
+{
+  "dataset_id": "artistic",
+  "status": "BLOCKED_EXTERNAL",
+  "reason": [
+    "Pinned public ARTISTIC source is available, but no valid real LAMMPS execution has been normalized; simulated data are not fabricated.",
+    "artistic has not been source-audited. Expected data\\external\\artistic\\5af9e0345673fac557c479ee8f4a0727e442c1fa\\processed\\3\\normalized_runs.json. Download immutable raw files, write hashes/manifest and map source fields before training."
+  ],
+  "simulation_manifest": {
+    "status": "IMPLEMENTED_NOT_VALIDATED",
+    "reason": "a full source-backed ARTISTIC execution is required before model fitting"
+  }
+}

@@ -1,0 +1,231 @@
+{
+  "suite": "BPSS",
+  "datasets": [
+    {
+      "metadata": {
+        "dataset_id": "drakopoulos_graphite",
+        "display_name": "Graphite Process-15",
+        "chemistry": "graphite Li-ion electrode",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.17632/4dh2h3tsf4.1",
+        "version": "1",
+        "license": "CC BY 4.0",
+        "process_stages": [
+          "FORMULATION",
+          "MIXING",
+          "COATING",
+          "DRYING",
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR",
+          "SCALAR_METROLOGY"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_PROCESS_RECIPE",
+          "OOD_FACTOR_EXTREME"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": false,
+        "limitations": "Parser covers AS cells with numeric 372 mAh/g cell-capacity records; other source workbooks remain inventory-only."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "warwick_nmc622",
+        "display_name": "Warwick NMC622 Pilot Multimodal",
+        "chemistry": "NMC622 Li-ion electrode/cell",
+        "evidence_kind": "PILOT_LINE_HISTORICAL",
+        "source_doi": "10.17632/wwhm2frfmy.1",
+        "version": "1",
+        "license": "CC0 1.0",
+        "process_stages": [
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR",
+          "SCALAR_METROLOGY"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_DOE_CONDITION"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": true,
+        "limitations": "Parser covers the audited Cathode intermediate-calendering table; electrochemical files remain independently auditable modalities."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "warwick_ultrasound",
+        "display_name": "Warwick Ultrasonic Inline QC",
+        "chemistry": "graphite anode / NMC622 cathode",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.17632/c62yn37d9h.4",
+        "version": "4",
+        "license": "CC BY 4.0",
+        "process_stages": [
+          "CALENDERING",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "ULTRASOUND_SPECTRUM",
+          "PROCESS_TABULAR"
+        ],
+        "recommended_splits": [
+          "LEAVE_ONE_PROCESS_SETTING_OUT"
+        ],
+        "optimization_capable": false,
+        "multimodal_capable": true,
+        "limitations": "Post-calender spectra are represented but are unavailable at a CALENDERING decision horizon."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "naion_hte",
+        "display_name": "Na-ion High-Throughput Process Chain",
+        "chemistry": "sodium-ion",
+        "evidence_kind": "PHYSICAL_HISTORICAL",
+        "source_doi": "10.5281/zenodo.7981011",
+        "version": "7981011",
+        "license": "not specified",
+        "process_stages": [
+          "FORMATION",
+          "FINAL_CHARACTERIZATION"
+        ],
+        "modalities": [
+          "FORMATION_CURVE",
+          "CYCLING_CURVE"
+        ],
+        "recommended_splits": [
+          "GROUP_BY_BATCH",
+          "LATER_RUN_HOLDOUT"
+        ],
+        "optimization_capable": false,
+        "multimodal_capable": true,
+        "limitations": "Source archive provides cycling traces and protocol/batch identity, not audited synthesis, coating, or assembly settings."
+      },
+      "validation": {
+        "valid": true,
+        "errors": []
+      }
+    },
+    {
+      "metadata": {
+        "dataset_id": "artistic",
+        "display_name": "ARTISTIC Physics Stress",
+        "chemistry": "lithium-ion electrode simulation",
+        "evidence_kind": "SIMULATED_PHYSICS",
+        "source_doi": "not applicable: pinned public GitHub source",
+        "version": "5af9e0345673fac557c479ee8f4a0727e442c1fa",
+        "license": "CC BY-NC-SA 4.0",
+        "process_stages": [
+          "MIXING",
+          "DRYING",
+          "CALENDERING"
+        ],
+        "modalities": [
+          "PROCESS_TABULAR"
+        ],
+        "recommended_splits": [
+          "OOD_FACTOR_EXTREME"
+        ],
+        "optimization_capable": true,
+        "multimodal_capable": false,
+        "limitations": "Runs are public-source simulated physics, never physical observations; training is blocked until a validated real execution exists."
+      },
+      "validation": {
+        "valid": false,
+        "errors": [
+          "artistic has not been source-audited. Expected data\\external\\artistic\\5af9e0345673fac557c479ee8f4a0727e442c1fa\\processed\\3\\normalized_runs.json. Download immutable raw files, write hashes/manifest and map source fields before training."
+        ]
+      }
+    }
+  ],
+  "status": "PARTIAL",
+  "unavailable": [
+    "artistic"
+  ],
+  "evaluated": [
+    "drakopoulos_graphite",
+    "warwick_nmc622",
+    "warwick_ultrasound",
+    "naion_hte"
+  ],
+  "replayed": [
+    "drakopoulos_graphite",
+    "warwick_nmc622"
+  ],
+  "seed": 42,
+  "replay_seeds": 3,
+  "replay_strategies": [
+    "random",
+    "greedy",
+    "gp_ucb",
+    "expected_improvement",
+    "noisy_expected_improvement",
+    "thompson"
+  ],
+  "replay_steps": 2,
+  "architecture_status": {
+    "scalar_contextual_stage_optimizer": {
+      "status": "IMPLEMENTED_NOT_VALIDATED",
+      "reason": "Context-conditioned stage-wise optimizer is implemented and unit-tested; source-backed multi-stage trajectory validation remains unavailable."
+    },
+    "multimodal_contextual_state": {
+      "status": "IMPLEMENTED_NOT_VALIDATED",
+      "reason": "Multimodal latent state adapter is implemented and unit-tested; no source-backed trained state benchmark is claimed."
+    },
+    "horizon_safe_evidence_replay": {
+      "status": "IMPLEMENTED_NOT_VALIDATED",
+      "reason": "Horizon-safe source-backed evidence replay is implemented and unit-tested; no adaptive policy performance is claimed."
+    },
+    "adaptive_evidence_policy": {
+      "status": "IMPLEMENTED_NOT_VALIDATED",
+      "reason": "Three pre-reveal evidence policies and blinded source-backed reveal are implemented and unit-tested; no source-backed policy-performance or EVI claim is made."
+    }
+  },
+  "capability_sections": {
+    "multiobjective": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "Official qNEHVI support is unit-tested, but no registered BPSS task has a prespecified source-backed objective pair and reference point."
+    },
+    "constraints": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "Hard scalar constraint semantics are unit-tested; no BPSS replay currently registers a source-backed modeled outcome constraint."
+    },
+    "manufacturability": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "The learned feasibility model exists, but BPSS adapters do not expose an audited process-failure label set for evaluation."
+    },
+    "evidence_acquisition": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "Three pre-reveal policies are unit-tested, but no BPSS adapter registers multiple legal source-backed evidence options at one decision horizon."
+    },
+    "multifidelity": {
+      "status": "NOT_AVAILABLE",
+      "reason": "No compatible paired low/high-fidelity BPSS evidence is available for a correction benchmark."
+    },
+    "robustness": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "Robustness utilities are available, but no source-backed perturbation protocol is registered for these BPSS tasks."
+    },
+    "explainability": {
+      "status": "IMPLEMENTED_NOT_EVALUATED",
+      "reason": "Stage ablations and process-graph path attribution are available; no source-backed local-recommendation attribution task is registered."
+    }
+  }
+}

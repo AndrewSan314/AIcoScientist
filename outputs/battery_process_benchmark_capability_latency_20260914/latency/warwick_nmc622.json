@@ -1,0 +1,33 @@
+{
+  "status": "EVALUATED",
+  "scope": "Offline source-backed optimizer proposal latency; excludes raw I/O and hardware control.",
+  "hardware": {
+    "os": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "python": "3.14.2"
+  },
+  "candidate_pool_sizes": [
+    18
+  ],
+  "batch_size": 1,
+  "model_artifact_fingerprint": null,
+  "model_artifact_note": "Offline replay fits the selected surrogate per decision; no frozen artifact is used.",
+  "warmup": {
+    "count": 18,
+    "p50_ms": 336.5724500035867,
+    "p95_ms": 370.6686249948689,
+    "p99_ms": 379.1750849926029
+  },
+  "optimizer_proposal": {
+    "count": 36,
+    "p50_ms": 341.8715000007069,
+    "p95_ms": 480.2013750086189,
+    "p99_ms": 651.9405950035434
+  },
+  "unmeasured_components": [
+    "modality_encoders",
+    "fusion",
+    "stage_state_model",
+    "evidence_selection"
+  ]
+}
