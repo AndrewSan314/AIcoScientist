@@ -82,7 +82,7 @@ def train_stage_aware_multimodal(
         torch.stack(losses).mean().backward(); optimizer.step()
     artifact = MASPOModelArtifact.from_training(model, feature_encoder=encoder, model_version="stage_aware_multimodal_surrogate-v1", semantic_modality_slots=modality_slots, dataset_fingerprint=dataset_fingerprint, validation_status=ModelValidationStatus.TRAINED_UNVALIDATED)
     artifact.verify_model_integrity()
-    metrics = _evaluate(artifact.model, test, encoder, modality_slots, final_targets)
+    metrics = _evaluate(artifact.model, test, encoder, modality_slots, final_targets, intermediate_targets)
     split = {"train": [run.run_id for run in train], "validation": [run.run_id for run in validation], "test": [run.run_id for run in test], "seed": seed, "dataset_fingerprint": dataset_fingerprint}
     return StageAwareTrainingResult("EVALUATED_SOURCE_BACKED", None, artifact, tuple(split["train"]), tuple(split["validation"]), tuple(split["test"]), hashlib.sha256(json.dumps(split, sort_keys=True).encode()).hexdigest(), final_masks, intermediate_masks, metrics)
 
@@ -91,8 +91,17 @@ def _transitions(run: BatteryProcessRun, encoder: StageFeatureEncoder, slots: Se
     return tuple(LegalStageTransition.from_encoded_source_stage(record, encoder=encoder, modality_slots=slots) for record in run.stages)
 
 
-def _evaluate(model: MASPOProcessStateModel, runs: Sequence[BatteryProcessRun], encoder: StageFeatureEncoder, slots: Sequence[ModalitySlotSpec], targets: Sequence[str]) -> dict[str, float]:
+def _evaluate(
+    model: MASPOProcessStateModel,
+    runs: Sequence[BatteryProcessRun],
+    encoder: StageFeatureEncoder,
+    slots: Sequence[ModalitySlotSpec],
+    targets: Sequence[str],
+    intermediate_targets: Sequence[tuple[ProcessStage, str]] = (),
+) -> dict[str, float]:
     model.eval(); errors: dict[str, list[float]] = {target: [] for target in targets}
+    for stage, target in intermediate_targets:
+        errors[f"{stage.value}.{target}"] = []
     with torch.no_grad():
         for run in runs:
             outputs = model(model.initial_state, _transitions(run, encoder, slots))
@@ -100,4 +109,9 @@ def _evaluate(model: MASPOProcessStateModel, runs: Sequence[BatteryProcessRun], 
                 value = run.final_kpis.get(target)
                 if value is not None and isinstance(value.value, (int, float)):
                     errors[target].append(abs(float(outputs[target]) - float(value.value)))
+            for record in run.stages:
+                for target, value in record.intermediate_properties.items():
+                    key = f"{record.stage_type.value}.{target}"
+                    if key in errors and isinstance(value.value, (int, float)):
+                        errors[key].append(abs(float(outputs[key]) - float(value.value)))
     return {target: float(np.mean(values)) for target, values in errors.items() if values}

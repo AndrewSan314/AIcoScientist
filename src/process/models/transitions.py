@@ -294,17 +294,49 @@ class StageFeatureEncoder:
     def encode_observations(self, record: StageRecord) -> EncodedStageFeatures:
         return self._encode_scope(record, "observation")
 
+    def encode_pre_observations(self, stage_type: ProcessStage) -> EncodedStageFeatures:
+        stage = next((s for s in self.stages if s.stage_type == stage_type), None)
+        if stage is None:
+            raise ValueError(f"stage type {stage_type.value!r} is not uniquely represented by the encoder")
+        values: list[float] = []
+        names: list[str] = []
+        for spec in stage.observations:
+            if spec.kind == "numeric":
+                values.extend([0.0, 0.0])
+                names.extend((f"{spec.name}.value", f"{spec.name}.observed"))
+            else:
+                token = ("missing", "")
+                if token in spec.categories:
+                    values.extend(float(token == category) for category in spec.categories)
+                else:
+                    values.extend(0.0 for _ in spec.categories)
+                names.extend(f"{spec.name}.category.{index}" for index in range(len(spec.categories)))
+        for index in range(len(values), self.observation_dim):
+            values.append(0.0)
+            names.append(f"{stage_type.value.lower()}.observation.__padding.{index}")
+        tensor = torch.tensor(values, dtype=torch.float32)
+        if not torch.isfinite(tensor).all():
+            raise ValueError("encoded source stage features must be finite")
+        digest_payload = {"encoder": self.fingerprint, "stage": stage_type.value, "scope": "pre_observation", "values": values, "names": names}
+        digest = hashlib.sha256(json.dumps(digest_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+        return EncodedStageFeatures(tensor, tuple(names), digest)
+
     def validate_transition(self, record: StageRecord, transition: "LegalStageTransition") -> None:
         controls = self.encode_controls(record)
         observations = self.encode_observations(record)
+        pre_observations = self.encode_pre_observations(record.stage_type)
         if transition.provenance.get("encoder_fingerprint") != self.fingerprint:
             raise ValueError("transition encoder fingerprint is not source-bound")
         if transition.provenance.get("control_feature_names") != controls.feature_names or transition.provenance.get("observation_feature_names") != observations.feature_names:
             raise ValueError("transition feature names are not source-bound")
         if transition.provenance.get("encoded_control_fingerprint") != controls.fingerprint or transition.provenance.get("encoded_observation_fingerprint") != observations.fingerprint:
             raise ValueError("transition encoded features are not source-bound")
+        if transition.provenance.get("encoded_pre_observation_fingerprint") != pre_observations.fingerprint:
+            raise ValueError("transition pre-observation fingerprint is not source-bound")
         if not torch.equal(transition.controls, controls.tensor) or not torch.equal(transition.scalar_observations, observations.tensor):
             raise ValueError("transition tensors do not equal deterministic source-record encodings")
+        if not torch.equal(transition.pre_scalar_observations, pre_observations.tensor):
+            raise ValueError("transition pre-scalar observations do not equal deterministic unobserved encoding")
 
 
 @dataclass(frozen=True)
@@ -349,8 +381,13 @@ class LegalStageTransition:
     provenance: Mapping[str, Any]
     modality_inputs: Mapping[str, torch.Tensor] = field(default_factory=dict)
     availability: Mapping[str, bool | torch.Tensor] = field(default_factory=dict)
+    pre_scalar_observations: torch.Tensor | None = None
 
     def __post_init__(self) -> None:
+        if self.pre_scalar_observations is None:
+            object.__setattr__(self, "pre_scalar_observations", torch.zeros_like(self.scalar_observations))
+        elif self.pre_scalar_observations.shape != self.scalar_observations.shape:
+            raise ValueError("pre_scalar_observations must match scalar_observations shape")
         if not self.source_stage_id.strip() or not isinstance(self.stage, ProcessStage):
             raise ValueError("legal transition needs a source stage identity and stage")
         if self.provenance.get("source_stage_id") != self.source_stage_id or self.provenance.get("stage") not in {self.stage, self.stage.value}:
@@ -495,6 +532,7 @@ class LegalStageTransition:
     ) -> "LegalStageTransition":
         controls = encoder.encode_controls(record)
         observations = encoder.encode_observations(record)
+        pre_observations = encoder.encode_pre_observations(record.stage_type)
         tokens, availability, bindings, resolved_slots, modality_provenance = cls._modality_payload(
             record, modality_inputs, modality_bindings, modality_slots,
             test_only=False,
@@ -503,6 +541,7 @@ class LegalStageTransition:
         reserved = {
             "source_stage_id", "stage", "source_stage_fingerprint", "control_names", "scalar_observation_names", "modality_bindings", "semantic_modality_slots",
             "encoder_fingerprint", "control_feature_names", "observation_feature_names", "encoded_control_fingerprint", "encoded_observation_fingerprint", "modality_provenance",
+            "pre_observation_feature_names", "encoded_pre_observation_fingerprint",
         }
         if reserved & set(supplied):
             raise ValueError("source-bound transition provenance fields cannot be overridden")
@@ -523,8 +562,10 @@ class LegalStageTransition:
             "observation_feature_names": observations.feature_names,
             "encoded_control_fingerprint": controls.fingerprint,
             "encoded_observation_fingerprint": observations.fingerprint,
+            "pre_observation_feature_names": pre_observations.feature_names,
+            "encoded_pre_observation_fingerprint": pre_observations.fingerprint,
         }
-        return cls(record.stage_id, record.stage_type, controls.tensor, observations.tensor, tuple(record.modalities), bound, tokens, availability)
+        return cls(record.stage_id, record.stage_type, controls.tensor, observations.tensor, tuple(record.modalities), bound, tokens, availability, pre_observations.tensor)
 
     @classmethod
     def from_source_stage(
@@ -538,6 +579,7 @@ class LegalStageTransition:
         modality_slots: Sequence[ModalitySlotSpec] | None = None,
         provenance: Mapping[str, Any] | None = None,
         test_only: bool = False,
+        pre_scalar_observations: torch.Tensor | None = None,
     ) -> "LegalStageTransition":
         if not test_only:
             raise ValueError("arbitrary stage tensors are test-only; use a frozen training StageFeatureEncoder")
@@ -562,4 +604,6 @@ class LegalStageTransition:
             "semantic_modality_slots": tuple(slot.as_tuple() for slot in resolved_slots),
             "unsafe_test_only": True,
         }
-        return cls(record.stage_id, record.stage_type, controls, scalar_observations, tuple(record.modalities), bound, tokens, availability)
+        if pre_scalar_observations is None:
+            pre_scalar_observations = torch.zeros_like(scalar_observations)
+        return cls(record.stage_id, record.stage_type, controls, scalar_observations, tuple(record.modalities), bound, tokens, availability, pre_scalar_observations)

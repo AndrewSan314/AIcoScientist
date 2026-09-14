@@ -48,35 +48,58 @@ class MASPOProcessStateModel(nn.Module):
         transitions: Iterable[LegalStageTransition],
     ) -> torch.Tensor:
         """Return the stage-aware latent state after the supplied legal transitions."""
-        state, _ = self._states_from_transitions(initial_state, transitions)
+        state = initial_state
+        for transition in transitions:
+            if not isinstance(transition, LegalStageTransition):
+                raise TypeError("state transitions must be source-bound LegalStageTransition values")
+            fused = self.fuse_observations(transition.modality_inputs, transition.availability)
+            if fused.ndim == 1 and transition.controls.ndim == 2:
+                fused = fused.unsqueeze(0).expand(transition.controls.shape[0], -1)
+            state = self.stage_model.transition_stage(
+                state, transition.stage, transition.controls,
+                torch.cat([transition.scalar_observations, fused], dim=-1),
+            )
         return state
 
     def _states_from_transitions(
         self,
         initial_state: torch.Tensor,
         transitions: Iterable[LegalStageTransition],
-    ) -> tuple[torch.Tensor, dict[ProcessStage, torch.Tensor]]:
+    ) -> tuple[torch.Tensor, dict[ProcessStage, torch.Tensor], dict[ProcessStage, torch.Tensor]]:
         state = initial_state
-        states: dict[ProcessStage, torch.Tensor] = {}
+        pre_states: dict[ProcessStage, torch.Tensor] = {}
+        post_states: dict[ProcessStage, torch.Tensor] = {}
         for transition in transitions:
             if not isinstance(transition, LegalStageTransition):
                 raise TypeError("state transitions must be source-bound LegalStageTransition values")
+            # Predict step: unrevealed intermediate observations and modalities for stage t
+            pre_fused = self.fuse_observations({}, {name: False for name in transition.availability})
+            if pre_fused.ndim == 1 and transition.controls.ndim == 2:
+                pre_fused = pre_fused.unsqueeze(0).expand(transition.controls.shape[0], -1)
+            pre_scalar = transition.pre_scalar_observations if transition.pre_scalar_observations is not None else torch.zeros_like(transition.scalar_observations)
+            pre_state = self.stage_model.transition_stage(
+                state, transition.stage, transition.controls,
+                torch.cat([pre_scalar, pre_fused], dim=-1),
+            )
+            pre_states[transition.stage] = pre_state
+
+            # Update step: revealed intermediate measurements and modalities for stage t
             fused = self.fuse_observations(transition.modality_inputs, transition.availability)
             if fused.ndim == 1 and transition.controls.ndim == 2:
-                fused = fused.unsqueeze(0)
+                fused = fused.unsqueeze(0).expand(transition.controls.shape[0], -1)
             state = self.stage_model.transition_stage(
                 state, transition.stage, transition.controls,
                 torch.cat([transition.scalar_observations, fused], dim=-1),
             )
-            states[transition.stage] = state
-        return state, states
+            post_states[transition.stage] = state
+        return state, pre_states, post_states
 
     def forward(
         self,
         initial_state: torch.Tensor,
         transitions: Iterable[LegalStageTransition],
     ) -> dict[str, torch.Tensor]:
-        state, states = self._states_from_transitions(initial_state, transitions)
+        state, pre_states, _ = self._states_from_transitions(initial_state, transitions)
         single = initial_state.ndim == 1
         outputs = {
             target: _prediction(head(state), single)
@@ -85,8 +108,8 @@ class MASPOProcessStateModel(nn.Module):
         for key, head in self.stage_model.intermediate_heads.items():
             stage_name, target = key.split("::", 1)
             stage = ProcessStage(stage_name)
-            if stage in states:
-                outputs[f"{stage.value}.{target}"] = _prediction(head(states[stage]), single)
+            if stage in pre_states:
+                outputs[f"{stage.value}.{target}"] = _prediction(head(pre_states[stage]), single)
         return outputs
 
 

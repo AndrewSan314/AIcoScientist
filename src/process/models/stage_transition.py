@@ -40,19 +40,32 @@ class StageAwareProcessModel(nn.Module):
         next_state = self.transition(torch.cat([state_batch, controls_batch, observations_batch, embedding], dim=-1))
         return next_state[0] if single else next_state
 
-    def forward(self, initial_state: torch.Tensor, transitions: Iterable[tuple[ProcessStage, torch.Tensor, torch.Tensor]]) -> dict[str, torch.Tensor]:
+    def forward(self, initial_state: torch.Tensor, transitions: Iterable[Any]) -> dict[str, torch.Tensor]:
         single = initial_state.ndim == 1
         state = initial_state
-        states: dict[ProcessStage, torch.Tensor] = {}
-        for stage, controls, observations in transitions:
+        pre_states: dict[ProcessStage, torch.Tensor] = {}
+        for item in transitions:
+            if hasattr(item, "stage") and hasattr(item, "controls") and hasattr(item, "scalar_observations"):
+                stage = item.stage
+                controls = item.controls
+                observations = item.scalar_observations
+                pre_observations = getattr(item, "pre_scalar_observations", None)
+                if pre_observations is None:
+                    pre_observations = torch.zeros_like(observations)
+            elif len(item) == 4:
+                stage, controls, observations, pre_observations = item
+            else:
+                stage, controls, observations = item
+                pre_observations = torch.zeros_like(observations)
+            pre_state = self.transition_stage(state, stage, controls, pre_observations)
+            pre_states[stage] = pre_state
             state = self.transition_stage(state, stage, controls, observations)
-            states[stage] = state
         outputs = {target: _prediction(head(state), single) for target, head in self.final_heads.items()}
         for key, head in self.intermediate_heads.items():
             stage_name, target = key.split("::", 1)
             stage = ProcessStage(stage_name)
-            if stage in states:
-                outputs[f"{stage.value}.{target}"] = _prediction(head(states[stage]), single)
+            if stage in pre_states:
+                outputs[f"{stage.value}.{target}"] = _prediction(head(pre_states[stage]), single)
         return outputs
 
 
