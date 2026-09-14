@@ -45,6 +45,12 @@ class DrakopoulosRecipeGroup:
     std_d30_specific_capacity: float
     mean_active_mass_mg: float
     cell_ids: tuple[str, ...]
+    # Replicate completeness tracking (v3 survivorship-bias fix)
+    total_replicates: int = 0
+    valid_d30_replicates: int = 0
+    zero_d30_replicates: int = 0
+    missing_d30_replicates: int = 0
+    recipe_eligibility_status: str = "UNKNOWN"
 
 
 def _find_header_col(headers: Sequence[tuple[int, str, str]], pattern: str) -> int | None:
@@ -128,12 +134,24 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 if st.stage_type == ProcessStage.CALENDERING:
                     calendered = bool(ctrls.get("calendering_applied", 0.0) > 0.5)
             
-            d30_vals = [
-                float(val.value)
-                for r in rlist
-                if (val := r.final_kpis.get("discharge_specific_capacity_cycle30_mah_g")) is not None
-                and isinstance(val.value, (int, float)) and val.value > 0
-            ]
+            # V3 survivorship-bias fix: include ALL measured D30 values (even zero).
+            # Only exclude cells with genuinely missing D30 (None / non-numeric).
+            total_replicates = len(rlist)
+            all_d30_vals: list[float] = []
+            zero_d30_count = 0
+            missing_d30_count = 0
+            for r in rlist:
+                val = r.final_kpis.get("discharge_specific_capacity_cycle30_mah_g")
+                if val is None or not isinstance(val.value, (int, float)):
+                    missing_d30_count += 1
+                else:
+                    fval = float(val.value)
+                    all_d30_vals.append(fval)
+                    if fval == 0.0:
+                        zero_d30_count += 1
+            
+            valid_d30_replicates = len(all_d30_vals)
+
             mass_vals = [
                 float(m.value)
                 for r in rlist
@@ -142,10 +160,18 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 and isinstance(m.value, (int, float))
             ]
             
-            mean_d30 = float(sum(d30_vals) / len(d30_vals)) if d30_vals else 0.0
-            variance_d30 = float(sum((x - mean_d30) ** 2 for x in d30_vals) / len(d30_vals)) if len(d30_vals) > 1 else 0.0
+            mean_d30 = float(sum(all_d30_vals) / len(all_d30_vals)) if all_d30_vals else 0.0
+            variance_d30 = float(sum((x - mean_d30) ** 2 for x in all_d30_vals) / len(all_d30_vals)) if len(all_d30_vals) > 1 else 0.0
             std_d30 = float(variance_d30 ** 0.5)
             mean_mass = float(sum(mass_vals) / len(mass_vals)) if mass_vals else 0.0
+            
+            # Determine eligibility status
+            if valid_d30_replicates == 0:
+                eligibility = "NO_D30"
+            elif missing_d30_count > 0:
+                eligibility = "PARTIAL_D30"
+            else:
+                eligibility = "STRICT_COMPLETE_RECIPE"
             
             groups.append(DrakopoulosRecipeGroup(
                 recipe_id=recipe_id,
@@ -156,6 +182,11 @@ class DrakopoulosGraphiteAdapter(NormalizedRunAdapter):
                 std_d30_specific_capacity=std_d30,
                 mean_active_mass_mg=mean_mass,
                 cell_ids=tuple(r.run_id for r in rlist),
+                total_replicates=total_replicates,
+                valid_d30_replicates=valid_d30_replicates,
+                zero_d30_replicates=zero_d30_count,
+                missing_d30_replicates=missing_d30_count,
+                recipe_eligibility_status=eligibility,
             ))
         return groups
 
