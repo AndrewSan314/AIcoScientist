@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 import math
 from typing import Any, Callable, Mapping
 
@@ -17,10 +18,15 @@ class EvidenceOption:
     latency_seconds: float
     provenance: Any = None
     reveals_source_observation: bool = False
+    evidence_kind: str = "PHYSICAL_HISTORICAL"
+    fidelity: str = "SOURCE"
+    required_context: Mapping[str, Any] | None = None
+    observed: bool = False
+    compatible: bool = True
 
     def __post_init__(self) -> None:
         if (
-            not self.modality_id.strip() or self.cost < 0 or self.latency_seconds < 0
+            not self.modality_id.strip() or not self.evidence_kind.strip() or not self.fidelity.strip() or self.cost < 0 or self.latency_seconds < 0
             or not math.isfinite(float(self.cost)) or not math.isfinite(float(self.latency_seconds))
         ):
             raise ValueError("evidence option needs an id and non-negative cost/latency")
@@ -34,22 +40,59 @@ class EvidenceReplayResult:
     acquired_latency_seconds: float
 
 
+class EvidenceAcquisitionPolicy(str, Enum):
+    MAX_PREDICTIVE_VARIANCE_REDUCTION = "MAX_PREDICTIVE_VARIANCE_REDUCTION"
+    EXPECTED_INFORMATION_VALUE_PER_COST = "EXPECTED_INFORMATION_VALUE_PER_COST"
+    NO_ADDITIONAL_EVIDENCE = "NO_ADDITIONAL_EVIDENCE"
+
+
+def _choose_scored_evidence(options: tuple[EvidenceOption, ...], estimates: Mapping[str, float], *, divide_by_cost: bool) -> EvidenceOption | None:
+    option_ids = {option.modality_id for option in options}
+    if len(option_ids) != len(options) or set(estimates) != option_ids:
+        raise ValueError("estimated evidence scores must be declared for exactly the available evidence options")
+    if any(not option.available or option.observed or not option.compatible for option in options):
+        raise ValueError("evidence policies reject unavailable, observed, or incompatible options")
+    scored: list[tuple[float, str, EvidenceOption]] = []
+    for option in options:
+        estimate = float(estimates[option.modality_id])
+        if not math.isfinite(estimate) or estimate < 0:
+            raise ValueError("estimated evidence scores must be finite and non-negative")
+        if estimate:
+            scored.append((estimate / (option.cost or 1.0) if divide_by_cost else estimate, option.modality_id, option))
+    return max(scored, default=(0.0, "", None), key=lambda item: (item[0], item[1]))[2]
+
+
+def choose_evidence(
+    options: tuple[EvidenceOption, ...],
+    policy: EvidenceAcquisitionPolicy,
+    *,
+    estimated_variance_reduction: Mapping[str, float] | None = None,
+    estimated_decision_utility: Mapping[str, float] | None = None,
+) -> EvidenceOption | None:
+    """Choose from declared pre-reveal estimates; this function never accesses withheld evidence."""
+    if policy is EvidenceAcquisitionPolicy.NO_ADDITIONAL_EVIDENCE:
+        return None
+    if policy is EvidenceAcquisitionPolicy.MAX_PREDICTIVE_VARIANCE_REDUCTION:
+        if estimated_variance_reduction is None:
+            raise ValueError("variance-reduction policy requires declared variance estimates")
+        return _choose_scored_evidence(options, estimated_variance_reduction, divide_by_cost=False)
+    if policy is EvidenceAcquisitionPolicy.EXPECTED_INFORMATION_VALUE_PER_COST:
+        if estimated_decision_utility is None:
+            raise ValueError("EVI-per-cost policy requires declared decision-utility estimates")
+        return _choose_scored_evidence(options, estimated_decision_utility, divide_by_cost=True)
+    raise ValueError(f"unsupported evidence acquisition policy: {policy!r}")
+
+
 def choose_cost_aware_evidence(
     options: tuple[EvidenceOption, ...],
     estimated_utility: Mapping[str, float],
 ) -> EvidenceOption | None:
     """Select from declared, pre-reveal utility estimates; never inspect withheld data."""
-    option_ids = {option.modality_id for option in options}
-    if set(estimated_utility) != option_ids:
-        raise ValueError("estimated utility must be declared for exactly the available evidence options")
-    scored: list[tuple[float, str, EvidenceOption]] = []
-    for option in options:
-        utility = float(estimated_utility[option.modality_id])
-        if not math.isfinite(utility) or utility < 0:
-            raise ValueError("estimated evidence utility must be finite and non-negative")
-        if utility:
-            scored.append((utility / (option.cost or 1.0), option.modality_id, option))
-    return max(scored, default=(0.0, "", None), key=lambda item: (item[0], item[1]))[2]
+    return choose_evidence(
+        options,
+        EvidenceAcquisitionPolicy.EXPECTED_INFORMATION_VALUE_PER_COST,
+        estimated_decision_utility=estimated_utility,
+    )
 
 
 def replay_blinded_evidence(

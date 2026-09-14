@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.process.evidence import EvidenceOption, choose_cost_aware_evidence, replay_blinded_evidence
+from src.process.evidence import EvidenceAcquisitionPolicy, EvidenceOption, choose_cost_aware_evidence, choose_evidence, replay_blinded_evidence
 from src.process.information_horizon import HorizonView
 from src.process.stages import ProcessStage
 
@@ -68,3 +68,13 @@ def test_cost_aware_policy_uses_declared_pre_reveal_utility() -> None:
     assert choose_cost_aware_evidence((cheap, expensive), {"ultrasound": 0.5, "sem": 1.0}) == cheap
     with pytest.raises(ValueError, match="exactly"):
         choose_cost_aware_evidence((cheap,), {"withheld": 1.0})
+
+
+def test_evidence_policy_choices_are_pre_reveal_and_fail_closed() -> None:
+    cheap = _option("ultrasound", cost=1.0)
+    expensive = _option("sem", cost=4.0)
+    assert choose_evidence((cheap, expensive), EvidenceAcquisitionPolicy.MAX_PREDICTIVE_VARIANCE_REDUCTION, estimated_variance_reduction={"ultrasound": 0.5, "sem": 1.0}) == expensive
+    assert choose_evidence((cheap, expensive), EvidenceAcquisitionPolicy.EXPECTED_INFORMATION_VALUE_PER_COST, estimated_decision_utility={"ultrasound": 0.5, "sem": 1.0}) == cheap
+    assert choose_evidence((cheap,), EvidenceAcquisitionPolicy.NO_ADDITIONAL_EVIDENCE) is None
+    with pytest.raises(ValueError, match="unavailable"):
+        choose_evidence((_option("hidden", available=False),), EvidenceAcquisitionPolicy.MAX_PREDICTIVE_VARIANCE_REDUCTION, estimated_variance_reduction={"hidden": 1.0})
