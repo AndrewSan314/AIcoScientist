@@ -42,7 +42,7 @@ CAPABILITY_SECTIONS = {
     "constraints": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Hard scalar constraint semantics are unit-tested; no BPSS replay currently registers a source-backed modeled outcome constraint."},
     "manufacturability": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "The learned feasibility model exists, but BPSS adapters do not expose an audited process-failure label set for evaluation."},
     "evidence_acquisition": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Three pre-reveal policies are unit-tested, but no BPSS adapter registers multiple legal source-backed evidence options at one decision horizon."},
-    "multifidelity": {"status": "NOT_AVAILABLE", "reason": "No compatible paired low/high-fidelity BPSS evidence is available for a correction benchmark."},
+    "multifidelity": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Paired low-to-high residual correction is unit-tested and rejects unmatched/incompatible pairs; no compatible paired BPSS evidence is available for evaluation."},
     "robustness": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Robustness utilities are available, but no source-backed perturbation protocol is registered for these BPSS tasks."},
     "explainability": {"status": "IMPLEMENTED_NOT_EVALUATED", "reason": "Stage ablations and process-graph path attribution are available; no source-backed local-recommendation attribution task is registered."},
 }
