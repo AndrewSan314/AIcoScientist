@@ -1,0 +1,1262 @@
+[
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 11,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-0d38055e23a7",
+      "protocol-95a0b3eea94d",
+      "protocol-23509c88f8bf"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 354.53634941923684,
+    "rediscovered": true,
+    "experiments_to_best": 3,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 3,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 95.42540147358955,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": 3,
+        "is_hidden_best": false,
+        "predicted_mean": 265.55923038579203,
+        "predicted_std": 134.0489195705679,
+        "acquisition_value": 3.031191199648055,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 335.68116474952234,
+        "predicted_std": 65.6945796958201,
+        "acquisition_value": 2.9039092722356683,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 219.3198139483849,
+        "predicted_std": 107.90313870521163,
+        "acquisition_value": 1.7379435786429278,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 383.80860601328413,
+        "predicted_std": 52.00386813339738,
+        "acquisition_value": 2.5617758096802907,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-a4fcf0522485",
+        "revealed_target": 265.59032086603634,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 256.40454989525637,
+        "predicted_std": 112.11794942188257,
+        "acquisition_value": 1.6604026631516673,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 23,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-899621a76f90",
+      "protocol-fd150c39c22f",
+      "protocol-baa76da6d242"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 392.50999261021303,
+    "rediscovered": false,
+    "experiments_to_best": null,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 5,
+    "final_simple_regret": 9.739057545818582,
+    "final_cumulative_regret": 48.69528772909291,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 9.739057545818582,
+        "hidden_best_rank": 7,
+        "is_hidden_best": false,
+        "predicted_mean": 309.36436181863706,
+        "predicted_std": 87.32632548161065,
+        "acquisition_value": 2.0936840976571522,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-95a0b3eea94d",
+        "revealed_target": 115.71076742044022,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 19.478115091637164,
+        "hidden_best_rank": 9,
+        "is_hidden_best": false,
+        "predicted_mean": 288.19491832723804,
+        "predicted_std": 74.33109229760092,
+        "acquisition_value": 1.0401119337827707,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-1839e8c24871",
+        "revealed_target": 235.08466136470602,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 29.217172637455747,
+        "hidden_best_rank": 7,
+        "is_hidden_best": false,
+        "predicted_mean": 237.46142920315748,
+        "predicted_std": 83.05719193423207,
+        "acquisition_value": 0.03814943775377344,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 38.95623018327433,
+        "hidden_best_rank": 3,
+        "is_hidden_best": false,
+        "predicted_mean": 228.59305633742377,
+        "predicted_std": 63.49354784587752,
+        "acquisition_value": -1.7277823022888317,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-0d38055e23a7",
+        "revealed_target": 354.53634941923684,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 48.69528772909291,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 308.42349336776044,
+        "predicted_std": 21.896116261579877,
+        "acquisition_value": -52.23641120082999,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 42,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-baa76da6d242",
+      "protocol-fd150c39c22f",
+      "protocol-9ecd72d3534a"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 392.50999261021303,
+    "rediscovered": true,
+    "experiments_to_best": 1,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 1,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 0.0,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 307.2937201790541,
+        "predicted_std": 123.47861866358953,
+        "acquisition_value": 2.8997205148835574,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 315.96136065120794,
+        "predicted_std": 123.22017031042141,
+        "acquisition_value": 2.8450297293474494,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 396.38430247440925,
+        "predicted_std": 34.55028278783605,
+        "acquisition_value": 2.349465858303012,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-95a0b3eea94d",
+        "revealed_target": 115.71076742044022,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 288.4365189078292,
+        "predicted_std": 101.03925472744372,
+        "acquisition_value": 1.8960760132444276,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 240.95788140466797,
+        "predicted_std": 108.102338613417,
+        "acquisition_value": 1.1528390957150014,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 67,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-c1c280b7366f",
+      "protocol-1839e8c24871",
+      "protocol-baa76da6d242"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 263.887740480095,
+    "rediscovered": false,
+    "experiments_to_best": null,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 1,
+    "final_simple_regret": 9.739057545818582,
+    "final_cumulative_regret": 48.69528772909291,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-fd150c39c22f",
+        "revealed_target": 392.50999261021303,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 9.739057545818582,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 252.15984042628583,
+        "predicted_std": 16.744170078746926,
+        "acquisition_value": 0.8827539678130218,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-95a0b3eea94d",
+        "revealed_target": 115.71076742044022,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 19.478115091637164,
+        "hidden_best_rank": 7,
+        "is_hidden_best": false,
+        "predicted_mean": 293.60450133138886,
+        "predicted_std": 75.64872358511128,
+        "acquisition_value": 1.2390575138272322,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-0d38055e23a7",
+        "revealed_target": 354.53634941923684,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 29.217172637455747,
+        "hidden_best_rank": 4,
+        "is_hidden_best": false,
+        "predicted_mean": 239.2913143818567,
+        "predicted_std": 90.32878351461639,
+        "acquisition_value": 0.6097234447363862,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 38.95623018327433,
+        "hidden_best_rank": 3,
+        "is_hidden_best": false,
+        "predicted_mean": 307.0581572927358,
+        "predicted_std": 73.81536942426233,
+        "acquisition_value": 1.555772136273327,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 48.69528772909291,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 353.48278966085155,
+        "predicted_std": 22.436498596541327,
+        "acquisition_value": -0.6536666069188914,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 101,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-9ecd72d3534a",
+      "protocol-a4fcf0522485",
+      "protocol-23509c88f8bf"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 265.59032086603634,
+    "rediscovered": true,
+    "experiments_to_best": 1,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 1,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 0.0,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 171.65071908878116,
+        "predicted_std": 81.76834756359851,
+        "acquisition_value": 1.648167792257385,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 352.1622828226207,
+        "predicted_std": 93.5145067643485,
+        "acquisition_value": 2.8751618930151137,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 270.99245512116335,
+        "predicted_std": 110.94744635523698,
+        "acquisition_value": 1.8940119107093887,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-fd150c39c22f",
+        "revealed_target": 392.50999261021303,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 232.21370758202332,
+        "predicted_std": 99.97648590195796,
+        "acquisition_value": 0.6152580909397338,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 0.0,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 237.97091970788543,
+        "predicted_std": 108.06280864792498,
+        "acquisition_value": 1.0986106237317346,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 137,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-7acc4561b3f7",
+      "protocol-95a0b3eea94d",
+      "protocol-c1c280b7366f"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 316.38845846496605,
+    "rediscovered": false,
+    "experiments_to_best": null,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 1,
+    "final_simple_regret": 9.739057545818582,
+    "final_cumulative_regret": 200.58986049299767,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-0d38055e23a7",
+        "revealed_target": 354.53634941923684,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": 3,
+        "is_hidden_best": false,
+        "predicted_mean": 236.0251488967524,
+        "predicted_std": 100.34990631498225,
+        "acquisition_value": 2.5137990954202865,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": 7,
+        "is_hidden_best": false,
+        "predicted_mean": 331.0890279984394,
+        "predicted_std": 36.19000695651896,
+        "acquisition_value": 1.753809865687331,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-a4fcf0522485",
+        "revealed_target": 265.59032086603634,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 143.13810221038432,
+        "hidden_best_rank": 7,
+        "is_hidden_best": false,
+        "predicted_mean": 223.76187776751144,
+        "predicted_std": 91.19610277885793,
+        "acquisition_value": 1.2005204263076203,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-1839e8c24871",
+        "revealed_target": 235.08466136470602,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 190.8508029471791,
+        "hidden_best_rank": 5,
+        "is_hidden_best": false,
+        "predicted_mean": 244.27407092376174,
+        "predicted_std": 79.3752275462041,
+        "acquisition_value": 1.1566598911643302,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-fd150c39c22f",
+        "revealed_target": 392.50999261021303,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 200.58986049299767,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 227.19147597826486,
+        "predicted_std": 74.89208113994805,
+        "acquisition_value": 0.3683617630091023,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 179,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-95a0b3eea94d",
+      "protocol-23509c88f8bf",
+      "protocol-0d38055e23a7"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 354.53634941923684,
+    "rediscovered": true,
+    "experiments_to_best": 3,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 3,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 95.42540147358955,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": 3,
+        "is_hidden_best": false,
+        "predicted_mean": 265.5592303857969,
+        "predicted_std": 134.04891957056773,
+        "acquisition_value": 3.023760638923034,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 335.68116474954263,
+        "predicted_std": 65.69457969578012,
+        "acquisition_value": 2.90240755414668,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 219.31981372626498,
+        "predicted_std": 107.90313871875257,
+        "acquisition_value": 1.7208770555560795,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 383.8086008281287,
+        "predicted_std": 52.003883877470656,
+        "acquisition_value": 2.5564742616032268,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-a4fcf0522485",
+        "revealed_target": 265.59032086603634,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 95.42540147358955,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 256.40455009763895,
+        "predicted_std": 112.11794942188257,
+        "acquisition_value": 1.6617519163277867,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 223,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-a4fcf0522485",
+      "protocol-1839e8c24871",
+      "protocol-95a0b3eea94d"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 265.59032086603634,
+    "rediscovered": true,
+    "experiments_to_best": 2,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 2,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 136.65872928999528,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-9ecd72d3534a",
+        "revealed_target": 140.35420523556508,
+        "best_so_far": 265.59032086603634,
+        "simple_regret": 136.65872928999528,
+        "cumulative_regret": 136.65872928999528,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 248.3645422699371,
+        "predicted_std": 38.93154719278732,
+        "acquisition_value": 2.1511766936149455,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 136.65872928999528,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 189.10990964066454,
+        "predicted_std": 72.40502132798468,
+        "acquisition_value": 1.735149562422909,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-899621a76f90",
+        "revealed_target": 241.91474467651884,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 136.65872928999528,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 354.54105402359016,
+        "predicted_std": 80.2892908604582,
+        "acquisition_value": 2.6306573768879256,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 136.65872928999528,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 276.57595567930343,
+        "predicted_std": 98.37110987733227,
+        "acquisition_value": 1.5791957559991987,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-fd150c39c22f",
+        "revealed_target": 392.50999261021303,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 136.65872928999528,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 238.28323072177878,
+        "predicted_std": 90.50813328944321,
+        "acquisition_value": 0.32571559432522346,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 281,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-899621a76f90",
+      "protocol-c1c280b7366f",
+      "protocol-95a0b3eea94d"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 263.887740480095,
+    "rediscovered": false,
+    "experiments_to_best": null,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 4,
+    "final_simple_regret": 9.739057545818582,
+    "final_cumulative_regret": 315.03353335581005,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 316.38845846496605,
+        "simple_regret": 85.86059169106557,
+        "cumulative_regret": 85.86059169106557,
+        "hidden_best_rank": 8,
+        "is_hidden_best": false,
+        "predicted_mean": 235.8157491251141,
+        "predicted_std": 58.30637937808105,
+        "acquisition_value": 2.493606214873302,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-a4fcf0522485",
+        "revealed_target": 265.59032086603634,
+        "best_so_far": 316.38845846496605,
+        "simple_regret": 85.86059169106557,
+        "cumulative_regret": 171.72118338213113,
+        "hidden_best_rank": 9,
+        "is_hidden_best": false,
+        "predicted_mean": 202.70097511333702,
+        "predicted_std": 85.11799010897124,
+        "acquisition_value": 1.326468508979052,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-9ecd72d3534a",
+        "revealed_target": 140.35420523556508,
+        "best_so_far": 316.38845846496605,
+        "simple_regret": 85.86059169106557,
+        "cumulative_regret": 257.5817750731967,
+        "hidden_best_rank": 6,
+        "is_hidden_best": false,
+        "predicted_mean": 235.6410473125809,
+        "predicted_std": 71.9258712275306,
+        "acquisition_value": 1.5861982344388883,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-0d38055e23a7",
+        "revealed_target": 354.53634941923684,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 305.29447580999147,
+        "hidden_best_rank": 6,
+        "is_hidden_best": false,
+        "predicted_mean": 275.1926766741572,
+        "predicted_std": 32.24305834554874,
+        "acquisition_value": 0.48927335196372557,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-fd150c39c22f",
+        "revealed_target": 392.50999261021303,
+        "best_so_far": 392.50999261021303,
+        "simple_regret": 9.739057545818582,
+        "cumulative_regret": 315.03353335581005,
+        "hidden_best_rank": 4,
+        "is_hidden_best": false,
+        "predicted_mean": 213.42988288643338,
+        "predicted_std": 87.0186924914843,
+        "acquisition_value": 0.7130057964104983,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "seed": 353,
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "initial_candidate_ids": [
+      "protocol-9ecd72d3534a",
+      "protocol-899621a76f90",
+      "protocol-0d38055e23a7"
+    ],
+    "hidden_best_id": "protocol-d3602183e567",
+    "hidden_best_value": 402.2490501560316,
+    "initial_best_value": 354.53634941923684,
+    "rediscovered": true,
+    "experiments_to_best": 2,
+    "top3_rediscovered": true,
+    "experiments_to_top3": 2,
+    "final_simple_regret": 0.0,
+    "final_cumulative_regret": 47.71270073679477,
+    "steps": [
+      {
+        "step": 1,
+        "selected_id": "protocol-7acc4561b3f7",
+        "revealed_target": 316.38845846496605,
+        "best_so_far": 354.53634941923684,
+        "simple_regret": 47.71270073679477,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": 2,
+        "is_hidden_best": false,
+        "predicted_mean": 262.5457648428804,
+        "predicted_std": 103.29657170069952,
+        "acquisition_value": 2.376271448481389,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 3
+        }
+      },
+      {
+        "step": 2,
+        "selected_id": "protocol-d3602183e567",
+        "revealed_target": 402.2490501560316,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": 1,
+        "is_hidden_best": true,
+        "predicted_mean": 226.6375626936523,
+        "predicted_std": 94.36710843527219,
+        "acquisition_value": 1.3854189071485914,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 4
+        }
+      },
+      {
+        "step": 3,
+        "selected_id": "protocol-c1c280b7366f",
+        "revealed_target": 263.887740480095,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 385.33614635294487,
+        "predicted_std": 49.996982706420106,
+        "acquisition_value": 2.5450837150649255,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 5
+        }
+      },
+      {
+        "step": 4,
+        "selected_id": "protocol-a4fcf0522485",
+        "revealed_target": 265.59032086603634,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 277.1387239878968,
+        "predicted_std": 92.4963153790876,
+        "acquisition_value": 1.3581468547944944,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 6
+        }
+      },
+      {
+        "step": 5,
+        "selected_id": "protocol-95a0b3eea94d",
+        "revealed_target": 115.71076742044022,
+        "best_so_far": 402.2490501560316,
+        "simple_regret": 0.0,
+        "cumulative_regret": 47.71270073679477,
+        "hidden_best_rank": null,
+        "is_hidden_best": false,
+        "predicted_mean": 282.3571939736919,
+        "predicted_std": 84.80819004943659,
+        "acquisition_value": 1.1247751903615173,
+        "engine_path": "DIRECT_BOTORCH_BASELINE",
+        "surrogate_artifact_fingerprint": null,
+        "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+        "information_horizon": "NONE (FLAT TABLE)",
+        "training_view_summary": {
+          "backend": "BoTorchBackend",
+          "num_observations": 7
+        }
+      }
+    ]
+  }
+]

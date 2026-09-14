@@ -1,0 +1,36 @@
+{
+  "dataset": "Drakopoulos et al. 2021",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "candidate_pool_total": 32,
+  "eligible_complete_d30_recipes": 13,
+  "excluded_incomplete_d30_recipes": 19,
+  "primary_target": "D30",
+  "primary_target_units": "mAh/g",
+  "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
+  "initial_design_size": 3,
+  "additional_experiment_budget": 5,
+  "seed_count": 10,
+  "unconstrained": {
+    "source_best_d30": 402.2490501560316,
+    "hit_at_1": 0.4,
+    "hit_at_3": 0.8,
+    "hit_at_5": 0.8,
+    "random_hit_at_5": 0.5,
+    "simple_regret_at_5": 1.9478115091637165
+  },
+  "high_loading": {
+    "status": "EVALUATED_ON_STRICT_COMPLETE_HIGH_LOADING_SUBSET",
+    "loading_definition": "coating_gap_um >= 150 um (mean active mass >= 11.0 mg) among strictly complete recipes",
+    "eligible_recipe_count": 10,
+    "source_best_d30": 354.53634941923684,
+    "hit_at_5": 1.0,
+    "random_hit_at_5": 0.7142857142857143
+  },
+  "published_design_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
+  "claim": "In source-backed offline replay on eligible Drakopoulos manufacturing protocols, the AIcoScientist process-surrogate engine recovered the source-observed high-D30 recipe more frequently within five additional experiments than random selection.",
+  "limitations": [
+    "Evaluated on physical retrospective experimental candidates rather than real-time prospective wet-lab synthesis.",
+    "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",
+    "Published Alchemite design represents an aggregate comparative set in Table S6 rather than an isolated recoverable single-cell identifier."
+  ]
+}

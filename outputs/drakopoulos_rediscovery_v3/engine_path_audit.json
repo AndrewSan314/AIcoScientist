@@ -1,0 +1,57 @@
+[
+  {
+    "policy": "AICOSCIENTIST_PROCESS_SURROGATE",
+    "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
+    "uses_battery_process_run": true,
+    "uses_information_horizon": true,
+    "uses_process_surrogate_sample": true,
+    "fits_process_surrogate": true,
+    "creates_surrogate_artifact": true,
+    "uses_process_optimization_coordinator": true,
+    "uses_direct_botorch_backend": false
+  },
+  {
+    "policy": "DIRECT_BOTORCH_BASELINE",
+    "engine_path": "DIRECT_BOTORCH_BASELINE",
+    "uses_battery_process_run": false,
+    "uses_information_horizon": false,
+    "uses_process_surrogate_sample": false,
+    "fits_process_surrogate": false,
+    "creates_surrogate_artifact": false,
+    "uses_process_optimization_coordinator": false,
+    "uses_direct_botorch_backend": true
+  },
+  {
+    "policy": "random",
+    "engine_path": "RANDOM_BASELINE",
+    "uses_battery_process_run": false,
+    "uses_information_horizon": false,
+    "uses_process_surrogate_sample": false,
+    "fits_process_surrogate": false,
+    "creates_surrogate_artifact": false,
+    "uses_process_optimization_coordinator": false,
+    "uses_direct_botorch_backend": false
+  },
+  {
+    "policy": "aicointel_greedy",
+    "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
+    "uses_battery_process_run": true,
+    "uses_information_horizon": true,
+    "uses_process_surrogate_sample": true,
+    "fits_process_surrogate": true,
+    "creates_surrogate_artifact": true,
+    "uses_process_optimization_coordinator": true,
+    "uses_direct_botorch_backend": false
+  },
+  {
+    "policy": "aicointel_ucb",
+    "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
+    "uses_battery_process_run": true,
+    "uses_information_horizon": true,
+    "uses_process_surrogate_sample": true,
+    "fits_process_surrogate": true,
+    "creates_surrogate_artifact": true,
+    "uses_process_optimization_coordinator": true,
+    "uses_direct_botorch_backend": false
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "dataset": "Drakopoulos et al. 2021 (Graphite Process-15)",
+  "partition": "PROSPECTIVE_MODEL_VALIDATION (ASC Cells 1-108)",
+  "total_cells": 108,
+  "total_recipe_groups": 32,
+  "strictly_complete_recipes": 13,
+  "incomplete_partial_d30_recipes": 13,
+  "no_d30_recipes": 6,
+  "eligibility_policy": "STRICT_COMPLETE_RECIPE: Only recipes with 100% of replicates having valid measured D30 cycling data are admitted into primary benchmark pool to prevent survivorship bias.",
+  "zero_versus_missing_policy": "Zero measured D30 is retained as a valid physical failure/zero outcome; missing D30 is preserved as missing and excluded from primary complete-recipe pool."
+}

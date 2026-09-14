@@ -1,0 +1,1902 @@
+[
+  {
+    "seed": 11,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "40286c5fed959aee17de12fd0b0d3fd4d0a4dbb76bc28c0d3010d38694a70583",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 11,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "19edd27b5d6a2e7d4fc780cf26eedb42b6457732a83529947fbb2883746ddf10",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 11,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "770b940d8f4a87715aabbf514f21f427b1d76f9b69e89569d508390e66f464d1",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 11,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "8eb42b4500545d3213457a6f19678525a4ae2f9b3321b884bd9e4ea55db433db",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 11,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "dfb7f397def85ea1c1089ef1ea5d58fe008cf71005a819186e58fb0af2adc5c2",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 23,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "de4f7eefa68e908e8627fa42597a48b9113265d274642c366d5997c840b4d1aa",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 23,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "0ebd7acd0e142ac5dfecc6b8a840a5b3f8b6794484638bc9135b83d123dc373f",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 23,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "0199be85747557d3bffe3ae429c9a45efb4319b48faf9c5712cdc945483765d4",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 23,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "b5050736d21a18bb603ec4324b47c162d2c2a848daa6eece50ec5d376d5359c5",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 23,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "fac5eb767b26fd320f51f20e303a5ee0e6ea9c7e1c4bbc361865d7dba31cfada",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 42,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "4f16373a7265d64a4fa135e0bd61bd53a0c43b58a67a8527861965a81a607a5e",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 42,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "d45380188086ba317caba0fed94cbd592962f43b317d9d847faca6c2d700368f",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 42,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "d6b32a51f755f2767ded16548456579869a3a1c31b6e656cc9791ba913885e38",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 42,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "0adad31bf8f4a986ebf3e5fc81131370f08e021841de05413249ed7f36480472",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 42,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "720e46747253dccd2afc2178a097f89f74d72c36b95b96cdf6ddadf8f5476244",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 67,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "539670327d2bf4c651ff1cb973b27daa0c57cb10313ff74a99be797e86cb28da",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 67,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "4b9235ff0d221e86073221bf429c77c06cc9e731651b1f84517a99a44dab48d7",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 67,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "7bf13a7617dff7b4ada55e6354b2a928aa0cc7b4a9dd8853cd06019003f79431",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 67,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "9ad85b60fbe9e7f29088ffc5465fed6890f3c50be4bf70db9d6bfef35b6065db",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 67,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "e5c2c7533cfcaeb77899e35c728509c5fa32d5a37399039770d99e313c1fa99c",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 101,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "a011ee0c5aef66bcf397d44094aa261d1fa7ea55787bcd8cac7379bceb555508",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 101,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "d26c12018ba84a83f027d631eff423a709179afb66e842e3599e94ae482f2bb6",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 101,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "416c1cff7d2ba15e9b97cdc6e3f60bd12c48ef240c51be0e6fc52c4e2de2c87b",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 101,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "4b39852f15167833ff93311aa961a63504f1c35e86fc711b2f50fc1616d28d53",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 101,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "d553f9f390eaaf3ee4f462d5a6057458a51184aa89569550ed46e9343b3e434d",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 137,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "fe51ee24f22de7a54de5304a06de6708fc85f677557b69a3ebf46a9dc5603e26",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 137,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "b2e3b77a0f19b804620dad91a65dd5565706dcc5bdd3f51159b722537b90cf0e",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 137,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "3816bac9c1b034b836efb9a548c911bf7141134dba451ff99a7bb9c375a6bacb",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 137,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "5e34d0502dedb2b24ca66df5d883b877ca0726a8bb9d2fc7d763cdc6e8c24a9c",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 137,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "d89bcf1e5224762499e4b4c65a873467a929f1244c4e4a30e84eadcb82bc35aa",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 179,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "e247d1c4515e67577887ea45ab25c0fc91af26f0d300c2e03a15ca3260599703",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 179,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "54ae7fb18fe297cbc38101b50a5517185ddd3704eef3ea3f7a36bb63d004f11a",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 179,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "1b7afe4e95ef60d6dc4650c2c83db1ec433f239d525ad1ef9dc4ed704f79b42a",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 179,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "913fb184a329127b34924f2491d780ec3e932a25ccc624329d938c1f99b4ad16",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 179,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "0c4acd687491939ce2ba6f2678a8e889a7d0d0e64b458824b94d1be05025e549",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 223,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "dac5c66c9bc57be4d3640aff97c6d3a36f984c3a6b2e990f949494f6c7e62bf2",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 223,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "ae1577279dda488744e5a42c7408b871691b17300d6eb3b802f0ae99dfae64db",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 223,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "21c84ab2098e029ce0ca051c92f11f90324476ed5a2c52d9a8a9f5aa88ba8a54",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 223,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "52271ffbac7d34bd47af366fe958baf94352b1989792a18562957e76b1caf12a",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 223,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "72d11e55d342bebe1a4a9d346c00ecc99052467cfe8453c69dbe55d5b72ce939",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 281,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "6abc219bdf9638e2e1cee19df2392361ba4f5d77cd17a4c2daec63c979ea093b",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 281,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "a8972e064543a4cbac64cfc92f3e6564f3c731fb0da416aa26f5649c62d66480",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 281,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "ccf4f9bf56bea8b5427459573fefd8ffa4ed37a80cf900025a3a4b1f87884dcc",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 281,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "dfa7a6186cbb2f10485043c30529df3e662237a985a8261931d482fb2e0d2a81",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 281,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "fb7835442920c95fd87288ecbd9ec2e79b5d490b357dddfab7edcd0fbbdaf2c8",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 353,
+    "step": 1,
+    "surrogate_artifact_fingerprint": "435c833e10c9ae035cdf958e81d59b747f300df055168c15f3564b68a137e343",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 3,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 353,
+    "step": 2,
+    "surrogate_artifact_fingerprint": "35066d3b560c7ddf26b5503179ae7b5c7a0b422ec5c16f7e608214a241c7b60d",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 4,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 353,
+    "step": 3,
+    "surrogate_artifact_fingerprint": "5ac027173b9f797eaaacaffacc863a03336e1e5d58dc19fb51035c5afe1b0424",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 5,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 353,
+    "step": 4,
+    "surrogate_artifact_fingerprint": "aa614029ba1bad5493a7fb8183aa693ab0dfd6022326c6e19bc087a56636d74a",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 6,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  },
+  {
+    "seed": 353,
+    "step": 5,
+    "surrogate_artifact_fingerprint": "4539608630b234ef33bc15a581137bee2b397987a13ffa6e75dd77f777e62029",
+    "dataset_fingerprint": "774d65582ec41d2442620ac1cbc9bbf3bf22c67166862e692daf5e81d8d3772a",
+    "information_horizon": "InformationHorizon(COATING)",
+    "training_view_summary": {
+      "num_revealed_samples": 7,
+      "observable_controls": [
+        "active_material_fraction_pct",
+        "binder_cmc_fraction_pct",
+        "binder_sbr_fraction_pct",
+        "coating_gap_um",
+        "coating_speed_m_per_min",
+        "conductive_additive_fraction_pct",
+        "mixing_solids_pct"
+      ],
+      "decision_stage": "COATING",
+      "features": [
+        "control::active_material_fraction_pct",
+        "control::binder_cmc_fraction_pct",
+        "control::binder_sbr_fraction_pct",
+        "control::coating_gap_um",
+        "control::coating_speed_m_per_min",
+        "control::conductive_additive_fraction_pct",
+        "control::mixing_solids_pct",
+        "fidelity::EXPERIMENTAL",
+        "control::active_material_fraction_pct__observed",
+        "control::binder_cmc_fraction_pct__observed",
+        "control::binder_sbr_fraction_pct__observed",
+        "control::coating_gap_um__observed",
+        "control::coating_speed_m_per_min__observed",
+        "control::conductive_additive_fraction_pct__observed",
+        "control::mixing_solids_pct__observed",
+        "fidelity::EXPERIMENTAL__observed"
+      ]
+    }
+  }
+]

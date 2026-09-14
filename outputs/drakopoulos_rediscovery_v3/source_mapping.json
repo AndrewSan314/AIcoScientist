@@ -1,0 +1,19 @@
+{
+  "dataset_doi": "10.17632/4dh2h3tsf4.1",
+  "paper_doi": "10.1016/j.xcrp.2021.100683",
+  "adapter": "DrakopoulosGraphiteAdapter (version 3.0)",
+  "semantic_mapping_strategy": "FAIL_CLOSED_REGEX_HEADER_MATCHING",
+  "positional_fallback": "STRICTLY_PROHIBITED",
+  "header_regex_map": {
+    "coating_gap_um": "gap\\s*size",
+    "coating_speed_m_per_min": "speed\\s*\\(",
+    "drying_temperature_c": "tempera",
+    "active_material_fraction_pct": "^a%| a% |active\\s*material\\s*%",
+    "conductive_additive_fraction_pct": "^c%| c% |carbon\\s*%",
+    "binder_cmc_fraction_pct": "b1%|cmc",
+    "binder_sbr_fraction_pct": "b2%|sbr",
+    "active_mass_mg": "active\\s*mass",
+    "d30_specific_capacity": "d30"
+  },
+  "calendering_source": "ASC_results-live.xlsx Sample sheets explicit Non-Calendar / Calendar cell tracking"
+}

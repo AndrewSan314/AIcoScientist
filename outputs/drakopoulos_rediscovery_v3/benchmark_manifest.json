@@ -1,0 +1,46 @@
+{
+  "benchmark_name": "drakopoulos_graphite_offline_rediscovery_v3",
+  "version": "3.0.0",
+  "timestamp_utc": "2026-09-14T18:55:27Z",
+  "dataset_doi": "10.17632/4dh2h3tsf4.1",
+  "paper_doi": "10.1016/j.xcrp.2021.100683",
+  "primary_budget": 5,
+  "initial_size": 3,
+  "seeds": [
+    11,
+    23,
+    42,
+    67,
+    101,
+    137,
+    179,
+    223,
+    281,
+    353
+  ],
+  "policies": [
+    "AICOSCIENTIST_PROCESS_SURROGATE",
+    "DIRECT_BOTORCH_BASELINE",
+    "random",
+    "aicointel_greedy",
+    "aicointel_ucb"
+  ],
+  "tasks": [
+    "UNCONSTRAINED_D30",
+    "HIGH_LOADING_D30"
+  ],
+  "unconstrained_pool_size": 13,
+  "high_loading_pool_size": 10,
+  "unconstrained_best": {
+    "recipe_id": "protocol-d3602183e567",
+    "d30_mah_g": 402.2490501560316,
+    "mass_mg": 7.701773604985722
+  },
+  "high_loading_best": {
+    "recipe_id": "protocol-0d38055e23a7",
+    "d30_mah_g": 354.53634941923684,
+    "mass_mg": 11.098681171900282
+  },
+  "engine_path_verified": true,
+  "zero_leakage_verified": true
+}

@@ -1,6 +1,6 @@
-# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration (v2)
-benchmark_name: "drakopoulos_graphite_offline_rediscovery_v2"
-version: "2.0.0"
+# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration (v3)
+benchmark_name: "drakopoulos_graphite_offline_rediscovery_v3"
+version: "3.0.0"
 
 dataset:
   dataset_id: "drakopoulos_graphite"
@@ -18,7 +18,7 @@ target:
 
 optimization:
   candidate_id_column: "recipe_id"
-  candidate_pool_size: 26
+  candidate_pool_size: 13
   initial_design_size: 3
   budget_primary: 5
   max_steps: 10
@@ -35,7 +35,7 @@ optimization:
     - 281
     - 353
   policies:
-    - "AICOSCIENTIST_PROCESS_ENGINE"
+    - "AICOSCIENTIST_PROCESS_SURROGATE"
     - "DIRECT_BOTORCH_BASELINE"
     - "random"
     - "aicointel_greedy"

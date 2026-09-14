@@ -1,4 +1,10 @@
 {
+  "status": "OFFICIAL_SUPPLEMENT_NOT_LOCALLY_VERIFIED",
+  "reason": "Direct programmatic download from publisher Cell Press / ScienceDirect returns HTTP 403 Forbidden without interactive browser session.",
+  "mode_2_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
+  "sha256": null,
+  "original_filename": "mmc1.pdf",
+  "official_url": "https://www.cell.com/cms/10.1016/j.xcrp.2021.100683/attachment/c210dfa6-f25b-4357-9d7b-1cb81c742c3d/mmc1.pdf",
   "paper_doi": "10.1016/j.xcrp.2021.100683",
   "paper_title": "Formulation and manufacturing optimization of lithium-ion graphite-based electrodes via machine learning",
   "paper_authors": "Stavros X. Drakopoulos, Azarmidokht Gholamipour-Shirazi, Paul MacDonald, Robert C. Parini, Carl D. Reynolds, David L. Burnett, Ben Pye, Kieran B. O'Regan, Guanmei Wang, Thomas M. Whitehead, Gareth J. Conduit, Alexandru Cazacu, Emma Kendrick",
