@@ -1,0 +1,2662 @@
+LAMMPS (22 Jul 2025 - Update 4)
+  using 4 OpenMP thread(s) per MPI task
+package omp 4
+using multi-threaded neighbor list subroutines
+#Slurry : Active materials (NMC) + Carbon Binder Domain(CBD) (PVDF + Carbon black + NMP)
+
+units           micro
+dimension       3
+atom_style      sphere
+#atom_modify     map array
+comm_modify vel yes
+#newton off
+
+## User inputs
+include user_inputs.txt
+## Number of AM type
+variable nAM_part equal 10
+variable nAM_eff equal 1      ## @input - number of different AM particle sizes
+#print ${nAM_part} file nAM_part
+
+## Diameters of AM particles in µm
+variable    d_e_1 equal 5   ## @input
+
+if "${nAM_eff} < 2" then "variable    d_e_2 equal 0.01"
+variable    d_e_2 equal 0.01
+if "${nAM_eff} >= 2" then "variable    d_e_2 equal 5   ## @input "
+
+if "${nAM_eff} < 3" then "variable    d_e_3 equal 0.01"
+variable    d_e_3 equal 0.01
+if "${nAM_eff} >= 3" then "variable    d_e_3 equal 5   ## @input "
+
+if "${nAM_eff} < 4" then "variable    d_e_4 equal 0.01"
+variable    d_e_4 equal 0.01
+if "${nAM_eff} >= 4" then "variable    d_e_4 equal 5  ## @input "
+
+if "${nAM_eff} < 5" then "variable    d_e_5 equal 0.01"
+variable    d_e_5 equal 0.01
+if "${nAM_eff} >= 5" then "variable    d_e_5 equal 5  ## @input "
+
+if "${nAM_eff} < 6" then "variable    d_e_6 equal 0.01"
+variable    d_e_6 equal 0.01
+if "${nAM_eff} >= 6" then "variable    d_e_6 equal 5 ## @input "
+
+if "${nAM_eff} < 7" then "variable    d_e_7 equal 0.01"
+variable    d_e_7 equal 0.01
+if "${nAM_eff} >= 7" then "variable    d_e_7 equal 5 ## @input "
+
+if "${nAM_eff} < 8" then "variable    d_e_8 equal 0.01"
+variable    d_e_8 equal 0.01
+if "${nAM_eff} >= 8" then "variable    d_e_8 equal 5 ## @input "
+
+if "${nAM_eff} < 9" then "variable    d_e_9 equal 0.01"
+variable    d_e_9 equal 0.01
+if "${nAM_eff} >= 9" then "variable    d_e_9 equal 5 ## @input "
+
+if "${nAM_eff} < 10" then "variable    d_e_10 equal 0.01"
+variable    d_e_10 equal 0.01
+if "${nAM_eff} >= 10" then "variable    d_e_10 equal 5 ## @input "
+
+## ## AM particle size distribution (here fraction of number of particles - Ex: 0.2 - Important: the sum must be equal to 1)
+variable p_AM1 equal 1  ##@input
+
+if "${nAM_eff} < 2" then "variable    p_AM2 equal 0.00"
+variable    p_AM2 equal 0.00
+if "${nAM_eff} >= 2" then "variable p_AM2 equal 0   ##@input "
+
+if "${nAM_eff} < 3" then "variable    p_AM3 equal 0.00"
+variable    p_AM3 equal 0.00
+if "${nAM_eff} >= 3" then "variable p_AM3 equal 0  ##@input "
+
+if "${nAM_eff} < 4" then "variable    p_AM4 equal 0.00"
+variable    p_AM4 equal 0.00
+if "${nAM_eff} >= 4" then "variable p_AM4 equal 0  ##@input "
+
+if "${nAM_eff} < 5" then "variable    p_AM5 equal 0.00"
+variable    p_AM5 equal 0.00
+if "${nAM_eff} >= 5" then "variable p_AM5 equal 0  ##@input "
+
+if "${nAM_eff} < 6" then "variable    p_AM6 equal 0.00"
+variable    p_AM6 equal 0.00
+if "${nAM_eff} >= 6" then "variable p_AM6 equal 0   ##@input "
+
+if "${nAM_eff} < 7" then "variable    p_AM7 equal 0.00"
+variable    p_AM7 equal 0.00
+if "${nAM_eff} >= 7" then "variable p_AM7 equal 0   ##@input "
+
+if "${nAM_eff} < 8" then "variable    p_AM8 equal 0.00"
+variable    p_AM8 equal 0.00
+if "${nAM_eff} >= 8" then "variable p_AM8 equal 0   ##@input "
+
+if "${nAM_eff} < 9" then "variable    p_AM9 equal 0.00"
+variable    p_AM9 equal 0.00
+if "${nAM_eff} >= 9" then "variable p_AM9 equal 0   ##@input "
+
+if "${nAM_eff} < 10" then "variable    p_AM10 equal 0.00"
+variable    p_AM10 equal 0.00
+if "${nAM_eff} >= 10" then "variable p_AM10 equal 0   ##@input "
+
+#Diameter solid (no solvent) CBD
+variable    d_cb equal 1   ## @input - diameter of solid CBD agglomerates (after drying)
+#Solid content
+variable    StL  equal 0.5  ## @input - Solid content - Ex: 0.55
+
+# Simulated electrode mass and weight percentages of AM and CBD
+variable dry_mass equal 0.1/1E6 ## @input - Mass of the simulated electrode in g
+variable ratio_AM equal 0.9 ## @input - AM wt.% - Ex: 0.94
+variable ratio_CBD equal 0.1 ## @input - CBD wt.% (sum of carbon and binder) - Ex: 0.06
+# Important : ratio_AM + ratio_CBD must be equal to 1
+
+# Half of the size of the initial simulation box, were the AM and CBD particles are initially located randomly (before applying the FFs, which leads to the simulation box shrinkage)
+variable size_ini_xy equal 200
+variable level_thick equal 0 # 0: thinner, 1: thicker
+if "${level_thick} == 0" then "variable size_ini_z equal 500"
+variable size_ini_z equal 500
+if "${level_thick} == 1" then "variable size_ini_z equal 1000"
+
+##############################################################
+# Parameters that depend on the Material types : @AM @CB @PVDF
+##############################################################
+
+# density
+variable    Rho_AM equal 4.65 ## @change depend of the @AM material input : this refers to NMC-111
+variable    ini_CBD_nano equal 0.5 ## Initial CBD nanoporosity. Experimentally it was found to be around 0.5 (DOI: 10.1002/aenm.201401612)
+print ${ini_CBD_nano} file CBD_nanoporosity_ini
+print 0.5 file CBD_nanoporosity_ini
+0.5
+variable    Rho_cb equal 1.8*v_ini_CBD_nano ## @change depend of the @CB and @PVDF materials : this refers to C65 and PVdF, both aving a density of ca. 1.8 g cm-3
+variable    Rho_cb_liq equal 0.05  ## @change depend of the @CB , @PVDF and @Solvent materials : this value was taken by previous parametrization of the slurry model (DOI: 10.1002/batt.202000049)
+
+## Diameter and density
+include am_particles.txt
+###Diameters
+
+##Active Material
+
+# Loop to assign diameters of each type
+label loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a1 equal v_d_e_$i
+variable d_e_a1 equal v_d_e_1
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a2 equal v_d_e_$i
+variable d_e_a2 equal v_d_e_2
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a3 equal v_d_e_$i
+variable d_e_a3 equal v_d_e_3
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a4 equal v_d_e_$i
+variable d_e_a4 equal v_d_e_4
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a5 equal v_d_e_$i
+variable d_e_a5 equal v_d_e_5
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a6 equal v_d_e_$i
+variable d_e_a6 equal v_d_e_6
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a7 equal v_d_e_$i
+variable d_e_a7 equal v_d_e_7
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a8 equal v_d_e_$i
+variable d_e_a8 equal v_d_e_8
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a9 equal v_d_e_$i
+variable d_e_a9 equal v_d_e_9
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable d_e_a$i equal v_d_e_$i
+variable d_e_a10 equal v_d_e_$i
+variable d_e_a10 equal v_d_e_10
+
+# diameters of the particles
+# variable d_a$i equal v_coef_exp*v_d_e_a$i
+
+next i
+jump am_particles.txt loop
+
+print "d_e_1: ${d_e_a1} " screen yes
+d_e_1: 5 
+
+if '${nAM_eff} >= 2' then 'print "d_e_2: ${d_e_a2} " screen yes'
+
+if '${nAM_eff} >= 3' then 'print "d_e_3: ${d_e_a3} " screen yes'
+
+if '${nAM_eff} >= 4' then 'print "d_e_4: ${d_e_a4} " screen yes'
+
+if '${nAM_eff} >= 5' then 'print "d_e_5: ${d_e_a5} " screen yes'
+
+if '${nAM_eff} >= 6' then 'print "d_e_6: ${d_e_a6} " screen yes'
+
+if '${nAM_eff} >= 7' then 'print "d_e_7: ${d_e_a7} " screen yes'
+
+if '${nAM_eff} >= 8' then 'print "d_e_8: ${d_e_a8} " screen yes'
+
+if '${nAM_eff} >= 9' then 'print "d_e_9: ${d_e_a9} " screen yes'
+
+if '${nAM_eff} >= 10' then 'print "d_e_10: ${d_e_a10} " screen yes'
+
+
+
+## Force fields pameters
+include force_fields_parameters.txt
+## LJ parameters
+# Active material
+## the number of values depend on the number of diameters in the PSD @input
+variable    epsi_AM equal 1
+print ${epsi_AM} file epsi_AM
+print 1 file epsi_AM
+1
+
+variable    sig_AM equal 0.89
+print ${sig_AM} file sig_AM
+print 0.89 file sig_AM
+0.89
+
+variable    rc_AM equal 1.5
+print ${rc_AM} file rc_AM
+print 1.5 file rc_AM
+1.5
+
+variable exp_par equal 1.02
+print ${exp_par} file exp_par
+print 1.02 file exp_par
+1.02
+
+label loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a1 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a1 equal v_epsi_AM*(v_d_e_a1)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a1 equal v_sig_AM*v_d_e_a$i
+variable    sig_a1 equal v_sig_AM*v_d_e_a1
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a1 equal v_rc_AM*v_d_e_a$i
+variable    rc_a1 equal v_rc_AM*v_d_e_a1
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a1 equal v_exp_par*v_d_e_a$i
+variable d_a1 equal v_exp_par*v_d_e_a1
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a2 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a2 equal v_epsi_AM*(v_d_e_a2)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a2 equal v_sig_AM*v_d_e_a$i
+variable    sig_a2 equal v_sig_AM*v_d_e_a2
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a2 equal v_rc_AM*v_d_e_a$i
+variable    rc_a2 equal v_rc_AM*v_d_e_a2
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a2 equal v_exp_par*v_d_e_a$i
+variable d_a2 equal v_exp_par*v_d_e_a2
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a3 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a3 equal v_epsi_AM*(v_d_e_a3)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a3 equal v_sig_AM*v_d_e_a$i
+variable    sig_a3 equal v_sig_AM*v_d_e_a3
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a3 equal v_rc_AM*v_d_e_a$i
+variable    rc_a3 equal v_rc_AM*v_d_e_a3
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a3 equal v_exp_par*v_d_e_a$i
+variable d_a3 equal v_exp_par*v_d_e_a3
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a4 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a4 equal v_epsi_AM*(v_d_e_a4)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a4 equal v_sig_AM*v_d_e_a$i
+variable    sig_a4 equal v_sig_AM*v_d_e_a4
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a4 equal v_rc_AM*v_d_e_a$i
+variable    rc_a4 equal v_rc_AM*v_d_e_a4
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a4 equal v_exp_par*v_d_e_a$i
+variable d_a4 equal v_exp_par*v_d_e_a4
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a5 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a5 equal v_epsi_AM*(v_d_e_a5)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a5 equal v_sig_AM*v_d_e_a$i
+variable    sig_a5 equal v_sig_AM*v_d_e_a5
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a5 equal v_rc_AM*v_d_e_a$i
+variable    rc_a5 equal v_rc_AM*v_d_e_a5
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a5 equal v_exp_par*v_d_e_a$i
+variable d_a5 equal v_exp_par*v_d_e_a5
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a6 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a6 equal v_epsi_AM*(v_d_e_a6)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a6 equal v_sig_AM*v_d_e_a$i
+variable    sig_a6 equal v_sig_AM*v_d_e_a6
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a6 equal v_rc_AM*v_d_e_a$i
+variable    rc_a6 equal v_rc_AM*v_d_e_a6
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a6 equal v_exp_par*v_d_e_a$i
+variable d_a6 equal v_exp_par*v_d_e_a6
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a7 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a7 equal v_epsi_AM*(v_d_e_a7)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a7 equal v_sig_AM*v_d_e_a$i
+variable    sig_a7 equal v_sig_AM*v_d_e_a7
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a7 equal v_rc_AM*v_d_e_a$i
+variable    rc_a7 equal v_rc_AM*v_d_e_a7
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a7 equal v_exp_par*v_d_e_a$i
+variable d_a7 equal v_exp_par*v_d_e_a7
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a8 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a8 equal v_epsi_AM*(v_d_e_a8)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a8 equal v_sig_AM*v_d_e_a$i
+variable    sig_a8 equal v_sig_AM*v_d_e_a8
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a8 equal v_rc_AM*v_d_e_a$i
+variable    rc_a8 equal v_rc_AM*v_d_e_a8
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a8 equal v_exp_par*v_d_e_a$i
+variable d_a8 equal v_exp_par*v_d_e_a8
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a9 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a9 equal v_epsi_AM*(v_d_e_a9)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a9 equal v_sig_AM*v_d_e_a$i
+variable    sig_a9 equal v_sig_AM*v_d_e_a9
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a9 equal v_rc_AM*v_d_e_a$i
+variable    rc_a9 equal v_rc_AM*v_d_e_a9
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a9 equal v_exp_par*v_d_e_a$i
+variable d_a9 equal v_exp_par*v_d_e_a9
+
+next i
+jump force_fields_parameters.txt loop
+variable i loop ${nAM_part}
+variable i loop 10
+variable    epsi_a$i equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a10 equal v_epsi_AM*(v_d_e_a$i)
+variable    epsi_a10 equal v_epsi_AM*(v_d_e_a10)
+variable    sig_a$i equal v_sig_AM*v_d_e_a$i
+variable    sig_a10 equal v_sig_AM*v_d_e_a$i
+variable    sig_a10 equal v_sig_AM*v_d_e_a10
+variable    rc_a$i equal v_rc_AM*v_d_e_a$i
+variable    rc_a10 equal v_rc_AM*v_d_e_a$i
+variable    rc_a10 equal v_rc_AM*v_d_e_a10
+variable d_a$i equal v_exp_par*v_d_e_a$i
+variable d_a10 equal v_exp_par*v_d_e_a$i
+variable d_a10 equal v_exp_par*v_d_e_a10
+
+next i
+jump force_fields_parameters.txt loop
+
+
+# CBD
+variable    epsi_cb_pre equal 1
+print ${epsi_cb_pre} file epsi_cb_pre
+print 1 file epsi_cb_pre
+1
+variable    epsi_cb equal v_epsi_cb_pre*v_d_cb_liq
+
+variable    sig_cb equal 0.89*v_d_cb
+print ${sig_cb} file sig_cb
+print 0.89 file sig_cb
+0.89
+
+variable    rc_cb  equal 2.2
+print ${rc_cb} file rc_cb
+print 2.2 file rc_cb
+2.2
+
+## GRANULAR parameters
+variable    Kn equal 3.5
+print ${Kn} file Kn
+print 3.5 file Kn
+3.5
+
+variable    KtKn equal 1.378
+print ${KtKn} file KtKn
+print 1.378 file KtKn
+1.378
+variable    Kt equal v_KtKn*v_Kn
+
+variable    Gamman equal 30
+print ${Gamman} file Gamman
+print 30 file Gamman
+30
+
+variable    GammatGamman equal 0.959
+print ${GammatGamman} file GammatGamman
+print 0.959 file GammatGamman
+0.959
+variable    Gammat equal v_GammatGamman*v_Gamman
+
+variable    Xu equal 0.015
+print ${Xu} file Xu
+print 0.015 file Xu
+0.015
+
+
+## Generate initial structure
+include init_structure.txt
+##generate structure
+variable pi equal 3.1415926
+
+
+# Mass AM and CBD
+variable AM_mass equal v_ratio_AM*v_dry_mass
+variable CBD_mass equal v_ratio_CBD*v_dry_mass
+
+
+print "AM_mass: ${AM_mass} " screen yes
+AM_mass: 9e-08 
+print "CBD_mas: ${CBD_mass} " screen yes
+CBD_mas: 1e-08 
+
+
+# Volume AM and CBD
+variable AM_vol equal 1E+12*v_AM_mass/v_Rho_AM # in micro meter
+variable CBD_vol equal 1E+12*v_CBD_mass/v_Rho_cb # in micro meter
+
+# Volume single particle AM and CBD
+variable CBD_pvol equal v_pi*(v_d_cb^3)/6.0
+
+variable AM1_pvol equal v_pi*(v_d_e_a1^3)/6.0
+variable AM2_pvol equal v_pi*(v_d_e_a2^3)/6.0
+variable AM3_pvol equal v_pi*(v_d_e_a3^3)/6.0
+variable AM4_pvol equal v_pi*(v_d_e_a4^3)/6.0
+variable AM5_pvol equal v_pi*(v_d_e_a5^3)/6.0
+variable AM6_pvol equal v_pi*(v_d_e_a6^3)/6.0
+variable AM7_pvol equal v_pi*(v_d_e_a7^3)/6.0
+variable AM8_pvol equal v_pi*(v_d_e_a8^3)/6.0
+variable AM9_pvol equal v_pi*(v_d_e_a9^3)/6.0
+variable AM10_pvol equal v_pi*(v_d_e_a10^3)/6.0
+
+print "AM1_pvol: ${AM1_pvol} " screen yes
+AM1_pvol: 65.4498458333333 
+
+if '${nAM_eff} >= 2' then 'print "AM2_pvol: ${AM2_pvol} " screen yes'
+
+if '${nAM_eff} >= 3' then 'print "AM3_pvol: ${AM3_pvol} " screen yes'
+
+if '${nAM_eff} >= 4' then 'print "AM4_pvol: ${AM4_pvol} " screen yes'
+
+if '${nAM_eff} >= 5' then 'print "AM5_pvol: ${AM5_pvol} " screen yes'
+
+if '${nAM_eff} >= 6' then 'print "AM6_pvol: ${AM6_pvol} " screen yes'
+
+if '${nAM_eff} >= 7' then 'print "AM7_pvol: ${AM7_pvol} " screen yes'
+
+if '${nAM_eff} >= 8' then 'print "AM8_pvol: ${AM8_pvol} " screen yes'
+
+if '${nAM_eff} >= 9' then 'print "AM9_pvol: ${AM9_pvol} " screen yes'
+
+if '${nAM_eff} >= 10' then 'print "AM10_pvol: ${AM10_pvol} " screen yes'
+
+# number of AM and CBD particles
+
+variable sum_p_AMi1 equal v_p_AM1*v_AM1_pvol+v_p_AM2*v_AM2_pvol+v_p_AM3*v_AM3_pvol+v_p_AM4*v_AM4_pvol+v_p_AM5*v_AM5_pvol
+variable sum_p_AMi2 equal v_p_AM6*v_AM6_pvol+v_p_AM7*v_AM7_pvol+v_p_AM8*v_AM8_pvol+v_p_AM9*v_AM9_pvol+v_p_AM10*v_AM10_pvol
+variable sum_p_AMi equal v_sum_p_AMi1+v_sum_p_AMi2
+
+variable n_AM_cal equal v_AM_vol/v_sum_p_AMi
+variable n_AM equal round(v_n_AM_cal)
+
+variable n_CBD_cal equal v_CBD_vol/v_CBD_pvol
+variable n_CBD equal round(v_n_CBD_cal)
+
+
+variable n_CBD_20 equal floor(v_n_CBD/20)
+variable n_rest_CBD equal $((v_n_CBD % 20 ))
+variable n_rest_CBD equal 1
+#  volume of each AM particle
+
+
+variable n_AM1 equal round(v_n_AM*v_p_AM1)
+variable n_AM2 equal round(v_n_AM*v_p_AM2)
+variable n_AM3 equal round(v_n_AM*v_p_AM3)
+variable n_AM4 equal round(v_n_AM*v_p_AM4)
+variable n_AM5 equal round(v_n_AM*v_p_AM5)
+variable n_AM6 equal round(v_n_AM*v_p_AM6)
+variable n_AM7 equal round(v_n_AM*v_p_AM7)
+variable n_AM8 equal round(v_n_AM*v_p_AM8)
+variable n_AM9 equal round(v_n_AM*v_p_AM9)
+variable n_AM10 equal round(v_n_AM*v_p_AM10)
+
+print "n_AM: ${n_AM} " screen yes
+n_AM: 296 
+print "nCBDs: ${n_CBD} " screen yes
+nCBDs: 21221 
+print "n_CBD_20: ${n_CBD_20} " screen yes
+n_CBD_20: 1061 
+print "n_rest_CBD: ${n_rest_CBD} " screen yes
+n_rest_CBD: 1 
+print "nAMs: ${n_AM1} ${n_AM2} ${n_AM3} ${n_AM4} ${n_AM5} ${n_AM6} ${n_AM7} ${n_AM8} ${n_AM9} ${n_AM10} " screen yes
+nAMs: 296 0 0 0 0 0 0 0 0 0 
+#
+region          box block -${size_ini_xy} ${size_ini_xy} -${size_ini_xy} ${size_ini_xy} -${size_ini_z} ${size_ini_z} units box
+region          box block -200 ${size_ini_xy} -${size_ini_xy} ${size_ini_xy} -${size_ini_z} ${size_ini_z} units box
+region          box block -200 200 -${size_ini_xy} ${size_ini_xy} -${size_ini_z} ${size_ini_z} units box
+region          box block -200 200 -200 ${size_ini_xy} -${size_ini_z} ${size_ini_z} units box
+region          box block -200 200 -200 200 -${size_ini_z} ${size_ini_z} units box
+region          box block -200 200 -200 200 -500 ${size_ini_z} units box
+region          box block -200 200 -200 200 -500 500 units box
+create_box      11 box #bond/types 1 extra/bond/per/atom 1
+Created orthogonal box = (-200 -200 -500) to (200 200 500)
+  1 by 1 by 2 MPI processor grid
+
+create_atoms 1 random ${n_CBD_20} 34875 NULL units box
+create_atoms 1 random 1061 34875 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.001 seconds
+create_atoms 1 random ${n_CBD_20} 30157 NULL units box
+create_atoms 1 random 1061 30157 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 97842 NULL units box
+create_atoms 1 random 1061 97842 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 46235 NULL units box
+create_atoms 1 random 1061 46235 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 22077 NULL units box
+create_atoms 1 random 1061 22077 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 62387 NULL units box
+create_atoms 1 random 1061 62387 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 68435 NULL units box
+create_atoms 1 random 1061 68435 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 98761 NULL units box
+create_atoms 1 random 1061 98761 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 34545 NULL units box
+create_atoms 1 random 1061 34545 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 68751 NULL units box
+create_atoms 1 random 1061 68751 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 89456 NULL units box
+create_atoms 1 random 1061 89456 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 13548 NULL units box
+create_atoms 1 random 1061 13548 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 56432 NULL units box
+create_atoms 1 random 1061 56432 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 84635 NULL units box
+create_atoms 1 random 1061 84635 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 65516 NULL units box
+create_atoms 1 random 1061 65516 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 32456 NULL units box
+create_atoms 1 random 1061 32456 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 68512 NULL units box
+create_atoms 1 random 1061 68512 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 79864 NULL units box
+create_atoms 1 random 1061 79864 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 98746 NULL units box
+create_atoms 1 random 1061 98746 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+create_atoms 1 random ${n_CBD_20} 68725 NULL units box
+create_atoms 1 random 1061 68725 NULL units box
+Created 1061 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+
+if "${n_rest_CBD} > 0" then "create_atoms 1 random ${n_rest_CBD} 66658  NULL units box"
+create_atoms 1 random ${n_rest_CBD} 66658  NULL units box
+create_atoms 1 random 1 66658  NULL units box
+Created 1 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+
+if '${nAM_eff} >= 1' then "create_atoms 2 random  ${n_AM1} 79285 NULL units box"
+create_atoms 2 random  ${n_AM1} 79285 NULL units box
+create_atoms 2 random  296 79285 NULL units box
+Created 296 atoms
+  using box units in orthogonal box = (-200 -200 -500) to (200 200 500)
+  create_atoms CPU = 0.000 seconds
+
+if '${nAM_eff} >= 2' then "create_atoms 3 random  ${n_AM2} 21784 NULL units box"
+
+if '${nAM_eff} >= 3' then "create_atoms 4 random  ${n_AM3} 13572 NULL units box"
+
+if '${nAM_eff} >= 4' then "create_atoms 5 random  ${n_AM4} 75842 NULL units box"
+
+if '${nAM_eff} >= 5' then "create_atoms 6 random  ${n_AM5} 75843 NULL units box"
+
+if '${nAM_eff} >= 6' then "create_atoms 7 random  ${n_AM6} 75844 NULL units box"
+
+if '${nAM_eff} >= 7' then "create_atoms 8 random  ${n_AM7} 65251 NULL units box"
+
+if '${nAM_eff} >= 8' then "create_atoms 9 random  ${n_AM8} 48733 NULL units box"
+
+if '${nAM_eff} >= 9' then "create_atoms 10 random  ${n_AM9} 99502 NULL units box"
+
+if '${nAM_eff} >= 10' then "create_atoms 11 random  ${n_AM10} 172205 NULL units box"
+
+## Calculated the CBD size un slurry
+
+
+variable    solvent_mass equal (1-${StL})*${dry_mass}/${StL}
+variable    solvent_mass equal (1-0.5)*${dry_mass}/${StL}
+variable    solvent_mass equal (1-0.5)*1e-07/${StL}
+variable    solvent_mass equal (1-0.5)*1e-07/0.5
+variable    CBD_vol_sol equal 1E+12*(${solvent_mass}+${CBD_mass})/(${Rho_cb_liq}*${n_CBD})
+variable    CBD_vol_sol equal 1E+12*(1e-07+${CBD_mass})/(${Rho_cb_liq}*${n_CBD})
+variable    CBD_vol_sol equal 1E+12*(1e-07+1e-08)/(${Rho_cb_liq}*${n_CBD})
+variable    CBD_vol_sol equal 1E+12*(1e-07+1e-08)/(0.05*${n_CBD})
+variable    CBD_vol_sol equal 1E+12*(1e-07+1e-08)/(0.05*21221)
+
+print "solvent_mass: ${solvent_mass} " screen yes
+solvent_mass: 1e-07 
+print "CBD_vol_sol: ${CBD_vol_sol} " screen yes
+CBD_vol_sol: 103.670892040903 
+
+variable    d_cb_liq equal  (6.0*${CBD_vol_sol}/${pi})^(1/3)
+variable    d_cb_liq equal  (6.0*103.670892040903/${pi})^(1/3)
+variable    d_cb_liq equal  (6.0*103.670892040903/3.1415926)^(1/3)
+print ${d_cb_liq} file d_cb_liq
+print 5.82844550420925 file d_cb_liq
+5.82844550420925
+print "d_cb_liq: ${d_cb_liq} " screen yes
+d_cb_liq: 5.82844550420925 
+
+## set density and diameter for particles in the slurry phase (the value of CBD change)
+set type 1 diameter ${d_cb_liq}  density ${Rho_cb_liq} # CBD liq 0.1 pg/µm3
+set type 1 diameter 5.82844550420925  density ${Rho_cb_liq} 
+set type 1 diameter 5.82844550420925  density 0.05 
+Setting atom values ...
+  21221 settings made for diameter
+  21221 settings made for density
+set type 2 diameter ${d_a1}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 2 diameter 5.1  density ${Rho_AM} 
+set type 2 diameter 5.1  density 4.65 
+Setting atom values ...
+  296 settings made for diameter
+  296 settings made for density
+set type 3 diameter ${d_a2}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 3 diameter 0.0102  density ${Rho_AM} 
+set type 3 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 4 diameter ${d_a3}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 4 diameter 0.0102  density ${Rho_AM} 
+set type 4 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 5 diameter ${d_a4}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 5 diameter 0.0102  density ${Rho_AM} 
+set type 5 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 6 diameter ${d_a5}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 6 diameter 0.0102  density ${Rho_AM} 
+set type 6 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 7 diameter ${d_a6}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 7 diameter 0.0102  density ${Rho_AM} 
+set type 7 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 8 diameter ${d_a7}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 8 diameter 0.0102  density ${Rho_AM} 
+set type 8 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 9 diameter ${d_a8}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 9 diameter 0.0102  density ${Rho_AM} 
+set type 9 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 10 diameter ${d_a9}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 10 diameter 0.0102  density ${Rho_AM} 
+set type 10 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+set type 11 diameter ${d_a10}  density ${Rho_AM} # MCMB 4.65 pg/µm3
+set type 11 diameter 0.0102  density ${Rho_AM} 
+set type 11 diameter 0.0102  density 4.65 
+Setting atom values ...
+  0 settings made for diameter
+  0 settings made for density
+
+# Write the initial structure
+write_data   coord_in.data
+System init for write_data ...
+No /omp style for force computation currently active
+WARNING: Communication cutoff is 0.0. No ghost atoms will be generated. Energies and forces may be wrong and atoms may get lost. (C:\Users\runneradmin\AppData\Local\Temp\tmpr04lorxi\build\_deps\lammps-src\src\comm_brick.cpp:212)
+
+
+neighbor        3.0 bin
+neigh_modify check yes one 15000 page 150000
+
+pair_style     hybrid/overlay lj/sf ${rc_a5}                gran/hertz/history  ${Kn} ${Kt} ${Gamman} ${Gammat} ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  ${Kn} ${Kt} ${Gamman} ${Gammat} ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  3.5 ${Kt} ${Gamman} ${Gammat} ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  3.5 4.823 ${Gamman} ${Gammat} ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  3.5 4.823 30 ${Gammat} ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  3.5 4.823 30 28.77 ${Xu} 1
+pair_style     hybrid/overlay lj/sf 0.015                gran/hertz/history  3.5 4.823 30 28.77 0.015 1
+
+## Set pair coefficients for the force fields (LJ - GH)
+include pair_coeff.txt
+## number of pair depends of the number of particle types @input diamters PSD
+pair_coeff      1 1 lj/sf ${epsi_cb} ${sig_cb} ${rc_cb}
+pair_coeff      1 1 lj/sf 5.82844550420925 ${sig_cb} ${rc_cb}
+pair_coeff      1 1 lj/sf 5.82844550420925 0.89 ${rc_cb}
+pair_coeff      1 1 lj/sf 5.82844550420925 0.89 2.2
+pair_coeff      2 2 lj/sf ${epsi_a1} ${sig_a1} ${rc_a1}
+pair_coeff      2 2 lj/sf 5 ${sig_a1} ${rc_a1}
+pair_coeff      2 2 lj/sf 5 4.45 ${rc_a1}
+pair_coeff      2 2 lj/sf 5 4.45 7.5
+pair_coeff      3 3 lj/sf ${epsi_a2} ${sig_a2} ${rc_a2}
+pair_coeff      3 3 lj/sf 0.01 ${sig_a2} ${rc_a2}
+pair_coeff      3 3 lj/sf 0.01 0.0089 ${rc_a2}
+pair_coeff      3 3 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 4 lj/sf ${epsi_a3} ${sig_a3} ${rc_a3}
+pair_coeff      4 4 lj/sf 0.01 ${sig_a3} ${rc_a3}
+pair_coeff      4 4 lj/sf 0.01 0.0089 ${rc_a3}
+pair_coeff      4 4 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 5 lj/sf ${epsi_a4} ${sig_a4} ${rc_a4}
+pair_coeff      5 5 lj/sf 0.01 ${sig_a4} ${rc_a4}
+pair_coeff      5 5 lj/sf 0.01 0.0089 ${rc_a4}
+pair_coeff      5 5 lj/sf 0.01 0.0089 0.015
+pair_coeff      6 6 lj/sf ${epsi_a5} ${sig_a5} ${rc_a5}
+pair_coeff      6 6 lj/sf 0.01 ${sig_a5} ${rc_a5}
+pair_coeff      6 6 lj/sf 0.01 0.0089 ${rc_a5}
+pair_coeff      6 6 lj/sf 0.01 0.0089 0.015
+pair_coeff      7 7 lj/sf ${epsi_a6} ${sig_a6} ${rc_a6}
+pair_coeff      7 7 lj/sf 0.01 ${sig_a6} ${rc_a6}
+pair_coeff      7 7 lj/sf 0.01 0.0089 ${rc_a6}
+pair_coeff      7 7 lj/sf 0.01 0.0089 0.015
+pair_coeff      8 8 lj/sf ${epsi_a7} ${sig_a7} ${rc_a7}
+pair_coeff      8 8 lj/sf 0.01 ${sig_a7} ${rc_a7}
+pair_coeff      8 8 lj/sf 0.01 0.0089 ${rc_a7}
+pair_coeff      8 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      9 9 lj/sf ${epsi_a8} ${sig_a8} ${rc_a8}
+pair_coeff      9 9 lj/sf 0.01 ${sig_a8} ${rc_a8}
+pair_coeff      9 9 lj/sf 0.01 0.0089 ${rc_a8}
+pair_coeff      9 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      10 10 lj/sf ${epsi_a9} ${sig_a9} ${rc_a9}
+pair_coeff      10 10 lj/sf 0.01 ${sig_a9} ${rc_a9}
+pair_coeff      10 10 lj/sf 0.01 0.0089 ${rc_a9}
+pair_coeff      10 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      11 11 lj/sf ${epsi_a10} ${sig_a10} ${rc_a10}
+pair_coeff      11 11 lj/sf 0.01 ${sig_a10} ${rc_a10}
+pair_coeff      11 11 lj/sf 0.01 0.0089 ${rc_a10}
+pair_coeff      11 11 lj/sf 0.01 0.0089 0.015
+
+# interaction mix 1
+label loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_12 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_12 equal (v_epsi_cb*v_epsi_a1)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_12 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_12 equal (v_sig_cb+v_sig_a1)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_12 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_12 equal (v_rc_cb+v_rc_a1)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_13 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_13 equal (v_epsi_cb*v_epsi_a2)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_13 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_13 equal (v_sig_cb+v_sig_a2)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_13 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_13 equal (v_rc_cb+v_rc_a2)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_14 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_14 equal (v_epsi_cb*v_epsi_a3)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_14 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_14 equal (v_sig_cb+v_sig_a3)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_14 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_14 equal (v_rc_cb+v_rc_a3)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_15 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_15 equal (v_epsi_cb*v_epsi_a4)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_15 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_15 equal (v_sig_cb+v_sig_a4)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_15 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_15 equal (v_rc_cb+v_rc_a4)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_16 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_16 equal (v_epsi_cb*v_epsi_a5)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_16 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_16 equal (v_sig_cb+v_sig_a5)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_16 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_16 equal (v_rc_cb+v_rc_a5)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_17 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_17 equal (v_epsi_cb*v_epsi_a6)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_17 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_17 equal (v_sig_cb+v_sig_a6)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_17 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_17 equal (v_rc_cb+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_18 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_18 equal (v_epsi_cb*v_epsi_a7)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_18 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_18 equal (v_sig_cb+v_sig_a7)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_18 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_18 equal (v_rc_cb+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_19 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_19 equal (v_epsi_cb*v_epsi_a8)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_19 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_19 equal (v_sig_cb+v_sig_a8)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_19 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_19 equal (v_rc_cb+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_110 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_110 equal (v_epsi_cb*v_epsi_a9)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_110 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_110 equal (v_sig_cb+v_sig_a9)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_110 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_110 equal (v_rc_cb+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop1
+variable i loop 1 ${nAM_part}
+variable i loop 1 10
+variable j equal v_i+1
+variable  epsi_1$j equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_111 equal (v_epsi_cb*v_epsi_a$i)^(1/2)
+variable  epsi_111 equal (v_epsi_cb*v_epsi_a10)^(1/2)
+variable  sig_1$j equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_111 equal (v_sig_cb+v_sig_a$i)/2
+variable  sig_111 equal (v_sig_cb+v_sig_a10)/2
+variable  rc_1$j equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_111 equal (v_rc_cb+v_rc_a$i)/2
+variable  rc_111 equal (v_rc_cb+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop1
+variable i delete
+variable j delete
+
+#interaction mix 2
+label loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_23 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_23 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_23 equal (v_epsi_a1*v_epsi_a2)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_23 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_23 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_23 equal (v_sig_a1+v_sig_a2)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_23 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_23 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_23 equal (v_rc_a1+v_rc_a2)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_24 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_24 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_24 equal (v_epsi_a1*v_epsi_a3)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_24 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_24 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_24 equal (v_sig_a1+v_sig_a3)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_24 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_24 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_24 equal (v_rc_a1+v_rc_a3)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_25 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_25 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_25 equal (v_epsi_a1*v_epsi_a4)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_25 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_25 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_25 equal (v_sig_a1+v_sig_a4)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_25 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_25 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_25 equal (v_rc_a1+v_rc_a4)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_26 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_26 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_26 equal (v_epsi_a1*v_epsi_a5)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_26 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_26 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_26 equal (v_sig_a1+v_sig_a5)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_26 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_26 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_26 equal (v_rc_a1+v_rc_a5)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_27 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_27 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_27 equal (v_epsi_a1*v_epsi_a6)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_27 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_27 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_27 equal (v_sig_a1+v_sig_a6)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_27 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_27 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_27 equal (v_rc_a1+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_28 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_28 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_28 equal (v_epsi_a1*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_28 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_28 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_28 equal (v_sig_a1+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_28 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_28 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_28 equal (v_rc_a1+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_29 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_29 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_29 equal (v_epsi_a1*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_29 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_29 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_29 equal (v_sig_a1+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_29 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_29 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_29 equal (v_rc_a1+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_210 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_210 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_210 equal (v_epsi_a1*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_210 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_210 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_210 equal (v_sig_a1+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_210 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_210 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_210 equal (v_rc_a1+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop2
+variable a equal 1
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 2 ${nAM_part}
+variable i loop 2 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_2$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_211 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_211 equal (v_epsi_a1*v_epsi_a$i)^(1/2)
+variable  epsi_211 equal (v_epsi_a1*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_2$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_211 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_211 equal (v_sig_a1+v_sig_a$i)/2
+variable  sig_211 equal (v_sig_a1+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_2$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_211 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_211 equal (v_rc_a1+v_rc_a$i)/2
+variable  rc_211 equal (v_rc_a1+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop2
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 3
+label loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_34 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_34 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_34 equal (v_epsi_a2*v_epsi_a3)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_34 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_34 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_34 equal (v_sig_a2+v_sig_a3)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_34 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_34 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_34 equal (v_rc_a2+v_rc_a3)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_35 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_35 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_35 equal (v_epsi_a2*v_epsi_a4)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_35 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_35 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_35 equal (v_sig_a2+v_sig_a4)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_35 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_35 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_35 equal (v_rc_a2+v_rc_a4)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_36 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_36 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_36 equal (v_epsi_a2*v_epsi_a5)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_36 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_36 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_36 equal (v_sig_a2+v_sig_a5)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_36 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_36 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_36 equal (v_rc_a2+v_rc_a5)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_37 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_37 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_37 equal (v_epsi_a2*v_epsi_a6)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_37 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_37 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_37 equal (v_sig_a2+v_sig_a6)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_37 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_37 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_37 equal (v_rc_a2+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_38 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_38 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_38 equal (v_epsi_a2*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_38 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_38 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_38 equal (v_sig_a2+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_38 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_38 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_38 equal (v_rc_a2+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_39 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_39 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_39 equal (v_epsi_a2*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_39 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_39 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_39 equal (v_sig_a2+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_39 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_39 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_39 equal (v_rc_a2+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_310 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_310 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_310 equal (v_epsi_a2*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_310 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_310 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_310 equal (v_sig_a2+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_310 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_310 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_310 equal (v_rc_a2+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop3
+variable a equal 2
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 3 ${nAM_part}
+variable i loop 3 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_3$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_311 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_311 equal (v_epsi_a2*v_epsi_a$i)^(1/2)
+variable  epsi_311 equal (v_epsi_a2*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_3$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_311 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_311 equal (v_sig_a2+v_sig_a$i)/2
+variable  sig_311 equal (v_sig_a2+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_3$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_311 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_311 equal (v_rc_a2+v_rc_a$i)/2
+variable  rc_311 equal (v_rc_a2+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop3
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+
+#interaction mix 4
+label loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_45 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_45 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_45 equal (v_epsi_a3*v_epsi_a4)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_45 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_45 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_45 equal (v_sig_a3+v_sig_a4)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_45 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_45 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_45 equal (v_rc_a3+v_rc_a4)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_46 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_46 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_46 equal (v_epsi_a3*v_epsi_a5)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_46 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_46 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_46 equal (v_sig_a3+v_sig_a5)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_46 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_46 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_46 equal (v_rc_a3+v_rc_a5)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_47 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_47 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_47 equal (v_epsi_a3*v_epsi_a6)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_47 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_47 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_47 equal (v_sig_a3+v_sig_a6)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_47 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_47 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_47 equal (v_rc_a3+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_48 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_48 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_48 equal (v_epsi_a3*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_48 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_48 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_48 equal (v_sig_a3+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_48 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_48 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_48 equal (v_rc_a3+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_49 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_49 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_49 equal (v_epsi_a3*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_49 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_49 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_49 equal (v_sig_a3+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_49 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_49 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_49 equal (v_rc_a3+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_410 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_410 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_410 equal (v_epsi_a3*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_410 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_410 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_410 equal (v_sig_a3+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_410 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_410 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_410 equal (v_rc_a3+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop4
+variable a equal 3
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 4 ${nAM_part}
+variable i loop 4 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_4$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_411 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_411 equal (v_epsi_a3*v_epsi_a$i)^(1/2)
+variable  epsi_411 equal (v_epsi_a3*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_4$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_411 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_411 equal (v_sig_a3+v_sig_a$i)/2
+variable  sig_411 equal (v_sig_a3+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_4$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_411 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_411 equal (v_rc_a3+v_rc_a$i)/2
+variable  rc_411 equal (v_rc_a3+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop4
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 5
+label loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_56 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_56 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_56 equal (v_epsi_a4*v_epsi_a5)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_56 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_56 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_56 equal (v_sig_a4+v_sig_a5)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_56 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_56 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_56 equal (v_rc_a4+v_rc_a5)/2
+next i
+jump pair_coeff.txt loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_57 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_57 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_57 equal (v_epsi_a4*v_epsi_a6)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_57 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_57 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_57 equal (v_sig_a4+v_sig_a6)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_57 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_57 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_57 equal (v_rc_a4+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_58 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_58 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_58 equal (v_epsi_a4*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_58 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_58 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_58 equal (v_sig_a4+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_58 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_58 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_58 equal (v_rc_a4+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_59 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_59 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_59 equal (v_epsi_a4*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_59 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_59 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_59 equal (v_sig_a4+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_59 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_59 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_59 equal (v_rc_a4+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_510 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_510 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_510 equal (v_epsi_a4*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_510 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_510 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_510 equal (v_sig_a4+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_510 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_510 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_510 equal (v_rc_a4+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop5
+variable a equal 4
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 5 ${nAM_part}
+variable i loop 5 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_5$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_511 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_511 equal (v_epsi_a4*v_epsi_a$i)^(1/2)
+variable  epsi_511 equal (v_epsi_a4*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_5$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_511 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_511 equal (v_sig_a4+v_sig_a$i)/2
+variable  sig_511 equal (v_sig_a4+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_5$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_511 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_511 equal (v_rc_a4+v_rc_a$i)/2
+variable  rc_511 equal (v_rc_a4+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop5
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 6
+label loop6
+variable a equal 5
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 6 ${nAM_part}
+variable i loop 6 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_6$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_67 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_67 equal (v_epsi_a5*v_epsi_a$i)^(1/2)
+variable  epsi_67 equal (v_epsi_a5*v_epsi_a6)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_6$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_67 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_67 equal (v_sig_a5+v_sig_a$i)/2
+variable  sig_67 equal (v_sig_a5+v_sig_a6)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_6$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_67 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_67 equal (v_rc_a5+v_rc_a$i)/2
+variable  rc_67 equal (v_rc_a5+v_rc_a6)/2
+next i
+jump pair_coeff.txt loop6
+variable a equal 5
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 6 ${nAM_part}
+variable i loop 6 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_6$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_68 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_68 equal (v_epsi_a5*v_epsi_a$i)^(1/2)
+variable  epsi_68 equal (v_epsi_a5*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_6$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_68 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_68 equal (v_sig_a5+v_sig_a$i)/2
+variable  sig_68 equal (v_sig_a5+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_6$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_68 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_68 equal (v_rc_a5+v_rc_a$i)/2
+variable  rc_68 equal (v_rc_a5+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop6
+variable a equal 5
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 6 ${nAM_part}
+variable i loop 6 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_6$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_69 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_69 equal (v_epsi_a5*v_epsi_a$i)^(1/2)
+variable  epsi_69 equal (v_epsi_a5*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_6$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_69 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_69 equal (v_sig_a5+v_sig_a$i)/2
+variable  sig_69 equal (v_sig_a5+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_6$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_69 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_69 equal (v_rc_a5+v_rc_a$i)/2
+variable  rc_69 equal (v_rc_a5+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop6
+variable a equal 5
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 6 ${nAM_part}
+variable i loop 6 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_6$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_610 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_610 equal (v_epsi_a5*v_epsi_a$i)^(1/2)
+variable  epsi_610 equal (v_epsi_a5*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_6$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_610 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_610 equal (v_sig_a5+v_sig_a$i)/2
+variable  sig_610 equal (v_sig_a5+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_6$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_610 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_610 equal (v_rc_a5+v_rc_a$i)/2
+variable  rc_610 equal (v_rc_a5+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop6
+variable a equal 5
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 6 ${nAM_part}
+variable i loop 6 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_6$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_611 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_611 equal (v_epsi_a5*v_epsi_a$i)^(1/2)
+variable  epsi_611 equal (v_epsi_a5*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_6$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_611 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_611 equal (v_sig_a5+v_sig_a$i)/2
+variable  sig_611 equal (v_sig_a5+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_6$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_611 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_611 equal (v_rc_a5+v_rc_a$i)/2
+variable  rc_611 equal (v_rc_a5+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop6
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 7
+label loop7
+variable a equal 6
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 7 ${nAM_part}
+variable i loop 7 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_7$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_78 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_78 equal (v_epsi_a6*v_epsi_a$i)^(1/2)
+variable  epsi_78 equal (v_epsi_a6*v_epsi_a7)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_7$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_78 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_78 equal (v_sig_a6+v_sig_a$i)/2
+variable  sig_78 equal (v_sig_a6+v_sig_a7)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_7$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_78 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_78 equal (v_rc_a6+v_rc_a$i)/2
+variable  rc_78 equal (v_rc_a6+v_rc_a7)/2
+next i
+jump pair_coeff.txt loop7
+variable a equal 6
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 7 ${nAM_part}
+variable i loop 7 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_7$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_79 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_79 equal (v_epsi_a6*v_epsi_a$i)^(1/2)
+variable  epsi_79 equal (v_epsi_a6*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_7$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_79 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_79 equal (v_sig_a6+v_sig_a$i)/2
+variable  sig_79 equal (v_sig_a6+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_7$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_79 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_79 equal (v_rc_a6+v_rc_a$i)/2
+variable  rc_79 equal (v_rc_a6+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop7
+variable a equal 6
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 7 ${nAM_part}
+variable i loop 7 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_7$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_710 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_710 equal (v_epsi_a6*v_epsi_a$i)^(1/2)
+variable  epsi_710 equal (v_epsi_a6*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_7$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_710 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_710 equal (v_sig_a6+v_sig_a$i)/2
+variable  sig_710 equal (v_sig_a6+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_7$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_710 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_710 equal (v_rc_a6+v_rc_a$i)/2
+variable  rc_710 equal (v_rc_a6+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop7
+variable a equal 6
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 7 ${nAM_part}
+variable i loop 7 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_7$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_711 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_711 equal (v_epsi_a6*v_epsi_a$i)^(1/2)
+variable  epsi_711 equal (v_epsi_a6*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_7$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_711 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_711 equal (v_sig_a6+v_sig_a$i)/2
+variable  sig_711 equal (v_sig_a6+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_7$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_711 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_711 equal (v_rc_a6+v_rc_a$i)/2
+variable  rc_711 equal (v_rc_a6+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop7
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 8
+label loop8
+variable a equal 7
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 8 ${nAM_part}
+variable i loop 8 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_8$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_89 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_89 equal (v_epsi_a7*v_epsi_a$i)^(1/2)
+variable  epsi_89 equal (v_epsi_a7*v_epsi_a8)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_8$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_89 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_89 equal (v_sig_a7+v_sig_a$i)/2
+variable  sig_89 equal (v_sig_a7+v_sig_a8)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_8$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_89 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_89 equal (v_rc_a7+v_rc_a$i)/2
+variable  rc_89 equal (v_rc_a7+v_rc_a8)/2
+next i
+jump pair_coeff.txt loop8
+variable a equal 7
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 8 ${nAM_part}
+variable i loop 8 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_8$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_810 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_810 equal (v_epsi_a7*v_epsi_a$i)^(1/2)
+variable  epsi_810 equal (v_epsi_a7*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_8$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_810 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_810 equal (v_sig_a7+v_sig_a$i)/2
+variable  sig_810 equal (v_sig_a7+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_8$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_810 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_810 equal (v_rc_a7+v_rc_a$i)/2
+variable  rc_810 equal (v_rc_a7+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop8
+variable a equal 7
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 8 ${nAM_part}
+variable i loop 8 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_8$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_811 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_811 equal (v_epsi_a7*v_epsi_a$i)^(1/2)
+variable  epsi_811 equal (v_epsi_a7*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_8$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_811 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_811 equal (v_sig_a7+v_sig_a$i)/2
+variable  sig_811 equal (v_sig_a7+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_8$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_811 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_811 equal (v_rc_a7+v_rc_a$i)/2
+variable  rc_811 equal (v_rc_a7+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop8
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 9
+label loop9
+variable a equal 8
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 9 ${nAM_part}
+variable i loop 9 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_9$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_910 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_910 equal (v_epsi_a8*v_epsi_a$i)^(1/2)
+variable  epsi_910 equal (v_epsi_a8*v_epsi_a9)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_9$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_910 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_910 equal (v_sig_a8+v_sig_a$i)/2
+variable  sig_910 equal (v_sig_a8+v_sig_a9)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_9$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_910 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_910 equal (v_rc_a8+v_rc_a$i)/2
+variable  rc_910 equal (v_rc_a8+v_rc_a9)/2
+next i
+jump pair_coeff.txt loop9
+variable a equal 8
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 9 ${nAM_part}
+variable i loop 9 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_9$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_911 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_911 equal (v_epsi_a8*v_epsi_a$i)^(1/2)
+variable  epsi_911 equal (v_epsi_a8*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_9$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_911 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_911 equal (v_sig_a8+v_sig_a$i)/2
+variable  sig_911 equal (v_sig_a8+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_9$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_911 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_911 equal (v_rc_a8+v_rc_a$i)/2
+variable  rc_911 equal (v_rc_a8+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop9
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+#interaction mix 10
+label loop10
+variable a equal 9
+variable s equal v_a+1
+variable i loop ${s} ${nAM_part}
+variable i loop 10 ${nAM_part}
+variable i loop 10 10
+variable j equal v_i+1
+variable  epsi_${s}$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_10$j equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_1011 equal (v_epsi_a$a*v_epsi_a$i)^(1/2)
+variable  epsi_1011 equal (v_epsi_a9*v_epsi_a$i)^(1/2)
+variable  epsi_1011 equal (v_epsi_a9*v_epsi_a10)^(1/2)
+variable  sig_${s}$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_10$j equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_1011 equal (v_sig_a$a+v_sig_a$i)/2
+variable  sig_1011 equal (v_sig_a9+v_sig_a$i)/2
+variable  sig_1011 equal (v_sig_a9+v_sig_a10)/2
+variable  rc_${s}$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_10$j equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_1011 equal (v_rc_a$a+v_rc_a$i)/2
+variable  rc_1011 equal (v_rc_a9+v_rc_a$i)/2
+variable  rc_1011 equal (v_rc_a9+v_rc_a10)/2
+next i
+jump pair_coeff.txt loop10
+variable a delete
+variable s delete
+variable i delete
+variable j delete
+
+
+pair_coeff      1 2 lj/sf ${epsi_12} ${sig_12} ${rc_12}
+pair_coeff      1 2 lj/sf 5.39835414927978 ${sig_12} ${rc_12}
+pair_coeff      1 2 lj/sf 5.39835414927978 2.67 ${rc_12}
+pair_coeff      1 2 lj/sf 5.39835414927978 2.67 4.85
+pair_coeff      1 3 lj/sf ${epsi_13} ${sig_13} ${rc_13}
+pair_coeff      1 3 lj/sf 0.241421736888153 ${sig_13} ${rc_13}
+pair_coeff      1 3 lj/sf 0.241421736888153 0.44945 ${rc_13}
+pair_coeff      1 3 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 4 lj/sf ${epsi_14} ${sig_14} ${rc_14}
+pair_coeff      1 4 lj/sf 0.241421736888153 ${sig_14} ${rc_14}
+pair_coeff      1 4 lj/sf 0.241421736888153 0.44945 ${rc_14}
+pair_coeff      1 4 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 5 lj/sf ${epsi_15} ${sig_15} ${rc_15}
+pair_coeff      1 5 lj/sf 0.241421736888153 ${sig_15} ${rc_15}
+pair_coeff      1 5 lj/sf 0.241421736888153 0.44945 ${rc_15}
+pair_coeff      1 5 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 6 lj/sf ${epsi_16} ${sig_16} ${rc_16}
+pair_coeff      1 6 lj/sf 0.241421736888153 ${sig_16} ${rc_16}
+pair_coeff      1 6 lj/sf 0.241421736888153 0.44945 ${rc_16}
+pair_coeff      1 6 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 7 lj/sf ${epsi_17} ${sig_17} ${rc_17}
+pair_coeff      1 7 lj/sf 0.241421736888153 ${sig_17} ${rc_17}
+pair_coeff      1 7 lj/sf 0.241421736888153 0.44945 ${rc_17}
+pair_coeff      1 7 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 8 lj/sf ${epsi_18} ${sig_18} ${rc_18}
+pair_coeff      1 8 lj/sf 0.241421736888153 ${sig_18} ${rc_18}
+pair_coeff      1 8 lj/sf 0.241421736888153 0.44945 ${rc_18}
+pair_coeff      1 8 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 9 lj/sf ${epsi_19} ${sig_19} ${rc_19}
+pair_coeff      1 9 lj/sf 0.241421736888153 ${sig_19} ${rc_19}
+pair_coeff      1 9 lj/sf 0.241421736888153 0.44945 ${rc_19}
+pair_coeff      1 9 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 10 lj/sf ${epsi_110} ${sig_110} ${rc_110}
+pair_coeff      1 10 lj/sf 0.241421736888153 ${sig_110} ${rc_110}
+pair_coeff      1 10 lj/sf 0.241421736888153 0.44945 ${rc_110}
+pair_coeff      1 10 lj/sf 0.241421736888153 0.44945 1.1075
+pair_coeff      1 11 lj/sf ${epsi_111} ${sig_111} ${rc_111}
+pair_coeff      1 11 lj/sf 0.241421736888153 ${sig_111} ${rc_111}
+pair_coeff      1 11 lj/sf 0.241421736888153 0.44945 ${rc_111}
+pair_coeff      1 11 lj/sf 0.241421736888153 0.44945 1.1075
+
+pair_coeff      2 3 lj/sf ${epsi_23} ${sig_23} ${rc_23}
+pair_coeff      2 3 lj/sf 0.223606797749979 ${sig_23} ${rc_23}
+pair_coeff      2 3 lj/sf 0.223606797749979 2.22945 ${rc_23}
+pair_coeff      2 3 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 4 lj/sf ${epsi_24} ${sig_24} ${rc_24}
+pair_coeff      2 4 lj/sf 0.223606797749979 ${sig_24} ${rc_24}
+pair_coeff      2 4 lj/sf 0.223606797749979 2.22945 ${rc_24}
+pair_coeff      2 4 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 5 lj/sf ${epsi_25} ${sig_25} ${rc_25}
+pair_coeff      2 5 lj/sf 0.223606797749979 ${sig_25} ${rc_25}
+pair_coeff      2 5 lj/sf 0.223606797749979 2.22945 ${rc_25}
+pair_coeff      2 5 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 6 lj/sf ${epsi_26} ${sig_26} ${rc_26}
+pair_coeff      2 6 lj/sf 0.223606797749979 ${sig_26} ${rc_26}
+pair_coeff      2 6 lj/sf 0.223606797749979 2.22945 ${rc_26}
+pair_coeff      2 6 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 7 lj/sf ${epsi_27} ${sig_27} ${rc_27}
+pair_coeff      2 7 lj/sf 0.223606797749979 ${sig_27} ${rc_27}
+pair_coeff      2 7 lj/sf 0.223606797749979 2.22945 ${rc_27}
+pair_coeff      2 7 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 8 lj/sf ${epsi_28} ${sig_28} ${rc_28}
+pair_coeff      2 8 lj/sf 0.223606797749979 ${sig_28} ${rc_28}
+pair_coeff      2 8 lj/sf 0.223606797749979 2.22945 ${rc_28}
+pair_coeff      2 8 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 9 lj/sf ${epsi_29} ${sig_29} ${rc_29}
+pair_coeff      2 9 lj/sf 0.223606797749979 ${sig_29} ${rc_29}
+pair_coeff      2 9 lj/sf 0.223606797749979 2.22945 ${rc_29}
+pair_coeff      2 9 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 10 lj/sf ${epsi_210} ${sig_210} ${rc_210}
+pair_coeff      2 10 lj/sf 0.223606797749979 ${sig_210} ${rc_210}
+pair_coeff      2 10 lj/sf 0.223606797749979 2.22945 ${rc_210}
+pair_coeff      2 10 lj/sf 0.223606797749979 2.22945 3.7575
+pair_coeff      2 11 lj/sf ${epsi_211} ${sig_211} ${rc_211}
+pair_coeff      2 11 lj/sf 0.223606797749979 ${sig_211} ${rc_211}
+pair_coeff      2 11 lj/sf 0.223606797749979 2.22945 ${rc_211}
+pair_coeff      2 11 lj/sf 0.223606797749979 2.22945 3.7575
+
+pair_coeff      3 4 lj/sf ${epsi_34} ${sig_34} ${rc_34}
+pair_coeff      3 4 lj/sf 0.01 ${sig_34} ${rc_34}
+pair_coeff      3 4 lj/sf 0.01 0.0089 ${rc_34}
+pair_coeff      3 4 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 5 lj/sf ${epsi_35} ${sig_35} ${rc_35}
+pair_coeff      3 5 lj/sf 0.01 ${sig_35} ${rc_35}
+pair_coeff      3 5 lj/sf 0.01 0.0089 ${rc_35}
+pair_coeff      3 5 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 6 lj/sf ${epsi_36} ${sig_36} ${rc_36}
+pair_coeff      3 6 lj/sf 0.01 ${sig_36} ${rc_36}
+pair_coeff      3 6 lj/sf 0.01 0.0089 ${rc_36}
+pair_coeff      3 6 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 7 lj/sf ${epsi_37} ${sig_37} ${rc_37}
+pair_coeff      3 7 lj/sf 0.01 ${sig_37} ${rc_37}
+pair_coeff      3 7 lj/sf 0.01 0.0089 ${rc_37}
+pair_coeff      3 7 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 8 lj/sf ${epsi_38} ${sig_38} ${rc_38}
+pair_coeff      3 8 lj/sf 0.01 ${sig_38} ${rc_38}
+pair_coeff      3 8 lj/sf 0.01 0.0089 ${rc_38}
+pair_coeff      3 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 9 lj/sf ${epsi_39} ${sig_39} ${rc_39}
+pair_coeff      3 9 lj/sf 0.01 ${sig_39} ${rc_39}
+pair_coeff      3 9 lj/sf 0.01 0.0089 ${rc_39}
+pair_coeff      3 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 10 lj/sf ${epsi_310} ${sig_310} ${rc_310}
+pair_coeff      3 10 lj/sf 0.01 ${sig_310} ${rc_310}
+pair_coeff      3 10 lj/sf 0.01 0.0089 ${rc_310}
+pair_coeff      3 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      3 11 lj/sf ${epsi_311} ${sig_311} ${rc_311}
+pair_coeff      3 11 lj/sf 0.01 ${sig_311} ${rc_311}
+pair_coeff      3 11 lj/sf 0.01 0.0089 ${rc_311}
+pair_coeff      3 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      4 5 lj/sf ${epsi_45} ${sig_45} ${rc_45}
+pair_coeff      4 5 lj/sf 0.01 ${sig_45} ${rc_45}
+pair_coeff      4 5 lj/sf 0.01 0.0089 ${rc_45}
+pair_coeff      4 5 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 6 lj/sf ${epsi_46} ${sig_46} ${rc_46}
+pair_coeff      4 6 lj/sf 0.01 ${sig_46} ${rc_46}
+pair_coeff      4 6 lj/sf 0.01 0.0089 ${rc_46}
+pair_coeff      4 6 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 7 lj/sf ${epsi_47} ${sig_47} ${rc_47}
+pair_coeff      4 7 lj/sf 0.01 ${sig_47} ${rc_47}
+pair_coeff      4 7 lj/sf 0.01 0.0089 ${rc_47}
+pair_coeff      4 7 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 8 lj/sf ${epsi_48} ${sig_48} ${rc_48}
+pair_coeff      4 8 lj/sf 0.01 ${sig_48} ${rc_48}
+pair_coeff      4 8 lj/sf 0.01 0.0089 ${rc_48}
+pair_coeff      4 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 9 lj/sf ${epsi_49} ${sig_49} ${rc_49}
+pair_coeff      4 9 lj/sf 0.01 ${sig_49} ${rc_49}
+pair_coeff      4 9 lj/sf 0.01 0.0089 ${rc_49}
+pair_coeff      4 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 10 lj/sf ${epsi_410} ${sig_410} ${rc_410}
+pair_coeff      4 10 lj/sf 0.01 ${sig_410} ${rc_410}
+pair_coeff      4 10 lj/sf 0.01 0.0089 ${rc_410}
+pair_coeff      4 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      4 11 lj/sf ${epsi_411} ${sig_411} ${rc_411}
+pair_coeff      4 11 lj/sf 0.01 ${sig_411} ${rc_411}
+pair_coeff      4 11 lj/sf 0.01 0.0089 ${rc_411}
+pair_coeff      4 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      5 6 lj/sf ${epsi_56} ${sig_56} ${rc_56}
+pair_coeff      5 6 lj/sf 0.01 ${sig_56} ${rc_56}
+pair_coeff      5 6 lj/sf 0.01 0.0089 ${rc_56}
+pair_coeff      5 6 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 7 lj/sf ${epsi_57} ${sig_57} ${rc_57}
+pair_coeff      5 7 lj/sf 0.01 ${sig_57} ${rc_57}
+pair_coeff      5 7 lj/sf 0.01 0.0089 ${rc_57}
+pair_coeff      5 7 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 8 lj/sf ${epsi_58} ${sig_58} ${rc_58}
+pair_coeff      5 8 lj/sf 0.01 ${sig_58} ${rc_58}
+pair_coeff      5 8 lj/sf 0.01 0.0089 ${rc_58}
+pair_coeff      5 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 9 lj/sf ${epsi_59} ${sig_59} ${rc_59}
+pair_coeff      5 9 lj/sf 0.01 ${sig_59} ${rc_59}
+pair_coeff      5 9 lj/sf 0.01 0.0089 ${rc_59}
+pair_coeff      5 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 10 lj/sf ${epsi_510} ${sig_510} ${rc_510}
+pair_coeff      5 10 lj/sf 0.01 ${sig_510} ${rc_510}
+pair_coeff      5 10 lj/sf 0.01 0.0089 ${rc_510}
+pair_coeff      5 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      5 11 lj/sf ${epsi_511} ${sig_511} ${rc_511}
+pair_coeff      5 11 lj/sf 0.01 ${sig_511} ${rc_511}
+pair_coeff      5 11 lj/sf 0.01 0.0089 ${rc_511}
+pair_coeff      5 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      6 7 lj/sf ${epsi_67} ${sig_67} ${rc_67}
+pair_coeff      6 7 lj/sf 0.01 ${sig_67} ${rc_67}
+pair_coeff      6 7 lj/sf 0.01 0.0089 ${rc_67}
+pair_coeff      6 7 lj/sf 0.01 0.0089 0.015
+pair_coeff      6 8 lj/sf ${epsi_68} ${sig_68} ${rc_68}
+pair_coeff      6 8 lj/sf 0.01 ${sig_68} ${rc_68}
+pair_coeff      6 8 lj/sf 0.01 0.0089 ${rc_68}
+pair_coeff      6 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      6 9 lj/sf ${epsi_69} ${sig_69} ${rc_69}
+pair_coeff      6 9 lj/sf 0.01 ${sig_69} ${rc_69}
+pair_coeff      6 9 lj/sf 0.01 0.0089 ${rc_69}
+pair_coeff      6 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      6 10 lj/sf ${epsi_610} ${sig_610} ${rc_610}
+pair_coeff      6 10 lj/sf 0.01 ${sig_610} ${rc_610}
+pair_coeff      6 10 lj/sf 0.01 0.0089 ${rc_610}
+pair_coeff      6 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      6 11 lj/sf ${epsi_611} ${sig_611} ${rc_611}
+pair_coeff      6 11 lj/sf 0.01 ${sig_611} ${rc_611}
+pair_coeff      6 11 lj/sf 0.01 0.0089 ${rc_611}
+pair_coeff      6 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      7 8 lj/sf ${epsi_78} ${sig_78} ${rc_78}
+pair_coeff      7 8 lj/sf 0.01 ${sig_78} ${rc_78}
+pair_coeff      7 8 lj/sf 0.01 0.0089 ${rc_78}
+pair_coeff      7 8 lj/sf 0.01 0.0089 0.015
+pair_coeff      7 9 lj/sf ${epsi_79} ${sig_79} ${rc_79}
+pair_coeff      7 9 lj/sf 0.01 ${sig_79} ${rc_79}
+pair_coeff      7 9 lj/sf 0.01 0.0089 ${rc_79}
+pair_coeff      7 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      7 10 lj/sf ${epsi_710} ${sig_710} ${rc_710}
+pair_coeff      7 10 lj/sf 0.01 ${sig_710} ${rc_710}
+pair_coeff      7 10 lj/sf 0.01 0.0089 ${rc_710}
+pair_coeff      7 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      7 11 lj/sf ${epsi_711} ${sig_711} ${rc_711}
+pair_coeff      7 11 lj/sf 0.01 ${sig_711} ${rc_711}
+pair_coeff      7 11 lj/sf 0.01 0.0089 ${rc_711}
+pair_coeff      7 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      8 9 lj/sf ${epsi_89} ${sig_89} ${rc_89}
+pair_coeff      8 9 lj/sf 0.01 ${sig_89} ${rc_89}
+pair_coeff      8 9 lj/sf 0.01 0.0089 ${rc_89}
+pair_coeff      8 9 lj/sf 0.01 0.0089 0.015
+pair_coeff      8 10 lj/sf ${epsi_810} ${sig_810} ${rc_810}
+pair_coeff      8 10 lj/sf 0.01 ${sig_810} ${rc_810}
+pair_coeff      8 10 lj/sf 0.01 0.0089 ${rc_810}
+pair_coeff      8 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      8 11 lj/sf ${epsi_811} ${sig_811} ${rc_811}
+pair_coeff      8 11 lj/sf 0.01 ${sig_811} ${rc_811}
+pair_coeff      8 11 lj/sf 0.01 0.0089 ${rc_811}
+pair_coeff      8 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      9 10 lj/sf ${epsi_910} ${sig_910} ${rc_910}
+pair_coeff      9 10 lj/sf 0.01 ${sig_910} ${rc_910}
+pair_coeff      9 10 lj/sf 0.01 0.0089 ${rc_910}
+pair_coeff      9 10 lj/sf 0.01 0.0089 0.015
+pair_coeff      9 11 lj/sf ${epsi_911} ${sig_911} ${rc_911}
+pair_coeff      9 11 lj/sf 0.01 ${sig_911} ${rc_911}
+pair_coeff      9 11 lj/sf 0.01 0.0089 ${rc_911}
+pair_coeff      9 11 lj/sf 0.01 0.0089 0.015
+
+pair_coeff      10 11 lj/sf ${epsi_1011} ${sig_1011} ${rc_1011}
+pair_coeff      10 11 lj/sf 0.01 ${sig_1011} ${rc_1011}
+pair_coeff      10 11 lj/sf 0.01 0.0089 ${rc_1011}
+pair_coeff      10 11 lj/sf 0.01 0.0089 0.015
+
+#pair_modify pair lj/sf mix arithmetic
+
+## Granular
+pair_coeff    * * gran/hertz/history
+
+
+
+timestep        0.001
+
+thermo 15000
+thermo_modify flush yes
+compute mytemp all temp/sphere
+compute mypress all pressure mytemp
+compute ke_rot all erotate/sphere
+variable slurry_density equal (v_CBD_mass+v_AM_mass+v_solvent_mass)/(1E-12*lx*ly*lz)
+
+thermo_style    custom step temp c_mytemp pe ke c_ke_rot press pzz vol lx ly lz
+WARNING: New thermo_style command, previous thermo_modify settings will be lost (C:\Users\runneradmin\AppData\Local\Temp\tmpr04lorxi\build\_deps\lammps-src\src\output.cpp:912)
+
+dump 1  all custom 50000 dump.com_*.atom id type x y z radius
+
+## --------------------- Relaxation ---------------------------------
+min_style cg
+minimize 1e-150 1e-150 5000000 10000000
+Generated 0 of 55 mixed pair_coeff terms from geometric mixing rule
+Hybrid pair style last /omp style gran/hertz/history
+Last active /omp style is pair_style gran/hertz/history
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 15000, page size: 150000
+  master list distance cutoff = 10.5
+  ghost atom cutoff = 10.5
+  binsize = 5.25, bins = 77 77 191
+  2 neighbor lists, perpetual/occasional/extra = 2 0 0
+  (1) pair lj/sf, perpetual
+      attributes: half, newton on, omp, cut 10.5
+      pair build: half/bin/atomonly/newton/omp
+      stencil: half/bin/3d
+      bin: standard
+  (2) pair gran/hertz/history, perpetual
+      attributes: half, newton on, size, history, omp, cut 8.828445504209249
+      pair build: half/size/bin/atomonly/newton/omp
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 52.7 | 52.72 | 52.73 Mbytes
+   Step          Temp         c_mytemp        PotEng         KinEng        c_ke_rot        Press           Pzz           Volume           Lx             Ly             Lz      
+         0   0              0              6661471.5      0              0              0.1668047      0.01257742     1.6e+08        400            400            1000         
+     15000   0              0             -10.140793      0              0              7.0597157e-05  6.7132119e-05  1.6e+08        400            400            1000         
+     30000   0              0             -10.141094      0              0              7.0597146e-05  6.7132116e-05  1.6e+08        400            400            1000         
+     45000   0              0             -10.141246      0              0              7.059714e-05   6.7132114e-05  1.6e+08        400            400            1000         
+     60000   0              0             -10.141399      0              0              7.0597134e-05  6.7132112e-05  1.6e+08        400            400            1000         
+     75000   0              0             -10.141551      0              0              7.0597128e-05  6.713211e-05   1.6e+08        400            400            1000         
+     90000   0              0             -10.141704      0              0              7.0597122e-05  6.7132109e-05  1.6e+08        400            400            1000         
+    105000   0              0             -10.141857      0              0              7.0597117e-05  6.7132107e-05  1.6e+08        400            400            1000         
+    120000   0              0             -10.142009      0              0              7.0597111e-05  6.7132105e-05  1.6e+08        400            400            1000         
+    135000   0              0             -10.142162      0              0              7.0597105e-05  6.7132104e-05  1.6e+08        400            400            1000         
+    150000   0              0             -10.142314      0              0              7.0597099e-05  6.7132102e-05  1.6e+08        400            400            1000         
+    165000   0              0             -10.142467      0              0              7.0597093e-05  6.71321e-05    1.6e+08        400            400            1000         
+    180000   0              0             -10.142619      0              0              7.0597087e-05  6.7132098e-05  1.6e+08        400            400            1000         
+    195000   0              0             -10.142772      0              0              7.0597082e-05  6.7132097e-05  1.6e+08        400            400            1000         
+    210000   0              0             -10.142924      0              0              7.0597076e-05  6.7132095e-05  1.6e+08        400            400            1000         
+    225000   0              0             -10.143077      0              0              7.059707e-05   6.7132093e-05  1.6e+08        400            400            1000         
+    240000   0              0             -10.14323       0              0              7.0597064e-05  6.7132091e-05  1.6e+08        400            400            1000         
+    255000   0              0             -10.143382      0              0              7.0597058e-05  6.713209e-05   1.6e+08        400            400            1000         
+    270000   0              0             -10.143535      0              0              7.0597052e-05  6.7132088e-05  1.6e+08        400            400            1000         
+    285000   0              0             -10.143687      0              0              7.0597046e-05  6.7132086e-05  1.6e+08        400            400            1000         
+    287300   0              0             -10.143711      0              0              7.0597046e-05  6.7132086e-05  1.6e+08        400            400            1000         
+Loop time of 29354.6 on 8 procs for 287300 steps with 21517 atoms
+
+52.4% CPU use with 2 MPI tasks x 4 OpenMP threads
+
+Minimization stats:
+  Stopping criterion = max force evaluations
+  Energy initial, next-to-last, final = 
+      6661471.54977709  -10.1437105919229  -10.1437106020928
+  Force two-norm initial, final = 3.4382375e+08 821.97908
+  Force max component initial, final = 2.3982691e+08 154.69513
+  Final line search alpha, max atom move = 3.762734e-14 5.8207661e-12
+  Iterations, force evaluations = 287300 10000018
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2545.9     | 6780.8     | 11016      |5142.8 | 23.10
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 2478.3     | 6725.3     | 10972      |5178.8 | 22.91
+Output  | 0.097974   | 0.10317    | 0.10837    |   1.6 |  0.00
+Modify  | 983.41     | 988.54     | 993.67     |  16.3 |  3.37
+Other   |            | 1.486e+04  |            |       | 50.62
+
+Nlocal:        10758.5 ave       10879 max       10638 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Nghost:         1641.5 ave        1691 max        1592 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Neighs:         3498.5 ave        3624 max        3373 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+
+Total # of neighbors = 6997
+Ave neighs/atom = 0.32518474
+Neighbor list builds = 0
+Dangerous builds = 0
+write_data   coord_min.data
+System init for write_data ...
+Generated 0 of 55 mixed pair_coeff terms from geometric mixing rule
+Hybrid pair style last /omp style gran/hertz/history
+Last active /omp style is pair_style gran/hertz/history
+## --------------------- Dynamics -----------------------------------
+
+variable run equal 1000000
+velocity all create 300.0 46659 mom yes rot yes dist gaussian
+fix NPT all npt/sphere temp 300.0 300.0 0.2 iso 0.0 100 1000
+
+run ${run}
+run 1000000
+Generated 0 of 55 mixed pair_coeff terms from geometric mixing rule
+Hybrid pair style last /omp style gran/hertz/history
+Last active /omp style is pair_style gran/hertz/history
+Per MPI rank memory allocation (min/avg/max) = 53.32 | 53.34 | 53.35 Mbytes
+   Step          Temp         c_mytemp        PotEng         KinEng        c_ke_rot        Press           Pzz           Volume           Lx             Ly             Lz      
+    287300   300            149.99651     -10.143711      0.13367733     0              7.0598342e-05  6.7129977e-05  1.6e+08        400            400            1000         
+    300000   100328.93      50202.311      2201.9675      44.705679      0.034767619    1.2265329      1.2243564      1140980.8      76.992089      76.992089      192.48022    
+    315000   53948.701      27013.053     -1766.4706      24.039062      0.035050654    2.7572797      2.7588336      776387.63      67.719363      67.719363      169.29841    
+    330000   31266.841      15675.193     -3054.9429      13.932227      0.037550887    4.2624101      4.2662539      633045.91      63.265226      63.265226      158.16307    
+    345000   17895.231      8988.392      -4314.6433      7.973956       0.036525312    5.7645956      5.7682312      548873.02      60.326847      60.326847      150.81712    
+    360000   10473.607      5274.9036     -5559.645       4.6669461      0.034063463    7.2658143      7.2695818      491360.65      58.141575      58.141575      145.35394    
+    375000   6441.5209      3257.329      -6769.8572      2.8702844      0.032656666    8.7665982      8.7701079      448751.68      56.409904      56.409904      141.02476    
+    390000   4270.0063      2170.8781     -7891.8775      1.9026769      0.03201609     10.267145      10.270455      415548.24      54.982837      54.982837      137.45709    
+    405000   3078.9643      1574.9933     -8897.7277      1.3719591      0.031679538    11.767555      11.770568      388760.34      53.775028      53.775028      134.43757    
+    420000   2382.7008      1228.0509     -9791.6976      1.0617103      0.032732229    13.267868      13.270431      366574.13      52.731962      52.731962      131.82991    
+    435000   1948.5782      1013.0217     -10595.157      0.86826914     0.03453872     14.768116      14.77041       347810.85      51.816456      51.816456      129.54114    
+    450000   1654.6112      868.13708     -11326.588      0.73728003     0.036406281    16.268316      16.270251      331677.71      51.002574      51.002574      127.50643    
+    465000   1446.2686      764.86919     -12000.017      0.64444443     0.037209241    17.76848       17.769714      317615.2       50.271336      50.271336      125.67834    
+    480000   1281.6735      684.72849     -12622.225      0.57110232     0.039129713    19.268618      19.2688        305216.47      49.608488      49.608488      124.02122    
+    495000   1148.588       621.90631     -13192.049      0.51180062     0.042444106    20.768736      20.767974      294180.03      49.003195      49.003195      122.50799    
+    510000   1038.3063      569.57756     -13709.73       0.46266006     0.044949129    22.268836      22.267261      284273.52      48.446841      48.446841      121.1171     
+    525000   947.22085      525.92105     -14185.535      0.42207319     0.046629189    23.768922      23.766749      275314.1       47.932434      47.932434      119.83108    
+    540000   874.24436      490.01429     -14634.959      0.38955551     0.047146653    25.268997      25.266425      267158.02      47.454355      47.454355      118.63589    
+    555000   811.98597      458.03009     -15069.286      0.36181373     0.046384031    26.769064      26.766235      259690.65      47.008035      47.008035      117.52009    
+    570000   756.03097      432.5551      -15487.593      0.33688068     0.04861369     28.269122      28.26614       252819.41      46.589724      46.589724      116.47431    
+    585000   711.51239      408.86143     -15893.93       0.31704359     0.047334911    29.769175      29.7661        246468.35      46.196284      46.196284      115.49071    
+    600000   666.06213      387.77751     -16289.475      0.29679137     0.048797088    31.269221      31.265923      240575.05      45.825111      45.825111      114.56278    
+    615000   625.35726      370.52793     -16677.093      0.27865364     0.051561939    32.769263      32.765923      235086.39      45.47393       45.47393       113.68483    
+    630000   590.0621       355.57565     -17061.713      0.26292643     0.053963632    34.269302      34.266112      229957.21      45.140775      45.140775      112.85194    
+    645000   560.41711      342.80979     -17446.504      0.24971688     0.055796207    35.769336      35.766553      225149.46      44.823968      44.823968      112.05992    
+    660000   533.99768      332.58783     -17833.115      0.23794462     0.058458631    37.269368      37.267214      220630.66      44.522064      44.522064      111.30516    
+    675000   511.13069      324.41599     -18222.115      0.22775529     0.061365194    38.769397      38.76794       216372.87      44.233802      44.233802      110.5845     
+    690000   492.07323      317.51875     -18613.209      0.21926346     0.063710182    40.269425      40.26878       212351.8       43.958073      43.958073      109.89518    
+    705000   484.85525      309.8803      -19009.435      0.21604719     0.060119041    41.769449      41.769761      208545.89      43.693873      43.693873      109.23468    
+    720000   527.38816      300.63668     -19428.324      0.23499948     0.032928818    43.269474      43.270807      204934.86      43.440213      43.440213      108.60053    
+    735000   467.83004      301.69884     -19838.845      0.20846091     0.06041398     44.769495      44.772038      201507.27      43.196667      43.196667      107.99167    
+    750000   463.79316      300.38897     -20253.957      0.20666211     0.061045422    46.269516      46.273209      198244.63      42.962262      42.962262      107.40566    
+    765000   417.27989      300.99238     -20663.553      0.18593621     0.082309086    47.769534      47.774293      195136.53      42.736556      42.736556      106.84139    
+    780000   390.10338      300.86916     -21064.306      0.1738266      0.094308876    49.269551      49.275221      192170.28      42.518905      42.518905      106.29726    
+    795000   370.63679      300.70898     -21462.522      0.16515246     0.10284026     50.769567      50.775974      189335.13      42.30877       42.30877       105.77193    
+    810000   354.50149      300.53348     -21864.494      0.15796271     0.10987361     52.269582      52.276539      186621.68      42.105681      42.105681      105.2642     
+    825000   339.88232      300.3733      -22269.717      0.15144854     0.11624503     53.769596      53.777031      184021.54      41.909218      41.909218      104.77304    
+    840000   324.62526      300.23802     -22674.963      0.14465013     0.12292287     55.269609      55.277585      181527.2       41.719001      41.719001      104.2975     
+    855000   311.80705      300.00459     -23079.373      0.13893845     0.12842652     56.76962       56.778167      179131.61      41.534668      41.534668      103.83667    
+    870000   299.63702      300.05495     -23483.409      0.13351559     0.13389426     58.269632      58.278846      176828.43      41.355889      41.355889      103.38972    
+    885000   287.8357       300.04243     -23885.97       0.12825703     0.13914167     59.769643      59.779541      174611.85      41.182361      41.182361      102.9559     
+    900000   278.71901      300.00763     -24290.348      0.12419471     0.14317296     61.269653      61.280192      172476.47      41.013794      41.013794      102.53449    
+    915000   270.52524      300.05185     -24699.229      0.12054364     0.14686344     62.769663      62.780717      170417.41      40.84993       40.84993       102.12482    
+    930000   264.49735      300.0502      -25117.101      0.11785767     0.14954795     64.269673      64.281092      168430.28      40.690533      40.690533      101.72633    
+    945000   259.95196      300.03753     -25542.864      0.11583228     0.15156205     65.769681      65.781261      166510.95      40.535382      40.535382      101.33845    
+    960000   255.90962      300.03172     -25977.091      0.11403105     0.1533581      67.269689      67.281372      164655.74      40.384275      40.384275      100.96069    
+    975000   250.93038      300.00754     -26418.615      0.11181235     0.15555525     68.769698      68.781467      162861.28      40.237032      40.237032      100.59258    
+    990000   245.63101      299.98153     -26863.625      0.10945099     0.15789343     70.269706      70.281536      161124.33      40.093475      40.093475      100.23369    
+   1005000   239.79547      299.97711     -27311.767      0.10685073     0.16048975     71.769713      71.781621      159441.92      39.95344       39.95344       99.883599    
+   1020000   233.81464      299.97656     -27760.677      0.10418573     0.16315426     73.26972       73.28173       157811.38      39.816777      39.816777      99.541942    
+   1035000   228.43462      299.98193     -28210.888      0.10178844     0.16555634     74.769727      74.781803      156230.01      39.683334      39.683334      99.208334    
+   1050000   223.12244      299.9743      -28664.339      0.099421376    0.1679166      76.269733      76.28182       154695.4       39.552973      39.552973      98.882433    
+   1065000   217.64994      299.97468     -29121.229      0.096982878    0.17035544     77.769739      77.781925      153205.42      39.425575      39.425575      98.563939    
+   1080000   211.8715       299.97202     -29581.77       0.094408055    0.17292789     79.269746      79.282092      151757.99      39.301023      39.301023      98.252558    
+   1095000   205.99669      299.97326     -30045.847      0.091790294    0.17554676     80.769753      80.782288      150351.09      39.179196      39.179196      97.947991    
+   1110000   200.00555      299.96949     -30510.863      0.089120695    0.17821299     82.269759      82.282414      148982.84      39.059986      39.059986      97.649965    
+   1125000   194.47709      299.96725     -30974.473      0.086657263    0.18067443     83.769766      83.782521      147651.49      38.943288      38.943288      97.358219    
+   1140000   189.98883      299.97342     -31438.926      0.084657335    0.18267985     85.269772      85.282575      146355.31      38.828996      38.828996      97.072489    
+   1155000   186.88312      299.97368     -31909.682      0.083273456    0.18406397     86.769779      86.78256       145092.68      38.717012      38.717012      96.792529    
+   1170000   184.67936      299.98073     -32391.351      0.08229148     0.18505222     88.269783      88.282478      143862.15      38.607248      38.607248      96.518121    
+   1185000   182.71883      299.96467     -32886.13       0.081417886    0.18591151     89.76979       89.782307      142662.38      38.499623      38.499623      96.249058    
+   1200000   180.76177      299.98002     -33393.195      0.080545838    0.18679723     91.269795      91.282068      141492.08      38.39406       38.39406       95.985151    
+   1215000   178.83448      299.97695     -33911.619      0.079687056    0.18765328     92.769801      92.781837      140350.15      38.290493      38.290493      95.726232    
+   1230000   176.91789      299.97044     -34438.795      0.078833037    0.1885015      94.269805      94.281684      139235.46      38.188853      38.188853      95.472132    
+   1245000   177.18551      298.4343      -34972.994      0.078952287    0.18701323     95.769808      95.781572      138146.92      38.089073      38.089073      95.222683    
+   1260000   173.98874      300.07167     -35514.884      0.077527835    0.18989691     97.269818      97.281531      137083.63      37.9911        37.9911        94.977749    
+   1275000   170.2527       300.04385     -36055.62       0.075863091    0.19153687     98.769823      98.781413      136044.75      37.894885      37.894885      94.737212    
+   1287300   167.24473      300.01161     -36497.195      0.074522766    0.19284846     99.999827      100.01126      135210.44      37.817261      37.817261      94.543152    
+Loop time of 22606.9 on 8 procs for 1000000 steps with 21517 atoms
+
+Performance: 3821836.751 ns/day, 0.000 hours/ns, 44.234 timesteps/s, 951.788 katom-step/s
+318.3% CPU use with 2 MPI tasks x 4 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 19661      | 19763      | 19865      |  72.5 | 87.42
+Neigh   | 4.2627     | 4.3235     | 4.3843     |   2.9 |  0.02
+Comm    | 1652.2     | 1753.9     | 1855.6     | 242.8 |  7.76
+Output  | 0.40818    | 0.42907    | 0.44997    |   3.2 |  0.00
+Modify  | 1013.2     | 1013.7     | 1014.2     |   1.6 |  4.48
+Other   |            | 71.56      |            |       |  0.32
+
+Nlocal:        10758.5 ave       10759 max       10758 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Nghost:          26596 ave       26602 max       26590 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Neighs:    4.06839e+06 ave 4.06901e+06 max 4.06777e+06 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+
+Total # of neighbors = 8136786
+Ave neighs/atom = 378.15616
+Neighbor list builds = 655
+Dangerous builds = 0
+write_data   coord_out_slurry.data
+System init for write_data ...
+Generated 0 of 55 mixed pair_coeff terms from geometric mixing rule
+Hybrid pair style last /omp style gran/hertz/history
+Last active /omp style is pair_style gran/hertz/history
+
+set type 2 diameter ${d_e_1}
+set type 2 diameter 5
+Setting atom values ...
+  296 settings made for diameter
+set type 3 diameter ${d_e_2}
+set type 3 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 4 diameter ${d_e_3}
+set type 4 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 5 diameter ${d_e_4}
+set type 5 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 6 diameter ${d_e_5}
+set type 6 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 7 diameter ${d_e_6}
+set type 7 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 8 diameter ${d_e_7}
+set type 8 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 9 diameter ${d_e_8}
+set type 9 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 10 diameter ${d_e_9}
+set type 10 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+set type 11 diameter ${d_e_10}
+set type 11 diameter 0.01
+Setting atom values ...
+  0 settings made for diameter
+
+write_dump all custom Slurry.atom id type x y z radius
+print ${slurry_density} file density_slurry.out
+print 1.47917577504687 file density_slurry.out
+1.47917577504687
+
+# --------------------End of Simulation- -----------------------------
+
+
+
+Total wall time: 14:26:02
