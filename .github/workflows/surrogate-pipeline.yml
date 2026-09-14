@@ -1,4 +1,4 @@
-name: Surrogate pipeline smoke
+name: Battery process scientific suite
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  synthetic:
+  process:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,5 +18,5 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-core.txt
           pip install -r requirements-test.txt
-      - run: python -m pytest -q tests/process/test_surrogate_pipeline.py -p no:cacheprovider
+      - run: python -m pytest -q tests/process -p no:cacheprovider
       - run: python scripts/run_maspo_pipeline.py --config config/maspo/synthetic.yaml --output outputs/maspo_pipeline_synthetic_ci
