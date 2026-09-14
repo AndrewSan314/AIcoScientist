@@ -1,0 +1,51 @@
+{
+  "benchmark": "drakopoulos_graphite_offline_rediscovery",
+  "dataset": "Graphite Process-15",
+  "retrospective_best_recipe": {
+    "id": "AS-104",
+    "capacity_mah": 11.047569807939249,
+    "controls": {
+      "active_material_fraction_pct": 300.0,
+      "additive_fraction_pct": 1.79319491200116,
+      "binder_cmc_fraction_pct": 2.4873994130771,
+      "binder_sbr_fraction_pct": 1.2007287146672,
+      "coating_gap_um": 0.3,
+      "coating_speed_m_per_min": 120.0,
+      "conductive_additive_fraction_pct": 94.5186769602545
+    }
+  },
+  "mode_1_results": {
+    "random": {
+      "success_rate_pct": 100.0,
+      "mean_exps_to_best": 6.1,
+      "mean_cum_regret_mah": 4.92,
+      "hit_rate_step_5_pct": 30.0
+    },
+    "greedy": {
+      "success_rate_pct": 100.0,
+      "mean_exps_to_best": 2.5,
+      "mean_cum_regret_mah": 0.53,
+      "hit_rate_step_5_pct": 100.0
+    },
+    "gp_ucb": {
+      "success_rate_pct": 100.0,
+      "mean_exps_to_best": 4.5,
+      "mean_cum_regret_mah": 3.1,
+      "hit_rate_step_5_pct": 70.0
+    },
+    "expected_improvement": {
+      "success_rate_pct": 100.0,
+      "mean_exps_to_best": 5.8,
+      "mean_cum_regret_mah": 3.85,
+      "hit_rate_step_5_pct": 50.0
+    },
+    "noisy_expected_improvement": {
+      "success_rate_pct": 100.0,
+      "mean_exps_to_best": 5.7,
+      "mean_cum_regret_mah": 3.84,
+      "hit_rate_step_5_pct": 50.0
+    }
+  },
+  "mode_2_status": "PUBLISHED_OPTIMIZED_DESIGN_NOT_SOURCE_RECOVERABLE",
+  "zero_leakage_firewall": true
+}

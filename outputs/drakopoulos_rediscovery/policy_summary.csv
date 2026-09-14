@@ -1,0 +1,6 @@
+policy,num_seeds,success_rate,mean_experiments_to_best,median_experiments_to_best,mean_simple_regret,std_simple_regret,mean_cumulative_regret,std_cumulative_regret,hit_rate_step_1,hit_rate_step_2,hit_rate_step_3,hit_rate_step_4,hit_rate_step_5,hit_rate_step_6,hit_rate_step_7,hit_rate_step_8,hit_rate_step_9,hit_rate_step_10
+random,10,1.0,6.1,7.0,0.0,0.0,4.924611449397534,3.832792077399098,0.2,0.3,0.3,0.3,0.3,0.4,0.7,0.7,0.7,1.0
+greedy,10,1.0,2.5,2.5,0.0,0.0,0.5318911229273937,0.6694995466541683,0.3,0.5,0.8,0.9,1.0,1.0,1.0,1.0,1.0,1.0
+gp_ucb,10,1.0,4.5,4.0,0.0,0.0,3.0998770853181083,3.6510899883096,0.1,0.1,0.4,0.6,0.7,0.8,0.8,1.0,1.0,1.0
+expected_improvement,10,1.0,5.8,5.5,0.0,0.0,3.8548677370507525,4.285498282128363,0.1,0.1,0.4,0.4,0.5,0.6,0.6,0.6,0.9,1.0
+noisy_expected_improvement,10,1.0,5.7,5.5,0.0,0.0,3.8421358873163696,4.293708842023825,0.1,0.1,0.4,0.4,0.5,0.6,0.6,0.6,1.0,1.0

@@ -1,0 +1,246 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "display_name": "Graphite Process-15",
+  "chemistry": "graphite Li-ion electrode",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "source_url": "https://data.mendeley.com/datasets/4dh2h3tsf4/1",
+  "source_doi": "10.17632/4dh2h3tsf4.1",
+  "source_version": "1",
+  "license": "CC BY 4.0",
+  "source_files": {
+    "alchemite_model_training.txt": "a0a9dc0ae007495e17ace302fbdc4766c556fe5e7cbef8cc2b9024c15bd61873",
+    "ASC-Cell_Data-Azar-Stavros.xlsx": "a49de219e8413871254e88bb9602169137255029e9ab37c7cd2e887155d7b4ed",
+    "AS-Cell_Data-Azar-Stavros_corrected_FCL-25-01-2021.xlsx": "a508e1654d8c39395285ce55b62dae521d45f083d1d1a8ee6f502b32777f93b2",
+    "ASC_results-live.xlsx": "2a12879bd9b62e528fd5e5e3ff486707073accfb896a8c3cd9e13d1495046801",
+    "AS-results-live.xlsx": "8199a7aa70935a9a5be228755d8fb52a53329f9aab453f336fa68e8c364e71b7"
+  },
+  "target_name": "cell_capacity_mah",
+  "target_units": "mAh",
+  "target_source_column": "Cell Capacity (372 mAh/g)",
+  "candidate_pool_size": 13,
+  "control_parameter_names": [
+    "active_material_fraction_pct",
+    "additive_fraction_pct",
+    "binder_cmc_fraction_pct",
+    "binder_sbr_fraction_pct",
+    "coating_gap_um",
+    "coating_speed_m_per_min",
+    "conductive_additive_fraction_pct"
+  ],
+  "retrospective_best_recipe_id": "AS-104",
+  "retrospective_best_recipe_capacity_mah": 11.047569807939249,
+  "retrospective_worst_recipe_id": "AS-38",
+  "retrospective_worst_recipe_capacity_mah": 1.0259695568513072,
+  "candidate_recipes": [
+    {
+      "run_id": "AS-104",
+      "batch_id": "protocol-f568e70024e9",
+      "cell_capacity_mah": 11.047569807939249,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.5186769602545,
+        "binder_cmc_fraction_pct": 2.4873994130771,
+        "binder_sbr_fraction_pct": 1.2007287146672,
+        "additive_fraction_pct": 1.79319491200116,
+        "coating_speed_m_per_min": 120.0,
+        "coating_gap_um": 0.3
+      },
+      "rank": 1
+    },
+    {
+      "run_id": "AS-46",
+      "batch_id": "protocol-233f4717045f",
+      "cell_capacity_mah": 10.92025131059542,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.45146163382928,
+        "binder_cmc_fraction_pct": 2.509535652641631,
+        "binder_sbr_fraction_pct": 1.1992316524551234,
+        "additive_fraction_pct": 1.8397710610739713,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 2
+    },
+    {
+      "run_id": "AS-21",
+      "batch_id": "protocol-48b3c67b2424",
+      "cell_capacity_mah": 9.872701518770816,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 93.94520428937878,
+        "binder_cmc_fraction_pct": 2.513060843200148,
+        "binder_sbr_fraction_pct": 1.2004275864846587,
+        "additive_fraction_pct": 1.8200551908103855,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 3
+    },
+    {
+      "run_id": "AS-72",
+      "batch_id": "protocol-7728f257bfbe",
+      "cell_capacity_mah": 9.21568442603717,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.51867696025454,
+        "binder_cmc_fraction_pct": 2.4873994130771027,
+        "binder_sbr_fraction_pct": 1.2007287146671959,
+        "additive_fraction_pct": 1.7931949120011608,
+        "coating_speed_m_per_min": 120.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 4
+    },
+    {
+      "run_id": "AS-68",
+      "batch_id": "protocol-cf455f581871",
+      "cell_capacity_mah": 8.860558852962102,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.51867696025454,
+        "binder_cmc_fraction_pct": 2.4873994130771027,
+        "binder_sbr_fraction_pct": 1.2007287146671959,
+        "additive_fraction_pct": 1.7931949120011608,
+        "coating_speed_m_per_min": 100.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 5
+    },
+    {
+      "run_id": "AS-58",
+      "batch_id": "protocol-e2397ab2c9a1",
+      "cell_capacity_mah": 8.07160724441687,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.9163120586373,
+        "binder_cmc_fraction_pct": 2.015649070809216,
+        "binder_sbr_fraction_pct": 1.2030612419143847,
+        "additive_fraction_pct": 1.814753814582384,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 6
+    },
+    {
+      "run_id": "AS-80",
+      "batch_id": "protocol-f6c236fa29a9",
+      "cell_capacity_mah": 6.620806476241125,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.5186769602545,
+        "binder_cmc_fraction_pct": 2.4873994130771,
+        "binder_sbr_fraction_pct": 1.2007287146672,
+        "additive_fraction_pct": 1.79319491200116,
+        "coating_speed_m_per_min": 120.0,
+        "coating_gap_um": 0.5
+      },
+      "rank": 7
+    },
+    {
+      "run_id": "AS-30",
+      "batch_id": "protocol-aad499a15e9e",
+      "cell_capacity_mah": 6.164584909296661,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 93.4129921642461,
+        "binder_cmc_fraction_pct": 1.9700571085952796,
+        "binder_sbr_fraction_pct": 1.1835167496034351,
+        "additive_fraction_pct": 1.8053366145655745,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 8
+    },
+    {
+      "run_id": "AS-50",
+      "batch_id": "protocol-f546858c2f1a",
+      "cell_capacity_mah": 6.118202120270675,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.03533386621348,
+        "binder_cmc_fraction_pct": 1.962661036835368,
+        "binder_sbr_fraction_pct": 1.203555466558013,
+        "additive_fraction_pct": 1.7902651349511804,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 9
+    },
+    {
+      "run_id": "AS-1",
+      "batch_id": "protocol-66d04b9f395c",
+      "cell_capacity_mah": 5.818119927565452,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.50215910673832,
+        "binder_cmc_fraction_pct": 2.4926868965314997,
+        "binder_sbr_fraction_pct": 0.7524048763354036,
+        "additive_fraction_pct": 2.252749120394778,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 10
+    },
+    {
+      "run_id": "AS-5",
+      "batch_id": "protocol-e9b0ee089ccd",
+      "cell_capacity_mah": 4.464502246876376,
+      "controls": {
+        "active_material_fraction_pct": 300.0,
+        "conductive_additive_fraction_pct": 94.49881988985638,
+        "binder_cmc_fraction_pct": 2.493566066166175,
+        "binder_sbr_fraction_pct": 2.0021868707746053,
+        "additive_fraction_pct": 1.0054271732028324,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 11
+    },
+    {
+      "run_id": "AS-12",
+      "batch_id": "protocol-c887fd0e762a",
+      "cell_capacity_mah": 1.6338213833419792,
+      "controls": {
+        "active_material_fraction_pct": 140.0,
+        "conductive_additive_fraction_pct": 94.45146163382928,
+        "binder_cmc_fraction_pct": 2.509535652641631,
+        "binder_sbr_fraction_pct": 1.1992316524551234,
+        "additive_fraction_pct": 1.8397710610739713,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 12
+    },
+    {
+      "run_id": "AS-38",
+      "batch_id": "protocol-019b4bea9965",
+      "cell_capacity_mah": 1.0259695568513072,
+      "controls": {
+        "active_material_fraction_pct": 70.0,
+        "conductive_additive_fraction_pct": 94.45146163382928,
+        "binder_cmc_fraction_pct": 2.509535652641631,
+        "binder_sbr_fraction_pct": 1.1992316524551234,
+        "additive_fraction_pct": 1.8397710610739713,
+        "coating_speed_m_per_min": 80.0,
+        "coating_gap_um": 0.1
+      },
+      "rank": 13
+    }
+  ],
+  "mode_1_support": {
+    "status": "SUPPORTED",
+    "benchmark_mode": "SOURCE_OBSERVED_BEST_REDISCOVERY",
+    "description": "Offline closed-loop rediscovery benchmark on 13 discrete audited graphite electrode manufacturing runs."
+  },
+  "mode_2_support": {
+    "status": "PUBLISHED_OPTIMIZED_DESIGN_NOT_SOURCE_RECOVERABLE",
+    "benchmark_mode": "PUBLISHED_VALIDATED_DESIGN_REDISCOVERY",
+    "description": "Source Mendeley dataset (DOI: 10.17632/4dh2h3tsf4.1) contains alchemite_model_training.txt, which is an API client training script without optimization proposals or output designs. The companion ASC workbook contains partial validation runs lacking complete process parameters (e.g. coating speed and gap for >80% of rows) and does not cleanly isolate a distinct published optimized recipe with verified ground-truth outcome. To preserve scientific integrity, Mode 2 is audited and documented as NOT_SOURCE_RECOVERABLE without hallucinating target outcomes.",
+    "files_audited": [
+      "alchemite_model_training.txt",
+      "ASC-Cell_Data-Azar-Stavros.xlsx",
+      "ASC_results-live.xlsx"
+    ]
+  }
+}

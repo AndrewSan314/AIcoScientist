@@ -1,0 +1,117 @@
+[
+  {
+    "policy": "random",
+    "num_seeds": 10,
+    "success_rate": 1.0,
+    "mean_experiments_to_best": 6.1,
+    "median_experiments_to_best": 7.0,
+    "mean_simple_regret": 0.0,
+    "std_simple_regret": 0.0,
+    "mean_cumulative_regret": 4.924611449397534,
+    "std_cumulative_regret": 3.832792077399098,
+    "hit_rate_at_step": {
+      "1": 0.2,
+      "2": 0.3,
+      "3": 0.3,
+      "4": 0.3,
+      "5": 0.3,
+      "6": 0.4,
+      "7": 0.7,
+      "8": 0.7,
+      "9": 0.7,
+      "10": 1.0
+    }
+  },
+  {
+    "policy": "greedy",
+    "num_seeds": 10,
+    "success_rate": 1.0,
+    "mean_experiments_to_best": 2.5,
+    "median_experiments_to_best": 2.5,
+    "mean_simple_regret": 0.0,
+    "std_simple_regret": 0.0,
+    "mean_cumulative_regret": 0.5318911229273937,
+    "std_cumulative_regret": 0.6694995466541683,
+    "hit_rate_at_step": {
+      "1": 0.3,
+      "2": 0.5,
+      "3": 0.8,
+      "4": 0.9,
+      "5": 1.0,
+      "6": 1.0,
+      "7": 1.0,
+      "8": 1.0,
+      "9": 1.0,
+      "10": 1.0
+    }
+  },
+  {
+    "policy": "gp_ucb",
+    "num_seeds": 10,
+    "success_rate": 1.0,
+    "mean_experiments_to_best": 4.5,
+    "median_experiments_to_best": 4.0,
+    "mean_simple_regret": 0.0,
+    "std_simple_regret": 0.0,
+    "mean_cumulative_regret": 3.0998770853181083,
+    "std_cumulative_regret": 3.6510899883096,
+    "hit_rate_at_step": {
+      "1": 0.1,
+      "2": 0.1,
+      "3": 0.4,
+      "4": 0.6,
+      "5": 0.7,
+      "6": 0.8,
+      "7": 0.8,
+      "8": 1.0,
+      "9": 1.0,
+      "10": 1.0
+    }
+  },
+  {
+    "policy": "expected_improvement",
+    "num_seeds": 10,
+    "success_rate": 1.0,
+    "mean_experiments_to_best": 5.8,
+    "median_experiments_to_best": 5.5,
+    "mean_simple_regret": 0.0,
+    "std_simple_regret": 0.0,
+    "mean_cumulative_regret": 3.8548677370507525,
+    "std_cumulative_regret": 4.285498282128363,
+    "hit_rate_at_step": {
+      "1": 0.1,
+      "2": 0.1,
+      "3": 0.4,
+      "4": 0.4,
+      "5": 0.5,
+      "6": 0.6,
+      "7": 0.6,
+      "8": 0.6,
+      "9": 0.9,
+      "10": 1.0
+    }
+  },
+  {
+    "policy": "noisy_expected_improvement",
+    "num_seeds": 10,
+    "success_rate": 1.0,
+    "mean_experiments_to_best": 5.7,
+    "median_experiments_to_best": 5.5,
+    "mean_simple_regret": 0.0,
+    "std_simple_regret": 0.0,
+    "mean_cumulative_regret": 3.8421358873163696,
+    "std_cumulative_regret": 4.293708842023825,
+    "hit_rate_at_step": {
+      "1": 0.1,
+      "2": 0.1,
+      "3": 0.4,
+      "4": 0.4,
+      "5": 0.5,
+      "6": 0.6,
+      "7": 0.6,
+      "8": 0.6,
+      "9": 1.0,
+      "10": 1.0
+    }
+  }
+]
