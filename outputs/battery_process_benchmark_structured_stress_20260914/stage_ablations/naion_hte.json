@@ -1,0 +1,21 @@
+{
+  "dataset_id": "naion_hte",
+  "reports": [
+    {
+      "target": "last_observed_discharge_capacity_ah",
+      "stage": "FORMATION",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'last_observed_discharge_capacity_ah'"
+    },
+    {
+      "target": "last_observed_discharge_capacity_ah",
+      "stage": "FINAL_CHARACTERIZATION",
+      "status": "NOT_EVALUATED",
+      "reason": "No numeric, horizon-valid training rows for target 'last_observed_discharge_capacity_ah'"
+    }
+  ],
+  "stage_transition_model": {
+    "status": "IMPLEMENTED_NOT_VALIDATED",
+    "reason": "The audited sources do not provide enough linked multi-stage trajectories for a source-backed transition evaluation."
+  }
+}

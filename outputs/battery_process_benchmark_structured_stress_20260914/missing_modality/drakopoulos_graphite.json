@@ -1,0 +1,6 @@
+{
+  "dataset_id": "drakopoulos_graphite",
+  "status": "NOT_EVALUATED",
+  "policy": "An unavailable modality is omitted, never zero-filled.",
+  "process_only_reference": null
+}

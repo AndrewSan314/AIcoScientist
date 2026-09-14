@@ -1,0 +1,107 @@
+{
+  "status": "EVALUATED",
+  "target": "post_calendering_thickness_um",
+  "split": "grouped process-condition holdout",
+  "rows": 48,
+  "groups": 24,
+  "reports": [
+    {
+      "mode": "process_only",
+      "metrics": {
+        "mae": 14.120606060606034,
+        "rmse": 24.323972203104002,
+        "r2": -0.0806087618448681
+      }
+    },
+    {
+      "mode": "signal_only",
+      "metrics": {
+        "mae": 6.5877272727272524,
+        "rmse": 8.746523623992006,
+        "r2": 0.8602761851153045
+      }
+    },
+    {
+      "mode": "naive_concatenation",
+      "metrics": {
+        "mae": 4.013484848484833,
+        "rmse": 5.587909680368808,
+        "r2": 0.9429706734171911
+      }
+    },
+    {
+      "mode": "gated_missing_aware_fusion",
+      "metrics": {
+        "mae": 7.642690831964665,
+        "rmse": 10.672464021319247,
+        "r2": 0.7919686025260557
+      }
+    },
+    {
+      "mode": "gated_fusion_signal_dropout",
+      "derived_stress": true,
+      "metrics": {
+        "mae": 14.91933233087713,
+        "rmse": 23.419043234330218,
+        "r2": -0.0017002552057778786
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.1,
+      "realized_dropout_rate": 0.09090909090909091,
+      "seed": 42,
+      "metrics": {
+        "mae": 7.921515378085048,
+        "rmse": 10.716738489214247,
+        "r2": 0.790238995541269
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.25,
+      "realized_dropout_rate": 0.2727272727272727,
+      "seed": 42,
+      "metrics": {
+        "mae": 10.622362310236149,
+        "rmse": 17.963384515587823,
+        "r2": 0.4106465634137645
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.5,
+      "realized_dropout_rate": 0.5454545454545454,
+      "seed": 42,
+      "metrics": {
+        "mae": 10.629204258774266,
+        "rmse": 17.702425272048675,
+        "r2": 0.427645598158361
+      }
+    },
+    {
+      "mode": "gated_fusion_partial_signal_dropout",
+      "derived_stress": true,
+      "missing_modality": "ultrasound",
+      "requested_dropout_rate": 0.75,
+      "realized_dropout_rate": 0.7272727272727273,
+      "seed": 42,
+      "metrics": {
+        "mae": 15.947552074085582,
+        "rmse": 24.016833967410168,
+        "r2": -0.0534914108980491
+      }
+    }
+  ],
+  "gated_fusion": {
+    "status": "EVALUATED",
+    "model": "GatedMaskedFusion with train-only standardized source descriptors",
+    "reason": "Small grouped holdout; report only, without a superiority claim."
+  }
+}
