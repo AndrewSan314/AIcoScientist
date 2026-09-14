@@ -11,6 +11,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.process.stages import ProcessStage
+from src.process.surrogates.battery_adapter import BatteryProcessSurrogateAdapter, registered_battery_datasets
 from src.process.surrogates.core import ArtisticRunDirectoryAdapter, GenericTabularAdapter
 from src.process.surrogates.pipeline import PipelineConfig, run_pipeline
 
@@ -45,9 +46,24 @@ def _adapter(dataset: dict, seed: int):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Dataset-pluggable, leakage-safe MASPO surrogate pipeline; it never runs ARTISTIC.")
-    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--config", type=Path)
+    parser.add_argument("--dataset", choices=registered_battery_datasets())
+    parser.add_argument("--dataset-root", type=Path)
+    parser.add_argument("--stage", choices=[stage.value for stage in ProcessStage])
+    parser.add_argument("--target")
+    parser.add_argument("--model-type", choices=("gp", "extra_trees"), default="gp")
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if bool(args.config) == bool(args.dataset):
+        parser.error("provide exactly one of --config or --dataset")
+    if args.dataset:
+        if not args.stage or not args.target:
+            parser.error("--dataset requires --stage and --target")
+        config = PipelineConfig(targets=(args.target,), model_type=args.model_type, seed=args.seed)
+        report = run_pipeline(BatteryProcessSurrogateAdapter.from_registered(args.dataset, stage=ProcessStage(args.stage), target=args.target, root=args.dataset_root), args.output or Path("outputs/maspo_pipeline"), config)
+        print(json.dumps(report, indent=2, sort_keys=True, default=str))
+        return 0
     raw = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("pipeline config must be a mapping")
