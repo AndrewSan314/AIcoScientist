@@ -1,0 +1,923 @@
+{
+  "dataset_id": "warwick_nmc622",
+  "replays": [
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_L_120_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 122.48,
+            "roll_temperature_c": 120.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 395.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_L_120_M",
+          "revealed_target": 2.881897028,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.0536662999948021
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.03995159998885356
+        }
+      ],
+      "best_so_far": 3.109384341,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.02941583599999964,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.09361789998365566,
+      "p50_decision_latency_seconds": 0.04680894999182783,
+      "p95_decision_latency_seconds": 0.052980564994504674
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 476.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_M",
+          "revealed_target": 2.915098652,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.02682900000945665
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_120_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 120.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 410.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_120_M",
+          "revealed_target": 2.90146198,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.027082200002041645
+        }
+      ],
+      "best_so_far": 3.028514874,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.11028530299999995,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.053911200011498295,
+      "p50_decision_latency_seconds": 0.026955600005749147,
+      "p95_decision_latency_seconds": 0.027069540002412396
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "random",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_120_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 120.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 410.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_120_M",
+          "revealed_target": 2.90146198,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.024491400006809272
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 473.0,
+            "number_of_passes": 3.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_M",
+          "revealed_target": 2.891999817,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.02565419999882579
+        }
+      ],
+      "best_so_far": 3.028514874,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.11028530299999995,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.05014560000563506,
+      "p50_decision_latency_seconds": 0.02507280000281753,
+      "p95_decision_latency_seconds": 0.025596059999224964
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.2094976999942446
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.20858940000471193
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.41808709999895655,
+      "p50_decision_latency_seconds": 0.20904354999947827,
+      "p95_decision_latency_seconds": 0.20945228499476798
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.23693839999032207
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.2377105999912601
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.47464899998158216,
+      "p50_decision_latency_seconds": 0.23732449999079108,
+      "p95_decision_latency_seconds": 0.2376719899912132
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "greedy",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.20656079999753274
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.2135262999945553
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.42008709999208804,
+      "p50_decision_latency_seconds": 0.21004354999604402,
+      "p95_decision_latency_seconds": 0.21317802499470417
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.28372250001120847
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.21572790000936948
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.49945040002057794,
+      "p50_decision_latency_seconds": 0.24972520001028897,
+      "p95_decision_latency_seconds": 0.2803227700111165
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.20190349999757018
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.20661150000523776
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.40851500000280794,
+      "p50_decision_latency_seconds": 0.20425750000140397,
+      "p95_decision_latency_seconds": 0.20637610000485437
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "gp_ucb",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.20261930000560824
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.22180800000205636
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.4244273000076646,
+      "p50_decision_latency_seconds": 0.2122136500038323,
+      "p95_decision_latency_seconds": 0.22084856500223396
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.1980691999924602
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.2196265999955358
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.417695799987996,
+      "p50_decision_latency_seconds": 0.208847899993998,
+      "p95_decision_latency_seconds": 0.21854872999538202
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.20818560000043362
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.1939973000116879
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.40218290001212154,
+      "p50_decision_latency_seconds": 0.20109145000606077,
+      "p95_decision_latency_seconds": 0.20747618500099635
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.22425010000006296
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.21846329999971204
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.442713399999775,
+      "p50_decision_latency_seconds": 0.2213566999998875,
+      "p95_decision_latency_seconds": 0.22396076000004542
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.23217650000879075
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.20771600000443868
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.43989250001322944,
+      "p50_decision_latency_seconds": 0.21994625000661472,
+      "p95_decision_latency_seconds": 0.23095347500857316
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.24143280000134837
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.2765097999945283
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.5179425999958767,
+      "p50_decision_latency_seconds": 0.25897129999793833,
+      "p95_decision_latency_seconds": 0.2747559499948693
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "noisy_expected_improvement",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 466.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_D",
+          "revealed_target": 3.109384341,
+          "best_so_far": 3.109384341,
+          "simple_regret": 0.02941583599999964,
+          "decision_latency_seconds": 0.24037619998853188
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 2.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_D",
+          "revealed_target": 3.138800177,
+          "best_so_far": 3.138800177,
+          "simple_regret": 0.0,
+          "decision_latency_seconds": 0.2298575000022538
+        }
+      ],
+      "best_so_far": 3.138800177,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.0,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.4702336999907857,
+      "p50_decision_latency_seconds": 0.23511684999539284,
+      "p95_decision_latency_seconds": 0.23985026498921797
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 42,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_P",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 2.7,
+            "target_porosity_pct": 39.44,
+            "roll_gap_um": 495.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_P",
+          "revealed_target": 2.655952298,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.23786949999339413
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_145_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 473.0,
+            "number_of_passes": 3.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_145_M",
+          "revealed_target": 2.891999817,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.29014029999962077
+        }
+      ],
+      "best_so_far": 3.028514874,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.11028530299999995,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.5280097999930149,
+      "p50_decision_latency_seconds": 0.26400489999650745,
+      "p95_decision_latency_seconds": 0.28752675999930943
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 43,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_L_145_P",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 122.48,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 2.7,
+            "target_porosity_pct": 39.44,
+            "roll_gap_um": 460.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_L_145_P",
+          "revealed_target": 2.697639911,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.18771129999367986
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_L_145_D",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 122.48,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 3.2,
+            "target_porosity_pct": 28.22,
+            "roll_gap_um": 446.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_L_145_D",
+          "revealed_target": 3.087865902,
+          "best_so_far": 3.087865902,
+          "simple_regret": 0.05093427499999992,
+          "decision_latency_seconds": 0.4549854999931995
+        }
+      ],
+      "best_so_far": 3.087865902,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.05093427499999992,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.6426967999868793,
+      "p50_decision_latency_seconds": 0.32134839999343967,
+      "p95_decision_latency_seconds": 0.4416217899932235
+    },
+    {
+      "status": "EVALUATED",
+      "target": "calendered_density_g_cm3",
+      "stage": "CALENDERING",
+      "seed": 44,
+      "strategy": "thompson",
+      "trajectory": [
+        {
+          "decision": 1,
+          "proposal_recipe_id": "NEX_CAT_240_L_145_M",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 122.48,
+            "roll_temperature_c": 145.0,
+            "target_density_g_cm3": 2.95,
+            "target_porosity_pct": 33.83,
+            "roll_gap_um": 450.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_L_145_M",
+          "revealed_target": 2.884456,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.21867600000405218
+        },
+        {
+          "decision": 2,
+          "proposal_recipe_id": "NEX_CAT_240_H_85_P",
+          "proposal_controls": {
+            "target_coating_weight_gsm": 182.73,
+            "roll_temperature_c": 85.0,
+            "target_density_g_cm3": 2.7,
+            "target_porosity_pct": 39.44,
+            "roll_gap_um": 495.0,
+            "number_of_passes": 1.0
+          },
+          "revealed_recipe_id": "NEX_CAT_240_H_85_P",
+          "revealed_target": 2.655952298,
+          "best_so_far": 3.028514874,
+          "simple_regret": 0.11028530299999995,
+          "decision_latency_seconds": 0.37408680000226013
+        }
+      ],
+      "best_so_far": 3.028514874,
+      "oracle_best": 3.138800177,
+      "simple_regret": 0.11028530299999995,
+      "remaining_hidden": 13,
+      "process_decisions": 2,
+      "total_decision_latency_seconds": 0.5927628000063123,
+      "p50_decision_latency_seconds": 0.29638140000315616,
+      "p95_decision_latency_seconds": 0.36631626000234974
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "dataset_id": "naion_hte",
+  "replays": [
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "random",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "random",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "random",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "greedy",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "greedy",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "greedy",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "gp_ucb",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "gp_ucb",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "gp_ucb",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "noisy_expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "noisy_expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "noisy_expected_improvement",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "thompson",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "thompson",
+      "reason": "no audited recipe-level replay target"
+    },
+    {
+      "status": "NOT_EVALUATED",
+      "strategy": "thompson",
+      "reason": "no audited recipe-level replay target"
+    }
+  ]
+}
