@@ -64,7 +64,15 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
         model = TreeEnsembleBaseline(random_state=seed).fit(X[train], y[train])
         calibration_mean, _ = model.predict_distribution(X[calibration])
         test_mean, _ = model.predict_distribution(X[test])
-        lower, upper = conformal_interval(test_mean, y[calibration] - calibration_mean)
+        calibration_residuals = y[calibration] - calibration_mean
+        intervals = {}
+        for coverage in (0.5, 0.8, 0.9, 0.95):
+            lower, upper = conformal_interval(test_mean, calibration_residuals, coverage)
+            intervals[str(int(coverage * 100))] = {
+                "nominal_coverage": coverage,
+                "empirical_coverage": float(np.mean((y[test] >= lower) & (y[test] <= upper))),
+                "mean_interval_width": float(np.mean(upper - lower)),
+            }
         baselines = [{"model": "ExtraTreesRegressor", "metrics": _metrics(y[test], test_mean)}]
         forest_mean, _ = TreeEnsembleBaseline("random_forest", random_state=seed).fit(X[train], y[train]).predict_distribution(X[test])
         baselines.append({"model": "RandomForestRegressor", "metrics": _metrics(y[test], forest_mean)})
@@ -75,7 +83,8 @@ def _grouped_prediction(adapter, *, seed: int) -> list[dict[str, object]]:
             "target": target, "status": "EVALUATED", "model": "ExtraTreesRegressor", "split": "grouped holdout with disjoint grouped calibration",
             "rows": len(X), "groups": len(set(groups)), "train_rows": len(train), "calibration_rows": len(calibration), "test_rows": len(test),
             "metrics": _metrics(y[test], test_mean), "baselines": baselines,
-            "interval": {"nominal_coverage": 0.9, "empirical_coverage": float(np.mean((y[test] >= lower) & (y[test] <= upper))), "calibration_residual_count": len(calibration)},
+            "interval": {**intervals["90"], "calibration_residual_count": len(calibration)},
+            "intervals": intervals,
         })
     return reports
 
@@ -287,7 +296,7 @@ def main() -> None:
         prediction_report = {"dataset_id": dataset_id, "evidence_kind": adapter.metadata().evidence_kind, "reports": predictions}
         (root / "prediction" / f"{dataset_id}.json").write_text(json.dumps(prediction_report, indent=2), encoding="utf-8")
         prediction_artifacts.append(prediction_report)
-        (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval")} for item in predictions]}, indent=2), encoding="utf-8")
+        (root / "calibration" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "reports": [{"target": item["target"], "status": item["status"], "interval": item.get("interval"), "intervals": item.get("intervals")} for item in predictions]}, indent=2), encoding="utf-8")
         ablation = _ultrasound_ablation(adapter, seed=args.seed)
         (root / "multimodal_ablations" / f"{dataset_id}.json").write_text(json.dumps(ablation, indent=2), encoding="utf-8")
         (root / "missing_modality" / f"{dataset_id}.json").write_text(json.dumps({"dataset_id": dataset_id, "status": ablation["status"], "policy": "An unavailable modality is omitted, never zero-filled.", "process_only_reference": next((item for item in ablation.get("reports", []) if item["mode"] == "process_only"), None)}, indent=2), encoding="utf-8")
