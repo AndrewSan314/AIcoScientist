@@ -678,65 +678,12 @@ def main() -> None:
     with open(out_dir / "surrogate_artifacts_manifest.json", "w", encoding="utf-8") as f:
         json.dump(surrogate_manifest, f, indent=2)
 
-    engine_path_audit = [
-        {
-            "policy": "AICOSCIENTIST_PROCESS_SURROGATE",
-            "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
-            "uses_battery_process_run": True,
-            "uses_information_horizon": True,
-            "uses_process_surrogate_sample": True,
-            "fits_process_surrogate": True,
-            "creates_surrogate_artifact": True,
-            "uses_process_optimization_coordinator": True,
-            "uses_direct_botorch_backend": False,
-        },
-        {
-            "policy": "DIRECT_BOTORCH_BASELINE",
-            "engine_path": "DIRECT_BOTORCH_BASELINE",
-            "uses_battery_process_run": False,
-            "uses_information_horizon": False,
-            "uses_process_surrogate_sample": False,
-            "fits_process_surrogate": False,
-            "creates_surrogate_artifact": False,
-            "uses_process_optimization_coordinator": False,
-            "uses_direct_botorch_backend": True,
-        },
-        {
-            "policy": "random",
-            "engine_path": "RANDOM_BASELINE",
-            "uses_battery_process_run": False,
-            "uses_information_horizon": False,
-            "uses_process_surrogate_sample": False,
-            "fits_process_surrogate": False,
-            "creates_surrogate_artifact": False,
-            "uses_process_optimization_coordinator": False,
-            "uses_direct_botorch_backend": False,
-        },
-        {
-            "policy": "aicointel_greedy",
-            "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
-            "uses_battery_process_run": True,
-            "uses_information_horizon": True,
-            "uses_process_surrogate_sample": True,
-            "fits_process_surrogate": True,
-            "creates_surrogate_artifact": True,
-            "uses_process_optimization_coordinator": True,
-            "uses_direct_botorch_backend": False,
-        },
-        {
-            "policy": "aicointel_ucb",
-            "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
-            "uses_battery_process_run": True,
-            "uses_information_horizon": True,
-            "uses_process_surrogate_sample": True,
-            "fits_process_surrogate": True,
-            "creates_surrogate_artifact": True,
-            "uses_process_optimization_coordinator": True,
-            "uses_direct_botorch_backend": False,
-        },
-    ]
+    engine_path_audit = unconstrained_results.get("engine_path_audit", [])
     with open(out_dir / "engine_path_audit.json", "w", encoding="utf-8") as f:
         json.dump(engine_path_audit, f, indent=2)
+
+    with open(out_dir / "execution_trace.json", "w", encoding="utf-8") as f:
+        json.dump(unconstrained_results.get("engine_execution_trace", {}), f, indent=2)
 
     summary_rows = []
     for s in unconstrained_results["summaries"]:

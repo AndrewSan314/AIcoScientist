@@ -47,19 +47,170 @@ logger = logging.getLogger(__name__)
 class EngineExecutionTrace:
     """Runtime execution counters for benchmark verification and audit."""
 
-    runs_loaded: int = 0
-    horizon_projections: int = 0
-    samples_created: int = 0
-    surrogates_fitted: int = 0
-    artifacts_created: int = 0
-    coordinator_calls: int = 0
-    proposals_generated: int = 0
-    oracle_reveals: int = 0
-    botorch_calls: int = 0
+    source_adapter_invocations: int = 0
+    battery_process_runs_seen: int = 0
+    recipe_selection_horizon_invocations: int = 0
+    process_surrogate_samples_created: int = 0
+    process_surrogate_fit_count: int = 0
+    surrogate_artifact_fingerprints: list[str] = field(default_factory=list)
+    coordinator_proposal_count: int = 0
+    optimizer_backend_type: str = "none"
+    oracle_reveal_count: int = 0
+    direct_botorch_calls: int = 0
     random_steps: int = 0
+    training_recipe_ids_by_step: list[list[str]] = field(default_factory=list)
+    candidate_ids_scored_by_step: list[list[str]] = field(default_factory=list)
+
+    @property
+    def runs_loaded(self) -> int:
+        return self.battery_process_runs_seen
+
+    @runs_loaded.setter
+    def runs_loaded(self, val: int) -> None:
+        self.battery_process_runs_seen = val
+
+    @property
+    def horizon_projections(self) -> int:
+        return self.recipe_selection_horizon_invocations
+
+    @horizon_projections.setter
+    def horizon_projections(self, val: int) -> None:
+        self.recipe_selection_horizon_invocations = val
+
+    @property
+    def samples_created(self) -> int:
+        return self.process_surrogate_samples_created
+
+    @samples_created.setter
+    def samples_created(self, val: int) -> None:
+        self.process_surrogate_samples_created = val
+
+    @property
+    def surrogates_fitted(self) -> int:
+        return self.process_surrogate_fit_count
+
+    @surrogates_fitted.setter
+    def surrogates_fitted(self, val: int) -> None:
+        self.process_surrogate_fit_count = val
+
+    @property
+    def artifacts_created(self) -> int:
+        return len(self.surrogate_artifact_fingerprints)
+
+    @property
+    def coordinator_calls(self) -> int:
+        return self.coordinator_proposal_count
+
+    @coordinator_calls.setter
+    def coordinator_calls(self, val: int) -> None:
+        self.coordinator_proposal_count = val
+
+    @property
+    def proposals_generated(self) -> int:
+        return sum(len(c) for c in self.candidate_ids_scored_by_step) or self.coordinator_proposal_count
+
+    @proposals_generated.setter
+    def proposals_generated(self, val: int) -> None:
+        pass
+
+    @property
+    def oracle_reveals(self) -> int:
+        return self.oracle_reveal_count
+
+    @oracle_reveals.setter
+    def oracle_reveals(self, val: int) -> None:
+        self.oracle_reveal_count = val
+
+    @property
+    def botorch_calls(self) -> int:
+        return self.direct_botorch_calls
+
+    @botorch_calls.setter
+    def botorch_calls(self, val: int) -> None:
+        self.direct_botorch_calls = val
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        return {
+            "source_adapter_invocations": self.source_adapter_invocations,
+            "battery_process_runs_seen": self.battery_process_runs_seen,
+            "recipe_selection_horizon_invocations": self.recipe_selection_horizon_invocations,
+            "process_surrogate_samples_created": self.process_surrogate_samples_created,
+            "process_surrogate_fit_count": self.process_surrogate_fit_count,
+            "surrogate_artifact_fingerprints": list(self.surrogate_artifact_fingerprints),
+            "coordinator_proposal_count": self.coordinator_proposal_count,
+            "optimizer_backend_type": self.optimizer_backend_type,
+            "oracle_reveal_count": self.oracle_reveal_count,
+            "direct_botorch_calls": self.direct_botorch_calls,
+            "random_steps": self.random_steps,
+            "training_recipe_ids_by_step": [list(ids) for ids in self.training_recipe_ids_by_step],
+            "candidate_ids_scored_by_step": [list(ids) for ids in self.candidate_ids_scored_by_step],
+            "runs_loaded": self.battery_process_runs_seen,
+            "horizon_projections": self.recipe_selection_horizon_invocations,
+            "samples_created": self.process_surrogate_samples_created,
+            "surrogates_fitted": self.process_surrogate_fit_count,
+            "artifacts_created": len(self.surrogate_artifact_fingerprints),
+            "coordinator_calls": self.coordinator_proposal_count,
+            "proposals_generated": sum(len(c) for c in self.candidate_ids_scored_by_step) or self.coordinator_proposal_count,
+            "oracle_reveals": self.oracle_reveal_count,
+            "botorch_calls": self.direct_botorch_calls,
+        }
+
+    def generate_audit(self, policy: str, engine_path: str) -> dict[str, Any]:
+        pol_upper = policy.upper()
+        is_full_engine = (
+            "PROCESS_SURROGATE" in pol_upper
+            or "PROCESS_ENGINE" in pol_upper
+            or pol_upper.startswith("AICOINTEL_")
+            or "COORDINATOR" in pol_upper
+        )
+        is_direct_botorch = "DIRECT_BOTORCH" in pol_upper
+        is_random = "RANDOM" in pol_upper
+
+        if is_full_engine:
+            verified = (
+                self.battery_process_runs_seen > 0
+                and self.recipe_selection_horizon_invocations > 0
+                and self.process_surrogate_fit_count > 0
+                and self.coordinator_proposal_count > 0
+                and self.oracle_reveal_count > 0
+                and self.direct_botorch_calls == 0
+                and len(self.surrogate_artifact_fingerprints) > 0
+            )
+            uses_direct_botorch_backend = False
+        elif is_direct_botorch:
+            verified = (
+                self.direct_botorch_calls > 0
+                and self.battery_process_runs_seen == 0
+                and self.process_surrogate_fit_count == 0
+                and self.coordinator_proposal_count == 0
+            )
+            uses_direct_botorch_backend = True
+        elif is_random:
+            verified = (
+                self.random_steps > 0
+                and self.battery_process_runs_seen == 0
+                and self.process_surrogate_fit_count == 0
+                and self.coordinator_proposal_count == 0
+            )
+            uses_direct_botorch_backend = False
+        else:
+            verified = False
+            uses_direct_botorch_backend = False
+
+        return {
+            "policy": policy,
+            "engine_path": engine_path,
+            "source_adapter_invocations": self.source_adapter_invocations,
+            "battery_process_runs_seen": self.battery_process_runs_seen,
+            "recipe_selection_horizon_invocations": self.recipe_selection_horizon_invocations,
+            "process_surrogate_fit_count": self.process_surrogate_fit_count,
+            "coordinator_proposal_count": self.coordinator_proposal_count,
+            "oracle_reveal_count": self.oracle_reveal_count,
+            "uses_direct_botorch_backend": uses_direct_botorch_backend,
+            "optimizer_backend_type": self.optimizer_backend_type,
+            "surrogate_artifact_fingerprints": list(self.surrogate_artifact_fingerprints),
+            "verified": verified,
+        }
 
 
 class FrozenSurrogateOptimizerBackend:
@@ -233,6 +384,7 @@ class RediscoveryTrajectory:
     final_simple_regret: float = 0.0
     final_cumulative_regret: float = 0.0
     engine_path: str = "DIRECT_BOTORCH_BASELINE"
+    execution_trace: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -249,6 +401,7 @@ class RediscoveryTrajectory:
             "experiments_to_top3": self.experiments_to_top3,
             "final_simple_regret": self.final_simple_regret,
             "final_cumulative_regret": self.final_cumulative_regret,
+            "execution_trace": dict(self.execution_trace),
             "steps": [asdict(s) for s in self.steps],
         }
 
@@ -654,10 +807,13 @@ class RediscoveryReplay:
 
     def _get_runs_by_recipe(self) -> dict[str, list[BatteryProcessRun]]:
         if self._runs_by_recipe is not None:
+            if self._runs_by_recipe and self._execution_trace.source_adapter_invocations == 0:
+                self._execution_trace.source_adapter_invocations = 1
             return self._runs_by_recipe
         if self._dataset_id == "drakopoulos_graphite":
             try:
                 from src.datasets.battery_process.drakopoulos_graphite import DrakopoulosGraphiteAdapter
+                self._execution_trace.source_adapter_invocations += 1
                 runs = DrakopoulosGraphiteAdapter().load_runs()
                 grouped: dict[str, list[BatteryProcessRun]] = {}
                 for r in runs:
@@ -718,17 +874,6 @@ class RediscoveryReplay:
         rng = np.random.default_rng(seed)
         sampled_initial = rng.choice(initial_eligible_pool, size=initial_size, replace=False).tolist()
 
-        # Reveal initial observations
-        initial_values: list[float] = []
-        for cid in sampled_initial:
-            rec = oracle.reveal(cid)
-            self._execution_trace.oracle_reveals += 1
-            initial_values.append(rec[oracle.target_column])
-
-        # Baseline best from initial design
-        best_so_far = min(initial_values) if self._minimize else max(initial_values)
-        initial_best_value = best_so_far
-
         canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
 
         strat_upper = strategy.upper()
@@ -751,6 +896,25 @@ class RediscoveryReplay:
             or strat_lower in ("direct_botorch_baseline", "direct_botorch")
         )
         is_random = (canonical_strat == "random" and not is_process_surrogate and not is_direct_botorch)
+
+        step_trace = EngineExecutionTrace()
+        step_trace.source_adapter_invocations = self._execution_trace.source_adapter_invocations
+        step_trace.optimizer_backend_type = (
+            "FrozenSurrogateOptimizerBackend" if is_process_surrogate
+            else ("BoTorchBackend" if is_direct_botorch else "RandomSampling")
+        )
+
+        # Reveal initial observations
+        initial_values: list[float] = []
+        for cid in sampled_initial:
+            rec = oracle.reveal(cid)
+            self._execution_trace.oracle_reveal_count += 1
+            step_trace.oracle_reveal_count += 1
+            initial_values.append(rec[oracle.target_column])
+
+        # Baseline best from initial design
+        best_so_far = min(initial_values) if self._minimize else max(initial_values)
+        initial_best_value = best_so_far
 
         if is_process_surrogate:
             traj_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
@@ -794,6 +958,7 @@ class RediscoveryReplay:
 
             if is_random:
                 self._execution_trace.random_steps += 1
+                step_trace.random_steps += 1
                 step_rng = np.random.default_rng(seed * 1000 + step)
                 visible_ids = visible[oracle.candidate_id_column].tolist()
                 selected_id = str(step_rng.choice(visible_ids))
@@ -806,6 +971,7 @@ class RediscoveryReplay:
             elif is_process_surrogate:
                 step_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
                 runs_dict = self._get_runs_by_recipe()
+                step_trace.source_adapter_invocations = max(step_trace.source_adapter_invocations, self._execution_trace.source_adapter_invocations)
 
                 is_recipe_sel = (
                     self._decision_stage in (DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION, "PRE_MANUFACTURING_RECIPE_SELECTION")
@@ -834,12 +1000,14 @@ class RediscoveryReplay:
                     g_runs = runs_dict.get(cid, [])
                     if g_runs:
                         self._execution_trace.runs_loaded += len(g_runs)
+                        step_trace.runs_loaded += len(g_runs)
                         for r in g_runs:
                             if is_recipe_sel:
                                 view = horizon.project_for_recipe_selection(r)
                             else:
                                 view = horizon.project(r)
                             self._execution_trace.horizon_projections += 1
+                            step_trace.horizon_projections += 1
                             ctrls = {
                                 c: float(view.controls[c].value if hasattr(view.controls[c], "value") else view.controls[c])
                                 for c in observable_ctrls
@@ -864,6 +1032,7 @@ class RediscoveryReplay:
                                 )
                             )
                             self._execution_trace.samples_created += 1
+                            step_trace.samples_created += 1
                     else:
                         ctrls = {c: float(row[c]) for c in observable_ctrls if c in row and pd.notna(row[c])}
                         val = float(row[oracle.target_column])
@@ -884,6 +1053,7 @@ class RediscoveryReplay:
                             )
                         )
                         self._execution_trace.samples_created += 1
+                        step_trace.samples_created += 1
 
                 schema = SurrogateInputSchema.from_training_samples(samples, declared_fidelities=["EXPERIMENTAL"])
                 preprocessor = TrainOnlyPreprocessor().fit(samples, schema)
@@ -891,6 +1061,7 @@ class RediscoveryReplay:
                 surrogate = ProcessSurrogate(model_type="gp", seed=seed * 1000 + step)
                 surrogate.fit(X_train, targets={oracle.target_column: np.array([s.targets[oracle.target_column] for s in samples])})
                 self._execution_trace.surrogates_fitted += 1
+                step_trace.surrogates_fitted += 1
 
                 split_fp = hashlib.sha256(f"split_{seed}_{step}".encode()).hexdigest()
                 artifact = SurrogateArtifact(
@@ -905,8 +1076,9 @@ class RediscoveryReplay:
                     training_config={"seed": seed * 1000 + step, "step": step},
                 )
                 artifact.verify_integrity()
-                self._execution_trace.artifacts_created += 1
                 surrogate_artifact_fp = artifact.artifact_fingerprint
+                step_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
+                self._execution_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
 
                 training_view_summary = {
                     "num_revealed_samples": len(samples),
@@ -944,6 +1116,12 @@ class RediscoveryReplay:
                 ])
 
                 self._execution_trace.coordinator_calls += 1
+                step_trace.coordinator_calls += 1
+                step_trace.training_recipe_ids_by_step.append([str(r) for r in revealed[oracle.candidate_id_column]])
+                self._execution_trace.training_recipe_ids_by_step.append([str(r) for r in revealed[oracle.candidate_id_column]])
+                step_trace.candidate_ids_scored_by_step.append([str(c) for c in visible[oracle.candidate_id_column]])
+                self._execution_trace.candidate_ids_scored_by_step.append([str(c) for c in visible[oracle.candidate_id_column]])
+
                 proposals = coordinator.propose_recipes(
                     observations=revealed,
                     space=space,
@@ -967,6 +1145,7 @@ class RediscoveryReplay:
                     hidden_rank = None
             else:
                 self._execution_trace.botorch_calls += 1
+                step_trace.botorch_calls += 1
                 step_engine_path = "DIRECT_BOTORCH_BASELINE"
                 horizon_str = "NONE (FLAT TABLE)"
                 training_view_summary = {"backend": "BoTorchBackend", "num_observations": len(revealed)}
@@ -1016,6 +1195,7 @@ class RediscoveryReplay:
             # Reveal selected candidate
             record = oracle.reveal(selected_id)
             self._execution_trace.oracle_reveals += 1
+            step_trace.oracle_reveals += 1
             revealed_val = float(record[oracle.target_column])
 
             is_hidden = (selected_id == hidden_best)
@@ -1058,6 +1238,7 @@ class RediscoveryReplay:
 
         trajectory.final_simple_regret = trajectory.steps[-1].simple_regret if trajectory.steps else 0.0
         trajectory.final_cumulative_regret = trajectory.steps[-1].cumulative_regret if trajectory.steps else 0.0
+        trajectory.execution_trace = step_trace.to_dict()
 
         return trajectory
 
@@ -1193,6 +1374,32 @@ def run_rediscovery_benchmark(
         initial_size=initial_size,
     )
 
+    policy_traces: dict[str, dict[str, Any]] = {}
+    engine_path_audit: list[dict[str, Any]] = []
+
+    for pol, trajs in all_trajectories.items():
+        combined_trace = EngineExecutionTrace()
+        engine_path = trajs[0].engine_path if trajs else "UNKNOWN"
+        for t in trajs:
+            t_trace = t.execution_trace
+            combined_trace.source_adapter_invocations = max(combined_trace.source_adapter_invocations, t_trace.get("source_adapter_invocations", 0))
+            combined_trace.battery_process_runs_seen += t_trace.get("battery_process_runs_seen", 0)
+            combined_trace.recipe_selection_horizon_invocations += t_trace.get("recipe_selection_horizon_invocations", 0)
+            combined_trace.process_surrogate_samples_created += t_trace.get("process_surrogate_samples_created", 0)
+            combined_trace.process_surrogate_fit_count += t_trace.get("process_surrogate_fit_count", 0)
+            combined_trace.coordinator_proposal_count += t_trace.get("coordinator_proposal_count", 0)
+            combined_trace.oracle_reveal_count += t_trace.get("oracle_reveal_count", 0)
+            combined_trace.direct_botorch_calls += t_trace.get("direct_botorch_calls", 0)
+            combined_trace.random_steps += t_trace.get("random_steps", 0)
+            backend_type = t_trace.get("optimizer_backend_type", "none")
+            if backend_type != "none":
+                combined_trace.optimizer_backend_type = backend_type
+            combined_trace.surrogate_artifact_fingerprints.extend(t_trace.get("surrogate_artifact_fingerprints", []))
+            combined_trace.training_recipe_ids_by_step.extend(t_trace.get("training_recipe_ids_by_step", []))
+            combined_trace.candidate_ids_scored_by_step.extend(t_trace.get("candidate_ids_scored_by_step", []))
+        policy_traces[pol] = combined_trace.to_dict()
+        engine_path_audit.append(combined_trace.generate_audit(pol, engine_path))
+
     return {
         "benchmark_task": benchmark_task,
         "candidate_id_column": candidate_id_column,
@@ -1204,6 +1411,8 @@ def run_rediscovery_benchmark(
         "seeds": list(seeds),
         "policies": list(policies),
         "engine_execution_trace": replay.execution_trace.to_dict(),
+        "policy_execution_traces": policy_traces,
+        "engine_path_audit": engine_path_audit,
         "analytic_hypergeometric": {
             "top1_hit_rate_by_step": analytic_top1,
             "top3_hit_rate_by_step": cond_analytic_top3,
