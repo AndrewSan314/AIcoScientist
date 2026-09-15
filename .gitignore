@@ -33,6 +33,7 @@ data/external/**/*.mat
 data/external/**/*.zip
 data/external/**/*.pkl
 data/external/aging_matrix_2025/
+data/external/Graphite-based electrodes for Li-ion batteries Formulation and manufacturing process optimization via machine learning/
 data/external/attia_2020/*
 !data/external/attia_2020/manifest.json
 *.mat

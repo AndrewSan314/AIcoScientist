@@ -18,7 +18,7 @@ target:
 
 optimization:
   candidate_id_column: "recipe_id"
-  candidate_pool_size: 13
+  candidate_pool_size: 12
   initial_design_size: 3
   budget_primary: 5
   max_steps: 10
@@ -44,8 +44,8 @@ optimization:
 mode_1_specification:
   mode: "SOURCE_OBSERVED_BEST_REDISCOVERY"
   status: "ACTIVE"
-  ground_truth_best_recipe_id: "protocol-d3602183e567"
-  ground_truth_best_source_case: "Case 56 (Calendered)"
+  ground_truth_best_recipe_id: "protocol-c1c280b7366f"
+  ground_truth_best_source_case: "Case 56 (Uncalendered)"
   ground_truth_best_cells:
     - "ASC-52"
     - "ASC-53"
@@ -54,8 +54,8 @@ mode_1_specification:
   ground_truth_best_std_mah_g: 1.76
   runner_up_recipe_id: "protocol-fd150c39c22f"
   runner_up_capacity_mah_g: 392.51
-  third_place_recipe_id: "protocol-04acc12b3f71"
-  third_place_capacity_mah_g: 384.31
+  third_place_recipe_id: "protocol-0d38055e23a7"
+  third_place_capacity_mah_g: 354.54
 
 mode_2_specification:
   mode: "PUBLISHED_VALIDATED_DESIGN_REDISCOVERY"
@@ -67,7 +67,11 @@ task_2_specification:
   task_name: "HIGHER_LOADING_MEASURED_D30_PROXY"
   display_name: "Higher-Loading Measured-D30 Proxy Subset"
   proxy_filter: "coating_gap_um >= 150.0 (observed mass ~11-17 mg)"
+  candidate_pool_size: 9
+  ground_truth_best_recipe_id: "protocol-0d38055e23a7"
+  ground_truth_best_capacity_mah_g: 354.54
   published_high_loading_rediscovery_status: "NOT_EVALUABLE_WITH_AVAILABLE_D30"
   rationale: "Exact published >=25 mg high-loading target is not evaluable with available data because all 300 um cells in ASC lack usable cycle 30 measurements. Benchmark evaluates the highest-loading subset with valid D30 data as a measured proxy."
+
 
 

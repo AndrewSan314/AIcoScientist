@@ -114,3 +114,28 @@ def test_rediscovery_replay_with_explicit_runs_by_recipe() -> None:
     assert trace.coordinator_calls == 2
     assert trace.proposals_generated >= 2
     assert trace.oracle_reveals == 4  # 2 initial + 2 sequential steps
+
+
+def test_missing_battery_process_run_fails_closed_in_full_engine() -> None:
+    """Verify that physical historical full engine strictly fails closed if source runs are missing."""
+    pool = pd.DataFrame([
+        {"recipe_id": "r1", "coating_gap_um": 100.0, "coating_speed_m_per_min": 0.1, "discharge_specific_capacity_cycle30_mah_g": 225.0},
+        {"recipe_id": "r2", "coating_gap_um": 150.0, "coating_speed_m_per_min": 0.2, "discharge_specific_capacity_cycle30_mah_g": 345.0},
+        {"recipe_id": "r3", "coating_gap_um": 200.0, "coating_speed_m_per_min": 0.3, "discharge_specific_capacity_cycle30_mah_g": 405.0},
+    ])
+    # Empty runs mapping with allow_flat_fallback=False
+    replay = RediscoveryReplay(
+        candidate_pool=pool,
+        candidate_id_column="recipe_id",
+        target_column="discharge_specific_capacity_cycle30_mah_g",
+        control_columns=["coating_gap_um", "coating_speed_m_per_min"],
+        runs_by_recipe={},  # Missing runs for all recipes
+        allow_flat_fallback=False,
+    )
+    with pytest.raises(RuntimeError, match="SOURCE_BATTERY_PROCESS_RUN_NOT_FOUND"):
+        replay.run(
+            strategy="AICOSCIENTIST_PROCESS_SURROGATE",
+            seed=42,
+            initial_size=2,
+            max_steps=1,
+        )

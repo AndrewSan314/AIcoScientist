@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Run offline closed-loop rediscovery benchmark on Drakopoulos graphite dataset (v3).
+"""Run offline closed-loop rediscovery benchmark on Drakopoulos graphite dataset (v4).
 
 Executes the hardened scientific rediscovery protocol across:
-- Task 1: UNCONSTRAINED_D30 rediscovery (13 strictly complete recipes)
-- Task 2: HIGH_LOADING_D30 rediscovery (coating gap >= 150 um, mass >= 11 mg)
+- Task 1: UNCONSTRAINED_D30 rediscovery (12 strictly complete recipes)
+- Task 2: HIGH_LOADING_D30 rediscovery (coating gap >= 150 um, observed mass ~11-17 mg, 9 strictly complete recipes)
 
 Enforces:
 - Survivorship bias elimination via STRICT_COMPLETE_RECIPE admission
@@ -348,13 +348,13 @@ def write_comprehensive_v3_report(
 
 {claim_text}
 
-- **Unconstrained Rediscovery (Task 1, 13 Strictly Complete Recipes):**
+- **Unconstrained Rediscovery (Task 1, {len(eligible_pool)} Strictly Complete Recipes):**
   - **AIcoScientist Full Process Engine:** **{ps_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {ps_unc['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {ps_unc['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {ps_unc['mean_simple_regret']:.2f} mAh/g)
   - **Direct BoTorch Baseline:** **{botorch_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {botorch_unc['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {botorch_unc['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {botorch_unc['mean_simple_regret']:.2f} mAh/g)
   - **Empirical Random Selection:** **{rand_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (mean simple regret = {rand_unc['mean_simple_regret']:.2f} mAh/g)
   - **Exact Hypergeometric Random Baseline:** **{rand_unc_h5 * 100:.1f}% Hit@5** (exact analytical closed-form: $5 / ({len(eligible_pool)} - 3) = {rand_unc_h5 * 100:.1f}\%$)
 
-- **Higher-Loading Measured-$D_{{30}}$ Proxy Subset (Task 2, Gap $\\ge 150\\ \\mu\\text{{m}}$, 10 Strictly Complete Recipes):**
+- **Higher-Loading Measured-$D_{{30}}$ Proxy Subset (Task 2, Gap $\\ge 150\\ \\mu\\text{{m}}$, {len(hl_pool)} Strictly Complete Recipes):**
   - **AIcoScientist Full Process Engine:** **{ps_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {ps_hl['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {ps_hl['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {ps_hl['mean_simple_regret']:.2f} mAh/g)
   - **Direct BoTorch Baseline:** **{botorch_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {botorch_hl['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {botorch_hl['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {botorch_hl['mean_simple_regret']:.2f} mAh/g)
   - **Empirical Random Selection:** **{rand_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (mean simple regret = {rand_hl['mean_simple_regret']:.2f} mAh/g)
@@ -368,8 +368,8 @@ def write_comprehensive_v3_report(
 The v4 hardening pass provides complete end-to-end scientific and provenance verification:
 
 1. **Measured-Zero $D_{{30}}$ Preservation:**
-   - In previous iterations, raw $D_{{30}} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts.
-   - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **13 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **13 partial recipes** (`PARTIAL_D30`), and **6 unmeasured recipes** (`NO_D30`, including all 300 $\\mu$m gap cells).
+   - In previous iterations, raw $D_{{30}} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts. The parser now preserves a measured D30 value of zero as a numeric outcome rather than converting it to missing. No measured-zero D30 cells were present in the currently audited source subset.
+   - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **{len(eligible_pool)} strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **{sum(1 for g in all_groups if g.recipe_eligibility_status == "PARTIAL_D30")} partial recipes** (`PARTIAL_D30`), and **{sum(1 for g in all_groups if g.recipe_eligibility_status == "NO_D30")} unmeasured recipes** (`NO_D30`, including all 300 $\\mu$m gap cells).
 
 2. **Genuine Full Process Engine Execution:**
    - The benchmark routes strictly through: `DrakopoulosGraphiteAdapter` $\\to$ `BatteryProcessRun` $\\to$ `InformationHorizon` (`PRE_MANUFACTURING_RECIPE_SELECTION`) $\\to$ `ProcessSurrogateSample` $\\to$ `TrainOnlyPreprocessor` $\\to$ `ProcessSurrogate` (GP) $\\to$ `SurrogateArtifact` $\\to$ `FrozenSurrogateOptimizerBackend` $\\to$ `ProcessOptimizationCoordinator`.
@@ -396,7 +396,7 @@ The v4 hardening pass provides complete end-to-end scientific and provenance ver
 
 ## 2. Benchmark Results Table
 
-### Task 1: Unconstrained $D_{{30}}$ Rediscovery (13 Strictly Complete Recipes)
+### Task 1: Unconstrained $D_{{30}}$ Rediscovery ({len(eligible_pool)} Strictly Complete Recipes)
 
 | Policy | Engine Path | Hit@1 | Hit@3 | Hit@5 | Top-3 Hit@5 | Simple Regret (mAh/g) | Cum. Regret (mAh/g) | Mean Steps to Best |
 |---|---|---|---|---|---|---|---|---|
@@ -420,7 +420,7 @@ The v4 hardening pass provides complete end-to-end scientific and provenance ver
     report += f"| `Hypergeometric Random (Analytic)` | `CLOSED_FORM` | {ah1} | {ah3} | {ah5} | {at3} | Reference Baseline | Reference Baseline | Closed-Form |\n"
 
     report += f"""
-### Task 2: Higher-Loading Measured-$D_{{30}}$ Proxy Subset Rediscovery (Gap $\\ge 150\\ \\mu\\text{{m}}$, 10 Strictly Complete Recipes)
+### Task 2: Higher-Loading Measured-$D_{{30}}$ Proxy Subset Rediscovery (Gap $\\ge 150\\ \\mu\\text{{m}}$, {len(hl_pool)} Strictly Complete Recipes)
 
 | Policy | Engine Path | Hit@1 | Hit@3 | Hit@5 | Top-3 Hit@5 | Simple Regret (mAh/g) | Cum. Regret (mAh/g) | Mean Steps to Best |
 |---|---|---|---|---|---|---|---|---|
@@ -469,6 +469,8 @@ All figures have been generated exclusively from v4 benchmark artifacts in `figu
   No ARTISTIC/LAMMPS simulation was launched. No slurry, drying, or calendering simulation was executed.
 - **Firewall Guarantee:**
   Target values were strictly firewalled behind `BlindExperimentalOracle`.
+- **Process Optimization Scope:**
+  This benchmark validates complete-recipe process optimization. It does not by itself validate adaptive stage-by-stage control conditioned on newly measured intermediate process states.
 - **Higher-Loading Proxy Semantics:**
   published_high_loading_rediscovery_status = NOT_EVALUABLE_WITH_AVAILABLE_D30
 """
@@ -721,7 +723,7 @@ def main() -> None:
                     "model_state_fingerprint": tv.get("model_state_fingerprint"),
                     "surrogate_artifact_fingerprint": step_rec["surrogate_artifact_fingerprint"],
                     "uncertainty_kind": tv.get("uncertainty_kind", "gaussian_process"),
-                    "acquisition_strategy": tv.get("acquisition_strategy", "noisy_expected_improvement"),
+                    "acquisition_strategy": tv.get("acquisition_strategy", "expected_improvement"),
                 }
                 surrogate_manifest.append(manifest_entry)
     with open(surrogate_dir / "surrogate_manifest.json", "w", encoding="utf-8") as f:
@@ -846,6 +848,7 @@ def main() -> None:
             "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",
             "Published Alchemite design represents an aggregate comparative set in Table S6 rather than an isolated recoverable single-cell identifier.",
             "Exact published >=25 mg loading objective is not evaluable due to absence of cycle 30 measurements for 300 um cells.",
+            "This benchmark validates complete-recipe process optimization. It does not by itself validate adaptive stage-by-stage control conditioned on newly measured intermediate process states.",
         ],
     }
     with open(out_dir / "slide_summary.json", "w", encoding="utf-8") as f:

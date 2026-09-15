@@ -13,13 +13,13 @@
 
 In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, the AIcoScientist full process engine recovered the source-observed highest-D30 recipe more often within five additional experiments than expected under random selection.
 
-- **Unconstrained Rediscovery (Task 1, 13 Strictly Complete Recipes):**
+- **Unconstrained Rediscovery (Task 1, 12 Strictly Complete Recipes):**
   - **AIcoScientist Full Process Engine:** **100.0% Hit@5** (Hit@1 = 30.0%, Hit@3 = 50.0%, mean simple regret = 0.00 mAh/g)
   - **Direct BoTorch Baseline:** **30.0% Hit@5** (Hit@1 = 20.0%, Hit@3 = 30.0%, mean simple regret = 10.61 mAh/g)
   - **Empirical Random Selection:** **30.0% Hit@5** (mean simple regret = 14.41 mAh/g)
   - **Exact Hypergeometric Random Baseline:** **55.6% Hit@5** (exact analytical closed-form: $5 / (12 - 3) = 55.6\%$)
 
-- **Higher-Loading Measured-$D_{30}$ Proxy Subset (Task 2, Gap $\ge 150\ \mu\text{m}$, 10 Strictly Complete Recipes):**
+- **Higher-Loading Measured-$D_{30}$ Proxy Subset (Task 2, Gap $\ge 150\ \mu\text{m}$, 9 Strictly Complete Recipes):**
   - **AIcoScientist Full Process Engine:** **100.0% Hit@5** (Hit@1 = 0.0%, Hit@3 = 90.0%, mean simple regret = 0.00 mAh/g)
   - **Direct BoTorch Baseline:** **100.0% Hit@5** (Hit@1 = 20.0%, Hit@3 = 90.0%, mean simple regret = 0.00 mAh/g)
   - **Empirical Random Selection:** **60.0% Hit@5** (mean simple regret = 15.26 mAh/g)
@@ -33,8 +33,8 @@ In source-backed offline replay on strictly complete Drakopoulos manufacturing r
 The v4 hardening pass provides complete end-to-end scientific and provenance verification:
 
 1. **Measured-Zero $D_{30}$ Preservation:**
-   - In previous iterations, raw $D_{30} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts.
-   - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **13 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **13 partial recipes** (`PARTIAL_D30`), and **6 unmeasured recipes** (`NO_D30`, including all 300 $\mu$m gap cells).
+   - In previous iterations, raw $D_{30} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts. The parser now preserves a measured D30 value of zero as a numeric outcome rather than converting it to missing. No measured-zero D30 cells were present in the currently audited source subset.
+   - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **12 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **14 partial recipes** (`PARTIAL_D30`), and **6 unmeasured recipes** (`NO_D30`, including all 300 $\mu$m gap cells).
 
 2. **Genuine Full Process Engine Execution:**
    - The benchmark routes strictly through: `DrakopoulosGraphiteAdapter` $\to$ `BatteryProcessRun` $\to$ `InformationHorizon` (`PRE_MANUFACTURING_RECIPE_SELECTION`) $\to$ `ProcessSurrogateSample` $\to$ `TrainOnlyPreprocessor` $\to$ `ProcessSurrogate` (GP) $\to$ `SurrogateArtifact` $\to$ `FrozenSurrogateOptimizerBackend` $\to$ `ProcessOptimizationCoordinator`.
@@ -61,7 +61,7 @@ The v4 hardening pass provides complete end-to-end scientific and provenance ver
 
 ## 2. Benchmark Results Table
 
-### Task 1: Unconstrained $D_{30}$ Rediscovery (13 Strictly Complete Recipes)
+### Task 1: Unconstrained $D_{30}$ Rediscovery (12 Strictly Complete Recipes)
 
 | Policy | Engine Path | Hit@1 | Hit@3 | Hit@5 | Top-3 Hit@5 | Simple Regret (mAh/g) | Cum. Regret (mAh/g) | Mean Steps to Best |
 |---|---|---|---|---|---|---|---|---|
@@ -72,7 +72,7 @@ The v4 hardening pass provides complete end-to-end scientific and provenance ver
 | `aicointel_ucb` | `AICOSCIENTIST_PROCESS_SURROGATE` | 30.0% | 50.0% | 100.0% | 100.0% | 0.00 ± 0.00 | 97.33 ± 69.96 | 2.80 |
 | `Hypergeometric Random (Analytic)` | `CLOSED_FORM` | 11.1% | 33.3% | 55.6% | 89.3% | Reference Baseline | Reference Baseline | Closed-Form |
 
-### Task 2: Higher-Loading Measured-$D_{30}$ Proxy Subset Rediscovery (Gap $\ge 150\ \mu\text{m}$, 10 Strictly Complete Recipes)
+### Task 2: Higher-Loading Measured-$D_{30}$ Proxy Subset Rediscovery (Gap $\ge 150\ \mu\text{m}$, 9 Strictly Complete Recipes)
 
 | Policy | Engine Path | Hit@1 | Hit@3 | Hit@5 | Top-3 Hit@5 | Simple Regret (mAh/g) | Cum. Regret (mAh/g) | Mean Steps to Best |
 |---|---|---|---|---|---|---|---|---|
@@ -108,5 +108,7 @@ All figures have been generated exclusively from v4 benchmark artifacts in `figu
   No ARTISTIC/LAMMPS simulation was launched. No slurry, drying, or calendering simulation was executed.
 - **Firewall Guarantee:**
   Target values were strictly firewalled behind `BlindExperimentalOracle`.
+- **Process Optimization Scope:**
+  This benchmark validates complete-recipe process optimization. It does not by itself validate adaptive stage-by-stage control conditioned on newly measured intermediate process states.
 - **Higher-Loading Proxy Semantics:**
   published_high_loading_rediscovery_status = NOT_EVALUABLE_WITH_AVAILABLE_D30

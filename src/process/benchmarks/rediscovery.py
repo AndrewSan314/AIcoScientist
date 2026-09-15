@@ -168,7 +168,8 @@ class EngineExecutionTrace:
 
         if is_full_engine:
             verified = (
-                self.battery_process_runs_seen > 0
+                self.source_adapter_invocations > 0
+                and self.battery_process_runs_seen > 0
                 and self.recipe_selection_horizon_invocations > 0
                 and self.process_surrogate_fit_count > 0
                 and self.coordinator_proposal_count > 0
@@ -179,18 +180,27 @@ class EngineExecutionTrace:
             uses_direct_botorch_backend = False
         elif is_direct_botorch:
             verified = (
-                self.direct_botorch_calls > 0
+                self.source_adapter_invocations == 0
                 and self.battery_process_runs_seen == 0
+                and self.recipe_selection_horizon_invocations == 0
                 and self.process_surrogate_fit_count == 0
                 and self.coordinator_proposal_count == 0
+                and self.direct_botorch_calls > 0
+                and self.oracle_reveal_count > 0
+                and len(self.surrogate_artifact_fingerprints) == 0
             )
             uses_direct_botorch_backend = True
         elif is_random:
             verified = (
-                self.random_steps > 0
+                self.source_adapter_invocations == 0
                 and self.battery_process_runs_seen == 0
+                and self.recipe_selection_horizon_invocations == 0
                 and self.process_surrogate_fit_count == 0
                 and self.coordinator_proposal_count == 0
+                and self.direct_botorch_calls == 0
+                and self.random_steps > 0
+                and self.oracle_reveal_count > 0
+                and len(self.surrogate_artifact_fingerprints) == 0
             )
             uses_direct_botorch_backend = False
         else:
@@ -206,6 +216,8 @@ class EngineExecutionTrace:
             "process_surrogate_fit_count": self.process_surrogate_fit_count,
             "coordinator_proposal_count": self.coordinator_proposal_count,
             "oracle_reveal_count": self.oracle_reveal_count,
+            "direct_botorch_calls": self.direct_botorch_calls,
+            "random_steps": self.random_steps,
             "uses_direct_botorch_backend": uses_direct_botorch_backend,
             "optimizer_backend_type": self.optimizer_backend_type,
             "surrogate_artifact_fingerprints": list(self.surrogate_artifact_fingerprints),
@@ -246,7 +258,7 @@ class FrozenSurrogateOptimizerBackend:
         candidate_id_column: str | None = None,
         n: int = 1,
         seed: int | None = None,
-        strategy: str = "noisy_expected_improvement",
+        strategy: str = "expected_improvement",
         beta: float | None = None,
         **kwargs: Any,
     ) -> list[CandidateProposal]:
@@ -288,8 +300,8 @@ class FrozenSurrogateOptimizerBackend:
             elif strat_lower == "random":
                 score = 0.0
                 acq_name = "random"
-            else:  # expected improvement / noisy_expected_improvement
-                acq_name = strat_lower
+            else:  # Standard analytic Expected Improvement
+                acq_name = "expected_improvement"
                 if best_so_far is None:
                     score = -m if minimize else m
                 else:
@@ -314,7 +326,7 @@ class FrozenSurrogateOptimizerBackend:
                     design_variables=candidate_controls[idx],
                     predicted_mean=float(means[idx]),
                     predicted_std=float(stds[idx]),
-                    acquisition_name=strat_lower,
+                    acquisition_name=acq_name,
                     acquisition_value=float(scores[idx]),
                     backend_name=self.name,
                     backend_version=self.version,
@@ -324,7 +336,7 @@ class FrozenSurrogateOptimizerBackend:
                         "context_fingerprint": self.context.context_fingerprint,
                         "context_stage": self.context.stage.value,
                         "objective_sense": "minimize" if minimize else "maximize",
-                        "strategy": strat_lower,
+                        "strategy": acq_name,
                     },
                 )
             )
@@ -778,10 +790,11 @@ class RediscoveryReplay:
         coordinator: Any | None = None,
         top_k_targets: int = 3,
         decision_stage: ProcessStage | DecisionHorizon | str = DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION,
-        dataset_id: str = "drakopoulos_graphite",
+        dataset_id: str = "synthetic",
         dataset_fingerprint: str | None = None,
         benchmark_task: str = "UNCONSTRAINED_D30",
         runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
+        allow_flat_fallback: bool | None = None,
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
@@ -796,6 +809,14 @@ class RediscoveryReplay:
         self._decision_stage = decision_stage
         self._dataset_id = dataset_id
         self._benchmark_task = benchmark_task
+        if allow_flat_fallback is not None:
+            self._allow_flat_fallback = allow_flat_fallback
+        elif dataset_id == "drakopoulos_graphite":
+            cids = set(self._candidate_pool[self._candidate_id_column].astype(str))
+            has_drakopoulos_ids = any(cid.startswith("protocol-") for cid in cids)
+            self._allow_flat_fallback = not has_drakopoulos_ids
+        else:
+            self._allow_flat_fallback = True
         self._runs_by_recipe = dict(runs_by_recipe) if runs_by_recipe is not None else None
         self._execution_trace = EngineExecutionTrace()
         if dataset_fingerprint is None:
@@ -882,23 +903,28 @@ class RediscoveryReplay:
         strat_upper = strategy.upper()
         strat_lower = strategy.lower()
 
-        is_process_surrogate = (
-            strat_upper in (
-                "AICOSCIENTIST_PROCESS_SURROGATE",
-                "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
-                "AICOSCIENTIST_PROCESS_ENGINE",
-                "AICOSCIENTIST_FULL_PROCESS_ENGINE",
-                "PRODUCTION_COORDINATOR",
-                "COORDINATOR",
-            )
-            or strat_lower.startswith("aicointel_")
-            or self._coordinator is not None
-        )
         is_direct_botorch = (
             strat_upper.startswith("DIRECT_BOTORCH")
             or strat_lower in ("direct_botorch_baseline", "direct_botorch")
         )
-        is_random = (canonical_strat == "random" and not is_process_surrogate and not is_direct_botorch)
+        is_random = (canonical_strat == "random" and not is_direct_botorch)
+        is_process_surrogate = (
+            not is_random
+            and not is_direct_botorch
+            and (
+                strat_upper in (
+                    "AICOSCIENTIST_PROCESS_SURROGATE",
+                    "AICOSCIENTIST_PROCESS_SURROGATE_EI",
+                    "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+                    "AICOSCIENTIST_PROCESS_ENGINE",
+                    "AICOSCIENTIST_FULL_PROCESS_ENGINE",
+                    "PRODUCTION_COORDINATOR",
+                    "COORDINATOR",
+                )
+                or strat_lower.startswith("aicointel_")
+                or self._coordinator is not None
+            )
+        )
 
         step_trace = EngineExecutionTrace()
         step_trace.source_adapter_invocations = self._execution_trace.source_adapter_invocations
@@ -1037,6 +1063,10 @@ class RediscoveryReplay:
                             self._execution_trace.samples_created += 1
                             step_trace.samples_created += 1
                     else:
+                        if not self._allow_flat_fallback:
+                            raise RuntimeError(
+                                f"SOURCE_BATTERY_PROCESS_RUN_NOT_FOUND: recipe {cid} has no source BatteryProcessRun objects"
+                            )
                         ctrls = {c: float(row[c]) for c in observable_ctrls if c in row and pd.notna(row[c])}
                         val = float(row[oracle.target_column])
                         sample_stage = ProcessStage.FORMULATION if is_recipe_sel else stage_enum
@@ -1083,21 +1113,25 @@ class RediscoveryReplay:
                 step_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
                 self._execution_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
 
-                coord_strat = "noisy_expected_improvement"
+                coord_strat = "expected_improvement"
                 if strat_lower.startswith("aicointel_"):
-                    coord_strat = strat_lower.replace("aicointel_", "")
-                    if coord_strat == "nei":
-                        coord_strat = "noisy_expected_improvement"
-                    elif coord_strat == "ei":
+                    sub = strat_lower.replace("aicointel_", "")
+                    if sub in ("ei", "expected_improvement"):
                         coord_strat = "expected_improvement"
-                    elif coord_strat == "ucb":
+                    elif sub in ("ucb", "gp_ucb"):
                         coord_strat = "gp_ucb"
-                elif strat_upper.endswith("_NEI"):
-                    coord_strat = "noisy_expected_improvement"
+                    elif sub == "greedy":
+                        coord_strat = "greedy"
+                    elif sub == "random":
+                        coord_strat = "random"
                 elif strat_upper.endswith("_UCB"):
                     coord_strat = "gp_ucb"
                 elif strat_upper.endswith("_GREEDY"):
                     coord_strat = "greedy"
+                elif strat_upper.endswith("_EI") or strat_upper.endswith("_NEI"):
+                    coord_strat = "expected_improvement"
+                else:
+                    coord_strat = "expected_improvement"
 
                 training_view_summary = {
                     "num_revealed_samples": len(samples),
@@ -1123,7 +1157,7 @@ class RediscoveryReplay:
                     "model_state_fingerprint": surrogate.state_fingerprint(),
                     "surrogate_artifact_fingerprint": surrogate_artifact_fp,
                     "uncertainty_kind": surrogate.uncertainty_kind,
-                    "acquisition_strategy": coord_strat,
+                    "acquisition_strategy": "EXPECTED_IMPROVEMENT" if coord_strat == "expected_improvement" else coord_strat.upper(),
                 }
 
                 context = SurrogateDecisionContext(stage=samples[0].stage, fidelity="EXPERIMENTAL")
@@ -1345,29 +1379,32 @@ def run_rediscovery_benchmark(
     runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
-    replay = RediscoveryReplay(
-        candidate_pool=candidate_pool,
-        candidate_id_column=candidate_id_column,
-        target_column=target_column,
-        control_columns=control_columns,
-        minimize=minimize,
-        backend=backend,
-        coordinator=coordinator,
-        top_k_targets=top_k_targets,
-        decision_stage=decision_stage,
-        dataset_id=dataset_id,
-        dataset_fingerprint=dataset_fingerprint,
-        benchmark_task=benchmark_task,
-        runs_by_recipe=runs_by_recipe,
-    )
-
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
     policy_summaries: list[PolicySummary] = []
+    primary_replay: RediscoveryReplay | None = None
 
     for pol in policies:
+        policy_replay = RediscoveryReplay(
+            candidate_pool=candidate_pool,
+            candidate_id_column=candidate_id_column,
+            target_column=target_column,
+            control_columns=control_columns,
+            minimize=minimize,
+            backend=backend,
+            coordinator=coordinator,
+            top_k_targets=top_k_targets,
+            decision_stage=decision_stage,
+            dataset_id=dataset_id,
+            dataset_fingerprint=dataset_fingerprint,
+            benchmark_task=benchmark_task,
+            runs_by_recipe=runs_by_recipe,
+        )
+        if primary_replay is None:
+            primary_replay = policy_replay
+
         pol_trajectories: list[RediscoveryTrajectory] = []
         for seed in seeds:
-            traj = replay.run(
+            traj = policy_replay.run(
                 strategy=pol,
                 seed=seed,
                 initial_size=initial_size,
@@ -1423,18 +1460,20 @@ def run_rediscovery_benchmark(
         policy_traces[pol] = combined_trace.to_dict()
         engine_path_audit.append(combined_trace.generate_audit(pol, engine_path))
 
+    first_policy_trace = policy_traces.get("AICOSCIENTIST_PROCESS_SURROGATE") or (list(policy_traces.values())[0] if policy_traces else {})
+
     return {
         "benchmark_task": benchmark_task,
         "published_high_loading_rediscovery_status": "NOT_EVALUABLE_WITH_AVAILABLE_D30",
         "candidate_id_column": candidate_id_column,
         "target_column": target_column,
-        "control_columns": replay._control_columns,
+        "control_columns": primary_replay._control_columns if primary_replay else [],
         "minimize": minimize,
         "candidate_pool_size": len(candidate_pool),
         "initial_size": initial_size,
         "seeds": list(seeds),
         "policies": list(policies),
-        "engine_execution_trace": replay.execution_trace.to_dict(),
+        "engine_execution_trace": first_policy_trace,
         "policy_execution_traces": policy_traces,
         "engine_path_audit": engine_path_audit,
         "analytic_hypergeometric": {
@@ -1484,7 +1523,7 @@ class ProductionProcessRediscoveryRunner:
     def run(
         self,
         policies: Sequence[str] = (
-            "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+            "AICOSCIENTIST_PROCESS_SURROGATE",
             "DIRECT_BOTORCH_BASELINE",
             "random",
         ),
@@ -1516,7 +1555,7 @@ class ProductionProcessRediscoveryRunner:
         *,
         min_active_mass_mg: float = 16.0,
         policies: Sequence[str] = (
-            "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+            "AICOSCIENTIST_PROCESS_SURROGATE",
             "DIRECT_BOTORCH_BASELINE",
             "random",
         ),

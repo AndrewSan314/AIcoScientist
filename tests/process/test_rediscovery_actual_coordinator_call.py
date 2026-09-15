@@ -47,7 +47,7 @@ def test_coordinator_propose_recipes_actually_called(mock_pool: pd.DataFrame) ->
 
     with patch.object(ProcessOptimizationCoordinator, "propose_recipes", side_effect=spy_propose, autospec=True):
         traj = replay.run(
-            strategy="AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+            strategy="AICOSCIENTIST_PROCESS_SURROGATE",
             seed=42,
             initial_size=2,
             max_steps=2,
@@ -61,13 +61,13 @@ def test_coordinator_propose_recipes_actually_called(mock_pool: pd.DataFrame) ->
     assert call_records[0]["observations_count"] == 2
     assert call_records[0]["space_candidates_count"] == 3
     assert call_records[0]["backend"] == "FrozenSurrogateOptimizerBackend"
-    assert call_records[0]["strategy"] == "noisy_expected_improvement"
+    assert call_records[0]["strategy"] == "expected_improvement"
 
     # Step 2: 3 observations revealed -> 2 visible candidates remain
     assert call_records[1]["observations_count"] == 3
     assert call_records[1]["space_candidates_count"] == 2
     assert call_records[1]["backend"] == "FrozenSurrogateOptimizerBackend"
-    assert call_records[1]["strategy"] == "noisy_expected_improvement"
+    assert call_records[1]["strategy"] == "expected_improvement"
 
 
 def test_frozen_surrogate_optimizer_backend_contract(mock_pool: pd.DataFrame) -> None:
@@ -79,7 +79,7 @@ def test_frozen_surrogate_optimizer_backend_contract(mock_pool: pd.DataFrame) ->
         control_columns=["coating_speed_m_per_min", "coating_gap_um"],
     )
     traj = replay.run(
-        strategy="AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+        strategy="AICOSCIENTIST_PROCESS_SURROGATE",
         seed=11,
         initial_size=2,
         max_steps=1,

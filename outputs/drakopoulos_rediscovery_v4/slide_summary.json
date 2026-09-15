@@ -37,6 +37,7 @@
     "Evaluated on physical retrospective experimental candidates rather than real-time prospective wet-lab synthesis.",
     "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",
     "Published Alchemite design represents an aggregate comparative set in Table S6 rather than an isolated recoverable single-cell identifier.",
-    "Exact published >=25 mg loading objective is not evaluable due to absence of cycle 30 measurements for 300 um cells."
+    "Exact published >=25 mg loading objective is not evaluable due to absence of cycle 30 measurements for 300 um cells.",
+    "This benchmark validates complete-recipe process optimization. It does not by itself validate adaptive stage-by-stage control conditioned on newly measured intermediate process states."
   ]
 }

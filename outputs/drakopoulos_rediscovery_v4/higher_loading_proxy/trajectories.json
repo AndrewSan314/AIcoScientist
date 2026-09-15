@@ -211,7 +211,7 @@
             "model_state_fingerprint": "fb1514353428ab8eda7df8d5a9c76104c5afb6db916bfa9d00e09c70193d0a5a",
             "surrogate_artifact_fingerprint": "696060740a50357e44cecff624785867fd6766397d09f181a69e98d6a47522e5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -313,7 +313,7 @@
             "model_state_fingerprint": "5e753e26e6adfe7b271924af49fa016f490a44963db2a2854d8753b76b3a350e",
             "surrogate_artifact_fingerprint": "bdb9a3973a1c45aa1d380c338aa45e4b8496f9fbdb528303a048b07453b59dff",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -419,7 +419,7 @@
             "model_state_fingerprint": "a32acbe93bdca72d6850f672dbc7bb99b1706bb1fdd5f1db45848fbcae4d2886",
             "surrogate_artifact_fingerprint": "ea2a02612e1a381680e9badbc01d2f5b630f61fc0b88bdd3f7656875243067c4",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -529,7 +529,7 @@
             "model_state_fingerprint": "7eb858d3cda96c8083a89614bd98339d57a44e7db772187ae19209eb3fe1b353",
             "surrogate_artifact_fingerprint": "177f7dc63704cc4e35d155d413eda22bc285c8fae31793d96365abf859b629b3",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -643,7 +643,7 @@
             "model_state_fingerprint": "134aed4f6f311bf8d21145a040971e48c52c5d85c180276d9b88d6c7ea3abebc",
             "surrogate_artifact_fingerprint": "ca42c0c3391908738e2bf075c6c91d029ec08dee6f995fc0fcea29c87bd0fc62",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -859,7 +859,7 @@
             "model_state_fingerprint": "1fe4a423e4e78cf0dd87fd155ba8dfdca2dde8957e70fe4150dca22aee905170",
             "surrogate_artifact_fingerprint": "b00c0b884286467710e3ca33c5b5c60abbb22a262e75a32a0ada98754484a3ec",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -961,7 +961,7 @@
             "model_state_fingerprint": "b4c42dfbb93f80facf66abd7160ccad190ff1b42b5fb1a60f7bdffa8b33be2c3",
             "surrogate_artifact_fingerprint": "21a35cb7074780838a167c79ef4c030c720f356f43509e3b519a3e864c75c1c7",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1067,7 +1067,7 @@
             "model_state_fingerprint": "6670b8b426ba081ff9eb15d4f1b738b33952584c1258f9437d94b9926bb41cbc",
             "surrogate_artifact_fingerprint": "82c5594f97c88e88959f3ff0996a3a30b6ae860d980266a70cfcc85967563386",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1177,7 +1177,7 @@
             "model_state_fingerprint": "c489d510d8cd7ebc37b78c424b1e5ff0a9f74b886e90de5ed98b1fd870d66760",
             "surrogate_artifact_fingerprint": "9f9deadd3b101da97c978f62051084c819ed9b95269ba866e138e312b64daf79",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1291,7 +1291,7 @@
             "model_state_fingerprint": "bd2485271efc99334dd13e7d6771176668b7d2ee02fa1e4b52f2cd633a0bfa87",
             "surrogate_artifact_fingerprint": "32c3fe993baefbe331b101f39c939047d59dbb7aa9997e68a2994a8d812d1bf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -1507,7 +1507,7 @@
             "model_state_fingerprint": "121d129362a2c966350f5b117ad770dc67f931b6e7d3e9db9ed5dbfb9279e29f",
             "surrogate_artifact_fingerprint": "f96c59cb18631c26c1fb9557ba3dc18c89fb3d57fb0da179f68d7dc223e2009b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1609,7 +1609,7 @@
             "model_state_fingerprint": "5abbabf7ce5c52650a893b5dff733b71d6ee1a307b2e9a206bc7c1395e871eb2",
             "surrogate_artifact_fingerprint": "cd077d8528e7f9fe61eea76c9fa40027d2a6ddfeb767d0d13debcd7c9c45ce37",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1715,7 +1715,7 @@
             "model_state_fingerprint": "2a6936a43bae604c835d422921a8c5b0d6b230687ad007e20d5ac6f7f8ff3845",
             "surrogate_artifact_fingerprint": "9c235b6abae486812110137aa5e40e4a908d36027a0726cf8a234a07793706bd",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1825,7 +1825,7 @@
             "model_state_fingerprint": "506ba6683f0838e212761e2ec21a0a32ceb91f8139fd9ccfd3a98c6728a7a73b",
             "surrogate_artifact_fingerprint": "1a1ca1e35556e6f16a354eb31e66f1dc3b5eec2f2be91451ee853b28f5a0836d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -1939,7 +1939,7 @@
             "model_state_fingerprint": "4926849fa0177bd3ee67ddfd1148bdacc76ece4f62ec1b49e05d70488aeeca0a",
             "surrogate_artifact_fingerprint": "bab88a98f7662ca9af5ba37b44a6a1bb3e08dcb632ee6ecf87c22dbf32f79c2d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -2155,7 +2155,7 @@
             "model_state_fingerprint": "5b9c25e2fad5a1cbe3830c76eddd77ba6dc10483604bc58c61fee7ed00c722ed",
             "surrogate_artifact_fingerprint": "a6c1f86ab4c47352dcd244d7af0516858a39078ab86f380f2f00ccc0e6bf0ad0",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -2257,7 +2257,7 @@
             "model_state_fingerprint": "6f70419adc54c83b4310665f998762d5b131b4fae0dcb161470e674b1bf619ba",
             "surrogate_artifact_fingerprint": "26cc53d5647c3cd4140ac314e7f8922abbbc968320912af15417b36adb40c7b5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -2363,7 +2363,7 @@
             "model_state_fingerprint": "1354a359d7b53554946dbe03d034d52b42fcb6795a5f8f3326789d4f23afea5c",
             "surrogate_artifact_fingerprint": "12fbeef3bdf6c4d7e30de1f2119f3bf322d0025c9cd73490543d519102c20f23",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -2473,7 +2473,7 @@
             "model_state_fingerprint": "679a0772aa16e56596f60f8dc9d86f7e70d16971c4ef21124b276d57b1629330",
             "surrogate_artifact_fingerprint": "98e943f18a05a302f1e90f5c3e682929702daa879b4753611dbcc3d21b33ea0b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -2587,7 +2587,7 @@
             "model_state_fingerprint": "e1d2572aa0cb68eb7107cb7f7776f885cba13ffe907fe1f6e566589f412673d8",
             "surrogate_artifact_fingerprint": "e90c7c95624dca85a764e20dfc1ddd1519a8c18fcdc056d181f03b2522d1dcdb",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -2803,7 +2803,7 @@
             "model_state_fingerprint": "7e2cac598f4051362386b547712c9ba7e496dad9d1102635662fc33a417a9203",
             "surrogate_artifact_fingerprint": "4453020897a8bc0d840db8191efcd3af878bee79490ae8895d4e418895fdddc1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -2905,7 +2905,7 @@
             "model_state_fingerprint": "a7065f4fda009b122315cfa34cae76bc2746c3d7634af85f083583ecfa36f3b6",
             "surrogate_artifact_fingerprint": "44b05685aa804fb498147b96ab98f2c4c76e9a04122f8ce0b966ad06995e369e",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3011,7 +3011,7 @@
             "model_state_fingerprint": "e7d998f683bc96d34a622f68cf4e65a60bad32d521e210cb58742efadcbfe11a",
             "surrogate_artifact_fingerprint": "09494e2ac969384757236fc39c2bf041b978cd39b763c83c370fd24367fa6ae2",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3121,7 +3121,7 @@
             "model_state_fingerprint": "de7a012a64873bc2438f844c5beb222b9702838d83d7965791dd0930f37e4da1",
             "surrogate_artifact_fingerprint": "c2e88d4679e0b6ff31c51c9d877df561a01b6292d9b6ad8bc4288a34c15373cf",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3235,7 +3235,7 @@
             "model_state_fingerprint": "d9e86d0519155404943c014b2c80f47e7f4e301cda77548845c88bf98521f60c",
             "surrogate_artifact_fingerprint": "2ce286e796306e82ef354fdbbb4bcba7c8be722b5c5c9d2f414eb9504a3e9711",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -3451,7 +3451,7 @@
             "model_state_fingerprint": "53a199f3ecefbe5b95aab6a44c85721cc72860c7255db3f9077943ae2aefe76b",
             "surrogate_artifact_fingerprint": "425bc3dc6f33202ef86a7a0f8952cabd1c8fc3b653811e5f6734718070cf2e64",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3553,7 +3553,7 @@
             "model_state_fingerprint": "948bec8954408a1e453c7f8d685ebf1637a896045f6e8dd8febb4ac755dbca2c",
             "surrogate_artifact_fingerprint": "1f41f7dfb6e51f750e69cc01baf2604288aa5098caaa4bd4c5c0b8f353534f02",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3659,7 +3659,7 @@
             "model_state_fingerprint": "619bda37c44b362ae8195a94f6715bab10c0d69b64696dd4386cd53a78db27d1",
             "surrogate_artifact_fingerprint": "4fe41344aaf6d2e328c8da8dfa870608e1c176eb13a88e0f62f5367e8b11e6c1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3769,7 +3769,7 @@
             "model_state_fingerprint": "cd7599ee9ccb1ce7125f034966c133c7af79eaa4ce591b5e6b9c5fee9fe3114d",
             "surrogate_artifact_fingerprint": "63053c703e180d3b47a48edaaa3e380f86bd5168d312f7b2abf424b773cc9547",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -3883,7 +3883,7 @@
             "model_state_fingerprint": "9f1a965b10370f5e3b39dfa8113d753fbb92d2df01e1fe407f1b5fb31b6190a3",
             "surrogate_artifact_fingerprint": "6da8c73a7b39fc5814eec9ff5b3f90d70760d3dbdf24c9d2f2627a29fafb5d71",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -4099,7 +4099,7 @@
             "model_state_fingerprint": "2944f674e46aa1bc073305ded0bbe341b71793b370740bbb06c4cfa8ae8e5131",
             "surrogate_artifact_fingerprint": "f5581cb9715d1ef212ce1bcd2d727ca8280ba5f8f576901f99abb8b2c9f01577",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4201,7 +4201,7 @@
             "model_state_fingerprint": "2a9865df247967c1897e256fb8a7bdf6afd0fda412068dd79627f0caa71aeb12",
             "surrogate_artifact_fingerprint": "281aa4bb1b19c5b317f662ad738f364f7813ab7c29d79b0d92fa1bc67b57f3ce",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4307,7 +4307,7 @@
             "model_state_fingerprint": "265404e5370327771b128caa7f8463a059081a9a8218f1b7d73f1f15f2d5c4f2",
             "surrogate_artifact_fingerprint": "f02927df4eada9ac47f0257fded621d256f5afe623bdcf144ecba5cca2cc7784",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4417,7 +4417,7 @@
             "model_state_fingerprint": "2319e157e169ab3f04d3ee6e770fbd0512e57f4ac3b9c9345ca2a94a5802662f",
             "surrogate_artifact_fingerprint": "c1f256f47753c78a7bd4d306d7bcf54955ccc901cec52707e29088d7eeb45183",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4531,7 +4531,7 @@
             "model_state_fingerprint": "94d76b665d7fccc30d1e55563f766f1c7b910fb60408de4db988b6d38fc00934",
             "surrogate_artifact_fingerprint": "a31e3e193d093de8cbc48df54d61ad2a2833c917c8a553fddd574822e86a6837",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -4747,7 +4747,7 @@
             "model_state_fingerprint": "454cf0fa8b962a23ce532e0e752cbe968a70edb3ef9049757af11e3289c26824",
             "surrogate_artifact_fingerprint": "6d905d96dde77a83214f7daa44f4e237cd27e29ce2c4bda0b6c6663fb36e348d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4849,7 +4849,7 @@
             "model_state_fingerprint": "d4863a84f6c8d3567269201c90a2e4cd953b97783a129fdd989b0b01d0b0bef2",
             "surrogate_artifact_fingerprint": "33d2a1d7ea14cf2a48bcf3c1971fd7c899ce57a9356d8dd20037e57a586fc46f",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -4955,7 +4955,7 @@
             "model_state_fingerprint": "ac634a1218cd23cae1172adcdceeecf5c496ebae3b442f322ee489d225203d2b",
             "surrogate_artifact_fingerprint": "89df1a746bf229a8032046294a5628d8269b90400f45081748e635bcc72dc8de",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5065,7 +5065,7 @@
             "model_state_fingerprint": "b554cca4b52b6339d75041c43b99c89d32078849ecdeef98a3460f298435a1d5",
             "surrogate_artifact_fingerprint": "e6fe063f0b722f0cf11838e2ea0f7402e1f55a405743e36774c4943cc0a52aea",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5179,7 +5179,7 @@
             "model_state_fingerprint": "81edef72bf1eb99859b2d28b960579d1f6f5944b82629c5364d354fe19f17d3b",
             "surrogate_artifact_fingerprint": "39d39a56a4d6f9bbc61f242859f147a970b199f4dc524cb50b4939f13f5651bc",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -5395,7 +5395,7 @@
             "model_state_fingerprint": "a93d01199a4467aaa71b1ea4b4b93513da9ca58cb46b3883127313486f8b1be2",
             "surrogate_artifact_fingerprint": "79f62d569b0d2b19aad2e8efb119ad5399d3990297a01990eca008c4b6ca2918",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5497,7 +5497,7 @@
             "model_state_fingerprint": "08d93940dbe4c545a6320d45fcb8ffc378ea54f58fe0cc5db968a2df12c488ae",
             "surrogate_artifact_fingerprint": "25cb23251fcd9d4138d94b258e253450ae294f4bd22ec3fe0742248919697d28",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5603,7 +5603,7 @@
             "model_state_fingerprint": "6292d86e1fa39f16a938a119b572ca6a8526a1592620997f08e19a78ed33dc5c",
             "surrogate_artifact_fingerprint": "3d48ee53e762b6ee7753808fca3a7bb61989f50d454d2deaecab84076959a2ef",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5713,7 +5713,7 @@
             "model_state_fingerprint": "59efb8c58e362671b7a113b178fd70a3e784530cc3bb5324e99663e7ea5e3aff",
             "surrogate_artifact_fingerprint": "41fc3d247c178bd9a7cf7122b65456ced6e0f598fee0ec3ba9411a4e871a4d96",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -5827,7 +5827,7 @@
             "model_state_fingerprint": "88187d5f9ccffe06e8417cac137b716345e9d0cbacfffb1ab8ff0dddc6631f89",
             "surrogate_artifact_fingerprint": "3bcebdf6845c5864f2df500869b59553515dd3e77ef99343e1acbdb4a1273e63",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -6043,7 +6043,7 @@
             "model_state_fingerprint": "66c338ba3ebebf5a1595be999d111521a903712a1cae563d9dea72b9b9ccc3b9",
             "surrogate_artifact_fingerprint": "7c978f66599536779676b2a3d731e542a815f9091092a3b1e732b2e65c097cf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -6145,7 +6145,7 @@
             "model_state_fingerprint": "a9b66eb9fb84aa58057203f5c7fc47799a8c4c9f236e972ad34881bcec6fbcff",
             "surrogate_artifact_fingerprint": "1e8d6b822518fd330cdfde988f6a4b55095c0f784490dc2747de7dac4f8f1fb1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -6251,7 +6251,7 @@
             "model_state_fingerprint": "0220a19581cc09ad2d0f1979e02f27187f13f903422fb8fa6e11d1e31fe5ad74",
             "surrogate_artifact_fingerprint": "c5ac5dfedb93b4557062e8033ccde8b630d98131e5415328725ecfae02a06d2a",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -6361,7 +6361,7 @@
             "model_state_fingerprint": "8e9e3e1ea7b5051a819bec6bbd7b7f5e57c83951feebac403c5e04168aefc166",
             "surrogate_artifact_fingerprint": "35841cf660caea591f36305ae68f0cbf4be12f6378a65fefb95af24465d6419d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         },
         {
@@ -6475,7 +6475,7 @@
             "model_state_fingerprint": "b1511e6e8c021f5bb40208a3cfcdcacd5976ff5514cb007d922ac68dda5f7239",
             "surrogate_artifact_fingerprint": "ae8375d42e65306075e3820cfb2d55ab8d6cfefe306fbcfaac3f5373dcaf268b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "noisy_expected_improvement"
+            "acquisition_strategy": "EXPECTED_IMPROVEMENT"
           }
         }
       ]
@@ -6501,7 +6501,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 0.0,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -6651,7 +6651,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 38.14789095427079,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -6801,7 +6801,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 0.0,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -6951,7 +6951,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 38.14789095427079,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7101,7 +7101,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 177.892057106401,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7251,7 +7251,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 88.9460285532005,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7401,7 +7401,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 177.892057106401,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7551,7 +7551,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 38.14789095427079,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7701,7 +7701,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 246.54560756200212,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -7851,7 +7851,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 38.14789095427079,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8003,7 +8003,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 152.59156381708317,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8138,7 +8138,7 @@
       "final_simple_regret": 38.14789095427079,
       "final_cumulative_regret": 190.73945477135396,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8273,7 +8273,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 0.0,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8408,7 +8408,7 @@
       "final_simple_regret": 38.14789095427079,
       "final_cumulative_regret": 241.53759237028368,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8543,7 +8543,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 304.9859766138723,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8678,7 +8678,7 @@
       "final_simple_regret": 38.14789095427079,
       "final_cumulative_regret": 292.3357299692134,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8813,7 +8813,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 88.9460285532005,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -8948,7 +8948,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 0.0,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -9083,7 +9083,7 @@
       "final_simple_regret": 0.0,
       "final_cumulative_regret": 315.1991580176032,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -9218,7 +9218,7 @@
       "final_simple_regret": 38.14789095427079,
       "final_cumulative_regret": 190.73945477135396,
       "execution_trace": {
-        "source_adapter_invocations": 1,
+        "source_adapter_invocations": 0,
         "battery_process_runs_seen": 0,
         "recipe_selection_horizon_invocations": 0,
         "process_surrogate_samples_created": 0,
@@ -9547,7 +9547,7 @@
             "model_state_fingerprint": "fb1514353428ab8eda7df8d5a9c76104c5afb6db916bfa9d00e09c70193d0a5a",
             "surrogate_artifact_fingerprint": "696060740a50357e44cecff624785867fd6766397d09f181a69e98d6a47522e5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -9649,7 +9649,7 @@
             "model_state_fingerprint": "5e753e26e6adfe7b271924af49fa016f490a44963db2a2854d8753b76b3a350e",
             "surrogate_artifact_fingerprint": "bdb9a3973a1c45aa1d380c338aa45e4b8496f9fbdb528303a048b07453b59dff",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -9755,7 +9755,7 @@
             "model_state_fingerprint": "a32acbe93bdca72d6850f672dbc7bb99b1706bb1fdd5f1db45848fbcae4d2886",
             "surrogate_artifact_fingerprint": "ea2a02612e1a381680e9badbc01d2f5b630f61fc0b88bdd3f7656875243067c4",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -9865,7 +9865,7 @@
             "model_state_fingerprint": "7eb858d3cda96c8083a89614bd98339d57a44e7db772187ae19209eb3fe1b353",
             "surrogate_artifact_fingerprint": "177f7dc63704cc4e35d155d413eda22bc285c8fae31793d96365abf859b629b3",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -9979,7 +9979,7 @@
             "model_state_fingerprint": "134aed4f6f311bf8d21145a040971e48c52c5d85c180276d9b88d6c7ea3abebc",
             "surrogate_artifact_fingerprint": "ca42c0c3391908738e2bf075c6c91d029ec08dee6f995fc0fcea29c87bd0fc62",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -10195,7 +10195,7 @@
             "model_state_fingerprint": "1fe4a423e4e78cf0dd87fd155ba8dfdca2dde8957e70fe4150dca22aee905170",
             "surrogate_artifact_fingerprint": "b00c0b884286467710e3ca33c5b5c60abbb22a262e75a32a0ada98754484a3ec",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -10297,7 +10297,7 @@
             "model_state_fingerprint": "b4c42dfbb93f80facf66abd7160ccad190ff1b42b5fb1a60f7bdffa8b33be2c3",
             "surrogate_artifact_fingerprint": "21a35cb7074780838a167c79ef4c030c720f356f43509e3b519a3e864c75c1c7",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -10403,7 +10403,7 @@
             "model_state_fingerprint": "6670b8b426ba081ff9eb15d4f1b738b33952584c1258f9437d94b9926bb41cbc",
             "surrogate_artifact_fingerprint": "82c5594f97c88e88959f3ff0996a3a30b6ae860d980266a70cfcc85967563386",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -10513,7 +10513,7 @@
             "model_state_fingerprint": "c489d510d8cd7ebc37b78c424b1e5ff0a9f74b886e90de5ed98b1fd870d66760",
             "surrogate_artifact_fingerprint": "9f9deadd3b101da97c978f62051084c819ed9b95269ba866e138e312b64daf79",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -10627,7 +10627,7 @@
             "model_state_fingerprint": "bd2485271efc99334dd13e7d6771176668b7d2ee02fa1e4b52f2cd633a0bfa87",
             "surrogate_artifact_fingerprint": "32c3fe993baefbe331b101f39c939047d59dbb7aa9997e68a2994a8d812d1bf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -10843,7 +10843,7 @@
             "model_state_fingerprint": "121d129362a2c966350f5b117ad770dc67f931b6e7d3e9db9ed5dbfb9279e29f",
             "surrogate_artifact_fingerprint": "f96c59cb18631c26c1fb9557ba3dc18c89fb3d57fb0da179f68d7dc223e2009b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -10945,7 +10945,7 @@
             "model_state_fingerprint": "5abbabf7ce5c52650a893b5dff733b71d6ee1a307b2e9a206bc7c1395e871eb2",
             "surrogate_artifact_fingerprint": "cd077d8528e7f9fe61eea76c9fa40027d2a6ddfeb767d0d13debcd7c9c45ce37",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11051,7 +11051,7 @@
             "model_state_fingerprint": "2a6936a43bae604c835d422921a8c5b0d6b230687ad007e20d5ac6f7f8ff3845",
             "surrogate_artifact_fingerprint": "9c235b6abae486812110137aa5e40e4a908d36027a0726cf8a234a07793706bd",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11161,7 +11161,7 @@
             "model_state_fingerprint": "506ba6683f0838e212761e2ec21a0a32ceb91f8139fd9ccfd3a98c6728a7a73b",
             "surrogate_artifact_fingerprint": "1a1ca1e35556e6f16a354eb31e66f1dc3b5eec2f2be91451ee853b28f5a0836d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11275,7 +11275,7 @@
             "model_state_fingerprint": "4926849fa0177bd3ee67ddfd1148bdacc76ece4f62ec1b49e05d70488aeeca0a",
             "surrogate_artifact_fingerprint": "bab88a98f7662ca9af5ba37b44a6a1bb3e08dcb632ee6ecf87c22dbf32f79c2d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -11491,7 +11491,7 @@
             "model_state_fingerprint": "5b9c25e2fad5a1cbe3830c76eddd77ba6dc10483604bc58c61fee7ed00c722ed",
             "surrogate_artifact_fingerprint": "a6c1f86ab4c47352dcd244d7af0516858a39078ab86f380f2f00ccc0e6bf0ad0",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11593,7 +11593,7 @@
             "model_state_fingerprint": "6f70419adc54c83b4310665f998762d5b131b4fae0dcb161470e674b1bf619ba",
             "surrogate_artifact_fingerprint": "26cc53d5647c3cd4140ac314e7f8922abbbc968320912af15417b36adb40c7b5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11699,7 +11699,7 @@
             "model_state_fingerprint": "1354a359d7b53554946dbe03d034d52b42fcb6795a5f8f3326789d4f23afea5c",
             "surrogate_artifact_fingerprint": "12fbeef3bdf6c4d7e30de1f2119f3bf322d0025c9cd73490543d519102c20f23",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11809,7 +11809,7 @@
             "model_state_fingerprint": "679a0772aa16e56596f60f8dc9d86f7e70d16971c4ef21124b276d57b1629330",
             "surrogate_artifact_fingerprint": "98e943f18a05a302f1e90f5c3e682929702daa879b4753611dbcc3d21b33ea0b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -11923,7 +11923,7 @@
             "model_state_fingerprint": "e1d2572aa0cb68eb7107cb7f7776f885cba13ffe907fe1f6e566589f412673d8",
             "surrogate_artifact_fingerprint": "e90c7c95624dca85a764e20dfc1ddd1519a8c18fcdc056d181f03b2522d1dcdb",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -12139,7 +12139,7 @@
             "model_state_fingerprint": "7e2cac598f4051362386b547712c9ba7e496dad9d1102635662fc33a417a9203",
             "surrogate_artifact_fingerprint": "4453020897a8bc0d840db8191efcd3af878bee79490ae8895d4e418895fdddc1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12241,7 +12241,7 @@
             "model_state_fingerprint": "a7065f4fda009b122315cfa34cae76bc2746c3d7634af85f083583ecfa36f3b6",
             "surrogate_artifact_fingerprint": "44b05685aa804fb498147b96ab98f2c4c76e9a04122f8ce0b966ad06995e369e",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12347,7 +12347,7 @@
             "model_state_fingerprint": "e7d998f683bc96d34a622f68cf4e65a60bad32d521e210cb58742efadcbfe11a",
             "surrogate_artifact_fingerprint": "09494e2ac969384757236fc39c2bf041b978cd39b763c83c370fd24367fa6ae2",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12457,7 +12457,7 @@
             "model_state_fingerprint": "de7a012a64873bc2438f844c5beb222b9702838d83d7965791dd0930f37e4da1",
             "surrogate_artifact_fingerprint": "c2e88d4679e0b6ff31c51c9d877df561a01b6292d9b6ad8bc4288a34c15373cf",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12571,7 +12571,7 @@
             "model_state_fingerprint": "d9e86d0519155404943c014b2c80f47e7f4e301cda77548845c88bf98521f60c",
             "surrogate_artifact_fingerprint": "2ce286e796306e82ef354fdbbb4bcba7c8be722b5c5c9d2f414eb9504a3e9711",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -12787,7 +12787,7 @@
             "model_state_fingerprint": "53a199f3ecefbe5b95aab6a44c85721cc72860c7255db3f9077943ae2aefe76b",
             "surrogate_artifact_fingerprint": "425bc3dc6f33202ef86a7a0f8952cabd1c8fc3b653811e5f6734718070cf2e64",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12889,7 +12889,7 @@
             "model_state_fingerprint": "948bec8954408a1e453c7f8d685ebf1637a896045f6e8dd8febb4ac755dbca2c",
             "surrogate_artifact_fingerprint": "1f41f7dfb6e51f750e69cc01baf2604288aa5098caaa4bd4c5c0b8f353534f02",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -12995,7 +12995,7 @@
             "model_state_fingerprint": "619bda37c44b362ae8195a94f6715bab10c0d69b64696dd4386cd53a78db27d1",
             "surrogate_artifact_fingerprint": "4fe41344aaf6d2e328c8da8dfa870608e1c176eb13a88e0f62f5367e8b11e6c1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13105,7 +13105,7 @@
             "model_state_fingerprint": "cd7599ee9ccb1ce7125f034966c133c7af79eaa4ce591b5e6b9c5fee9fe3114d",
             "surrogate_artifact_fingerprint": "63053c703e180d3b47a48edaaa3e380f86bd5168d312f7b2abf424b773cc9547",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13219,7 +13219,7 @@
             "model_state_fingerprint": "9f1a965b10370f5e3b39dfa8113d753fbb92d2df01e1fe407f1b5fb31b6190a3",
             "surrogate_artifact_fingerprint": "6da8c73a7b39fc5814eec9ff5b3f90d70760d3dbdf24c9d2f2627a29fafb5d71",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -13435,7 +13435,7 @@
             "model_state_fingerprint": "2944f674e46aa1bc073305ded0bbe341b71793b370740bbb06c4cfa8ae8e5131",
             "surrogate_artifact_fingerprint": "f5581cb9715d1ef212ce1bcd2d727ca8280ba5f8f576901f99abb8b2c9f01577",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13537,7 +13537,7 @@
             "model_state_fingerprint": "2a9865df247967c1897e256fb8a7bdf6afd0fda412068dd79627f0caa71aeb12",
             "surrogate_artifact_fingerprint": "281aa4bb1b19c5b317f662ad738f364f7813ab7c29d79b0d92fa1bc67b57f3ce",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13643,7 +13643,7 @@
             "model_state_fingerprint": "265404e5370327771b128caa7f8463a059081a9a8218f1b7d73f1f15f2d5c4f2",
             "surrogate_artifact_fingerprint": "f02927df4eada9ac47f0257fded621d256f5afe623bdcf144ecba5cca2cc7784",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13753,7 +13753,7 @@
             "model_state_fingerprint": "2319e157e169ab3f04d3ee6e770fbd0512e57f4ac3b9c9345ca2a94a5802662f",
             "surrogate_artifact_fingerprint": "c1f256f47753c78a7bd4d306d7bcf54955ccc901cec52707e29088d7eeb45183",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -13867,7 +13867,7 @@
             "model_state_fingerprint": "94d76b665d7fccc30d1e55563f766f1c7b910fb60408de4db988b6d38fc00934",
             "surrogate_artifact_fingerprint": "a31e3e193d093de8cbc48df54d61ad2a2833c917c8a553fddd574822e86a6837",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -14083,7 +14083,7 @@
             "model_state_fingerprint": "454cf0fa8b962a23ce532e0e752cbe968a70edb3ef9049757af11e3289c26824",
             "surrogate_artifact_fingerprint": "6d905d96dde77a83214f7daa44f4e237cd27e29ce2c4bda0b6c6663fb36e348d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14185,7 +14185,7 @@
             "model_state_fingerprint": "d4863a84f6c8d3567269201c90a2e4cd953b97783a129fdd989b0b01d0b0bef2",
             "surrogate_artifact_fingerprint": "33d2a1d7ea14cf2a48bcf3c1971fd7c899ce57a9356d8dd20037e57a586fc46f",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14291,7 +14291,7 @@
             "model_state_fingerprint": "ac634a1218cd23cae1172adcdceeecf5c496ebae3b442f322ee489d225203d2b",
             "surrogate_artifact_fingerprint": "89df1a746bf229a8032046294a5628d8269b90400f45081748e635bcc72dc8de",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14401,7 +14401,7 @@
             "model_state_fingerprint": "b554cca4b52b6339d75041c43b99c89d32078849ecdeef98a3460f298435a1d5",
             "surrogate_artifact_fingerprint": "e6fe063f0b722f0cf11838e2ea0f7402e1f55a405743e36774c4943cc0a52aea",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14515,7 +14515,7 @@
             "model_state_fingerprint": "81edef72bf1eb99859b2d28b960579d1f6f5944b82629c5364d354fe19f17d3b",
             "surrogate_artifact_fingerprint": "39d39a56a4d6f9bbc61f242859f147a970b199f4dc524cb50b4939f13f5651bc",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -14731,7 +14731,7 @@
             "model_state_fingerprint": "a93d01199a4467aaa71b1ea4b4b93513da9ca58cb46b3883127313486f8b1be2",
             "surrogate_artifact_fingerprint": "79f62d569b0d2b19aad2e8efb119ad5399d3990297a01990eca008c4b6ca2918",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14833,7 +14833,7 @@
             "model_state_fingerprint": "08d93940dbe4c545a6320d45fcb8ffc378ea54f58fe0cc5db968a2df12c488ae",
             "surrogate_artifact_fingerprint": "25cb23251fcd9d4138d94b258e253450ae294f4bd22ec3fe0742248919697d28",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -14939,7 +14939,7 @@
             "model_state_fingerprint": "6292d86e1fa39f16a938a119b572ca6a8526a1592620997f08e19a78ed33dc5c",
             "surrogate_artifact_fingerprint": "3d48ee53e762b6ee7753808fca3a7bb61989f50d454d2deaecab84076959a2ef",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15049,7 +15049,7 @@
             "model_state_fingerprint": "59efb8c58e362671b7a113b178fd70a3e784530cc3bb5324e99663e7ea5e3aff",
             "surrogate_artifact_fingerprint": "41fc3d247c178bd9a7cf7122b65456ced6e0f598fee0ec3ba9411a4e871a4d96",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15163,7 +15163,7 @@
             "model_state_fingerprint": "88187d5f9ccffe06e8417cac137b716345e9d0cbacfffb1ab8ff0dddc6631f89",
             "surrogate_artifact_fingerprint": "3bcebdf6845c5864f2df500869b59553515dd3e77ef99343e1acbdb4a1273e63",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -15379,7 +15379,7 @@
             "model_state_fingerprint": "66c338ba3ebebf5a1595be999d111521a903712a1cae563d9dea72b9b9ccc3b9",
             "surrogate_artifact_fingerprint": "7c978f66599536779676b2a3d731e542a815f9091092a3b1e732b2e65c097cf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15481,7 +15481,7 @@
             "model_state_fingerprint": "a9b66eb9fb84aa58057203f5c7fc47799a8c4c9f236e972ad34881bcec6fbcff",
             "surrogate_artifact_fingerprint": "1e8d6b822518fd330cdfde988f6a4b55095c0f784490dc2747de7dac4f8f1fb1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15587,7 +15587,7 @@
             "model_state_fingerprint": "0220a19581cc09ad2d0f1979e02f27187f13f903422fb8fa6e11d1e31fe5ad74",
             "surrogate_artifact_fingerprint": "c5ac5dfedb93b4557062e8033ccde8b630d98131e5415328725ecfae02a06d2a",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15697,7 +15697,7 @@
             "model_state_fingerprint": "8e9e3e1ea7b5051a819bec6bbd7b7f5e57c83951feebac403c5e04168aefc166",
             "surrogate_artifact_fingerprint": "35841cf660caea591f36305ae68f0cbf4be12f6378a65fefb95af24465d6419d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         },
         {
@@ -15811,7 +15811,7 @@
             "model_state_fingerprint": "b1511e6e8c021f5bb40208a3cfcdcacd5976ff5514cb007d922ac68dda5f7239",
             "surrogate_artifact_fingerprint": "ae8375d42e65306075e3820cfb2d55ab8d6cfefe306fbcfaac3f5373dcaf268b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "greedy"
+            "acquisition_strategy": "GREEDY"
           }
         }
       ]
@@ -16029,7 +16029,7 @@
             "model_state_fingerprint": "fb1514353428ab8eda7df8d5a9c76104c5afb6db916bfa9d00e09c70193d0a5a",
             "surrogate_artifact_fingerprint": "696060740a50357e44cecff624785867fd6766397d09f181a69e98d6a47522e5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16131,7 +16131,7 @@
             "model_state_fingerprint": "fc927103cc50bd581e7923088a4f5e3ca8f0078f91b7d6d673588eefe65c7236",
             "surrogate_artifact_fingerprint": "99d31a26ee6cd194178af7c07f71368ac8a5e129609c6f32480f70e408f68a57",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16237,7 +16237,7 @@
             "model_state_fingerprint": "712f5d4ceae92bf34b11089633deeb2a3a1a1d56167cb8d03e36f1ca96779482",
             "surrogate_artifact_fingerprint": "193f26ac76860d0f0a57d814be8bc49b2575574e5dbeb657efba80395bf526c8",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16347,7 +16347,7 @@
             "model_state_fingerprint": "0f1262c226cd6eb074121b76d57aeac93f46e429ebe9fc9dfd58a86e4e008cf0",
             "surrogate_artifact_fingerprint": "09e81440272eea096cd8488cd5009e8dce28fa50eb82d826efcaa325f6a77968",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16461,7 +16461,7 @@
             "model_state_fingerprint": "be87dc53dcd3f690711e94a36624d9847a23a6466b555f6354301441d505a85f",
             "surrogate_artifact_fingerprint": "41836661d8e607457a0b71c7d56cff7a521e90bcce7457b5de26370696e6e33c",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -16677,7 +16677,7 @@
             "model_state_fingerprint": "1fe4a423e4e78cf0dd87fd155ba8dfdca2dde8957e70fe4150dca22aee905170",
             "surrogate_artifact_fingerprint": "b00c0b884286467710e3ca33c5b5c60abbb22a262e75a32a0ada98754484a3ec",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16779,7 +16779,7 @@
             "model_state_fingerprint": "b4c42dfbb93f80facf66abd7160ccad190ff1b42b5fb1a60f7bdffa8b33be2c3",
             "surrogate_artifact_fingerprint": "21a35cb7074780838a167c79ef4c030c720f356f43509e3b519a3e864c75c1c7",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16885,7 +16885,7 @@
             "model_state_fingerprint": "6670b8b426ba081ff9eb15d4f1b738b33952584c1258f9437d94b9926bb41cbc",
             "surrogate_artifact_fingerprint": "82c5594f97c88e88959f3ff0996a3a30b6ae860d980266a70cfcc85967563386",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -16995,7 +16995,7 @@
             "model_state_fingerprint": "c489d510d8cd7ebc37b78c424b1e5ff0a9f74b886e90de5ed98b1fd870d66760",
             "surrogate_artifact_fingerprint": "9f9deadd3b101da97c978f62051084c819ed9b95269ba866e138e312b64daf79",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -17109,7 +17109,7 @@
             "model_state_fingerprint": "bd2485271efc99334dd13e7d6771176668b7d2ee02fa1e4b52f2cd633a0bfa87",
             "surrogate_artifact_fingerprint": "32c3fe993baefbe331b101f39c939047d59dbb7aa9997e68a2994a8d812d1bf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -17325,7 +17325,7 @@
             "model_state_fingerprint": "121d129362a2c966350f5b117ad770dc67f931b6e7d3e9db9ed5dbfb9279e29f",
             "surrogate_artifact_fingerprint": "f96c59cb18631c26c1fb9557ba3dc18c89fb3d57fb0da179f68d7dc223e2009b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -17427,7 +17427,7 @@
             "model_state_fingerprint": "a5653a88ec4a951353addcd5c5ef4aee7ecc46da660ca8fbf3409440479f1421",
             "surrogate_artifact_fingerprint": "cf3584d4f1e804eac508f044cc3352608ad9f3fc52b0e6799efd129384a56a0e",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -17533,7 +17533,7 @@
             "model_state_fingerprint": "d397d17804fe11686217c4a7198ffd23011e974537a6568ee70068e9613e6372",
             "surrogate_artifact_fingerprint": "43cf5dd4bdde076b4b7501009c513ee6ad535c6293454845eef7ea0d47d1b958",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -17643,7 +17643,7 @@
             "model_state_fingerprint": "33ae48e85f3ddac501728b1e193092efc27ff2f8a4050b1d2beefa0610eac004",
             "surrogate_artifact_fingerprint": "8d306b73c7b1717156dd06267bfbf449d8c821dbc49ccaacebb4b889a5f3a167",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -17757,7 +17757,7 @@
             "model_state_fingerprint": "9a3ca15b8713dd40a3b5b555e802337e24feebcae4906b66810e5ac9b9fb10ea",
             "surrogate_artifact_fingerprint": "74b80f7fbb0fc13774acc1c16c40141f2a19a781987c7e000dbc27d30e8a71a8",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -17973,7 +17973,7 @@
             "model_state_fingerprint": "5b9c25e2fad5a1cbe3830c76eddd77ba6dc10483604bc58c61fee7ed00c722ed",
             "surrogate_artifact_fingerprint": "a6c1f86ab4c47352dcd244d7af0516858a39078ab86f380f2f00ccc0e6bf0ad0",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18075,7 +18075,7 @@
             "model_state_fingerprint": "6f70419adc54c83b4310665f998762d5b131b4fae0dcb161470e674b1bf619ba",
             "surrogate_artifact_fingerprint": "26cc53d5647c3cd4140ac314e7f8922abbbc968320912af15417b36adb40c7b5",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18181,7 +18181,7 @@
             "model_state_fingerprint": "1354a359d7b53554946dbe03d034d52b42fcb6795a5f8f3326789d4f23afea5c",
             "surrogate_artifact_fingerprint": "12fbeef3bdf6c4d7e30de1f2119f3bf322d0025c9cd73490543d519102c20f23",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18291,7 +18291,7 @@
             "model_state_fingerprint": "679a0772aa16e56596f60f8dc9d86f7e70d16971c4ef21124b276d57b1629330",
             "surrogate_artifact_fingerprint": "98e943f18a05a302f1e90f5c3e682929702daa879b4753611dbcc3d21b33ea0b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18405,7 +18405,7 @@
             "model_state_fingerprint": "e1d2572aa0cb68eb7107cb7f7776f885cba13ffe907fe1f6e566589f412673d8",
             "surrogate_artifact_fingerprint": "e90c7c95624dca85a764e20dfc1ddd1519a8c18fcdc056d181f03b2522d1dcdb",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -18621,7 +18621,7 @@
             "model_state_fingerprint": "7e2cac598f4051362386b547712c9ba7e496dad9d1102635662fc33a417a9203",
             "surrogate_artifact_fingerprint": "4453020897a8bc0d840db8191efcd3af878bee79490ae8895d4e418895fdddc1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18723,7 +18723,7 @@
             "model_state_fingerprint": "a7065f4fda009b122315cfa34cae76bc2746c3d7634af85f083583ecfa36f3b6",
             "surrogate_artifact_fingerprint": "44b05685aa804fb498147b96ab98f2c4c76e9a04122f8ce0b966ad06995e369e",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18829,7 +18829,7 @@
             "model_state_fingerprint": "e7d998f683bc96d34a622f68cf4e65a60bad32d521e210cb58742efadcbfe11a",
             "surrogate_artifact_fingerprint": "09494e2ac969384757236fc39c2bf041b978cd39b763c83c370fd24367fa6ae2",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -18939,7 +18939,7 @@
             "model_state_fingerprint": "de7a012a64873bc2438f844c5beb222b9702838d83d7965791dd0930f37e4da1",
             "surrogate_artifact_fingerprint": "c2e88d4679e0b6ff31c51c9d877df561a01b6292d9b6ad8bc4288a34c15373cf",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -19053,7 +19053,7 @@
             "model_state_fingerprint": "d9e86d0519155404943c014b2c80f47e7f4e301cda77548845c88bf98521f60c",
             "surrogate_artifact_fingerprint": "2ce286e796306e82ef354fdbbb4bcba7c8be722b5c5c9d2f414eb9504a3e9711",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -19269,7 +19269,7 @@
             "model_state_fingerprint": "53a199f3ecefbe5b95aab6a44c85721cc72860c7255db3f9077943ae2aefe76b",
             "surrogate_artifact_fingerprint": "425bc3dc6f33202ef86a7a0f8952cabd1c8fc3b653811e5f6734718070cf2e64",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -19371,7 +19371,7 @@
             "model_state_fingerprint": "948bec8954408a1e453c7f8d685ebf1637a896045f6e8dd8febb4ac755dbca2c",
             "surrogate_artifact_fingerprint": "1f41f7dfb6e51f750e69cc01baf2604288aa5098caaa4bd4c5c0b8f353534f02",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -19477,7 +19477,7 @@
             "model_state_fingerprint": "619bda37c44b362ae8195a94f6715bab10c0d69b64696dd4386cd53a78db27d1",
             "surrogate_artifact_fingerprint": "4fe41344aaf6d2e328c8da8dfa870608e1c176eb13a88e0f62f5367e8b11e6c1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -19587,7 +19587,7 @@
             "model_state_fingerprint": "cd7599ee9ccb1ce7125f034966c133c7af79eaa4ce591b5e6b9c5fee9fe3114d",
             "surrogate_artifact_fingerprint": "63053c703e180d3b47a48edaaa3e380f86bd5168d312f7b2abf424b773cc9547",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -19701,7 +19701,7 @@
             "model_state_fingerprint": "9f1a965b10370f5e3b39dfa8113d753fbb92d2df01e1fe407f1b5fb31b6190a3",
             "surrogate_artifact_fingerprint": "6da8c73a7b39fc5814eec9ff5b3f90d70760d3dbdf24c9d2f2627a29fafb5d71",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -19917,7 +19917,7 @@
             "model_state_fingerprint": "2944f674e46aa1bc073305ded0bbe341b71793b370740bbb06c4cfa8ae8e5131",
             "surrogate_artifact_fingerprint": "f5581cb9715d1ef212ce1bcd2d727ca8280ba5f8f576901f99abb8b2c9f01577",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20019,7 +20019,7 @@
             "model_state_fingerprint": "2a9865df247967c1897e256fb8a7bdf6afd0fda412068dd79627f0caa71aeb12",
             "surrogate_artifact_fingerprint": "281aa4bb1b19c5b317f662ad738f364f7813ab7c29d79b0d92fa1bc67b57f3ce",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20125,7 +20125,7 @@
             "model_state_fingerprint": "265404e5370327771b128caa7f8463a059081a9a8218f1b7d73f1f15f2d5c4f2",
             "surrogate_artifact_fingerprint": "f02927df4eada9ac47f0257fded621d256f5afe623bdcf144ecba5cca2cc7784",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20235,7 +20235,7 @@
             "model_state_fingerprint": "2319e157e169ab3f04d3ee6e770fbd0512e57f4ac3b9c9345ca2a94a5802662f",
             "surrogate_artifact_fingerprint": "c1f256f47753c78a7bd4d306d7bcf54955ccc901cec52707e29088d7eeb45183",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20349,7 +20349,7 @@
             "model_state_fingerprint": "94d76b665d7fccc30d1e55563f766f1c7b910fb60408de4db988b6d38fc00934",
             "surrogate_artifact_fingerprint": "a31e3e193d093de8cbc48df54d61ad2a2833c917c8a553fddd574822e86a6837",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -20565,7 +20565,7 @@
             "model_state_fingerprint": "454cf0fa8b962a23ce532e0e752cbe968a70edb3ef9049757af11e3289c26824",
             "surrogate_artifact_fingerprint": "6d905d96dde77a83214f7daa44f4e237cd27e29ce2c4bda0b6c6663fb36e348d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20667,7 +20667,7 @@
             "model_state_fingerprint": "d4863a84f6c8d3567269201c90a2e4cd953b97783a129fdd989b0b01d0b0bef2",
             "surrogate_artifact_fingerprint": "33d2a1d7ea14cf2a48bcf3c1971fd7c899ce57a9356d8dd20037e57a586fc46f",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20773,7 +20773,7 @@
             "model_state_fingerprint": "ac634a1218cd23cae1172adcdceeecf5c496ebae3b442f322ee489d225203d2b",
             "surrogate_artifact_fingerprint": "89df1a746bf229a8032046294a5628d8269b90400f45081748e635bcc72dc8de",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20883,7 +20883,7 @@
             "model_state_fingerprint": "b554cca4b52b6339d75041c43b99c89d32078849ecdeef98a3460f298435a1d5",
             "surrogate_artifact_fingerprint": "e6fe063f0b722f0cf11838e2ea0f7402e1f55a405743e36774c4943cc0a52aea",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -20997,7 +20997,7 @@
             "model_state_fingerprint": "81edef72bf1eb99859b2d28b960579d1f6f5944b82629c5364d354fe19f17d3b",
             "surrogate_artifact_fingerprint": "39d39a56a4d6f9bbc61f242859f147a970b199f4dc524cb50b4939f13f5651bc",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -21213,7 +21213,7 @@
             "model_state_fingerprint": "a93d01199a4467aaa71b1ea4b4b93513da9ca58cb46b3883127313486f8b1be2",
             "surrogate_artifact_fingerprint": "79f62d569b0d2b19aad2e8efb119ad5399d3990297a01990eca008c4b6ca2918",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -21315,7 +21315,7 @@
             "model_state_fingerprint": "08d93940dbe4c545a6320d45fcb8ffc378ea54f58fe0cc5db968a2df12c488ae",
             "surrogate_artifact_fingerprint": "25cb23251fcd9d4138d94b258e253450ae294f4bd22ec3fe0742248919697d28",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -21421,7 +21421,7 @@
             "model_state_fingerprint": "6292d86e1fa39f16a938a119b572ca6a8526a1592620997f08e19a78ed33dc5c",
             "surrogate_artifact_fingerprint": "3d48ee53e762b6ee7753808fca3a7bb61989f50d454d2deaecab84076959a2ef",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -21531,7 +21531,7 @@
             "model_state_fingerprint": "59efb8c58e362671b7a113b178fd70a3e784530cc3bb5324e99663e7ea5e3aff",
             "surrogate_artifact_fingerprint": "41fc3d247c178bd9a7cf7122b65456ced6e0f598fee0ec3ba9411a4e871a4d96",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -21645,7 +21645,7 @@
             "model_state_fingerprint": "88187d5f9ccffe06e8417cac137b716345e9d0cbacfffb1ab8ff0dddc6631f89",
             "surrogate_artifact_fingerprint": "3bcebdf6845c5864f2df500869b59553515dd3e77ef99343e1acbdb4a1273e63",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]
@@ -21861,7 +21861,7 @@
             "model_state_fingerprint": "66c338ba3ebebf5a1595be999d111521a903712a1cae563d9dea72b9b9ccc3b9",
             "surrogate_artifact_fingerprint": "7c978f66599536779676b2a3d731e542a815f9091092a3b1e732b2e65c097cf1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -21963,7 +21963,7 @@
             "model_state_fingerprint": "a9b66eb9fb84aa58057203f5c7fc47799a8c4c9f236e972ad34881bcec6fbcff",
             "surrogate_artifact_fingerprint": "1e8d6b822518fd330cdfde988f6a4b55095c0f784490dc2747de7dac4f8f1fb1",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -22069,7 +22069,7 @@
             "model_state_fingerprint": "0220a19581cc09ad2d0f1979e02f27187f13f903422fb8fa6e11d1e31fe5ad74",
             "surrogate_artifact_fingerprint": "c5ac5dfedb93b4557062e8033ccde8b630d98131e5415328725ecfae02a06d2a",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -22179,7 +22179,7 @@
             "model_state_fingerprint": "8e9e3e1ea7b5051a819bec6bbd7b7f5e57c83951feebac403c5e04168aefc166",
             "surrogate_artifact_fingerprint": "35841cf660caea591f36305ae68f0cbf4be12f6378a65fefb95af24465d6419d",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         },
         {
@@ -22293,7 +22293,7 @@
             "model_state_fingerprint": "b1511e6e8c021f5bb40208a3cfcdcacd5976ff5514cb007d922ac68dda5f7239",
             "surrogate_artifact_fingerprint": "ae8375d42e65306075e3820cfb2d55ab8d6cfefe306fbcfaac3f5373dcaf268b",
             "uncertainty_kind": "GP_POSTERIOR_STD",
-            "acquisition_strategy": "gp_ucb"
+            "acquisition_strategy": "GP_UCB"
           }
         }
       ]

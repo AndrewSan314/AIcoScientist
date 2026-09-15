@@ -38,10 +38,10 @@
   ],
   "engine_execution_trace": {
     "source_adapter_invocations": 1,
-    "battery_process_runs_seen": 2250,
-    "recipe_selection_horizon_invocations": 2250,
-    "process_surrogate_samples_created": 2250,
-    "process_surrogate_fit_count": 150,
+    "battery_process_runs_seen": 750,
+    "recipe_selection_horizon_invocations": 750,
+    "process_surrogate_samples_created": 750,
+    "process_surrogate_fit_count": 50,
     "surrogate_artifact_fingerprints": [
       "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
       "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
@@ -92,113 +92,13 @@
       "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
       "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
       "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
-      "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38",
-      "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
-      "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
-      "4c81b1cc8ea2b16cd2470e77df8062dcd210abbabce926e94a5a688bc3067e2f",
-      "574f02e990c06d860223caf775ff5ea628586515c8f702406ad81484fbc36172",
-      "504633caa41f831e5af08606d94aa0aee46f66a19ab5e1ff35d46313f8e4c009",
-      "eab3bf4c0ae215a7e76630891d5f222ed76525ea549c50293932759cb2e4fc5e",
-      "ad1be340c8e56f6cdb55ad4ef2acc9168fb8f068379ec3070dc3ac84e09922a4",
-      "9e8bc7e51d97c65293aa78a051ad695a00d2ae8bf12d033cac22a9784c8cf91b",
-      "0cb194538dd70ff04bde1b3e9385c1f1027593aaffc7802efb5c30379f246b55",
-      "70990573e2456a4537d4a7e5d8afed6a588d6295f2055e4514427e027085574d",
-      "4c20d0e89922e02e02b9d7002f316d99d415e872830636a496858ac0b9526f15",
-      "4ae198551eb1ded491ced9507a475621d2be4d140e5d1d89c035e6a7ed20cf50",
-      "70eafd58df1c39ea42d5682a58a1e4f8c6b375d2089045fcd2331208310e66eb",
-      "5eaae6bab439a488cc4bd31e9692357057f492806d42315b8cb72cfc24fa02de",
-      "41d80049d370e3ed842be0cf1fa7f7df5f21c477915b09b1d9c73a22d67f2585",
-      "1e99777010fa2274bd4407cafc0055bdfaf9248b1a459ba1fe2e8c9a1bfe7537",
-      "425e183f9fe332b288c194892e6e07867447a8b1b4bea427a378ce5ed88bc0ad",
-      "eb05601900c6f87473d30a4f19f55ea98fdf690c6dbfbf64c70e5126207e32c9",
-      "2958fd3adadafe72d2faed2aaf66fc8e38511e551e3e3d0cb7ce6b5f7b426f96",
-      "111c67abeb39edd3c2f9b69d03080f1509ce40e7b51f86b0b9e89d8409af3c22",
-      "5d43db9b5bbffb8f16b30d658b8f88ba84194d7687c699415982afede6e15341",
-      "75449f9435948d31560ef5a0e4a128efed4f2b6752ea9181f35477cb1fea61a3",
-      "6f92f93b49a1b5d904fa3e5c5aca1a38ef7b21670cc5e8cec5330623b4ac40ce",
-      "26f95790844dd84868574a6b16dfed6650983831687e216546607499c065d002",
-      "6259f56c039deab1844d76abff52c73da5194f8b3d0bf0471f6fca7956e33d32",
-      "aa17d65ebef0d682fb23e1b209eaa459223e0025f80dcac0a583dbb055e39766",
-      "7a5d2fe7be6bc86bcade298a12bfb5eba75debd09d4c2fe1d3aec2d7f37cce0d",
-      "d24aabd40b42bd376e9a05453a1e3f0d4bbe6c2397eccba343942c493836106a",
-      "a89d02dd3c4a39cd4a0616c88af247504a51c19ba243024e41ceab464387f885",
-      "23626fbc0422de635371500c7e79572eb268a5c8aabaaa1906c0f149b435c5d0",
-      "7388edc387d7e23eccb22d1eb3a9f3f79733cf957e7a68e9ad7abaa301cb9138",
-      "7f91479c4f5dc55cac8931aa3ec5f17157b3e8b6162cd8de520cb2b0035f9da6",
-      "7431a5672562a0480a8df9789a852103628f44ecac839b34a17ad1fc2ff89344",
-      "f3861bbfa49e497cbde628006efbf74e00f10e4dc15d412d3549922d21789289",
-      "37349198046262e8d6fc2ad5ae33e9ba31587ca031e5435efe455801a42b1754",
-      "0f284caccadf8b9334b8c102c73ded03229a6601e45ac82c0fdf65f44153d392",
-      "1ed91ba0143bb9a370a2c833b4c09968afbdb1666c27f276dd0b2f6bb8e3b6ca",
-      "1fcca16dc059e8047c14a4bea371ee6ce4397be2e5d7eb354655cfdbec71116f",
-      "ab02772ae3daa3ddc9f556f1785694b8533c5dfe58a34fef4988ea0ce8eda66e",
-      "05229543f9a1596105ac429108d32c536153dc7847ac414b415b95b8f1f4442b",
-      "1a9ec71f2eaca1cfbbf5089ea8896ca682f1c38a5639213727716c1ed1c55f77",
-      "b2d63f353bdf09cfb564ea859fd64bbdd9f1a397ed9f5e3586bc0aa7fb685d63",
-      "01f2f0d17316ba16296085700dae4b3966a63234330981202322d6a52ab0df33",
-      "49f786f71f6a436fc3c445e8413c72230e80b6d8116ec28b6150db9f0a081188",
-      "1939e4881ed1e88dda280fd2b8c219c3888a0ae8c5fa4029e5794efc2b8c048e",
-      "3cdb5efcce287030f0a2e1bcdfffde67c41ecfcacbcb6199c93dffac2baecae4",
-      "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
-      "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
-      "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
-      "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38",
-      "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
-      "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
-      "4c81b1cc8ea2b16cd2470e77df8062dcd210abbabce926e94a5a688bc3067e2f",
-      "574f02e990c06d860223caf775ff5ea628586515c8f702406ad81484fbc36172",
-      "504633caa41f831e5af08606d94aa0aee46f66a19ab5e1ff35d46313f8e4c009",
-      "eab3bf4c0ae215a7e76630891d5f222ed76525ea549c50293932759cb2e4fc5e",
-      "ad1be340c8e56f6cdb55ad4ef2acc9168fb8f068379ec3070dc3ac84e09922a4",
-      "9e8bc7e51d97c65293aa78a051ad695a00d2ae8bf12d033cac22a9784c8cf91b",
-      "0cb194538dd70ff04bde1b3e9385c1f1027593aaffc7802efb5c30379f246b55",
-      "70990573e2456a4537d4a7e5d8afed6a588d6295f2055e4514427e027085574d",
-      "4c20d0e89922e02e02b9d7002f316d99d415e872830636a496858ac0b9526f15",
-      "4ae198551eb1ded491ced9507a475621d2be4d140e5d1d89c035e6a7ed20cf50",
-      "87e5b7c29557660296b26c268882fc55cfca292f387ed046df50127df7d96274",
-      "c594bdbef5dd46633723b8764b5f30e47d8b25524d4960c7ef27d41049adc1ee",
-      "1fc8c82a8386b0fa0d635b8b6bf2aaf7b3aa2220ec05600ca32aa537776849c6",
-      "1e99777010fa2274bd4407cafc0055bdfaf9248b1a459ba1fe2e8c9a1bfe7537",
-      "425e183f9fe332b288c194892e6e07867447a8b1b4bea427a378ce5ed88bc0ad",
-      "eb05601900c6f87473d30a4f19f55ea98fdf690c6dbfbf64c70e5126207e32c9",
-      "2958fd3adadafe72d2faed2aaf66fc8e38511e551e3e3d0cb7ce6b5f7b426f96",
-      "111c67abeb39edd3c2f9b69d03080f1509ce40e7b51f86b0b9e89d8409af3c22",
-      "5d43db9b5bbffb8f16b30d658b8f88ba84194d7687c699415982afede6e15341",
-      "75449f9435948d31560ef5a0e4a128efed4f2b6752ea9181f35477cb1fea61a3",
-      "6f92f93b49a1b5d904fa3e5c5aca1a38ef7b21670cc5e8cec5330623b4ac40ce",
-      "26f95790844dd84868574a6b16dfed6650983831687e216546607499c065d002",
-      "6259f56c039deab1844d76abff52c73da5194f8b3d0bf0471f6fca7956e33d32",
-      "aa17d65ebef0d682fb23e1b209eaa459223e0025f80dcac0a583dbb055e39766",
-      "7a5d2fe7be6bc86bcade298a12bfb5eba75debd09d4c2fe1d3aec2d7f37cce0d",
-      "d24aabd40b42bd376e9a05453a1e3f0d4bbe6c2397eccba343942c493836106a",
-      "a89d02dd3c4a39cd4a0616c88af247504a51c19ba243024e41ceab464387f885",
-      "23626fbc0422de635371500c7e79572eb268a5c8aabaaa1906c0f149b435c5d0",
-      "7388edc387d7e23eccb22d1eb3a9f3f79733cf957e7a68e9ad7abaa301cb9138",
-      "7f91479c4f5dc55cac8931aa3ec5f17157b3e8b6162cd8de520cb2b0035f9da6",
-      "7431a5672562a0480a8df9789a852103628f44ecac839b34a17ad1fc2ff89344",
-      "f3861bbfa49e497cbde628006efbf74e00f10e4dc15d412d3549922d21789289",
-      "37349198046262e8d6fc2ad5ae33e9ba31587ca031e5435efe455801a42b1754",
-      "0f284caccadf8b9334b8c102c73ded03229a6601e45ac82c0fdf65f44153d392",
-      "1ed91ba0143bb9a370a2c833b4c09968afbdb1666c27f276dd0b2f6bb8e3b6ca",
-      "1fcca16dc059e8047c14a4bea371ee6ce4397be2e5d7eb354655cfdbec71116f",
-      "ab02772ae3daa3ddc9f556f1785694b8533c5dfe58a34fef4988ea0ce8eda66e",
-      "05229543f9a1596105ac429108d32c536153dc7847ac414b415b95b8f1f4442b",
-      "1a9ec71f2eaca1cfbbf5089ea8896ca682f1c38a5639213727716c1ed1c55f77",
-      "b2d63f353bdf09cfb564ea859fd64bbdd9f1a397ed9f5e3586bc0aa7fb685d63",
-      "01f2f0d17316ba16296085700dae4b3966a63234330981202322d6a52ab0df33",
-      "49f786f71f6a436fc3c445e8413c72230e80b6d8116ec28b6150db9f0a081188",
-      "1939e4881ed1e88dda280fd2b8c219c3888a0ae8c5fa4029e5794efc2b8c048e",
-      "3cdb5efcce287030f0a2e1bcdfffde67c41ecfcacbcb6199c93dffac2baecae4",
-      "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
-      "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
-      "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
       "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38"
     ],
-    "coordinator_proposal_count": 150,
-    "optimizer_backend_type": "none",
-    "oracle_reveal_count": 400,
-    "direct_botorch_calls": 50,
-    "random_steps": 50,
+    "coordinator_proposal_count": 50,
+    "optimizer_backend_type": "FrozenSurrogateOptimizerBackend",
+    "oracle_reveal_count": 80,
+    "direct_botorch_calls": 0,
+    "random_steps": 0,
     "training_recipe_ids_by_step": [
       [
         "protocol-0d38055e23a7",
@@ -303,706 +203,6 @@
         "protocol-c1c280b7366f",
         "protocol-f3ae9bcb49de",
         "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-f3ae9bcb49de",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-a4fcf0522485"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-f3ae9bcb49de",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-7acc4561b3f7",
-        "protocol-23509c88f8bf",
-        "protocol-f3ae9bcb49de",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-7acc4561b3f7",
-        "protocol-95a0b3eea94d",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-7acc4561b3f7",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-1839e8c24871",
-        "protocol-d3602183e567",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-d3602183e567",
-        "protocol-7acc4561b3f7",
-        "protocol-f3ae9bcb49de",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-a4fcf0522485"
-      ],
-      [
-        "protocol-d3602183e567",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-c1c280b7366f",
-        "protocol-f3ae9bcb49de",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-d3602183e567"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de"
-      ],
-      [
-        "protocol-c005aa958750",
-        "protocol-fd150c39c22f",
-        "protocol-1839e8c24871",
-        "protocol-c1c280b7366f",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
         "protocol-7acc4561b3f7"
       ],
       [
@@ -1701,917 +901,17 @@
         "protocol-95a0b3eea94d",
         "protocol-23509c88f8bf",
         "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-0d38055e23a7",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-d3602183e567",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-d3602183e567",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-0d38055e23a7",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-1839e8c24871",
-        "protocol-95a0b3eea94d"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-7acc4561b3f7",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-f3ae9bcb49de",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-c1c280b7366f",
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-fd150c39c22f",
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
-      ],
-      [
-        "protocol-a4fcf0522485",
-        "protocol-9ecd72d3534a",
-        "protocol-95a0b3eea94d",
-        "protocol-23509c88f8bf",
-        "protocol-c005aa958750"
       ]
     ],
-    "runs_loaded": 2250,
-    "horizon_projections": 2250,
-    "samples_created": 2250,
-    "surrogates_fitted": 150,
-    "artifacts_created": 150,
-    "coordinator_calls": 150,
-    "proposals_generated": 1050,
-    "oracle_reveals": 400,
-    "botorch_calls": 50
+    "runs_loaded": 750,
+    "horizon_projections": 750,
+    "samples_created": 750,
+    "surrogates_fitted": 50,
+    "artifacts_created": 50,
+    "coordinator_calls": 50,
+    "proposals_generated": 350,
+    "oracle_reveals": 80,
+    "botorch_calls": 0
   },
   "policy_execution_traces": {
     "AICOSCIENTIST_PROCESS_SURROGATE": {
@@ -3492,7 +1792,7 @@
       "botorch_calls": 0
     },
     "DIRECT_BOTORCH_BASELINE": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -3516,7 +1816,7 @@
       "botorch_calls": 50
     },
     "random": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -5304,6 +3604,8 @@
       "process_surrogate_fit_count": 50,
       "coordinator_proposal_count": 50,
       "oracle_reveal_count": 80,
+      "direct_botorch_calls": 0,
+      "random_steps": 0,
       "uses_direct_botorch_backend": false,
       "optimizer_backend_type": "FrozenSurrogateOptimizerBackend",
       "surrogate_artifact_fingerprints": [
@@ -5363,12 +3665,14 @@
     {
       "policy": "DIRECT_BOTORCH_BASELINE",
       "engine_path": "DIRECT_BOTORCH_BASELINE",
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_fit_count": 0,
       "coordinator_proposal_count": 0,
       "oracle_reveal_count": 80,
+      "direct_botorch_calls": 50,
+      "random_steps": 0,
       "uses_direct_botorch_backend": true,
       "optimizer_backend_type": "BoTorchBackend",
       "surrogate_artifact_fingerprints": [],
@@ -5377,12 +3681,14 @@
     {
       "policy": "random",
       "engine_path": "RANDOM_BASELINE",
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_fit_count": 0,
       "coordinator_proposal_count": 0,
       "oracle_reveal_count": 80,
+      "direct_botorch_calls": 0,
+      "random_steps": 50,
       "uses_direct_botorch_backend": false,
       "optimizer_backend_type": "RandomSampling",
       "surrogate_artifact_fingerprints": [],
@@ -5397,6 +3703,8 @@
       "process_surrogate_fit_count": 50,
       "coordinator_proposal_count": 50,
       "oracle_reveal_count": 80,
+      "direct_botorch_calls": 0,
+      "random_steps": 0,
       "uses_direct_botorch_backend": false,
       "optimizer_backend_type": "FrozenSurrogateOptimizerBackend",
       "surrogate_artifact_fingerprints": [
@@ -5462,6 +3770,8 @@
       "process_surrogate_fit_count": 50,
       "coordinator_proposal_count": 50,
       "oracle_reveal_count": 80,
+      "direct_botorch_calls": 0,
+      "random_steps": 0,
       "uses_direct_botorch_backend": false,
       "optimizer_backend_type": "FrozenSurrogateOptimizerBackend",
       "surrogate_artifact_fingerprints": [
@@ -5777,7 +4087,7 @@
               "model_state_fingerprint": "e5560961e2e2301c9ea618001567df8120c2d28f0d05bbc864f2e1cadc1dda91",
               "surrogate_artifact_fingerprint": "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -5879,7 +4189,7 @@
               "model_state_fingerprint": "8721f7edf267e6b78e5076cb3aba8f97bedc892bcc2f585c14b83e40db5441de",
               "surrogate_artifact_fingerprint": "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -5985,7 +4295,7 @@
               "model_state_fingerprint": "10ccb3e4ef51a747f8cd2ee7a07f8bb6f694dc47a6535b36d18cf48fad0354be",
               "surrogate_artifact_fingerprint": "4c81b1cc8ea2b16cd2470e77df8062dcd210abbabce926e94a5a688bc3067e2f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6095,7 +4405,7 @@
               "model_state_fingerprint": "3337e7bf0b1a8ca3603f4bf7ee497cc7d3673f0f8a819cddd23eedb940914bfd",
               "surrogate_artifact_fingerprint": "574f02e990c06d860223caf775ff5ea628586515c8f702406ad81484fbc36172",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6209,7 +4519,7 @@
               "model_state_fingerprint": "464e5d7a56d907d37eb6ecc114fdb9b6c363f2ccf7fa9e9b13802a70ce47953a",
               "surrogate_artifact_fingerprint": "504633caa41f831e5af08606d94aa0aee46f66a19ab5e1ff35d46313f8e4c009",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -6440,7 +4750,7 @@
               "model_state_fingerprint": "256e580e5a4e8e0cf782d6cfe1cc0b47f821d8a67437a493ecea804c829167a1",
               "surrogate_artifact_fingerprint": "eab3bf4c0ae215a7e76630891d5f222ed76525ea549c50293932759cb2e4fc5e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6542,7 +4852,7 @@
               "model_state_fingerprint": "1b67557bf708c5b8f12916373328c89cb46c8d6a65f8546fdbdd2a7072ce4a89",
               "surrogate_artifact_fingerprint": "ad1be340c8e56f6cdb55ad4ef2acc9168fb8f068379ec3070dc3ac84e09922a4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6648,7 +4958,7 @@
               "model_state_fingerprint": "d5d15abac216b33d0281e442305463a47dea327319c9e9ace7e08bf8d9b6f78e",
               "surrogate_artifact_fingerprint": "9e8bc7e51d97c65293aa78a051ad695a00d2ae8bf12d033cac22a9784c8cf91b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6758,7 +5068,7 @@
               "model_state_fingerprint": "4b6f22a22e9598c1c1f9be6b50a203b23314866088c750f44bd0c7b3a23cd373",
               "surrogate_artifact_fingerprint": "0cb194538dd70ff04bde1b3e9385c1f1027593aaffc7802efb5c30379f246b55",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -6872,7 +5182,7 @@
               "model_state_fingerprint": "35d877e96ed2f2c67fe724f5fb1b9c4a6c931bbf67508405833140b2f87de50a",
               "surrogate_artifact_fingerprint": "70990573e2456a4537d4a7e5d8afed6a588d6295f2055e4514427e027085574d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -7103,7 +5413,7 @@
               "model_state_fingerprint": "7b3a78e62e5bdd6bb88efd8e6c76ad693ec0fad6f96c6d04a5485c4fbf045188",
               "surrogate_artifact_fingerprint": "4c20d0e89922e02e02b9d7002f316d99d415e872830636a496858ac0b9526f15",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7205,7 +5515,7 @@
               "model_state_fingerprint": "36a1be1c9d70d38df67f7cf399735fcf70994cddff62963f1e1c1ede72e4e5cf",
               "surrogate_artifact_fingerprint": "4ae198551eb1ded491ced9507a475621d2be4d140e5d1d89c035e6a7ed20cf50",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7311,7 +5621,7 @@
               "model_state_fingerprint": "2ee724d28b75627ba9fee4cc40f03f442c274fdc92a2f7fda7a5683d02b6e66e",
               "surrogate_artifact_fingerprint": "70eafd58df1c39ea42d5682a58a1e4f8c6b375d2089045fcd2331208310e66eb",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7421,7 +5731,7 @@
               "model_state_fingerprint": "9773d63fd96299c7751cbabb4998627f5ceb570febb38175b0baa7864e734100",
               "surrogate_artifact_fingerprint": "5eaae6bab439a488cc4bd31e9692357057f492806d42315b8cb72cfc24fa02de",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7535,7 +5845,7 @@
               "model_state_fingerprint": "dae7a0b463b89611e323916caa49e33c4fd5a712af90fb3ebb5ba55657696eb3",
               "surrogate_artifact_fingerprint": "41d80049d370e3ed842be0cf1fa7f7df5f21c477915b09b1d9c73a22d67f2585",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -7766,7 +6076,7 @@
               "model_state_fingerprint": "2da5f987acf98eeba6fe3554fd18c0b006f48d749dcf9a11cb6a672534401eec",
               "surrogate_artifact_fingerprint": "1e99777010fa2274bd4407cafc0055bdfaf9248b1a459ba1fe2e8c9a1bfe7537",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7868,7 +6178,7 @@
               "model_state_fingerprint": "b99f2241dce7ef4886fa30ff7d2c9eaab196c4783059d533a334e39cf39bba72",
               "surrogate_artifact_fingerprint": "425e183f9fe332b288c194892e6e07867447a8b1b4bea427a378ce5ed88bc0ad",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -7974,7 +6284,7 @@
               "model_state_fingerprint": "0c53e813ad4f30db6986f931649f7d8c6cdcd45ff1060ccd0477be358efab983",
               "surrogate_artifact_fingerprint": "eb05601900c6f87473d30a4f19f55ea98fdf690c6dbfbf64c70e5126207e32c9",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8084,7 +6394,7 @@
               "model_state_fingerprint": "434f249831ba98be74046c5ff507c147424ed1323516403191790130015d984a",
               "surrogate_artifact_fingerprint": "2958fd3adadafe72d2faed2aaf66fc8e38511e551e3e3d0cb7ce6b5f7b426f96",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8198,7 +6508,7 @@
               "model_state_fingerprint": "e9adc59337fdc79522cde5bfb7e034de2834bc51694201308e4684e26b9d8e9d",
               "surrogate_artifact_fingerprint": "111c67abeb39edd3c2f9b69d03080f1509ce40e7b51f86b0b9e89d8409af3c22",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -8429,7 +6739,7 @@
               "model_state_fingerprint": "4f635009cf562c290d8b802c3d4f076aa3c745ee58edec5bb2957ed8b37869f9",
               "surrogate_artifact_fingerprint": "5d43db9b5bbffb8f16b30d658b8f88ba84194d7687c699415982afede6e15341",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8531,7 +6841,7 @@
               "model_state_fingerprint": "b780a8dd16ab787ba2ee30e89abfc711d80a294fd947097f3970c2120c007ce6",
               "surrogate_artifact_fingerprint": "75449f9435948d31560ef5a0e4a128efed4f2b6752ea9181f35477cb1fea61a3",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8637,7 +6947,7 @@
               "model_state_fingerprint": "6869bdc014e1784b54a3aa693619a92110d01a03f14543ec8bb8b2d34c5243b6",
               "surrogate_artifact_fingerprint": "6f92f93b49a1b5d904fa3e5c5aca1a38ef7b21670cc5e8cec5330623b4ac40ce",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8747,7 +7057,7 @@
               "model_state_fingerprint": "afb92e5ffeca34112cde97a7953279113b9351527b4117c4a4a8ba21b6f36a31",
               "surrogate_artifact_fingerprint": "26f95790844dd84868574a6b16dfed6650983831687e216546607499c065d002",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -8861,7 +7171,7 @@
               "model_state_fingerprint": "212dfdd63063e1f569e6496adfad5f9c1d63dc5a8659aca09ae35a3dbbe4b46a",
               "surrogate_artifact_fingerprint": "6259f56c039deab1844d76abff52c73da5194f8b3d0bf0471f6fca7956e33d32",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -9092,7 +7402,7 @@
               "model_state_fingerprint": "7e137f0dd329c9918ab78251f1dc35f878a518bf921ba2550592239768ec8714",
               "surrogate_artifact_fingerprint": "aa17d65ebef0d682fb23e1b209eaa459223e0025f80dcac0a583dbb055e39766",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9194,7 +7504,7 @@
               "model_state_fingerprint": "b5b96e335466d6575b67a8a3d8ffcc811296e380570179486b1afe4e95b27173",
               "surrogate_artifact_fingerprint": "7a5d2fe7be6bc86bcade298a12bfb5eba75debd09d4c2fe1d3aec2d7f37cce0d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9300,7 +7610,7 @@
               "model_state_fingerprint": "8171573a3734b7637c375d786a99a7495d03d3d120b70ea15f000979cc37e58c",
               "surrogate_artifact_fingerprint": "d24aabd40b42bd376e9a05453a1e3f0d4bbe6c2397eccba343942c493836106a",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9410,7 +7720,7 @@
               "model_state_fingerprint": "f41fb4b3cb1b7da5970dd387cc71ff2a46d08022223b317a55bd8b9bc40487a7",
               "surrogate_artifact_fingerprint": "a89d02dd3c4a39cd4a0616c88af247504a51c19ba243024e41ceab464387f885",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9524,7 +7834,7 @@
               "model_state_fingerprint": "87f705c1f1f66413e76e4f19c0de4acaa42277d4c807ef4d599347c5438de938",
               "surrogate_artifact_fingerprint": "23626fbc0422de635371500c7e79572eb268a5c8aabaaa1906c0f149b435c5d0",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -9755,7 +8065,7 @@
               "model_state_fingerprint": "8bdc215cc0abfcc8e48b9610cb93afd0710886fceb00e21be46164bf71e82f94",
               "surrogate_artifact_fingerprint": "7388edc387d7e23eccb22d1eb3a9f3f79733cf957e7a68e9ad7abaa301cb9138",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9857,7 +8167,7 @@
               "model_state_fingerprint": "a488160eb43f79675b6c38304120bdc7ee82b871c595f4d5cbb8856d5e8ca14d",
               "surrogate_artifact_fingerprint": "7f91479c4f5dc55cac8931aa3ec5f17157b3e8b6162cd8de520cb2b0035f9da6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -9963,7 +8273,7 @@
               "model_state_fingerprint": "d64be5661fbb6e601c4032e08b2764cb67822c1667f3d768355399ba96125358",
               "surrogate_artifact_fingerprint": "7431a5672562a0480a8df9789a852103628f44ecac839b34a17ad1fc2ff89344",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10073,7 +8383,7 @@
               "model_state_fingerprint": "563395ec4a6074ab6071779b49ca58f81b9bdd0874ed981f44e62046374ee1c6",
               "surrogate_artifact_fingerprint": "f3861bbfa49e497cbde628006efbf74e00f10e4dc15d412d3549922d21789289",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10187,7 +8497,7 @@
               "model_state_fingerprint": "9badaa5bc403a68be84e71943e08ba3428bbe194e505ab2fc640f8f3c6fcc5e1",
               "surrogate_artifact_fingerprint": "37349198046262e8d6fc2ad5ae33e9ba31587ca031e5435efe455801a42b1754",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -10418,7 +8728,7 @@
               "model_state_fingerprint": "4fd900f51c2f452c27a8d9751c083757b67dd2b426f75eb5a460c72f607cd9cf",
               "surrogate_artifact_fingerprint": "0f284caccadf8b9334b8c102c73ded03229a6601e45ac82c0fdf65f44153d392",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10520,7 +8830,7 @@
               "model_state_fingerprint": "21486f492788f2b373a9205189afe8d223109848c53b71a19e65b5f0b9178b01",
               "surrogate_artifact_fingerprint": "1ed91ba0143bb9a370a2c833b4c09968afbdb1666c27f276dd0b2f6bb8e3b6ca",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10626,7 +8936,7 @@
               "model_state_fingerprint": "702107a195b52c95f88e433d64e1f49f2d648afc9f8add50ee16bbc5e5af9daa",
               "surrogate_artifact_fingerprint": "1fcca16dc059e8047c14a4bea371ee6ce4397be2e5d7eb354655cfdbec71116f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10736,7 +9046,7 @@
               "model_state_fingerprint": "5f589a5ab4dd943926ef671afcfeef916065925e509a7d8c37233ba1c08b475c",
               "surrogate_artifact_fingerprint": "ab02772ae3daa3ddc9f556f1785694b8533c5dfe58a34fef4988ea0ce8eda66e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -10850,7 +9160,7 @@
               "model_state_fingerprint": "8e83a627d6fe1e30e7d391fdb9725d36dcfd237a57b58f3a3329e114f3b7cd92",
               "surrogate_artifact_fingerprint": "05229543f9a1596105ac429108d32c536153dc7847ac414b415b95b8f1f4442b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -11081,7 +9391,7 @@
               "model_state_fingerprint": "683e764f0f596c1f71113f925ca88fa8b069db6fa8e2054e03e190959e6f4c8a",
               "surrogate_artifact_fingerprint": "1a9ec71f2eaca1cfbbf5089ea8896ca682f1c38a5639213727716c1ed1c55f77",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11183,7 +9493,7 @@
               "model_state_fingerprint": "2f92f9d1b9e60a8b27975bda20624b95ea70035e7d10c2e828397397323328d7",
               "surrogate_artifact_fingerprint": "b2d63f353bdf09cfb564ea859fd64bbdd9f1a397ed9f5e3586bc0aa7fb685d63",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11289,7 +9599,7 @@
               "model_state_fingerprint": "b6f67649089d17e4fd972a9c2646d2978c5c273a1dd06c073f167dce085170b9",
               "surrogate_artifact_fingerprint": "01f2f0d17316ba16296085700dae4b3966a63234330981202322d6a52ab0df33",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11399,7 +9709,7 @@
               "model_state_fingerprint": "1af2e10bda8390b8def8904869c7a41b47b70a67f6e81ad3248212f8abb70c2e",
               "surrogate_artifact_fingerprint": "49f786f71f6a436fc3c445e8413c72230e80b6d8116ec28b6150db9f0a081188",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11513,7 +9823,7 @@
               "model_state_fingerprint": "46e4dde31821ed0cb25be05626f1de4987081206b4b8e113660275277c10b0e3",
               "surrogate_artifact_fingerprint": "1939e4881ed1e88dda280fd2b8c219c3888a0ae8c5fa4029e5794efc2b8c048e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -11744,7 +10054,7 @@
               "model_state_fingerprint": "98e0d7a75bfde30455ea1e9f2628c977467f5f5ebd382b56dbb44f1ac4931828",
               "surrogate_artifact_fingerprint": "3cdb5efcce287030f0a2e1bcdfffde67c41ecfcacbcb6199c93dffac2baecae4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11846,7 +10156,7 @@
               "model_state_fingerprint": "4532ad2d1a8077b43ed793349efa33d73e6ffc8893d7a540f66bfde830591138",
               "surrogate_artifact_fingerprint": "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -11952,7 +10262,7 @@
               "model_state_fingerprint": "50f331015dc4dfaf6f6a8ca3b80fbc4c5a9b18f8a83173f7658172e4009308f5",
               "surrogate_artifact_fingerprint": "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -12062,7 +10372,7 @@
               "model_state_fingerprint": "799e13ae8346dba7232b015830a4184f15c6acf7f4ae770c69149d24f497e1cc",
               "surrogate_artifact_fingerprint": "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           },
           {
@@ -12176,7 +10486,7 @@
               "model_state_fingerprint": "90624b40ee0878e084b36e08e2eb014d78e54bc2da35196c3c41bb20585eee52",
               "surrogate_artifact_fingerprint": "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "noisy_expected_improvement"
+              "acquisition_strategy": "EXPECTED_IMPROVEMENT"
             }
           }
         ]
@@ -12202,7 +10512,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 162.61621730202148,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -12352,7 +10662,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 0.0,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -12502,7 +10812,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 48.69528772909291,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -12652,7 +10962,7 @@
         "final_simple_regret": 47.71270073679477,
         "final_cumulative_regret": 238.56350368397386,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -12802,7 +11112,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 238.73775144726847,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -12952,7 +11262,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 238.73775144726847,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13102,7 +11412,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 162.61621730202148,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13252,7 +11562,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 136.65872928999528,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13402,7 +11712,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 0.0,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13552,7 +11862,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 200.58986049299767,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13704,7 +12014,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 200.58986049299767,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13839,7 +12149,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 48.69528772909291,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -13974,7 +12284,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 0.0,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14109,7 +12419,7 @@
         "final_simple_regret": 47.71270073679477,
         "final_cumulative_regret": 276.71139463824466,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14244,7 +12554,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 353.18142431008084,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14379,7 +12689,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 200.93835601958688,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14514,7 +12824,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 47.71270073679477,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14649,7 +12959,7 @@
         "final_simple_regret": 0.0,
         "final_cumulative_regret": 0.0,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14784,7 +13094,7 @@
         "final_simple_regret": 9.739057545818582,
         "final_cumulative_regret": 420.0349693255522,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -14919,7 +13229,7 @@
         "final_simple_regret": 47.71270073679477,
         "final_cumulative_regret": 238.56350368397386,
         "execution_trace": {
-          "source_adapter_invocations": 1,
+          "source_adapter_invocations": 0,
           "battery_process_runs_seen": 0,
           "recipe_selection_horizon_invocations": 0,
           "process_surrogate_samples_created": 0,
@@ -15263,7 +13573,7 @@
               "model_state_fingerprint": "e5560961e2e2301c9ea618001567df8120c2d28f0d05bbc864f2e1cadc1dda91",
               "surrogate_artifact_fingerprint": "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -15365,7 +13675,7 @@
               "model_state_fingerprint": "8721f7edf267e6b78e5076cb3aba8f97bedc892bcc2f585c14b83e40db5441de",
               "surrogate_artifact_fingerprint": "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -15471,7 +13781,7 @@
               "model_state_fingerprint": "10ccb3e4ef51a747f8cd2ee7a07f8bb6f694dc47a6535b36d18cf48fad0354be",
               "surrogate_artifact_fingerprint": "4c81b1cc8ea2b16cd2470e77df8062dcd210abbabce926e94a5a688bc3067e2f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -15581,7 +13891,7 @@
               "model_state_fingerprint": "3337e7bf0b1a8ca3603f4bf7ee497cc7d3673f0f8a819cddd23eedb940914bfd",
               "surrogate_artifact_fingerprint": "574f02e990c06d860223caf775ff5ea628586515c8f702406ad81484fbc36172",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -15695,7 +14005,7 @@
               "model_state_fingerprint": "464e5d7a56d907d37eb6ecc114fdb9b6c363f2ccf7fa9e9b13802a70ce47953a",
               "surrogate_artifact_fingerprint": "504633caa41f831e5af08606d94aa0aee46f66a19ab5e1ff35d46313f8e4c009",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -15926,7 +14236,7 @@
               "model_state_fingerprint": "256e580e5a4e8e0cf782d6cfe1cc0b47f821d8a67437a493ecea804c829167a1",
               "surrogate_artifact_fingerprint": "eab3bf4c0ae215a7e76630891d5f222ed76525ea549c50293932759cb2e4fc5e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16028,7 +14338,7 @@
               "model_state_fingerprint": "1b67557bf708c5b8f12916373328c89cb46c8d6a65f8546fdbdd2a7072ce4a89",
               "surrogate_artifact_fingerprint": "ad1be340c8e56f6cdb55ad4ef2acc9168fb8f068379ec3070dc3ac84e09922a4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16134,7 +14444,7 @@
               "model_state_fingerprint": "d5d15abac216b33d0281e442305463a47dea327319c9e9ace7e08bf8d9b6f78e",
               "surrogate_artifact_fingerprint": "9e8bc7e51d97c65293aa78a051ad695a00d2ae8bf12d033cac22a9784c8cf91b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16244,7 +14554,7 @@
               "model_state_fingerprint": "4b6f22a22e9598c1c1f9be6b50a203b23314866088c750f44bd0c7b3a23cd373",
               "surrogate_artifact_fingerprint": "0cb194538dd70ff04bde1b3e9385c1f1027593aaffc7802efb5c30379f246b55",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16358,7 +14668,7 @@
               "model_state_fingerprint": "35d877e96ed2f2c67fe724f5fb1b9c4a6c931bbf67508405833140b2f87de50a",
               "surrogate_artifact_fingerprint": "70990573e2456a4537d4a7e5d8afed6a588d6295f2055e4514427e027085574d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -16589,7 +14899,7 @@
               "model_state_fingerprint": "7b3a78e62e5bdd6bb88efd8e6c76ad693ec0fad6f96c6d04a5485c4fbf045188",
               "surrogate_artifact_fingerprint": "4c20d0e89922e02e02b9d7002f316d99d415e872830636a496858ac0b9526f15",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16691,7 +15001,7 @@
               "model_state_fingerprint": "36a1be1c9d70d38df67f7cf399735fcf70994cddff62963f1e1c1ede72e4e5cf",
               "surrogate_artifact_fingerprint": "4ae198551eb1ded491ced9507a475621d2be4d140e5d1d89c035e6a7ed20cf50",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16797,7 +15107,7 @@
               "model_state_fingerprint": "2ee724d28b75627ba9fee4cc40f03f442c274fdc92a2f7fda7a5683d02b6e66e",
               "surrogate_artifact_fingerprint": "70eafd58df1c39ea42d5682a58a1e4f8c6b375d2089045fcd2331208310e66eb",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -16907,7 +15217,7 @@
               "model_state_fingerprint": "9773d63fd96299c7751cbabb4998627f5ceb570febb38175b0baa7864e734100",
               "surrogate_artifact_fingerprint": "5eaae6bab439a488cc4bd31e9692357057f492806d42315b8cb72cfc24fa02de",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -17021,7 +15331,7 @@
               "model_state_fingerprint": "dae7a0b463b89611e323916caa49e33c4fd5a712af90fb3ebb5ba55657696eb3",
               "surrogate_artifact_fingerprint": "41d80049d370e3ed842be0cf1fa7f7df5f21c477915b09b1d9c73a22d67f2585",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -17252,7 +15562,7 @@
               "model_state_fingerprint": "2da5f987acf98eeba6fe3554fd18c0b006f48d749dcf9a11cb6a672534401eec",
               "surrogate_artifact_fingerprint": "1e99777010fa2274bd4407cafc0055bdfaf9248b1a459ba1fe2e8c9a1bfe7537",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -17354,7 +15664,7 @@
               "model_state_fingerprint": "b99f2241dce7ef4886fa30ff7d2c9eaab196c4783059d533a334e39cf39bba72",
               "surrogate_artifact_fingerprint": "425e183f9fe332b288c194892e6e07867447a8b1b4bea427a378ce5ed88bc0ad",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -17460,7 +15770,7 @@
               "model_state_fingerprint": "0c53e813ad4f30db6986f931649f7d8c6cdcd45ff1060ccd0477be358efab983",
               "surrogate_artifact_fingerprint": "eb05601900c6f87473d30a4f19f55ea98fdf690c6dbfbf64c70e5126207e32c9",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -17570,7 +15880,7 @@
               "model_state_fingerprint": "434f249831ba98be74046c5ff507c147424ed1323516403191790130015d984a",
               "surrogate_artifact_fingerprint": "2958fd3adadafe72d2faed2aaf66fc8e38511e551e3e3d0cb7ce6b5f7b426f96",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -17684,7 +15994,7 @@
               "model_state_fingerprint": "e9adc59337fdc79522cde5bfb7e034de2834bc51694201308e4684e26b9d8e9d",
               "surrogate_artifact_fingerprint": "111c67abeb39edd3c2f9b69d03080f1509ce40e7b51f86b0b9e89d8409af3c22",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -17915,7 +16225,7 @@
               "model_state_fingerprint": "4f635009cf562c290d8b802c3d4f076aa3c745ee58edec5bb2957ed8b37869f9",
               "surrogate_artifact_fingerprint": "5d43db9b5bbffb8f16b30d658b8f88ba84194d7687c699415982afede6e15341",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18017,7 +16327,7 @@
               "model_state_fingerprint": "b780a8dd16ab787ba2ee30e89abfc711d80a294fd947097f3970c2120c007ce6",
               "surrogate_artifact_fingerprint": "75449f9435948d31560ef5a0e4a128efed4f2b6752ea9181f35477cb1fea61a3",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18123,7 +16433,7 @@
               "model_state_fingerprint": "6869bdc014e1784b54a3aa693619a92110d01a03f14543ec8bb8b2d34c5243b6",
               "surrogate_artifact_fingerprint": "6f92f93b49a1b5d904fa3e5c5aca1a38ef7b21670cc5e8cec5330623b4ac40ce",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18233,7 +16543,7 @@
               "model_state_fingerprint": "afb92e5ffeca34112cde97a7953279113b9351527b4117c4a4a8ba21b6f36a31",
               "surrogate_artifact_fingerprint": "26f95790844dd84868574a6b16dfed6650983831687e216546607499c065d002",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18347,7 +16657,7 @@
               "model_state_fingerprint": "212dfdd63063e1f569e6496adfad5f9c1d63dc5a8659aca09ae35a3dbbe4b46a",
               "surrogate_artifact_fingerprint": "6259f56c039deab1844d76abff52c73da5194f8b3d0bf0471f6fca7956e33d32",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -18578,7 +16888,7 @@
               "model_state_fingerprint": "7e137f0dd329c9918ab78251f1dc35f878a518bf921ba2550592239768ec8714",
               "surrogate_artifact_fingerprint": "aa17d65ebef0d682fb23e1b209eaa459223e0025f80dcac0a583dbb055e39766",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18680,7 +16990,7 @@
               "model_state_fingerprint": "b5b96e335466d6575b67a8a3d8ffcc811296e380570179486b1afe4e95b27173",
               "surrogate_artifact_fingerprint": "7a5d2fe7be6bc86bcade298a12bfb5eba75debd09d4c2fe1d3aec2d7f37cce0d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18786,7 +17096,7 @@
               "model_state_fingerprint": "8171573a3734b7637c375d786a99a7495d03d3d120b70ea15f000979cc37e58c",
               "surrogate_artifact_fingerprint": "d24aabd40b42bd376e9a05453a1e3f0d4bbe6c2397eccba343942c493836106a",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -18896,7 +17206,7 @@
               "model_state_fingerprint": "f41fb4b3cb1b7da5970dd387cc71ff2a46d08022223b317a55bd8b9bc40487a7",
               "surrogate_artifact_fingerprint": "a89d02dd3c4a39cd4a0616c88af247504a51c19ba243024e41ceab464387f885",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -19010,7 +17320,7 @@
               "model_state_fingerprint": "87f705c1f1f66413e76e4f19c0de4acaa42277d4c807ef4d599347c5438de938",
               "surrogate_artifact_fingerprint": "23626fbc0422de635371500c7e79572eb268a5c8aabaaa1906c0f149b435c5d0",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -19241,7 +17551,7 @@
               "model_state_fingerprint": "8bdc215cc0abfcc8e48b9610cb93afd0710886fceb00e21be46164bf71e82f94",
               "surrogate_artifact_fingerprint": "7388edc387d7e23eccb22d1eb3a9f3f79733cf957e7a68e9ad7abaa301cb9138",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -19343,7 +17653,7 @@
               "model_state_fingerprint": "a488160eb43f79675b6c38304120bdc7ee82b871c595f4d5cbb8856d5e8ca14d",
               "surrogate_artifact_fingerprint": "7f91479c4f5dc55cac8931aa3ec5f17157b3e8b6162cd8de520cb2b0035f9da6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -19449,7 +17759,7 @@
               "model_state_fingerprint": "d64be5661fbb6e601c4032e08b2764cb67822c1667f3d768355399ba96125358",
               "surrogate_artifact_fingerprint": "7431a5672562a0480a8df9789a852103628f44ecac839b34a17ad1fc2ff89344",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -19559,7 +17869,7 @@
               "model_state_fingerprint": "563395ec4a6074ab6071779b49ca58f81b9bdd0874ed981f44e62046374ee1c6",
               "surrogate_artifact_fingerprint": "f3861bbfa49e497cbde628006efbf74e00f10e4dc15d412d3549922d21789289",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -19673,7 +17983,7 @@
               "model_state_fingerprint": "9badaa5bc403a68be84e71943e08ba3428bbe194e505ab2fc640f8f3c6fcc5e1",
               "surrogate_artifact_fingerprint": "37349198046262e8d6fc2ad5ae33e9ba31587ca031e5435efe455801a42b1754",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -19904,7 +18214,7 @@
               "model_state_fingerprint": "4fd900f51c2f452c27a8d9751c083757b67dd2b426f75eb5a460c72f607cd9cf",
               "surrogate_artifact_fingerprint": "0f284caccadf8b9334b8c102c73ded03229a6601e45ac82c0fdf65f44153d392",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20006,7 +18316,7 @@
               "model_state_fingerprint": "21486f492788f2b373a9205189afe8d223109848c53b71a19e65b5f0b9178b01",
               "surrogate_artifact_fingerprint": "1ed91ba0143bb9a370a2c833b4c09968afbdb1666c27f276dd0b2f6bb8e3b6ca",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20112,7 +18422,7 @@
               "model_state_fingerprint": "702107a195b52c95f88e433d64e1f49f2d648afc9f8add50ee16bbc5e5af9daa",
               "surrogate_artifact_fingerprint": "1fcca16dc059e8047c14a4bea371ee6ce4397be2e5d7eb354655cfdbec71116f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20222,7 +18532,7 @@
               "model_state_fingerprint": "5f589a5ab4dd943926ef671afcfeef916065925e509a7d8c37233ba1c08b475c",
               "surrogate_artifact_fingerprint": "ab02772ae3daa3ddc9f556f1785694b8533c5dfe58a34fef4988ea0ce8eda66e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20336,7 +18646,7 @@
               "model_state_fingerprint": "8e83a627d6fe1e30e7d391fdb9725d36dcfd237a57b58f3a3329e114f3b7cd92",
               "surrogate_artifact_fingerprint": "05229543f9a1596105ac429108d32c536153dc7847ac414b415b95b8f1f4442b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -20567,7 +18877,7 @@
               "model_state_fingerprint": "683e764f0f596c1f71113f925ca88fa8b069db6fa8e2054e03e190959e6f4c8a",
               "surrogate_artifact_fingerprint": "1a9ec71f2eaca1cfbbf5089ea8896ca682f1c38a5639213727716c1ed1c55f77",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20669,7 +18979,7 @@
               "model_state_fingerprint": "2f92f9d1b9e60a8b27975bda20624b95ea70035e7d10c2e828397397323328d7",
               "surrogate_artifact_fingerprint": "b2d63f353bdf09cfb564ea859fd64bbdd9f1a397ed9f5e3586bc0aa7fb685d63",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20775,7 +19085,7 @@
               "model_state_fingerprint": "b6f67649089d17e4fd972a9c2646d2978c5c273a1dd06c073f167dce085170b9",
               "surrogate_artifact_fingerprint": "01f2f0d17316ba16296085700dae4b3966a63234330981202322d6a52ab0df33",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20885,7 +19195,7 @@
               "model_state_fingerprint": "1af2e10bda8390b8def8904869c7a41b47b70a67f6e81ad3248212f8abb70c2e",
               "surrogate_artifact_fingerprint": "49f786f71f6a436fc3c445e8413c72230e80b6d8116ec28b6150db9f0a081188",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -20999,7 +19309,7 @@
               "model_state_fingerprint": "46e4dde31821ed0cb25be05626f1de4987081206b4b8e113660275277c10b0e3",
               "surrogate_artifact_fingerprint": "1939e4881ed1e88dda280fd2b8c219c3888a0ae8c5fa4029e5794efc2b8c048e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -21230,7 +19540,7 @@
               "model_state_fingerprint": "98e0d7a75bfde30455ea1e9f2628c977467f5f5ebd382b56dbb44f1ac4931828",
               "surrogate_artifact_fingerprint": "3cdb5efcce287030f0a2e1bcdfffde67c41ecfcacbcb6199c93dffac2baecae4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -21332,7 +19642,7 @@
               "model_state_fingerprint": "4532ad2d1a8077b43ed793349efa33d73e6ffc8893d7a540f66bfde830591138",
               "surrogate_artifact_fingerprint": "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -21438,7 +19748,7 @@
               "model_state_fingerprint": "50f331015dc4dfaf6f6a8ca3b80fbc4c5a9b18f8a83173f7658172e4009308f5",
               "surrogate_artifact_fingerprint": "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -21548,7 +19858,7 @@
               "model_state_fingerprint": "799e13ae8346dba7232b015830a4184f15c6acf7f4ae770c69149d24f497e1cc",
               "surrogate_artifact_fingerprint": "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           },
           {
@@ -21662,7 +19972,7 @@
               "model_state_fingerprint": "90624b40ee0878e084b36e08e2eb014d78e54bc2da35196c3c41bb20585eee52",
               "surrogate_artifact_fingerprint": "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "greedy"
+              "acquisition_strategy": "GREEDY"
             }
           }
         ]
@@ -21895,7 +20205,7 @@
               "model_state_fingerprint": "e5560961e2e2301c9ea618001567df8120c2d28f0d05bbc864f2e1cadc1dda91",
               "surrogate_artifact_fingerprint": "154e20a957e087fb5c537f53615639fa31bc1c560b3316cade1cf0d3cf9a6625",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -21997,7 +20307,7 @@
               "model_state_fingerprint": "8721f7edf267e6b78e5076cb3aba8f97bedc892bcc2f585c14b83e40db5441de",
               "surrogate_artifact_fingerprint": "363a689b0eca9953d5848ca50de03a8fc8834e3bd3ffbc79ed049f80083016e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22103,7 +20413,7 @@
               "model_state_fingerprint": "10ccb3e4ef51a747f8cd2ee7a07f8bb6f694dc47a6535b36d18cf48fad0354be",
               "surrogate_artifact_fingerprint": "4c81b1cc8ea2b16cd2470e77df8062dcd210abbabce926e94a5a688bc3067e2f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22213,7 +20523,7 @@
               "model_state_fingerprint": "3337e7bf0b1a8ca3603f4bf7ee497cc7d3673f0f8a819cddd23eedb940914bfd",
               "surrogate_artifact_fingerprint": "574f02e990c06d860223caf775ff5ea628586515c8f702406ad81484fbc36172",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22327,7 +20637,7 @@
               "model_state_fingerprint": "464e5d7a56d907d37eb6ecc114fdb9b6c363f2ccf7fa9e9b13802a70ce47953a",
               "surrogate_artifact_fingerprint": "504633caa41f831e5af08606d94aa0aee46f66a19ab5e1ff35d46313f8e4c009",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -22558,7 +20868,7 @@
               "model_state_fingerprint": "256e580e5a4e8e0cf782d6cfe1cc0b47f821d8a67437a493ecea804c829167a1",
               "surrogate_artifact_fingerprint": "eab3bf4c0ae215a7e76630891d5f222ed76525ea549c50293932759cb2e4fc5e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22660,7 +20970,7 @@
               "model_state_fingerprint": "1b67557bf708c5b8f12916373328c89cb46c8d6a65f8546fdbdd2a7072ce4a89",
               "surrogate_artifact_fingerprint": "ad1be340c8e56f6cdb55ad4ef2acc9168fb8f068379ec3070dc3ac84e09922a4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22766,7 +21076,7 @@
               "model_state_fingerprint": "d5d15abac216b33d0281e442305463a47dea327319c9e9ace7e08bf8d9b6f78e",
               "surrogate_artifact_fingerprint": "9e8bc7e51d97c65293aa78a051ad695a00d2ae8bf12d033cac22a9784c8cf91b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22876,7 +21186,7 @@
               "model_state_fingerprint": "4b6f22a22e9598c1c1f9be6b50a203b23314866088c750f44bd0c7b3a23cd373",
               "surrogate_artifact_fingerprint": "0cb194538dd70ff04bde1b3e9385c1f1027593aaffc7802efb5c30379f246b55",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -22990,7 +21300,7 @@
               "model_state_fingerprint": "35d877e96ed2f2c67fe724f5fb1b9c4a6c931bbf67508405833140b2f87de50a",
               "surrogate_artifact_fingerprint": "70990573e2456a4537d4a7e5d8afed6a588d6295f2055e4514427e027085574d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -23221,7 +21531,7 @@
               "model_state_fingerprint": "7b3a78e62e5bdd6bb88efd8e6c76ad693ec0fad6f96c6d04a5485c4fbf045188",
               "surrogate_artifact_fingerprint": "4c20d0e89922e02e02b9d7002f316d99d415e872830636a496858ac0b9526f15",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -23323,7 +21633,7 @@
               "model_state_fingerprint": "36a1be1c9d70d38df67f7cf399735fcf70994cddff62963f1e1c1ede72e4e5cf",
               "surrogate_artifact_fingerprint": "4ae198551eb1ded491ced9507a475621d2be4d140e5d1d89c035e6a7ed20cf50",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -23429,7 +21739,7 @@
               "model_state_fingerprint": "936b4aedab5d0f0e38fc7567c4d941375a7702b2e5025f3f6db4ac5b19b4bcc7",
               "surrogate_artifact_fingerprint": "87e5b7c29557660296b26c268882fc55cfca292f387ed046df50127df7d96274",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -23539,7 +21849,7 @@
               "model_state_fingerprint": "39ae38a7cec0e0959f2b61f87e7b9b63178d796080e8928b600b590de1bb519c",
               "surrogate_artifact_fingerprint": "c594bdbef5dd46633723b8764b5f30e47d8b25524d4960c7ef27d41049adc1ee",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -23653,7 +21963,7 @@
               "model_state_fingerprint": "680260228527551aef5465bb22c2a2337e7cbff2e62d5ff64af2d29bd7889312",
               "surrogate_artifact_fingerprint": "1fc8c82a8386b0fa0d635b8b6bf2aaf7b3aa2220ec05600ca32aa537776849c6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -23884,7 +22194,7 @@
               "model_state_fingerprint": "2da5f987acf98eeba6fe3554fd18c0b006f48d749dcf9a11cb6a672534401eec",
               "surrogate_artifact_fingerprint": "1e99777010fa2274bd4407cafc0055bdfaf9248b1a459ba1fe2e8c9a1bfe7537",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -23986,7 +22296,7 @@
               "model_state_fingerprint": "b99f2241dce7ef4886fa30ff7d2c9eaab196c4783059d533a334e39cf39bba72",
               "surrogate_artifact_fingerprint": "425e183f9fe332b288c194892e6e07867447a8b1b4bea427a378ce5ed88bc0ad",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24092,7 +22402,7 @@
               "model_state_fingerprint": "0c53e813ad4f30db6986f931649f7d8c6cdcd45ff1060ccd0477be358efab983",
               "surrogate_artifact_fingerprint": "eb05601900c6f87473d30a4f19f55ea98fdf690c6dbfbf64c70e5126207e32c9",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24202,7 +22512,7 @@
               "model_state_fingerprint": "434f249831ba98be74046c5ff507c147424ed1323516403191790130015d984a",
               "surrogate_artifact_fingerprint": "2958fd3adadafe72d2faed2aaf66fc8e38511e551e3e3d0cb7ce6b5f7b426f96",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24316,7 +22626,7 @@
               "model_state_fingerprint": "e9adc59337fdc79522cde5bfb7e034de2834bc51694201308e4684e26b9d8e9d",
               "surrogate_artifact_fingerprint": "111c67abeb39edd3c2f9b69d03080f1509ce40e7b51f86b0b9e89d8409af3c22",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -24547,7 +22857,7 @@
               "model_state_fingerprint": "4f635009cf562c290d8b802c3d4f076aa3c745ee58edec5bb2957ed8b37869f9",
               "surrogate_artifact_fingerprint": "5d43db9b5bbffb8f16b30d658b8f88ba84194d7687c699415982afede6e15341",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24649,7 +22959,7 @@
               "model_state_fingerprint": "b780a8dd16ab787ba2ee30e89abfc711d80a294fd947097f3970c2120c007ce6",
               "surrogate_artifact_fingerprint": "75449f9435948d31560ef5a0e4a128efed4f2b6752ea9181f35477cb1fea61a3",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24755,7 +23065,7 @@
               "model_state_fingerprint": "6869bdc014e1784b54a3aa693619a92110d01a03f14543ec8bb8b2d34c5243b6",
               "surrogate_artifact_fingerprint": "6f92f93b49a1b5d904fa3e5c5aca1a38ef7b21670cc5e8cec5330623b4ac40ce",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24865,7 +23175,7 @@
               "model_state_fingerprint": "afb92e5ffeca34112cde97a7953279113b9351527b4117c4a4a8ba21b6f36a31",
               "surrogate_artifact_fingerprint": "26f95790844dd84868574a6b16dfed6650983831687e216546607499c065d002",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -24979,7 +23289,7 @@
               "model_state_fingerprint": "212dfdd63063e1f569e6496adfad5f9c1d63dc5a8659aca09ae35a3dbbe4b46a",
               "surrogate_artifact_fingerprint": "6259f56c039deab1844d76abff52c73da5194f8b3d0bf0471f6fca7956e33d32",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -25210,7 +23520,7 @@
               "model_state_fingerprint": "7e137f0dd329c9918ab78251f1dc35f878a518bf921ba2550592239768ec8714",
               "surrogate_artifact_fingerprint": "aa17d65ebef0d682fb23e1b209eaa459223e0025f80dcac0a583dbb055e39766",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -25312,7 +23622,7 @@
               "model_state_fingerprint": "b5b96e335466d6575b67a8a3d8ffcc811296e380570179486b1afe4e95b27173",
               "surrogate_artifact_fingerprint": "7a5d2fe7be6bc86bcade298a12bfb5eba75debd09d4c2fe1d3aec2d7f37cce0d",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -25418,7 +23728,7 @@
               "model_state_fingerprint": "8171573a3734b7637c375d786a99a7495d03d3d120b70ea15f000979cc37e58c",
               "surrogate_artifact_fingerprint": "d24aabd40b42bd376e9a05453a1e3f0d4bbe6c2397eccba343942c493836106a",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -25528,7 +23838,7 @@
               "model_state_fingerprint": "f41fb4b3cb1b7da5970dd387cc71ff2a46d08022223b317a55bd8b9bc40487a7",
               "surrogate_artifact_fingerprint": "a89d02dd3c4a39cd4a0616c88af247504a51c19ba243024e41ceab464387f885",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -25642,7 +23952,7 @@
               "model_state_fingerprint": "87f705c1f1f66413e76e4f19c0de4acaa42277d4c807ef4d599347c5438de938",
               "surrogate_artifact_fingerprint": "23626fbc0422de635371500c7e79572eb268a5c8aabaaa1906c0f149b435c5d0",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -25873,7 +24183,7 @@
               "model_state_fingerprint": "8bdc215cc0abfcc8e48b9610cb93afd0710886fceb00e21be46164bf71e82f94",
               "surrogate_artifact_fingerprint": "7388edc387d7e23eccb22d1eb3a9f3f79733cf957e7a68e9ad7abaa301cb9138",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -25975,7 +24285,7 @@
               "model_state_fingerprint": "a488160eb43f79675b6c38304120bdc7ee82b871c595f4d5cbb8856d5e8ca14d",
               "surrogate_artifact_fingerprint": "7f91479c4f5dc55cac8931aa3ec5f17157b3e8b6162cd8de520cb2b0035f9da6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26081,7 +24391,7 @@
               "model_state_fingerprint": "d64be5661fbb6e601c4032e08b2764cb67822c1667f3d768355399ba96125358",
               "surrogate_artifact_fingerprint": "7431a5672562a0480a8df9789a852103628f44ecac839b34a17ad1fc2ff89344",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26191,7 +24501,7 @@
               "model_state_fingerprint": "563395ec4a6074ab6071779b49ca58f81b9bdd0874ed981f44e62046374ee1c6",
               "surrogate_artifact_fingerprint": "f3861bbfa49e497cbde628006efbf74e00f10e4dc15d412d3549922d21789289",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26305,7 +24615,7 @@
               "model_state_fingerprint": "9badaa5bc403a68be84e71943e08ba3428bbe194e505ab2fc640f8f3c6fcc5e1",
               "surrogate_artifact_fingerprint": "37349198046262e8d6fc2ad5ae33e9ba31587ca031e5435efe455801a42b1754",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -26536,7 +24846,7 @@
               "model_state_fingerprint": "4fd900f51c2f452c27a8d9751c083757b67dd2b426f75eb5a460c72f607cd9cf",
               "surrogate_artifact_fingerprint": "0f284caccadf8b9334b8c102c73ded03229a6601e45ac82c0fdf65f44153d392",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26638,7 +24948,7 @@
               "model_state_fingerprint": "21486f492788f2b373a9205189afe8d223109848c53b71a19e65b5f0b9178b01",
               "surrogate_artifact_fingerprint": "1ed91ba0143bb9a370a2c833b4c09968afbdb1666c27f276dd0b2f6bb8e3b6ca",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26744,7 +25054,7 @@
               "model_state_fingerprint": "702107a195b52c95f88e433d64e1f49f2d648afc9f8add50ee16bbc5e5af9daa",
               "surrogate_artifact_fingerprint": "1fcca16dc059e8047c14a4bea371ee6ce4397be2e5d7eb354655cfdbec71116f",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26854,7 +25164,7 @@
               "model_state_fingerprint": "5f589a5ab4dd943926ef671afcfeef916065925e509a7d8c37233ba1c08b475c",
               "surrogate_artifact_fingerprint": "ab02772ae3daa3ddc9f556f1785694b8533c5dfe58a34fef4988ea0ce8eda66e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -26968,7 +25278,7 @@
               "model_state_fingerprint": "8e83a627d6fe1e30e7d391fdb9725d36dcfd237a57b58f3a3329e114f3b7cd92",
               "surrogate_artifact_fingerprint": "05229543f9a1596105ac429108d32c536153dc7847ac414b415b95b8f1f4442b",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -27199,7 +25509,7 @@
               "model_state_fingerprint": "683e764f0f596c1f71113f925ca88fa8b069db6fa8e2054e03e190959e6f4c8a",
               "surrogate_artifact_fingerprint": "1a9ec71f2eaca1cfbbf5089ea8896ca682f1c38a5639213727716c1ed1c55f77",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -27301,7 +25611,7 @@
               "model_state_fingerprint": "2f92f9d1b9e60a8b27975bda20624b95ea70035e7d10c2e828397397323328d7",
               "surrogate_artifact_fingerprint": "b2d63f353bdf09cfb564ea859fd64bbdd9f1a397ed9f5e3586bc0aa7fb685d63",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -27407,7 +25717,7 @@
               "model_state_fingerprint": "b6f67649089d17e4fd972a9c2646d2978c5c273a1dd06c073f167dce085170b9",
               "surrogate_artifact_fingerprint": "01f2f0d17316ba16296085700dae4b3966a63234330981202322d6a52ab0df33",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -27517,7 +25827,7 @@
               "model_state_fingerprint": "1af2e10bda8390b8def8904869c7a41b47b70a67f6e81ad3248212f8abb70c2e",
               "surrogate_artifact_fingerprint": "49f786f71f6a436fc3c445e8413c72230e80b6d8116ec28b6150db9f0a081188",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -27631,7 +25941,7 @@
               "model_state_fingerprint": "46e4dde31821ed0cb25be05626f1de4987081206b4b8e113660275277c10b0e3",
               "surrogate_artifact_fingerprint": "1939e4881ed1e88dda280fd2b8c219c3888a0ae8c5fa4029e5794efc2b8c048e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]
@@ -27862,7 +26172,7 @@
               "model_state_fingerprint": "98e0d7a75bfde30455ea1e9f2628c977467f5f5ebd382b56dbb44f1ac4931828",
               "surrogate_artifact_fingerprint": "3cdb5efcce287030f0a2e1bcdfffde67c41ecfcacbcb6199c93dffac2baecae4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -27964,7 +26274,7 @@
               "model_state_fingerprint": "4532ad2d1a8077b43ed793349efa33d73e6ffc8893d7a540f66bfde830591138",
               "surrogate_artifact_fingerprint": "f2fbcf2a57ad0fc6dde8ba54950e32c6aa9137caa85911f2ed06607e27ca58d6",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -28070,7 +26380,7 @@
               "model_state_fingerprint": "50f331015dc4dfaf6f6a8ca3b80fbc4c5a9b18f8a83173f7658172e4009308f5",
               "surrogate_artifact_fingerprint": "b7cff7cd8223fc912dd60fb5aba85669fd70818d51d197a480b33184d53cf4e4",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -28180,7 +26490,7 @@
               "model_state_fingerprint": "799e13ae8346dba7232b015830a4184f15c6acf7f4ae770c69149d24f497e1cc",
               "surrogate_artifact_fingerprint": "bdd958de6ae51b1dfdc7b29580c7c3386b98bf9e237d855e3a5248fa803a323e",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           },
           {
@@ -28294,7 +26604,7 @@
               "model_state_fingerprint": "90624b40ee0878e084b36e08e2eb014d78e54bc2da35196c3c41bb20585eee52",
               "surrogate_artifact_fingerprint": "17b3b36206dcdbfba99c1df7471ac58ddd89a0bdb8ed58ddf5fba22e34f80c38",
               "uncertainty_kind": "GP_POSTERIOR_STD",
-              "acquisition_strategy": "gp_ucb"
+              "acquisition_strategy": "GP_UCB"
             }
           }
         ]

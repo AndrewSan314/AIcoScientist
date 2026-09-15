@@ -18,7 +18,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 162.61621730202148,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -168,7 +168,7 @@
     "final_simple_regret": 0.0,
     "final_cumulative_regret": 0.0,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -318,7 +318,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 48.69528772909291,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -468,7 +468,7 @@
     "final_simple_regret": 47.71270073679477,
     "final_cumulative_regret": 238.56350368397386,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -618,7 +618,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 238.73775144726847,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -768,7 +768,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 238.73775144726847,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -918,7 +918,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 162.61621730202148,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -1068,7 +1068,7 @@
     "final_simple_regret": 0.0,
     "final_cumulative_regret": 136.65872928999528,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -1218,7 +1218,7 @@
     "final_simple_regret": 0.0,
     "final_cumulative_regret": 0.0,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,
@@ -1368,7 +1368,7 @@
     "final_simple_regret": 9.739057545818582,
     "final_cumulative_regret": 200.58986049299767,
     "execution_trace": {
-      "source_adapter_invocations": 1,
+      "source_adapter_invocations": 0,
       "battery_process_runs_seen": 0,
       "recipe_selection_horizon_invocations": 0,
       "process_surrogate_samples_created": 0,

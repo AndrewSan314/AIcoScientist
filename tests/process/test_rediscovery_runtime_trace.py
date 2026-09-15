@@ -127,6 +127,7 @@ def test_runtime_trace_direct_botorch_counters(mock_trace_pool):
     )
 
     trace = traj.execution_trace
+    assert trace["source_adapter_invocations"] == 0
     assert trace["direct_botorch_calls"] == 2
     assert trace["battery_process_runs_seen"] == 0
     assert trace["process_surrogate_fit_count"] == 0
@@ -157,6 +158,7 @@ def test_runtime_trace_random_counters(mock_trace_pool):
     )
 
     trace = traj.execution_trace
+    assert trace["source_adapter_invocations"] == 0
     assert trace["random_steps"] == 2
     assert trace["battery_process_runs_seen"] == 0
     assert trace["process_surrogate_fit_count"] == 0
@@ -226,7 +228,11 @@ def test_run_rediscovery_benchmark_generates_engine_path_audit(mock_trace_pool):
     assert botorch_audit["verified"] is True
     assert botorch_audit["uses_direct_botorch_backend"] is True
     assert botorch_audit["coordinator_proposal_count"] == 0
+    assert botorch_audit["source_adapter_invocations"] == 0
+    assert botorch_audit["direct_botorch_calls"] == 2
 
     random_audit = next(a for a in audit_list if a["policy"] == "random")
     assert random_audit["verified"] is True
     assert random_audit["coordinator_proposal_count"] == 0
+    assert random_audit["source_adapter_invocations"] == 0
+    assert random_audit["random_steps"] == 2
