@@ -1083,13 +1083,6 @@ class RediscoveryReplay:
                 step_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
                 self._execution_trace.surrogate_artifact_fingerprints.append(surrogate_artifact_fp)
 
-                training_view_summary = {
-                    "num_revealed_samples": len(samples),
-                    "observable_controls": observable_ctrls,
-                    "decision_stage": dec_stage_val,
-                    "features": list(preprocessor.output_names),
-                }
-
                 coord_strat = "noisy_expected_improvement"
                 if strat_lower.startswith("aicointel_"):
                     coord_strat = strat_lower.replace("aicointel_", "")
@@ -1105,6 +1098,33 @@ class RediscoveryReplay:
                     coord_strat = "gp_ucb"
                 elif strat_upper.endswith("_GREEDY"):
                     coord_strat = "greedy"
+
+                training_view_summary = {
+                    "num_revealed_samples": len(samples),
+                    "observable_controls": observable_ctrls,
+                    "decision_stage": dec_stage_val,
+                    "features": list(preprocessor.output_names),
+                    "training_recipe_ids": list(revealed[oracle.candidate_id_column].unique()),
+                    "training_run_ids": [s.run_id for s in samples],
+                    "number_of_training_runs": len(samples),
+                    "target_name": oracle.target_column,
+                    "target_units": "mAh/g",
+                    "visible_planned_control_names": observable_ctrls,
+                    "hidden_observation_names": [
+                        "active_mass_mg",
+                        "electrode_thickness_um",
+                        "porosity_pct",
+                        "discharge_specific_capacity_cycle30_mah_g",
+                    ],
+                    "dataset_fingerprint": self._dataset_fingerprint,
+                    "split_fingerprint": split_fp,
+                    "schema_fingerprint": schema.schema_fingerprint,
+                    "preprocessor_fingerprint": preprocessor.state_fingerprint(),
+                    "model_state_fingerprint": surrogate.state_fingerprint(),
+                    "surrogate_artifact_fingerprint": surrogate_artifact_fp,
+                    "uncertainty_kind": surrogate.uncertainty_kind,
+                    "acquisition_strategy": coord_strat,
+                }
 
                 context = SurrogateDecisionContext(stage=samples[0].stage, fidelity="EXPERIMENTAL")
                 backend = FrozenSurrogateOptimizerBackend(artifact, context, beta=beta)

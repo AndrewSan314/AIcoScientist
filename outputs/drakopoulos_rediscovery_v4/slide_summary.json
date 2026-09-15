@@ -1,0 +1,42 @@
+{
+  "dataset": "Drakopoulos et al. 2021",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "benchmark_version": "v4",
+  "decision_semantics": "PRE_MANUFACTURING_RECIPE_SELECTION",
+  "candidate_pool_total": 32,
+  "strict_complete_recipe_count": 12,
+  "partial_recipe_count": 14,
+  "no_d30_recipe_count": 6,
+  "measured_zero_d30_cell_count": 0,
+  "primary_policy": "AICOSCIENTIST_FULL_PROCESS_ENGINE",
+  "engine_verified_by_runtime_trace": true,
+  "initial_design_size": 3,
+  "additional_experiment_budget": 5,
+  "seed_count": 10,
+  "unconstrained": {
+    "source_best_recipe_id": "protocol-c1c280b7366f",
+    "source_best_d30_mah_g": 402.2490501560316,
+    "hit_at_1": 0.3,
+    "hit_at_3": 0.5,
+    "hit_at_5": 1.0,
+    "analytic_random_hit_at_5": 0.5555555555555556,
+    "mean_simple_regret_at_5": 0.0
+  },
+  "higher_loading_proxy": {
+    "status": "EVALUATED_ON_STRICT_COMPLETE_HIGH_LOADING_SUBSET",
+    "eligibility_definition": "coating_gap_um >= 150 um among strictly complete recipes",
+    "eligible_recipe_count": 9,
+    "hit_at_5": 1.0,
+    "analytic_random_hit_at_5": 0.8333333333333334
+  },
+  "published_high_loading_task": {
+    "status": "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+  },
+  "supported_claim": "In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, the AIcoScientist full process engine recovered the source-observed highest-D30 recipe more often within five additional experiments than expected under random selection.",
+  "limitations": [
+    "Evaluated on physical retrospective experimental candidates rather than real-time prospective wet-lab synthesis.",
+    "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",
+    "Published Alchemite design represents an aggregate comparative set in Table S6 rather than an isolated recoverable single-cell identifier.",
+    "Exact published >=25 mg loading objective is not evaluable due to absence of cycle 30 measurements for 300 um cells."
+  ]
+}

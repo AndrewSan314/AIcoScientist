@@ -145,9 +145,6 @@ class InformationHorizon:
         for record in stages:
             prefix = f"{record.stage_type.value.lower()}."
             controls.update({prefix + name: value for name, value in record.controls.items()})
-            for name, value in record.controls.items():
-                if name not in controls:
-                    controls[name] = value
             measurements.update({prefix + name: value for name, value in record.intermediate_properties.items()})
             modalities.extend(record.modalities)
         return HorizonView(

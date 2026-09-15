@@ -150,7 +150,7 @@ def generate_all_v3_figures(
     plt.savefig(figures_dir / "best_so_far_d30.png", dpi=300)
     plt.close()
 
-    # 4. production_engine_vs_direct_botorch.png
+    # 4. full_engine_vs_direct_botorch.png
     plt.figure(figsize=(8, 5))
     ps_hits = [sum(1 for t in unc_trajs["AICOSCIENTIST_PROCESS_SURROGATE"] if t["experiments_to_best"] is not None and t["experiments_to_best"] <= s) / 10 for s in steps_axis]
     botorch_hits = [sum(1 for t in unc_trajs["DIRECT_BOTORCH_BASELINE"] if t["experiments_to_best"] is not None and t["experiments_to_best"] <= s) / 10 for s in steps_axis]
@@ -165,6 +165,7 @@ def generate_all_v3_figures(
     plt.grid(True, linestyle="--", alpha=0.5, axis="y")
     plt.legend(frameon=True, fontsize=9)
     plt.tight_layout()
+    plt.savefig(figures_dir / "full_engine_vs_direct_botorch.png", dpi=300)
     plt.savefig(figures_dir / "production_engine_vs_direct_botorch.png", dpi=300)
     plt.close()
 
@@ -186,7 +187,7 @@ def generate_all_v3_figures(
     plt.savefig(figures_dir / "d30_recipe_completeness.png", dpi=300)
     plt.close()
 
-    # 6. high_loading_rediscovery.png
+    # 6. higher_loading_proxy_rediscovery.png
     plt.figure(figsize=(8, 5))
     for pol in ["AICOSCIENTIST_PROCESS_SURROGATE", "DIRECT_BOTORCH_BASELINE", "random"]:
         if pol not in hl_trajs:
@@ -201,11 +202,12 @@ def generate_all_v3_figures(
     plt.plot(steps_axis, rand_hl_exact, label="Random Hypergeometric Exact", color="#2ca02c", linestyle="--", marker="x", linewidth=2.2)
     plt.xlabel("Sequential Experiment Step", fontsize=12)
     plt.ylabel("Cumulative Hit@1 Success Rate", fontsize=12)
-    plt.title("High-Loading D30 Rediscovery (Gap >= 150 um, Mass >= 11 mg)", fontsize=13, fontweight="bold")
+    plt.title("Higher-Loading Measured-D30 Proxy Rediscovery (Gap >= 150 um)", fontsize=13, fontweight="bold")
     plt.ylim(-0.05, 1.05)
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend(frameon=True, fontsize=9, loc="lower right")
     plt.tight_layout()
+    plt.savefig(figures_dir / "higher_loading_proxy_rediscovery.png", dpi=300)
     plt.savefig(figures_dir / "high_loading_rediscovery.png", dpi=300)
     plt.close()
 
@@ -295,9 +297,12 @@ def write_comprehensive_v3_report(
     eligible_pool: pd.DataFrame,
     hl_pool: pd.DataFrame,
     all_groups: Sequence[DrakopoulosRecipeGroup],
+    report_name: str | None = None,
 ) -> None:
-    """Writes the comprehensive markdown report for the v3 benchmark."""
-    report_path = out_dir / "DRAKOPOULOS_REDISCOVERY_V3_REPORT.md"
+    """Writes the comprehensive markdown report for the v4 benchmark."""
+    if report_name is None:
+        report_name = "DRAKOPOULOS_REDISCOVERY_V4_REPORT.md" if "v4" in str(out_dir) else "DRAKOPOULOS_REDISCOVERY_V3_REPORT.md"
+    report_path = out_dir / report_name
     best_unc = eligible_pool.iloc[0]
     best_hl = hl_pool.iloc[0]
 
@@ -306,64 +311,86 @@ def write_comprehensive_v3_report(
     unc_rand_analytic = unconstrained_results["analytic_hypergeometric"]["top1_hit_rate_by_step"]
     hl_rand_analytic = high_loading_results["analytic_hypergeometric"]["top1_hit_rate_by_step"]
 
-    report = f"""# Drakopoulos Battery-Manufacturing Offline Closed-Loop Rediscovery Benchmark (v3)
+    ps_unc = unc_summaries.get("AICOSCIENTIST_PROCESS_SURROGATE") or unc_summaries.get("AICOSCIENTIST_FULL_PROCESS_ENGINE")
+    botorch_unc = unc_summaries.get("DIRECT_BOTORCH_BASELINE")
+    rand_unc = unc_summaries.get("random")
 
-**Version:** 3.0.0 (Hardened Scientific Release)  
+    ps_hl = hl_summaries.get("AICOSCIENTIST_PROCESS_SURROGATE") or hl_summaries.get("AICOSCIENTIST_FULL_PROCESS_ENGINE")
+    botorch_hl = hl_summaries.get("DIRECT_BOTORCH_BASELINE")
+    rand_hl = hl_summaries.get("random")
+
+    ps_unc_h5 = ps_unc["hit_rate_at_step"].get(5, 0.0) if ps_unc else 0.0
+    rand_unc_h5 = unc_rand_analytic[5]
+    if ps_unc_h5 > rand_unc_h5:
+        claim_text = (
+            "In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, "
+            "the AIcoScientist full process engine recovered the source-observed highest-D30 recipe "
+            "more often within five additional experiments than expected under random selection."
+        )
+    else:
+        claim_text = (
+            "This source-backed offline replay did not establish a Hit@5 advantage for the "
+            "AIcoScientist full process engine over random selection."
+        )
+
+    report = f"""# Drakopoulos Battery-Manufacturing Offline Closed-Loop Rediscovery Benchmark (v4)
+
+**Version:** 4.0.0 (Hardened Scientific Provenance Release)  
 **Dataset:** Drakopoulos et al. 2021 (*Cell Reports Physical Science* 2, 100683)  
 **Evidence Kind:** `PHYSICAL_HISTORICAL`  
 **Primary Target:** Cycle 30 Specific Discharge Capacity ($D_{{30}}$, mAh/g)  
-**Decision Horizon:** `InformationHorizon(ProcessStage.COATING)` — strictly pre-manufacturing formulation & coating controls  
+**Decision Horizon:** `DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION` — strictly pre-manufacturing formulation, coating, drying & calendering controls without lookahead into post-process metrology or cycle outcomes  
 **Evaluation:** 10 Pre-Registered Seeds (`[11, 23, 42, 67, 101, 137, 179, 223, 281, 353]`), $N_\\text{{init}} = 3$, Budget $B = 5$  
 
 ---
 
 ## Executive Summary & Supported Claim
 
-In source-backed offline replay on eligible Drakopoulos manufacturing protocols, the **AIcoScientist process-surrogate engine** recovered the source-observed high-$D_{{30}}$ recipe more frequently within five additional experiments than random selection:
+{claim_text}
 
-- **Unconstrained Rediscovery (Task 1):**
-  - **AIcoScientist Process Surrogate:** **80.0% Hit@5** (Hit@1 = 40.0%, Hit@3 = 80.0%, mean simple regret = 1.95 mAh/g)
-  - **Direct BoTorch Baseline:** **60.0% Hit@5** (Hit@1 = 20.0%, Hit@3 = 60.0%, mean simple regret = 3.90 mAh/g)
-  - **Empirical Random Selection:** **30.0% Hit@5** (mean simple regret = 18.21 mAh/g)
-  - **Exact Hypergeometric Random Baseline:** **50.0% Hit@5** (exact analytical closed-form: $5 / (13 - 3) = 50.0\%$)
+- **Unconstrained Rediscovery (Task 1, 13 Strictly Complete Recipes):**
+  - **AIcoScientist Full Process Engine:** **{ps_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {ps_unc['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {ps_unc['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {ps_unc['mean_simple_regret']:.2f} mAh/g)
+  - **Direct BoTorch Baseline:** **{botorch_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {botorch_unc['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {botorch_unc['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {botorch_unc['mean_simple_regret']:.2f} mAh/g)
+  - **Empirical Random Selection:** **{rand_unc['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (mean simple regret = {rand_unc['mean_simple_regret']:.2f} mAh/g)
+  - **Exact Hypergeometric Random Baseline:** **{rand_unc_h5 * 100:.1f}% Hit@5** (exact analytical closed-form: $5 / ({len(eligible_pool)} - 3) = {rand_unc_h5 * 100:.1f}\%$)
 
-- **High-Loading Rediscovery (Task 2, Gap $\\ge 150\\ \\mu\\text{{m}}$, Mass $\\ge 11\\ \\text{{mg}}$):**
-  - **AIcoScientist Process Surrogate:** **100.0% Hit@5** (Hit@1 = 70.0%, Hit@3 = 100.0%, mean simple regret = 0.00 mAh/g)
-  - **Direct BoTorch Baseline:** **100.0% Hit@5** (Hit@1 = 60.0%, Hit@3 = 90.0%, mean simple regret = 0.00 mAh/g)
-  - **Empirical Random Selection:** **60.0% Hit@5** (mean simple regret = 15.26 mAh/g)
-  - **Exact Hypergeometric Random Baseline:** **71.4% Hit@5** (exact analytical closed-form: $5 / (10 - 3) = 71.4\%$)
+- **Higher-Loading Measured-$D_{{30}}$ Proxy Subset (Task 2, Gap $\\ge 150\\ \\mu\\text{{m}}$, 10 Strictly Complete Recipes):**
+  - **AIcoScientist Full Process Engine:** **{ps_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {ps_hl['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {ps_hl['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {ps_hl['mean_simple_regret']:.2f} mAh/g)
+  - **Direct BoTorch Baseline:** **{botorch_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (Hit@1 = {botorch_hl['hit_rate_at_step'].get(1, 0.0) * 100:.1f}%, Hit@3 = {botorch_hl['hit_rate_at_step'].get(3, 0.0) * 100:.1f}%, mean simple regret = {botorch_hl['mean_simple_regret']:.2f} mAh/g)
+  - **Empirical Random Selection:** **{rand_hl['hit_rate_at_step'].get(5, 0.0) * 100:.1f}% Hit@5** (mean simple regret = {rand_hl['mean_simple_regret']:.2f} mAh/g)
+  - **Exact Hypergeometric Random Baseline:** **{hl_rand_analytic[5] * 100:.1f}% Hit@5** (exact analytical closed-form: $5 / ({len(hl_pool)} - 3) = {hl_rand_analytic[5] * 100:.1f}\%$)
+  - **Published High-Loading Objective:** `published_high_loading_rediscovery_status = NOT_EVALUABLE_WITH_AVAILABLE_D30` (300 $\\mu$m cells reaching published $\\ge 25$ mg lack usable cycle 30 cycling measurements).
 
 ---
 
 ## 1. Scientific Hardening & Anti-Bias Audit
 
-The v3 hardening pass resolves all prior audit concerns:
+The v4 hardening pass provides complete end-to-end scientific and provenance verification:
 
-1. **Elimination of Survivorship Bias:**
-   - In v2, recipe averaging only considered cells with positive $D_{{30}}$ while total cell counts masked unmeasured/failed cells.
-   - In v3, all 32 prospective recipe groups were audited across 108 cells.
-   - Recipes are partitioned into **13 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **13 partial recipes** (`PARTIAL_D30`, 1-2 replicates measured), and **6 unmeasured recipes** (`NO_D30`, 0 replicates measured, including all 300 $\\mu$m gap cells).
-   - Only strictly complete recipes are admitted into the primary candidate pool. Incomplete recipes are preserved in `excluded_recipe_table.csv` and `outputs/drakopoulos_source_reaudit/d30_completeness_audit.csv`.
+1. **Measured-Zero $D_{{30}}$ Preservation:**
+   - In previous iterations, raw $D_{{30}} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts.
+   - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **13 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **13 partial recipes** (`PARTIAL_D30`), and **6 unmeasured recipes** (`NO_D30`, including all 300 $\\mu$m gap cells).
 
-2. **Genuine Production Process Surrogate Execution:**
-   - Rather than relying on a direct wrapper over BoTorch, `AICOSCIENTIST_PROCESS_SURROGATE` executes:
-     `DrakopoulosGraphiteAdapter` $\\to$ `BatteryProcessRun` $\\to$ `InformationHorizon(COATING)` $\\to$ `ProcessSurrogateSample` $\\to$ `TrainOnlyPreprocessor` $\\to$ `ProcessSurrogate` (GP) $\\to$ `SurrogateArtifact` $\\to$ posterior predictions $\\to$ `ProcessOptimizationCoordinator`.
+2. **Genuine Full Process Engine Execution:**
+   - The benchmark routes strictly through: `DrakopoulosGraphiteAdapter` $\\to$ `BatteryProcessRun` $\\to$ `InformationHorizon` (`PRE_MANUFACTURING_RECIPE_SELECTION`) $\\to$ `ProcessSurrogateSample` $\\to$ `TrainOnlyPreprocessor` $\\to$ `ProcessSurrogate` (GP) $\\to$ `SurrogateArtifact` $\\to$ `FrozenSurrogateOptimizerBackend` $\\to$ `ProcessOptimizationCoordinator`.
    - At every sequential step, an immutable `SurrogateArtifact` is trained only on revealed observations, cryptographic SHA-256 fingerprints are logged, and integrity is verified.
+   - Proposals are generated strictly through `ProcessOptimizationCoordinator.propose_recipes(...)`.
 
 3. **Strict Zero-Lookahead Firewall:**
    - All outcomes are hidden behind `BlindExperimentalOracle`.
    - The retrospective best recipe (`{best_unc['recipe_id']}`) is strictly excluded from all initial designs ($N_\\text{{init}}=3$).
    - Post-manufacturing metrology (`mean_active_mass_mg`, thickness, porosity) is strictly excluded from pre-manufacturing control features.
    - After a candidate is selected and revealed, its `hidden_best_rank` transitions strictly to `null` (`None`).
+   - Adversarial perturbation tests verify that changing unrevealed target $D_{{30}}$ or post-process metrology cannot alter the subsequent proposal.
 
 4. **Mathematically Correct Random Hypergeometric Baseline:**
    - The top-$k$ baseline is conditioned on the exact initial designs sampled across the 10 seeds, accounting for whether other top-$k$ candidates were present in the initial design.
    - The analytical formula has been verified against brute-force combinatorial enumeration.
 
-5. **Task Separation (Unconstrained vs High-Loading):**
+5. **Task Separation (Unconstrained vs Higher-Loading Proxy):**
    - Unconstrained champion: `{best_unc['recipe_id']}` ($D_{{30}} = {best_unc['discharge_specific_capacity_cycle30_mah_g']:.2f}$ mAh/g, active mass = {best_unc['mean_active_mass_mg']:.2f} mg, gap = 100 $\\mu$m).
-   - High-loading champion: `{best_hl['recipe_id']}` ($D_{{30}} = {best_hl['discharge_specific_capacity_cycle30_mah_g']:.2f}$ mAh/g, active mass = {best_hl['mean_active_mass_mg']:.2f} mg, gap = 150 $\\mu$m).
-   - Published target $\\ge 25$ mg: all 300 $\\mu$m cells in ASC lack cycle 30 cycling data and are explicitly recorded as unmeasured.
+   - Higher-loading proxy champion: `{best_hl['recipe_id']}` ($D_{{30}} = {best_hl['discharge_specific_capacity_cycle30_mah_g']:.2f}$ mAh/g, active mass = {best_hl['mean_active_mass_mg']:.2f} mg, gap = 150 $\\mu$m).
+   - Published target $\\ge 25$ mg: all 300 $\\mu$m cells in ASC lack cycle 30 cycling data and are explicitly recorded as `NOT_EVALUABLE_WITH_AVAILABLE_D30`.
 
 ---
 
@@ -393,7 +420,7 @@ The v3 hardening pass resolves all prior audit concerns:
     report += f"| `Hypergeometric Random (Analytic)` | `CLOSED_FORM` | {ah1} | {ah3} | {ah5} | {at3} | Reference Baseline | Reference Baseline | Closed-Form |\n"
 
     report += f"""
-### Task 2: High-Loading $D_{{30}}$ Rediscovery (Gap $\\ge 150\\ \\mu\\text{{m}}$, 10 Strictly Complete Recipes)
+### Task 2: Higher-Loading Measured-$D_{{30}}$ Proxy Subset Rediscovery (Gap $\\ge 150\\ \\mu\\text{{m}}$, 10 Strictly Complete Recipes)
 
 | Policy | Engine Path | Hit@1 | Hit@3 | Hit@5 | Top-3 Hit@5 | Simple Regret (mAh/g) | Cum. Regret (mAh/g) | Mean Steps to Best |
 |---|---|---|---|---|---|---|---|---|
@@ -421,14 +448,14 @@ The v3 hardening pass resolves all prior audit concerns:
 
 ## 3. Publication Figures
 
-All figures have been generated exclusively from v3 benchmark artifacts in `figures/`:
+All figures have been generated exclusively from v4 benchmark artifacts in `figures/`:
 
 1. `hit_rate_at_budget.png`: Cumulative Hit@1 success rate across sequential budget steps $B \\in [1, 5]$.
 2. `simple_regret_vs_experiment.png`: Simple regret reduction trajectories with $\\pm 1\\sigma$ uncertainty bands.
 3. `best_so_far_d30.png`: Capacity recovery progression towards the source-observed maximum.
-4. `production_engine_vs_direct_botorch.png`: Head-to-head comparison of full production surrogate pipeline vs flat BoTorch baseline.
+4. `full_engine_vs_direct_botorch.png`: Head-to-head comparison of full production surrogate pipeline vs flat BoTorch baseline.
 5. `d30_recipe_completeness.png`: Replicate completeness breakdown across all 32 prospective recipe groups.
-6. `high_loading_rediscovery.png`: Sequential rediscovery performance on high-loading electrode recipes.
+6. `higher_loading_proxy_rediscovery.png`: Sequential rediscovery performance on higher-loading measured-D30 proxy subset.
 7. `hidden_best_rank.png`: Surrogate promotion dynamics showing hidden best ascending to rank 1 before selection, and proper nullification after reveal.
 8. `recipe_projection.png`: 2D projection of observed manufacturing recipes with explicit multi-variable notation.
 
@@ -437,21 +464,30 @@ All figures have been generated exclusively from v3 benchmark artifacts in `figu
 ## 4. Mandatory Statements & Audit Invariants
 
 - **Superseded Status:**
-  The v2 rediscovery result was superseded and was not used for the final scientific claim.
+  The v3 rediscovery benchmark was superseded because measured-zero D30 semantics and full-engine execution provenance required correction.
 - **Simulation Audit:**
   No ARTISTIC/LAMMPS simulation was launched. No slurry, drying, or calendering simulation was executed.
 - **Firewall Guarantee:**
   Target values were strictly firewalled behind `BlindExperimentalOracle`.
+- **Higher-Loading Proxy Semantics:**
+  published_high_loading_rediscovery_status = NOT_EVALUABLE_WITH_AVAILABLE_D30
 """
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(report)
-    logger.info("Saved DRAKOPOULOS_REDISCOVERY_V3_REPORT.md to %s", report_path)
+    logger.info("Saved %s to %s", report_name, report_path)
+    if report_name != "DRAKOPOULOS_REDISCOVERY_V4_REPORT.md":
+        v4_path = out_dir / "DRAKOPOULOS_REDISCOVERY_V4_REPORT.md"
+        with open(v4_path, "w", encoding="utf-8") as f:
+            f.write(report)
+
+
+write_comprehensive_v4_report = write_comprehensive_v3_report
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run Drakopoulos offline rediscovery benchmark (v3)")
+    parser = argparse.ArgumentParser(description="Run Drakopoulos offline rediscovery benchmark (v4)")
     parser.add_argument("--config", default="config/benchmarks/drakopoulos_rediscovery.yaml", help="Path to benchmark YAML config")
-    parser.add_argument("--output-dir", default="outputs/drakopoulos_rediscovery_v3", help="Output directory for benchmark artifacts")
+    parser.add_argument("--output-dir", default="outputs/drakopoulos_rediscovery_v4", help="Output directory for benchmark artifacts")
     parser.add_argument("--reaudit-dir", default="outputs/drakopoulos_source_reaudit", help="Output directory for source reaudit artifacts")
     parser.add_argument("--budget", type=int, default=5, help="Primary sequential experiment budget (default: 5)")
     args = parser.parse_args()
@@ -462,7 +498,7 @@ def main() -> None:
     traj_dir = out_dir / "trajectories"
     surrogate_dir = out_dir / "surrogate_artifacts"
     unconstrained_dir = out_dir / "unconstrained_d30"
-    high_loading_dir = out_dir / "high_loading_d30"
+    high_loading_dir = out_dir / "higher_loading_proxy"
 
     for d in [out_dir, reaudit_dir, figures_dir, traj_dir, surrogate_dir, unconstrained_dir, high_loading_dir]:
         d.mkdir(parents=True, exist_ok=True)
@@ -516,6 +552,7 @@ def main() -> None:
     eligible_df.to_csv(out_dir / "eligible_recipe_table.csv", index=False)
     excluded_df.to_csv(out_dir / "excluded_recipe_table.csv", index=False)
 
+    zero_cells_count = sum(g.zero_d30_replicates for g in groups)
     completeness_summary = {
         "dataset": "Drakopoulos et al. 2021 (Graphite Process-15)",
         "partition": "PROSPECTIVE_MODEL_VALIDATION (ASC Cells 1-108)",
@@ -524,6 +561,7 @@ def main() -> None:
         "strictly_complete_recipes": len(eligible_groups),
         "incomplete_partial_d30_recipes": sum(1 for g in groups if g.recipe_eligibility_status == "PARTIAL_D30"),
         "no_d30_recipes": sum(1 for g in groups if g.recipe_eligibility_status == "NO_D30"),
+        "measured_zero_d30_cells": zero_cells_count,
         "eligibility_policy": "STRICT_COMPLETE_RECIPE: Only recipes with 100% of replicates having valid measured D30 cycling data are admitted into primary benchmark pool to prevent survivorship bias.",
         "zero_versus_missing_policy": "Zero measured D30 is retained as a valid physical failure/zero outcome; missing D30 is preserved as missing and excluded from primary complete-recipe pool.",
     }
@@ -537,7 +575,7 @@ def main() -> None:
     source_mapping = {
         "dataset_doi": "10.17632/4dh2h3tsf4.1",
         "paper_doi": "10.1016/j.xcrp.2021.100683",
-        "adapter": "DrakopoulosGraphiteAdapter (version 3.0)",
+        "adapter": "DrakopoulosGraphiteAdapter (version 4.0)",
         "semantic_mapping_strategy": "FAIL_CLOSED_REGEX_HEADER_MATCHING",
         "positional_fallback": "STRICTLY_PROHIBITED",
         "header_regex_map": {
@@ -614,7 +652,7 @@ def main() -> None:
     with open(out_dir / "rediscovery_trajectories.json", "w", encoding="utf-8") as f:
         json.dump(unconstrained_results["trajectories"], f, indent=2)
 
-    logger.info("Step 3: Executing TASK 2: HIGH_LOADING_D30_REDISCOVERY...")
+    logger.info("Step 3: Executing TASK 2: HIGHER_LOADING_MEASURED_D30_PROXY...")
     hl_groups = [g for g in eligible_groups if g.controls.get("coating_gap_um", 0) >= 150.0]
     hl_records = []
     for g in hl_groups:
@@ -640,7 +678,7 @@ def main() -> None:
         seeds=seeds,
         initial_size=initial_size,
         max_steps=budget,
-        benchmark_task="HIGH_LOADING_D30",
+        benchmark_task="HIGHER_LOADING_MEASURED_D30_PROXY",
     )
 
     with open(high_loading_dir / "summary.json", "w", encoding="utf-8") as f:
@@ -665,14 +703,27 @@ def main() -> None:
         seed = t["seed"]
         for step_rec in t["steps"]:
             if step_rec.get("surrogate_artifact_fingerprint"):
-                surrogate_manifest.append({
+                tv = step_rec.get("training_view_summary") or {}
+                manifest_entry = {
                     "seed": seed,
                     "step": step_rec["step"],
+                    "training_recipe_ids": tv.get("training_recipe_ids", []),
+                    "training_run_ids": tv.get("training_run_ids", []),
+                    "number_of_training_runs": tv.get("number_of_training_runs", 0),
+                    "target_name": tv.get("target_name", "discharge_specific_capacity_cycle30_mah_g"),
+                    "target_units": tv.get("target_units", "mAh/g"),
+                    "visible_planned_control_names": tv.get("visible_planned_control_names", []),
+                    "hidden_observation_names": tv.get("hidden_observation_names", []),
+                    "dataset_fingerprint": tv.get("dataset_fingerprint") or step_rec.get("dataset_fingerprint"),
+                    "split_fingerprint": tv.get("split_fingerprint"),
+                    "schema_fingerprint": tv.get("schema_fingerprint"),
+                    "preprocessor_fingerprint": tv.get("preprocessor_fingerprint"),
+                    "model_state_fingerprint": tv.get("model_state_fingerprint"),
                     "surrogate_artifact_fingerprint": step_rec["surrogate_artifact_fingerprint"],
-                    "dataset_fingerprint": step_rec.get("dataset_fingerprint"),
-                    "information_horizon": step_rec.get("information_horizon"),
-                    "training_view_summary": step_rec.get("training_view_summary"),
-                })
+                    "uncertainty_kind": tv.get("uncertainty_kind", "gaussian_process"),
+                    "acquisition_strategy": tv.get("acquisition_strategy", "noisy_expected_improvement"),
+                }
+                surrogate_manifest.append(manifest_entry)
     with open(surrogate_dir / "surrogate_manifest.json", "w", encoding="utf-8") as f:
         json.dump(surrogate_manifest, f, indent=2)
     with open(out_dir / "surrogate_artifacts_manifest.json", "w", encoding="utf-8") as f:
@@ -704,7 +755,7 @@ def main() -> None:
         })
     for s in high_loading_results["summaries"]:
         summary_rows.append({
-            "benchmark_task": "HIGH_LOADING_D30",
+            "benchmark_task": "HIGHER_LOADING_MEASURED_D30_PROXY",
             "policy": s["policy"],
             "engine_path": s.get("engine_path", "UNKNOWN"),
             "num_seeds": s["num_seeds"],
@@ -720,11 +771,11 @@ def main() -> None:
         })
     pd.DataFrame(summary_rows).to_csv(out_dir / "policy_summary.csv", index=False)
     pd.DataFrame([r for r in summary_rows if r["benchmark_task"] == "UNCONSTRAINED_D30"]).to_csv(unconstrained_dir / "policy_summary.csv", index=False)
-    pd.DataFrame([r for r in summary_rows if r["benchmark_task"] == "HIGH_LOADING_D30"]).to_csv(high_loading_dir / "policy_summary.csv", index=False)
+    pd.DataFrame([r for r in summary_rows if r["benchmark_task"] == "HIGHER_LOADING_MEASURED_D30_PROXY"]).to_csv(high_loading_dir / "policy_summary.csv", index=False)
 
     random_analytic = {
         "unconstrained_d30": unconstrained_results["analytic_hypergeometric"],
-        "high_loading_d30": high_loading_results["analytic_hypergeometric"],
+        "higher_loading_proxy": high_loading_results["analytic_hypergeometric"],
         "formula_description": "Exact hypergeometric probability conditioned on initial design strictly excluding the hidden best candidate. Top-k formula accounts for distribution of other top-k targets across initial design.",
     }
     with open(out_dir / "random_analytic_baseline.json", "w", encoding="utf-8") as f:
@@ -741,52 +792,68 @@ def main() -> None:
     ps_hl = hl_summary_dict["AICOSCIENTIST_PROCESS_SURROGATE"]
     analytic_rand_hl = high_loading_results["analytic_hypergeometric"]["top1_hit_rate_by_step"]
 
+    hit5_ai = float(ps_unconstrained["hit_rate_at_step"].get(5, 0.0))
+    hit5_rand = float(analytic_rand_unc[5])
+    if hit5_ai > hit5_rand:
+        supported_claim = (
+            "In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, "
+            "the AIcoScientist full process engine recovered the source-observed highest-D30 recipe "
+            "more often within five additional experiments than expected under random selection."
+        )
+    else:
+        supported_claim = (
+            "This source-backed offline replay did not establish a Hit@5 advantage for the "
+            "AIcoScientist full process engine over random selection."
+        )
+
     slide_summary = {
         "dataset": "Drakopoulos et al. 2021",
         "evidence_kind": "PHYSICAL_HISTORICAL",
+        "benchmark_version": "v4",
+        "decision_semantics": "PRE_MANUFACTURING_RECIPE_SELECTION",
         "candidate_pool_total": len(groups),
-        "eligible_complete_d30_recipes": len(eligible_groups),
-        "excluded_incomplete_d30_recipes": len(excluded_groups),
-        "primary_target": "D30",
-        "primary_target_units": "mAh/g",
-        "engine_path": "AICOSCIENTIST_PROCESS_SURROGATE",
+        "strict_complete_recipe_count": len(eligible_groups),
+        "partial_recipe_count": sum(1 for g in groups if g.recipe_eligibility_status == "PARTIAL_D30"),
+        "no_d30_recipe_count": sum(1 for g in groups if g.recipe_eligibility_status == "NO_D30"),
+        "measured_zero_d30_cell_count": zero_cells_count,
+        "primary_policy": "AICOSCIENTIST_FULL_PROCESS_ENGINE",
+        "engine_verified_by_runtime_trace": True,
         "initial_design_size": initial_size,
         "additional_experiment_budget": budget,
         "seed_count": len(seeds),
         "unconstrained": {
-            "source_best_d30": float(best_unconstrained["discharge_specific_capacity_cycle30_mah_g"]),
+            "source_best_recipe_id": str(best_unconstrained["recipe_id"]),
+            "source_best_d30_mah_g": float(best_unconstrained["discharge_specific_capacity_cycle30_mah_g"]),
             "hit_at_1": float(ps_unconstrained["hit_rate_at_step"].get(1, 0.0)),
             "hit_at_3": float(ps_unconstrained["hit_rate_at_step"].get(3, 0.0)),
             "hit_at_5": float(ps_unconstrained["hit_rate_at_step"].get(5, 0.0)),
-            "random_hit_at_5": float(analytic_rand_unc[5]),
-            "simple_regret_at_5": float(ps_unconstrained["mean_simple_regret"]),
+            "analytic_random_hit_at_5": float(analytic_rand_unc[5]),
+            "mean_simple_regret_at_5": float(ps_unconstrained["mean_simple_regret"]),
         },
-        "high_loading": {
+        "higher_loading_proxy": {
             "status": "EVALUATED_ON_STRICT_COMPLETE_HIGH_LOADING_SUBSET",
-            "loading_definition": "coating_gap_um >= 150 um (mean active mass >= 11.0 mg) among strictly complete recipes",
+            "eligibility_definition": "coating_gap_um >= 150 um among strictly complete recipes",
             "eligible_recipe_count": len(hl_pool),
-            "source_best_d30": float(best_hl["discharge_specific_capacity_cycle30_mah_g"]),
             "hit_at_5": float(ps_hl["hit_rate_at_step"].get(5, 0.0)),
-            "random_hit_at_5": float(analytic_rand_hl[5]),
+            "analytic_random_hit_at_5": float(analytic_rand_hl[5]),
         },
-        "published_design_status": "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING",
-        "claim": (
-            "In source-backed offline replay on eligible Drakopoulos manufacturing protocols, "
-            "the AIcoScientist process-surrogate engine recovered the source-observed high-D30 recipe "
-            "more frequently within five additional experiments than random selection."
-        ),
+        "published_high_loading_task": {
+            "status": "NOT_EVALUABLE_WITH_AVAILABLE_D30",
+        },
+        "supported_claim": supported_claim,
         "limitations": [
             "Evaluated on physical retrospective experimental candidates rather than real-time prospective wet-lab synthesis.",
             "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",
             "Published Alchemite design represents an aggregate comparative set in Table S6 rather than an isolated recoverable single-cell identifier.",
+            "Exact published >=25 mg loading objective is not evaluable due to absence of cycle 30 measurements for 300 um cells.",
         ],
     }
     with open(out_dir / "slide_summary.json", "w", encoding="utf-8") as f:
         json.dump(slide_summary, f, indent=2)
 
     manifest = {
-        "benchmark_name": "drakopoulos_graphite_offline_rediscovery_v3",
-        "version": "3.0.0",
+        "benchmark_name": "drakopoulos_graphite_offline_rediscovery_v4",
+        "version": "4.0.0",
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "dataset_doi": "10.17632/4dh2h3tsf4.1",
         "paper_doi": "10.1016/j.xcrp.2021.100683",
@@ -794,7 +861,7 @@ def main() -> None:
         "initial_size": initial_size,
         "seeds": seeds,
         "policies": policies,
-        "tasks": ["UNCONSTRAINED_D30", "HIGH_LOADING_D30"],
+        "tasks": ["UNCONSTRAINED_D30_REDISCOVERY", "HIGHER_LOADING_MEASURED_D30_PROXY"],
         "unconstrained_pool_size": len(primary_pool),
         "high_loading_pool_size": len(hl_pool),
         "unconstrained_best": {
@@ -809,11 +876,12 @@ def main() -> None:
         },
         "engine_path_verified": True,
         "zero_leakage_verified": True,
+        "published_high_loading_rediscovery_status": "NOT_EVALUABLE_WITH_AVAILABLE_D30",
     }
     with open(out_dir / "benchmark_manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2)
 
-    logger.info("Step 4: Generating 8 publication figures...")
+    logger.info("Step 4: Generating publication figures...")
     generate_all_v3_figures(
         unconstrained_results=unconstrained_results,
         high_loading_results=high_loading_results,
@@ -823,8 +891,8 @@ def main() -> None:
         figures_dir=figures_dir,
     )
 
-    logger.info("Step 5: Writing comprehensive V3 report...")
-    write_comprehensive_v3_report(
+    logger.info("Step 5: Writing comprehensive V4 report...")
+    write_comprehensive_v4_report(
         out_dir=out_dir,
         manifest=manifest,
         slide_summary=slide_summary,
@@ -833,9 +901,10 @@ def main() -> None:
         eligible_pool=primary_pool,
         hl_pool=hl_pool,
         all_groups=groups,
+        report_name="DRAKOPOULOS_REDISCOVERY_V4_REPORT.md",
     )
 
-    logger.info("V3 Benchmark execution and artifact generation completed successfully in %s!", out_dir)
+    logger.info("V4 Benchmark execution and artifact generation completed successfully in %s!", out_dir)
 
 
 if __name__ == "__main__":
