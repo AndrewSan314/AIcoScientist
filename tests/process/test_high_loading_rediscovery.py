@@ -25,7 +25,7 @@ def _load_real_pool():
         pytest.skip("Requires local Drakopoulos raw or normalized dataset")
     adapter = DrakopoulosGraphiteAdapter()
     groups = adapter.load_recipe_groups("PROSPECTIVE_MODEL_VALIDATION")
-    valid_groups = [g for g in groups if g.mean_d30_specific_capacity > 0]
+    valid_groups = [g for g in groups if g.valid_d30_replicates > 0]
     records = []
     for g in valid_groups:
         row = {
@@ -110,7 +110,7 @@ def test_production_runner_high_loading_replay_unit(mock_high_loading_pool):
 def test_filter_candidate_pool_for_high_loading_16mg():
     df, ctrl_cols = _load_real_pool()
     assert len(df) == 26
-    assert df.iloc[0]["recipe_id"] == "protocol-d3602183e567"
+    assert df.iloc[0]["recipe_id"] == "protocol-c1c280b7366f"
 
     hl_df = filter_candidate_pool_for_high_loading(df, min_active_mass_mg=16.0)
     assert len(hl_df) == 11

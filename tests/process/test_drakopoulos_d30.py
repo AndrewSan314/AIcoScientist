@@ -13,5 +13,13 @@ def test_d30_specific_capacity_formula() -> None:
 def test_d30_rejects_zero_or_negative_active_mass() -> None:
     d30_mah = 3.10
     mass = 0.0
-    val = (d30_mah / mass * 1000.0) if (mass and mass > 0) else None
+    val = (d30_mah / mass * 1000.0) if (d30_mah is not None and mass is not None and mass > 0) else None
     assert val is None
+
+
+def test_d30_measured_zero_yields_numeric_zero() -> None:
+    d30_mah = 0.0
+    mass = 7.5
+    val = (d30_mah / mass * 1000.0) if (d30_mah is not None and mass is not None and mass > 0) else None
+    assert val == 0.0
+
