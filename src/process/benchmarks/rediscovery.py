@@ -20,8 +20,14 @@ import pandas as pd
 from src.optimization.backend import resolve_strategy
 from src.optimization.botorch_backend import BoTorchBackend
 from src.optimization.objective import OptimizationObjective
+from src.optimization.proposal import CandidateProposal
+from src.process.contracts import BatteryProcessRun
 from src.process.coordinator import ProcessOptimizationCoordinator
-from src.process.information_horizon import InformationHorizon
+from src.process.information_horizon import (
+    DecisionHorizon,
+    InformationHorizon,
+    PreManufacturingRecipeSelectionHorizon,
+)
 from src.process.optimization.process_objective import ObjectiveSpec, ProcessOptimizationObjective
 from src.process.optimization.process_space import ProcessSearchSpace
 from src.process.stages import ProcessStage
@@ -29,11 +35,149 @@ from src.process.surrogates.core import (
     ProcessSurrogate,
     ProcessSurrogateSample,
     SurrogateArtifact,
+    SurrogateDecisionContext,
     SurrogateInputSchema,
     TrainOnlyPreprocessor,
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EngineExecutionTrace:
+    """Runtime execution counters for benchmark verification and audit."""
+
+    runs_loaded: int = 0
+    horizon_projections: int = 0
+    samples_created: int = 0
+    surrogates_fitted: int = 0
+    artifacts_created: int = 0
+    coordinator_calls: int = 0
+    proposals_generated: int = 0
+    oracle_reveals: int = 0
+    botorch_calls: int = 0
+    random_steps: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+class FrozenSurrogateOptimizerBackend:
+    """Production optimizer backend executing over a frozen SurrogateArtifact.
+
+    Implements the optimizer backend protocol for ProcessOptimizationCoordinator:
+    propose(observations, candidate_pool, objective, ...) -> list[CandidateProposal]
+    """
+
+    name: str = "frozen_process_surrogate"
+    version: str = "4"
+
+    def __init__(
+        self,
+        artifact: SurrogateArtifact,
+        context: SurrogateDecisionContext,
+        *,
+        beta: float = 2.0,
+    ) -> None:
+        artifact.verify_integrity()
+        self.artifact = artifact
+        self.context = context
+        self.beta = float(beta)
+        self.control_names = tuple(name.removeprefix("control::") for name in artifact.input_schema.control_features)
+
+    def propose(
+        self,
+        observations: pd.DataFrame | Sequence[Mapping[str, Any]],
+        candidate_pool: pd.DataFrame,
+        objective: OptimizationObjective | str,
+        *,
+        feature_columns: Sequence[str] | None = None,
+        candidate_id_column: str | None = None,
+        n: int = 1,
+        seed: int | None = None,
+        strategy: str = "noisy_expected_improvement",
+        beta: float | None = None,
+        **kwargs: Any,
+    ) -> list[CandidateProposal]:
+        if candidate_pool.empty:
+            return []
+
+        target, minimize = (objective, False) if isinstance(objective, str) else (objective.target_name, objective.minimize)
+        if target not in self.artifact.target_names:
+            raise ValueError(f"Target {target!r} is absent from frozen surrogate artifact")
+
+        id_col = candidate_id_column or "recipe_id"
+        ids = candidate_pool[id_col].astype(str).tolist()
+        eff_beta = float(beta) if beta is not None else self.beta
+
+        ctrl_cols = [c for c in self.control_names if c in candidate_pool.columns]
+        candidate_controls = candidate_pool[ctrl_cols].to_dict(orient="records")
+        dist = self.artifact.predict_decision(self.context, candidate_controls)
+        means, stds = dist[target]
+
+        best_so_far = None
+        if isinstance(observations, pd.DataFrame) and not observations.empty and target in observations.columns:
+            obs_vals = observations[target].dropna().values
+            if len(obs_vals) > 0:
+                best_so_far = float(np.min(obs_vals) if minimize else np.max(obs_vals))
+
+        strat_lower = strategy.lower()
+        proposals: list[CandidateProposal] = []
+        scores: list[float] = []
+
+        for i, cid in enumerate(ids):
+            m = float(means[i])
+            s = max(float(stds[i]), 1e-8)
+            if strat_lower in ("gp_ucb", "ucb"):
+                score = (m - eff_beta * s) if minimize else (m + eff_beta * s)
+                acq_name = "gp_ucb"
+            elif strat_lower == "greedy":
+                score = -m if minimize else m
+                acq_name = "greedy"
+            elif strat_lower == "random":
+                score = 0.0
+                acq_name = "random"
+            else:  # expected improvement / noisy_expected_improvement
+                acq_name = strat_lower
+                if best_so_far is None:
+                    score = -m if minimize else m
+                else:
+                    diff = (best_so_far - m) if minimize else (m - best_so_far)
+                    z = diff / s
+                    phi = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+                    pdf = (1.0 / math.sqrt(2.0 * math.pi)) * math.exp(-0.5 * z * z)
+                    score = diff * phi + s * pdf
+            scores.append(score)
+
+        if strat_lower == "random":
+            rng = np.random.default_rng(seed)
+            ranking = list(range(len(ids)))
+            rng.shuffle(ranking)
+        else:
+            ranking = sorted(range(len(ids)), key=lambda idx: scores[idx], reverse=True)
+
+        for idx in ranking[:n]:
+            proposals.append(
+                CandidateProposal(
+                    candidate_id=ids[idx],
+                    design_variables=candidate_controls[idx],
+                    predicted_mean=float(means[idx]),
+                    predicted_std=float(stds[idx]),
+                    acquisition_name=strat_lower,
+                    acquisition_value=float(scores[idx]),
+                    backend_name=self.name,
+                    backend_version=self.version,
+                    seed=seed,
+                    metadata={
+                        "artifact_fingerprint": self.artifact.artifact_fingerprint,
+                        "context_fingerprint": self.context.context_fingerprint,
+                        "context_stage": self.context.stage.value,
+                        "objective_sense": "minimize" if minimize else "maximize",
+                        "strategy": strat_lower,
+                    },
+                )
+            )
+        return proposals
 
 STAGE_OF_CONTROL: dict[str, ProcessStage] = {
     "active_material_fraction_pct": ProcessStage.FORMULATION,
@@ -477,10 +621,11 @@ class RediscoveryReplay:
         backend: Any | None = None,
         coordinator: Any | None = None,
         top_k_targets: int = 3,
-        decision_stage: ProcessStage = ProcessStage.COATING,
+        decision_stage: ProcessStage | DecisionHorizon | str = DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION,
         dataset_id: str = "drakopoulos_graphite",
         dataset_fingerprint: str | None = None,
         benchmark_task: str = "UNCONSTRAINED_D30",
+        runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
@@ -495,11 +640,36 @@ class RediscoveryReplay:
         self._decision_stage = decision_stage
         self._dataset_id = dataset_id
         self._benchmark_task = benchmark_task
+        self._runs_by_recipe = dict(runs_by_recipe) if runs_by_recipe is not None else None
+        self._execution_trace = EngineExecutionTrace()
         if dataset_fingerprint is None:
             raw_bytes = pd.util.hash_pandas_object(self._candidate_pool, index=True).values.tobytes()
             self._dataset_fingerprint = hashlib.sha256(raw_bytes).hexdigest()
         else:
             self._dataset_fingerprint = dataset_fingerprint
+
+    @property
+    def execution_trace(self) -> EngineExecutionTrace:
+        return self._execution_trace
+
+    def _get_runs_by_recipe(self) -> dict[str, list[BatteryProcessRun]]:
+        if self._runs_by_recipe is not None:
+            return self._runs_by_recipe
+        if self._dataset_id == "drakopoulos_graphite":
+            try:
+                from src.datasets.battery_process.drakopoulos_graphite import DrakopoulosGraphiteAdapter
+                runs = DrakopoulosGraphiteAdapter().load_runs()
+                grouped: dict[str, list[BatteryProcessRun]] = {}
+                for r in runs:
+                    k = r.batch_id or r.run_id
+                    grouped.setdefault(k, []).append(r)
+                self._runs_by_recipe = grouped
+                return self._runs_by_recipe
+            except Exception:
+                self._runs_by_recipe = {}
+                return {}
+        self._runs_by_recipe = {}
+        return {}
 
     def _create_oracle(self) -> BlindExperimentalOracle:
         return BlindExperimentalOracle(
@@ -552,6 +722,7 @@ class RediscoveryReplay:
         initial_values: list[float] = []
         for cid in sampled_initial:
             rec = oracle.reveal(cid)
+            self._execution_trace.oracle_reveals += 1
             initial_values.append(rec[oracle.target_column])
 
         # Baseline best from initial design
@@ -560,21 +731,26 @@ class RediscoveryReplay:
 
         canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
 
+        strat_upper = strategy.upper()
+        strat_lower = strategy.lower()
+
         is_process_surrogate = (
-            strategy.upper() in (
+            strat_upper in (
                 "AICOSCIENTIST_PROCESS_SURROGATE",
+                "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
                 "AICOSCIENTIST_PROCESS_ENGINE",
+                "AICOSCIENTIST_FULL_PROCESS_ENGINE",
                 "PRODUCTION_COORDINATOR",
                 "COORDINATOR",
             )
-            or strategy.lower().startswith("aicointel_")
+            or strat_lower.startswith("aicointel_")
             or self._coordinator is not None
         )
         is_direct_botorch = (
-            strategy.upper().startswith("DIRECT_BOTORCH")
-            or strategy.lower() in ("direct_botorch_baseline", "direct_botorch")
+            strat_upper.startswith("DIRECT_BOTORCH")
+            or strat_lower in ("direct_botorch_baseline", "direct_botorch")
         )
-        is_random = (canonical_strat == "random" and not is_process_surrogate)
+        is_random = (canonical_strat == "random" and not is_process_surrogate and not is_direct_botorch)
 
         if is_process_surrogate:
             traj_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
@@ -617,6 +793,7 @@ class RediscoveryReplay:
             training_view_summary: dict[str, Any] | None = None
 
             if is_random:
+                self._execution_trace.random_steps += 1
                 step_rng = np.random.default_rng(seed * 1000 + step)
                 visible_ids = visible[oracle.candidate_id_column].tolist()
                 selected_id = str(step_rng.choice(visible_ids))
@@ -628,41 +805,93 @@ class RediscoveryReplay:
                     hidden_rank = None
             elif is_process_surrogate:
                 step_engine_path = "AICOSCIENTIST_PROCESS_SURROGATE"
-                horizon = InformationHorizon(self._decision_stage, include_decision_stage_controls=True)
-                horizon_str = f"InformationHorizon({self._decision_stage.value})"
-                observable_ctrls = [
-                    c for c in self._control_columns
-                    if horizon.can_observe_stage(STAGE_OF_CONTROL.get(c, self._decision_stage))
-                ]
+                runs_dict = self._get_runs_by_recipe()
+
+                is_recipe_sel = (
+                    self._decision_stage in (DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION, "PRE_MANUFACTURING_RECIPE_SELECTION")
+                )
+                if is_recipe_sel:
+                    horizon = PreManufacturingRecipeSelectionHorizon()
+                    horizon_str = f"InformationHorizon({DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION.value})"
+                    observable_ctrls = list(self._control_columns)
+                    dec_stage_val = DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION.value
+                else:
+                    stage_enum = self._decision_stage if isinstance(self._decision_stage, ProcessStage) else ProcessStage.COATING
+                    horizon = InformationHorizon(stage_enum, include_decision_stage_controls=True)
+                    horizon_str = f"InformationHorizon({stage_enum.value})"
+                    observable_ctrls = [
+                        c for c in self._control_columns
+                        if horizon.can_observe_stage(STAGE_OF_CONTROL.get(c, stage_enum))
+                    ]
+                    dec_stage_val = stage_enum.value
+
                 if not observable_ctrls:
                     observable_ctrls = list(self._control_columns)
 
                 samples: list[ProcessSurrogateSample] = []
                 for _, row in revealed.iterrows():
                     cid = str(row[oracle.candidate_id_column])
-                    ctrls = {c: float(row[c]) for c in observable_ctrls if c in row and pd.notna(row[c])}
-                    val = float(row[oracle.target_column])
-                    samples.append(
-                        ProcessSurrogateSample(
-                            sample_id=cid,
-                            run_id=cid,
-                            recipe_id=cid,
-                            source_dataset=self._dataset_id,
-                            source_evidence_kind="PHYSICAL_HISTORICAL",
-                            stage=self._decision_stage,
-                            group_id=cid,
-                            controls=ctrls,
-                            targets={oracle.target_column: val},
-                            fidelity="EXPERIMENTAL",
-                            dataset_manifest_fingerprint=self._dataset_fingerprint,
+                    g_runs = runs_dict.get(cid, [])
+                    if g_runs:
+                        self._execution_trace.runs_loaded += len(g_runs)
+                        for r in g_runs:
+                            if is_recipe_sel:
+                                view = horizon.project_for_recipe_selection(r)
+                            else:
+                                view = horizon.project(r)
+                            self._execution_trace.horizon_projections += 1
+                            ctrls = {
+                                c: float(view.controls[c].value if hasattr(view.controls[c], "value") else view.controls[c])
+                                for c in observable_ctrls
+                                if c in view.controls
+                            }
+                            run_d30 = r.final_kpis.get(oracle.target_column)
+                            target_val = float(run_d30.value) if (run_d30 is not None and isinstance(run_d30.value, (int, float))) else float(row[oracle.target_column])
+                            sample_stage = ProcessStage.FORMULATION if is_recipe_sel else stage_enum
+                            samples.append(
+                                ProcessSurrogateSample(
+                                    sample_id=r.run_id,
+                                    run_id=r.run_id,
+                                    recipe_id=cid,
+                                    source_dataset=self._dataset_id,
+                                    source_evidence_kind="PHYSICAL_HISTORICAL",
+                                    stage=sample_stage,
+                                    group_id=cid,
+                                    controls=ctrls,
+                                    targets={oracle.target_column: target_val},
+                                    fidelity="EXPERIMENTAL",
+                                    dataset_manifest_fingerprint=self._dataset_fingerprint,
+                                )
+                            )
+                            self._execution_trace.samples_created += 1
+                    else:
+                        ctrls = {c: float(row[c]) for c in observable_ctrls if c in row and pd.notna(row[c])}
+                        val = float(row[oracle.target_column])
+                        sample_stage = ProcessStage.FORMULATION if is_recipe_sel else stage_enum
+                        samples.append(
+                            ProcessSurrogateSample(
+                                sample_id=cid,
+                                run_id=cid,
+                                recipe_id=cid,
+                                source_dataset=self._dataset_id,
+                                source_evidence_kind="PHYSICAL_HISTORICAL",
+                                stage=sample_stage,
+                                group_id=cid,
+                                controls=ctrls,
+                                targets={oracle.target_column: val},
+                                fidelity="EXPERIMENTAL",
+                                dataset_manifest_fingerprint=self._dataset_fingerprint,
+                            )
                         )
-                    )
+                        self._execution_trace.samples_created += 1
 
                 schema = SurrogateInputSchema.from_training_samples(samples, declared_fidelities=["EXPERIMENTAL"])
                 preprocessor = TrainOnlyPreprocessor().fit(samples, schema)
                 X_train = preprocessor.transform(samples)
                 surrogate = ProcessSurrogate(model_type="gp", seed=seed * 1000 + step)
                 surrogate.fit(X_train, targets={oracle.target_column: np.array([s.targets[oracle.target_column] for s in samples])})
+                self._execution_trace.surrogates_fitted += 1
+
                 split_fp = hashlib.sha256(f"split_{seed}_{step}".encode()).hexdigest()
                 artifact = SurrogateArtifact(
                     surrogate=surrogate,
@@ -672,77 +901,72 @@ class RediscoveryReplay:
                     target_names=(oracle.target_column,),
                     input_schema=schema,
                     target_units={oracle.target_column: "mAh/g"},
-                    model_version="process-surrogate-v3",
+                    model_version="process-surrogate-v4",
                     training_config={"seed": seed * 1000 + step, "step": step},
                 )
                 artifact.verify_integrity()
+                self._execution_trace.artifacts_created += 1
                 surrogate_artifact_fp = artifact.artifact_fingerprint
+
                 training_view_summary = {
                     "num_revealed_samples": len(samples),
                     "observable_controls": observable_ctrls,
-                    "decision_stage": self._decision_stage.value,
+                    "decision_stage": dec_stage_val,
                     "features": list(preprocessor.output_names),
                 }
 
-                # Predict on unrevealed visible candidates
-                visible_ids = visible[oracle.candidate_id_column].astype(str).tolist()
-                cand_rows = []
-                for _, row in visible.iterrows():
-                    v_dict = {"fidelity::EXPERIMENTAL": 1.0}
-                    for c in observable_ctrls:
-                        if c in row and pd.notna(row[c]):
-                            v_dict[f"control::{c}"] = float(row[c])
-                    cand_rows.append(v_dict)
-
-                X_cands = preprocessor.transform_values(cand_rows)
-                dist = surrogate.predict_distribution(X_cands)
-                means = dist[oracle.target_column][0]
-                stds = dist[oracle.target_column][1]
-
                 coord_strat = "noisy_expected_improvement"
-                if strategy.startswith("aicointel_"):
-                    coord_strat = strategy.replace("aicointel_", "")
+                if strat_lower.startswith("aicointel_"):
+                    coord_strat = strat_lower.replace("aicointel_", "")
                     if coord_strat == "nei":
                         coord_strat = "noisy_expected_improvement"
                     elif coord_strat == "ei":
                         coord_strat = "expected_improvement"
                     elif coord_strat == "ucb":
                         coord_strat = "gp_ucb"
+                elif strat_upper.endswith("_NEI"):
+                    coord_strat = "noisy_expected_improvement"
+                elif strat_upper.endswith("_UCB"):
+                    coord_strat = "gp_ucb"
+                elif strat_upper.endswith("_GREEDY"):
+                    coord_strat = "greedy"
 
-                scored_candidates = []
-                for i, cid in enumerate(visible_ids):
-                    m = float(means[i])
-                    s = max(float(stds[i]), 1e-8)
-                    if coord_strat in ("ucb", "gp_ucb"):
-                        acq = m - beta * s if self._minimize else m + beta * s
-                    elif coord_strat == "greedy":
-                        acq = -m if self._minimize else m
-                    else:  # expected improvement
-                        diff = (best_so_far - m) if self._minimize else (m - best_so_far)
-                        z = diff / s
-                        phi = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
-                        pdf = (1.0 / math.sqrt(2.0 * math.pi)) * math.exp(-0.5 * z * z)
-                        acq = diff * phi + s * pdf
-                    scored_candidates.append({
-                        "id": cid,
-                        "mean": m,
-                        "std": s,
-                        "acq": acq,
-                    })
+                context = SurrogateDecisionContext(stage=samples[0].stage, fidelity="EXPERIMENTAL")
+                backend = FrozenSurrogateOptimizerBackend(artifact, context, beta=beta)
+                coordinator = self._coordinator or ProcessOptimizationCoordinator(scalar_backend=backend)
+                coordinator.scalar_backend = backend
 
-                scored_candidates.sort(key=lambda x: x["acq"], reverse=True)
-                top_cand = scored_candidates[0]
-                selected_id = top_cand["id"]
-                pred_mean = top_cand["mean"]
-                pred_std = top_cand["std"]
-                acq_val = top_cand["acq"]
+                cand_cols = list(backend.control_names)
+                pool_slice = visible[[oracle.candidate_id_column] + [c for c in cand_cols if c in visible.columns]].copy()
+                space = ProcessSearchSpace.from_finite_pool(pool_slice, id_column=oracle.candidate_id_column)
+                process_obj = ProcessOptimizationObjective([
+                    ObjectiveSpec(oracle.target_column, "minimize" if self._minimize else "maximize", units="mAh/g")
+                ])
 
-                prop_ids = [c["id"] for c in scored_candidates]
+                self._execution_trace.coordinator_calls += 1
+                proposals = coordinator.propose_recipes(
+                    observations=revealed,
+                    space=space,
+                    objective=process_obj,
+                    n=len(visible),
+                    seed=seed * 1000 + step,
+                    strategy=coord_strat,
+                )
+                self._execution_trace.proposals_generated += len(proposals)
+
+                top_prop = proposals[0]
+                selected_id = str(top_prop.candidate_instance_id)
+                pred_mean = top_prop.predicted_outputs[oracle.target_column].mean
+                pred_std = top_prop.predicted_outputs[oracle.target_column].std
+                acq_val = top_prop.acquisition_value
+
+                prop_ids = [str(p.candidate_instance_id) for p in proposals]
                 if hidden_best in prop_ids:
                     hidden_rank = prop_ids.index(hidden_best) + 1
                 else:
                     hidden_rank = None
             else:
+                self._execution_trace.botorch_calls += 1
                 step_engine_path = "DIRECT_BOTORCH_BASELINE"
                 horizon_str = "NONE (FLAT TABLE)"
                 training_view_summary = {"backend": "BoTorchBackend", "num_observations": len(revealed)}
@@ -791,6 +1015,7 @@ class RediscoveryReplay:
 
             # Reveal selected candidate
             record = oracle.reveal(selected_id)
+            self._execution_trace.oracle_reveals += 1
             revealed_val = float(record[oracle.target_column])
 
             is_hidden = (selected_id == hidden_best)
@@ -909,10 +1134,11 @@ def run_rediscovery_benchmark(
     backend: Any | None = None,
     coordinator: Any | None = None,
     top_k_targets: int = 3,
-    decision_stage: ProcessStage = ProcessStage.COATING,
+    decision_stage: ProcessStage | DecisionHorizon | str = DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION,
     dataset_id: str = "drakopoulos_graphite",
     dataset_fingerprint: str | None = None,
     benchmark_task: str = "UNCONSTRAINED_D30",
+    runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
     replay = RediscoveryReplay(
@@ -928,6 +1154,7 @@ def run_rediscovery_benchmark(
         dataset_id=dataset_id,
         dataset_fingerprint=dataset_fingerprint,
         benchmark_task=benchmark_task,
+        runs_by_recipe=runs_by_recipe,
     )
 
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
@@ -976,6 +1203,7 @@ def run_rediscovery_benchmark(
         "initial_size": initial_size,
         "seeds": list(seeds),
         "policies": list(policies),
+        "engine_execution_trace": replay.execution_trace.to_dict(),
         "analytic_hypergeometric": {
             "top1_hit_rate_by_step": analytic_top1,
             "top3_hit_rate_by_step": cond_analytic_top3,
@@ -1002,10 +1230,11 @@ class ProductionProcessRediscoveryRunner:
         control_columns: Sequence[str] | None = None,
         coordinator: ProcessOptimizationCoordinator | None = None,
         top_k_targets: int = 3,
-        decision_stage: ProcessStage = ProcessStage.COATING,
+        decision_stage: ProcessStage | DecisionHorizon | str = DecisionHorizon.PRE_MANUFACTURING_RECIPE_SELECTION,
         dataset_id: str = "drakopoulos_graphite",
         dataset_fingerprint: str | None = None,
         benchmark_task: str = "UNCONSTRAINED_D30",
+        runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
     ) -> None:
         self.candidate_pool = candidate_pool.copy()
         self.candidate_id_column = candidate_id_column
@@ -1017,11 +1246,12 @@ class ProductionProcessRediscoveryRunner:
         self.dataset_id = dataset_id
         self.dataset_fingerprint = dataset_fingerprint
         self.benchmark_task = benchmark_task
+        self.runs_by_recipe = runs_by_recipe
 
     def run(
         self,
         policies: Sequence[str] = (
-            "AICOSCIENTIST_PROCESS_SURROGATE",
+            "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
             "DIRECT_BOTORCH_BASELINE",
             "random",
         ),
@@ -1045,6 +1275,7 @@ class ProductionProcessRediscoveryRunner:
             dataset_id=self.dataset_id,
             dataset_fingerprint=self.dataset_fingerprint,
             benchmark_task=self.benchmark_task,
+            runs_by_recipe=self.runs_by_recipe,
         )
 
     def run_high_loading(
@@ -1052,7 +1283,7 @@ class ProductionProcessRediscoveryRunner:
         *,
         min_active_mass_mg: float = 16.0,
         policies: Sequence[str] = (
-            "AICOSCIENTIST_PROCESS_SURROGATE",
+            "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
             "DIRECT_BOTORCH_BASELINE",
             "random",
         ),
@@ -1081,5 +1312,6 @@ class ProductionProcessRediscoveryRunner:
             dataset_id=self.dataset_id,
             dataset_fingerprint=self.dataset_fingerprint,
             benchmark_task="HIGH_LOADING_D30",
+            runs_by_recipe=self.runs_by_recipe,
         )
 

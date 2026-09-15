@@ -119,6 +119,11 @@ class InformationHorizon:
     def visible_stages(self, run: BatteryProcessRun) -> list[StageRecord]:
         if self.is_recipe_selection():
             return list(run.stages)
+        if self.include_decision_stage_controls:
+            return [
+                record for record in run.stages
+                if stage_precedes(record.stage_type, self.stage) or record.stage_type == self.stage
+            ]
         return [record for record in run.stages if stage_precedes(record.stage_type, self.stage)]  # type: ignore[arg-type]
 
     def visible_planned_controls(self, run: BatteryProcessRun) -> dict[str, ParameterValue]:
@@ -140,6 +145,9 @@ class InformationHorizon:
         for record in stages:
             prefix = f"{record.stage_type.value.lower()}."
             controls.update({prefix + name: value for name, value in record.controls.items()})
+            for name, value in record.controls.items():
+                if name not in controls:
+                    controls[name] = value
             measurements.update({prefix + name: value for name, value in record.intermediate_properties.items()})
             modalities.extend(record.modalities)
         return HorizonView(

@@ -3,6 +3,7 @@
 This package deliberately has no dependency on the falsification/HIG stack.
 """
 
+from .benchmarks.rediscovery import EngineExecutionTrace, FrozenSurrogateOptimizerBackend
 from .contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
 from .evidence import EvidenceAcquisitionPolicy, EvidenceOption, EvidencePolicyReplayEvaluation, EvidenceReplayResult, choose_cost_aware_evidence, choose_evidence, evaluate_blinded_evidence_policy, replay_blinded_evidence
 from .information_horizon import DecisionHorizon, InformationHorizon, InformationHorizonError, PreManufacturingRecipeSelectionHorizon
@@ -18,6 +19,8 @@ DEFAULT_PRODUCT_MODE = "BATTERY_PROCESS_OPTIMIZATION"
 __all__ = [
     "DEFAULT_PRODUCT_MODE",
     "BatteryProcessRun",
+    "EngineExecutionTrace",
+    "FrozenSurrogateOptimizerBackend",
     "ContextualProcessState",
     "OptimizationState",
     "ModelValidationStatus",
