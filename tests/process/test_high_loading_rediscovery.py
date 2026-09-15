@@ -99,7 +99,8 @@ def test_production_runner_high_loading_replay_unit(mock_high_loading_pool):
         initial_size=2,
         budget=1,
     )
-    assert results["benchmark_task"] == "HIGH_LOADING_D30"
+    assert results["benchmark_task"] in ("HIGHER_LOADING_MEASURED_D30_PROXY", "HIGH_LOADING_D30")
+    assert results["published_high_loading_rediscovery_status"] == "NOT_EVALUABLE_WITH_AVAILABLE_D30"
     assert results["candidate_pool_size"] == 4
     trajs = results["trajectories"]["AICOSCIENTIST_PROCESS_SURROGATE"]
     assert len(trajs) == 1
@@ -167,7 +168,8 @@ def test_production_runner_high_loading_replay():
         budget=2,
     )
 
-    assert results["benchmark_task"] == "HIGH_LOADING_D30"
+    assert results["benchmark_task"] in ("HIGHER_LOADING_MEASURED_D30_PROXY", "HIGH_LOADING_D30")
+    assert results["published_high_loading_rediscovery_status"] == "NOT_EVALUABLE_WITH_AVAILABLE_D30"
     assert results["candidate_pool_size"] == 11
     trajs = results["trajectories"]["AICOSCIENTIST_PROCESS_SURROGATE"]
     assert len(trajs) == 1
@@ -179,3 +181,27 @@ def test_production_runner_high_loading_replay():
     step1 = t["steps"][0]
     assert step1["engine_path"] == "AICOSCIENTIST_PROCESS_SURROGATE"
     assert step1["surrogate_artifact_fingerprint"] is not None
+
+
+def test_higher_loading_proxy_semantics_and_status(mock_high_loading_pool):
+    """Verifies that higher-loading benchmark explicitly identifies as a measured-D30 proxy subset
+
+    and reports published_high_loading_rediscovery_status as NOT_EVALUABLE_WITH_AVAILABLE_D30.
+    """
+    df, ctrl_cols = mock_high_loading_pool
+    runner = ProductionProcessRediscoveryRunner(
+        candidate_pool=df,
+        candidate_id_column="recipe_id",
+        target_column="discharge_specific_capacity_cycle30_mah_g",
+        control_columns=ctrl_cols,
+    )
+    res = runner.run_high_loading(
+        min_active_mass_mg=16.0,
+        policies=["random"],
+        seeds=[42],
+        initial_size=2,
+        budget=1,
+    )
+    assert res["benchmark_task"] == "HIGHER_LOADING_MEASURED_D30_PROXY"
+    assert res["published_high_loading_rediscovery_status"] == "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+

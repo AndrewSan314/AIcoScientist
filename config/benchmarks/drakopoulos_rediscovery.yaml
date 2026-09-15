@@ -1,6 +1,6 @@
-# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration (v3)
-benchmark_name: "drakopoulos_graphite_offline_rediscovery_v3"
-version: "3.0.0"
+# Drakopoulos Graphite Electrode Manufacturing Rediscovery Benchmark Configuration (v4)
+benchmark_name: "drakopoulos_graphite_offline_rediscovery_v4"
+version: "4.0.0"
 
 dataset:
   dataset_id: "drakopoulos_graphite"
@@ -60,5 +60,14 @@ mode_1_specification:
 mode_2_specification:
   mode: "PUBLISHED_VALIDATED_DESIGN_REDISCOVERY"
   status: "PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING"
+  published_high_loading_rediscovery_status: "NOT_EVALUABLE_WITH_AVAILABLE_D30"
   rationale: "Mendeley source release DOI 10.17632/4dh2h3tsf4.1 provides alchemite_model_training.txt which configures proprietary Intellegens Alchemite API upload and training without optimization proposals or output recipes. In Drakopoulos et al. (2021) Tables S5-S6, Alchemite design represents an aggregate comparative set rather than an isolated recoverable single-cell ID distinct from the Nextrode series. Offline rediscovery fails closed with qualifier PUBLISHED_DESIGN_REQUIRES_RESTRICTED_PARTITION_C_MAPPING."
+
+task_2_specification:
+  task_name: "HIGHER_LOADING_MEASURED_D30_PROXY"
+  display_name: "Higher-Loading Measured-D30 Proxy Subset"
+  proxy_filter: "coating_gap_um >= 150.0 (observed mass ~11-17 mg)"
+  published_high_loading_rediscovery_status: "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+  rationale: "Exact published >=25 mg high-loading target is not evaluable with available data because all 300 um cells in ASC lack usable cycle 30 measurements. Benchmark evaluates the highest-loading subset with valid D30 data as a measured proxy."
+
 

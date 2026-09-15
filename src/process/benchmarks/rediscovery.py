@@ -740,12 +740,14 @@ def filter_candidate_pool_for_high_loading(
     min_active_mass_mg: float = 16.0,
     mass_column: str = "mean_active_mass_mg",
 ) -> pd.DataFrame:
-    """Filters candidate pool for high-loading electrode recipes based on retrospective mass.
+    """Filters candidate pool for higher-loading measured-D30 proxy subset based on retrospective mass.
 
     Scientific firewall guarantee:
     - Active mass is an observed metrology property, NOT a pre-manufacturing control.
     - It is used strictly for offline benchmark eligibility/filtering, NEVER as an input feature.
-    - Preserves exact source-observed high-loading regimes (e.g. coating gap 200 um with mass >= 16 mg).
+    - Preserves exact source-observed higher-loading proxy regimes (e.g. coating gap 200 um with mass >= 16 mg).
+    - NOTE: Exact published >= 25 mg Alchemite rediscovery is NOT evaluable because 300 um cells lack usable D30 data.
+      published_high_loading_rediscovery_status = "NOT_EVALUABLE_WITH_AVAILABLE_D30".
     """
     if mass_column not in candidate_pool.columns:
         raise KeyError(f"Mass column '{mass_column}' not found in candidate pool.")
@@ -755,7 +757,8 @@ def filter_candidate_pool_for_high_loading(
         raise ValueError(
             f"No candidates satisfy high-loading threshold {mass_column} >= {min_active_mass_mg} mg. "
             f"(Maximum observed mass in candidate pool: {max_val:.2f} mg. "
-            "Note: Drakopoulos 300 um cells in ASC have missing/unmeasured D30 cycle data)."
+            "Published target >= 25 mg is not evaluable: Drakopoulos 300 um cells in ASC lack usable D30 cycle data; "
+            "status: NOT_EVALUABLE_WITH_AVAILABLE_D30)."
         )
     return filtered.reset_index(drop=True)
 
@@ -1402,6 +1405,7 @@ def run_rediscovery_benchmark(
 
     return {
         "benchmark_task": benchmark_task,
+        "published_high_loading_rediscovery_status": "NOT_EVALUABLE_WITH_AVAILABLE_D30",
         "candidate_id_column": candidate_id_column,
         "target_column": target_column,
         "control_columns": replay._control_columns,
@@ -1499,13 +1503,20 @@ class ProductionProcessRediscoveryRunner:
         seeds: Sequence[int] = (11, 23, 42, 67, 101, 137, 179, 223, 281, 353),
         initial_size: int = 3,
         budget: int = 5,
+        benchmark_task: str = "HIGHER_LOADING_MEASURED_D30_PROXY",
     ) -> dict[str, Any]:
-        """Runs high-loading electrode rediscovery benchmark filtering candidate pool by active mass."""
+        """Runs higher-loading electrode rediscovery benchmark on measured-D30 proxy subset.
+
+        Scientific context:
+        - Evaluates the proxy subset of recipes with higher coating gap (>= 150 um) and mass (>= 11-16 mg).
+        - Exact published >= 25 mg Alchemite objective is NOT evaluable because 300 um cells lack usable D30 cycling data.
+        - Reports published_high_loading_rediscovery_status = NOT_EVALUABLE_WITH_AVAILABLE_D30.
+        """
         hl_pool = filter_candidate_pool_for_high_loading(
             self.candidate_pool,
             min_active_mass_mg=min_active_mass_mg,
         )
-        return run_rediscovery_benchmark(
+        res = run_rediscovery_benchmark(
             candidate_pool=hl_pool,
             candidate_id_column=self.candidate_id_column,
             target_column=self.target_column,
@@ -1520,7 +1531,9 @@ class ProductionProcessRediscoveryRunner:
             decision_stage=self.decision_stage,
             dataset_id=self.dataset_id,
             dataset_fingerprint=self.dataset_fingerprint,
-            benchmark_task="HIGH_LOADING_D30",
+            benchmark_task=benchmark_task,
             runs_by_recipe=self.runs_by_recipe,
         )
+        res["published_high_loading_rediscovery_status"] = "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+        return res
 

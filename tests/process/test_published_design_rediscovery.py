@@ -50,3 +50,18 @@ def test_source_observed_best_recipe_hierarchy() -> None:
     assert recipes[1]["run_id"] == "AS-46"
     assert recipes[2]["run_id"] == "AS-21"
     assert recipes[0]["cell_capacity_mah"] > recipes[1]["cell_capacity_mah"] > recipes[2]["cell_capacity_mah"]
+
+
+def test_published_high_loading_rediscovery_status_in_config() -> None:
+    import yaml
+    config_file = Path("config/benchmarks/drakopoulos_rediscovery.yaml")
+    assert config_file.is_file()
+    with open(config_file, "r", encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+    assert config["mode_2_specification"]["published_high_loading_rediscovery_status"] == "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+    task2 = config["task_2_specification"]
+    assert task2["task_name"] == "HIGHER_LOADING_MEASURED_D30_PROXY"
+    assert task2["published_high_loading_rediscovery_status"] == "NOT_EVALUABLE_WITH_AVAILABLE_D30"
+    assert "proxy" in task2["display_name"].lower()
+
