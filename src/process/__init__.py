@@ -5,7 +5,7 @@ This package deliberately has no dependency on the falsification/HIG stack.
 
 from .contracts import BatteryProcessRun, MeasurementValue, ParameterValue, ProvenanceRecord, StageRecord
 from .evidence import EvidenceAcquisitionPolicy, EvidenceOption, EvidencePolicyReplayEvaluation, EvidenceReplayResult, choose_cost_aware_evidence, choose_evidence, evaluate_blinded_evidence_policy, replay_blinded_evidence
-from .information_horizon import InformationHorizon, InformationHorizonError
+from .information_horizon import DecisionHorizon, InformationHorizon, InformationHorizonError, PreManufacturingRecipeSelectionHorizon
 from .maspo import ContextualProcessState, MASPOPlan, MASPOProcessOptimizationCoordinator
 from .modalities import ModalityObservation, ModalitySlotSpec, ModalityType, SourceBoundModalityInput, source_modality_fingerprint, tensor_fingerprint
 from .models import LegalStageTransition, build_legal_stage_transitions, encode_legal_multimodal_state
@@ -29,8 +29,10 @@ __all__ = [
     "choose_cost_aware_evidence",
     "choose_evidence",
     "evaluate_blinded_evidence_policy",
+    "DecisionHorizon",
     "InformationHorizon",
     "InformationHorizonError",
+    "PreManufacturingRecipeSelectionHorizon",
     "MASPOPlan",
     "MASPOProcessOptimizationCoordinator",
     "MeasurementValue",
