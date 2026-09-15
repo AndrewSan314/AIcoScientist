@@ -11,7 +11,7 @@
 
 ## Executive Summary & Supported Claim
 
-In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, the AIcoScientist full process engine recovered the source-observed highest-D30 recipe more often within five additional experiments than expected under random selection.
+In source-backed offline replay on 12 strictly complete Drakopoulos manufacturing recipes, the AIcoScientist process-surrogate engine recovered the source-observed highest-D30 recipe in all 10 predefined replay seeds within five additional recipe selections, compared with a 55.6% exact random-selection probability under the same budget.
 
 - **Unconstrained Rediscovery (Task 1, 12 Strictly Complete Recipes):**
   - **AIcoScientist Full Process Engine:** **100.0% Hit@5** (Hit@1 = 30.0%, Hit@3 = 50.0%, mean simple regret = 0.00 mAh/g)
@@ -33,7 +33,7 @@ In source-backed offline replay on strictly complete Drakopoulos manufacturing r
 The v4 hardening pass provides complete end-to-end scientific and provenance verification:
 
 1. **Measured-Zero $D_{30}$ Preservation:**
-   - In previous iterations, raw $D_{30} = 0$ (early cell failure before cycle 30) was incorrectly coerced to `None`. In v4, measured zero is retained as a valid numeric observation (`0.0 mAh/g`) contributing to recipe mean capacity and replicate completeness counts. The parser now preserves a measured D30 value of zero as a numeric outcome rather than converting it to missing. No measured-zero D30 cells were present in the currently audited source subset.
+   - Previous parser semantics could not preserve a measured zero separately from missing data. V4 now preserves a measured D30 value of zero as a numeric outcome. No measured-zero D30 cells were present in the currently audited source subset.
    - Auditing all 32 prospective recipe groups across 108 ASC cells partitions them into **12 strictly complete recipes** (`STRICT_COMPLETE_RECIPE`, all 3 replicates measured), **14 partial recipes** (`PARTIAL_D30`), and **6 unmeasured recipes** (`NO_D30`, including all 300 $\mu$m gap cells).
 
 2. **Genuine Full Process Engine Execution:**

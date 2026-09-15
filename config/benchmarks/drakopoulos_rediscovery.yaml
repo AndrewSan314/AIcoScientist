@@ -23,6 +23,7 @@ optimization:
   budget_primary: 5
   max_steps: 10
   ucb_beta: 2.0
+  primary_acquisition: "expected_improvement"
   seeds:
     - 11
     - 23

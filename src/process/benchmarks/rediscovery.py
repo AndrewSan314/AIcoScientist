@@ -746,19 +746,21 @@ class RecipeAggregation:
         return grouped[[id_column, target_column] + ctrls].reset_index(drop=True)
 
 
-def filter_candidate_pool_for_high_loading(
+def filter_candidate_pool_by_observed_active_mass_proxy(
     candidate_pool: pd.DataFrame,
     *,
     min_active_mass_mg: float = 16.0,
     mass_column: str = "mean_active_mass_mg",
 ) -> pd.DataFrame:
-    """Filters candidate pool for higher-loading measured-D30 proxy subset based on retrospective mass.
+    """Filters candidate pool by retrospective observed active mass proxy.
 
     Scientific firewall guarantee:
-    - Active mass is an observed metrology property, NOT a pre-manufacturing control.
-    - It is used strictly for offline benchmark eligibility/filtering, NEVER as an input feature.
-    - Preserves exact source-observed higher-loading proxy regimes (e.g. coating gap 200 um with mass >= 16 mg).
-    - NOTE: Exact published >= 25 mg Alchemite rediscovery is NOT evaluable because 300 um cells lack usable D30 data.
+    - Retrospective eligibility helper only;
+    - Active mass is post-fabrication metrology, NOT a pre-manufacturing control;
+    - NOT used as an input feature;
+    - NOT the canonical v4 Task 2 selector (canonical Task 2 selects recipes with
+      coating_gap_um >= 150 um among STRICT_COMPLETE_RECIPE candidates).
+    - Exact published >= 25 mg Alchemite rediscovery is NOT evaluable because 300 um cells lack usable D30 data;
       published_high_loading_rediscovery_status = "NOT_EVALUABLE_WITH_AVAILABLE_D30".
     """
     if mass_column not in candidate_pool.columns:
@@ -773,6 +775,25 @@ def filter_candidate_pool_for_high_loading(
             "status: NOT_EVALUABLE_WITH_AVAILABLE_D30)."
         )
     return filtered.reset_index(drop=True)
+
+
+def filter_candidate_pool_for_high_loading(
+    candidate_pool: pd.DataFrame,
+    *,
+    min_active_mass_mg: float = 16.0,
+    mass_column: str = "mean_active_mass_mg",
+) -> pd.DataFrame:
+    """[DEPRECATED] Legacy wrapper around filter_candidate_pool_by_observed_active_mass_proxy.
+
+    Retained for backwards compatibility with existing test harnesses.
+    Note: Canonical v4 Task 2 eligibility is defined by pre-manufacturing coating_gap_um >= 150 um,
+    not by active mass.
+    """
+    return filter_candidate_pool_by_observed_active_mass_proxy(
+        candidate_pool,
+        min_active_mass_mg=min_active_mass_mg,
+        mass_column=mass_column,
+    )
 
 
 class RediscoveryReplay:
@@ -903,6 +924,17 @@ class RediscoveryReplay:
         strat_upper = strategy.upper()
         strat_lower = strategy.lower()
 
+        # Reject fake NEI aliases on ProcessSurrogate
+        if (
+            strat_upper == "AICOSCIENTIST_PROCESS_SURROGATE_NEI"
+            or (strat_upper.startswith("AICOSCIENTIST_") and strat_upper.endswith("_NEI"))
+            or (strat_lower.startswith("aicointel_") and strat_lower.endswith("_nei"))
+        ):
+            raise ValueError(
+                "NEI_NOT_IMPLEMENTED_FOR_FROZEN_SURROGATE: "
+                "use expected_improvement / AICOSCIENTIST_PROCESS_SURROGATE instead"
+            )
+
         is_direct_botorch = (
             strat_upper.startswith("DIRECT_BOTORCH")
             or strat_lower in ("direct_botorch_baseline", "direct_botorch")
@@ -915,12 +947,12 @@ class RediscoveryReplay:
                 strat_upper in (
                     "AICOSCIENTIST_PROCESS_SURROGATE",
                     "AICOSCIENTIST_PROCESS_SURROGATE_EI",
-                    "AICOSCIENTIST_PROCESS_SURROGATE_NEI",
                     "AICOSCIENTIST_PROCESS_ENGINE",
                     "AICOSCIENTIST_FULL_PROCESS_ENGINE",
                     "PRODUCTION_COORDINATOR",
                     "COORDINATOR",
                 )
+                or strat_lower in ("aicointel_ei", "aicointel_greedy", "aicointel_ucb")
                 or strat_lower.startswith("aicointel_")
                 or self._coordinator is not None
             )
@@ -1124,12 +1156,22 @@ class RediscoveryReplay:
                         coord_strat = "greedy"
                     elif sub == "random":
                         coord_strat = "random"
+                    elif sub in ("nei", "noisy_expected_improvement"):
+                        raise ValueError(
+                            "NEI_NOT_IMPLEMENTED_FOR_FROZEN_SURROGATE: "
+                            "use expected_improvement / AICOSCIENTIST_PROCESS_SURROGATE instead"
+                        )
                 elif strat_upper.endswith("_UCB"):
                     coord_strat = "gp_ucb"
                 elif strat_upper.endswith("_GREEDY"):
                     coord_strat = "greedy"
-                elif strat_upper.endswith("_EI") or strat_upper.endswith("_NEI"):
+                elif strat_upper.endswith("_EI"):
                     coord_strat = "expected_improvement"
+                elif strat_upper.endswith("_NEI"):
+                    raise ValueError(
+                        "NEI_NOT_IMPLEMENTED_FOR_FROZEN_SURROGATE: "
+                        "use expected_improvement / AICOSCIENTIST_PROCESS_SURROGATE instead"
+                    )
                 else:
                     coord_strat = "expected_improvement"
 

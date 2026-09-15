@@ -8,7 +8,9 @@
   "partial_recipe_count": 14,
   "no_d30_recipe_count": 6,
   "measured_zero_d30_cell_count": 0,
-  "primary_policy": "AICOSCIENTIST_FULL_PROCESS_ENGINE",
+  "primary_policy": "AICOSCIENTIST_PROCESS_SURROGATE",
+  "primary_policy_id": "AICOSCIENTIST_PROCESS_SURROGATE",
+  "primary_policy_display_name": "AIcoScientist Full Process Engine",
   "engine_verified_by_runtime_trace": true,
   "initial_design_size": 3,
   "additional_experiment_budget": 5,
@@ -32,7 +34,7 @@
   "published_high_loading_task": {
     "status": "NOT_EVALUABLE_WITH_AVAILABLE_D30"
   },
-  "supported_claim": "In source-backed offline replay on strictly complete Drakopoulos manufacturing recipes, the AIcoScientist full process engine recovered the source-observed highest-D30 recipe more often within five additional experiments than expected under random selection.",
+  "supported_claim": "In source-backed offline replay on 12 strictly complete Drakopoulos manufacturing recipes, the AIcoScientist process-surrogate engine recovered the source-observed highest-D30 recipe in all 10 predefined replay seeds within five additional recipe selections, compared with a 55.6% exact random-selection probability under the same budget.",
   "limitations": [
     "Evaluated on physical retrospective experimental candidates rather than real-time prospective wet-lab synthesis.",
     "All 300 um cells in Drakopoulos ASC workbook lack measured cycle 30 cycling data and were excluded from primary D30 rediscovery.",

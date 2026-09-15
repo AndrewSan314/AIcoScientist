@@ -96,7 +96,7 @@ def test_rediscovery_replay_with_explicit_runs_by_recipe() -> None:
     )
 
     traj = replay.run(
-        strategy="AICOSCIENTIST_PROCESS_SURROGATE_NEI",
+        strategy="AICOSCIENTIST_PROCESS_SURROGATE",
         seed=101,
         initial_size=2,
         max_steps=2,
@@ -139,3 +139,45 @@ def test_missing_battery_process_run_fails_closed_in_full_engine() -> None:
             initial_size=2,
             max_steps=1,
         )
+
+
+def test_process_surrogate_nei_alias_fails_closed() -> None:
+    """Verify that requesting NEI on FrozenSurrogate raises explicit unsupported error."""
+    pool = pd.DataFrame([
+        {"recipe_id": "r1", "coating_gap_um": 100.0, "discharge_specific_capacity_cycle30_mah_g": 225.0},
+        {"recipe_id": "r2", "coating_gap_um": 150.0, "discharge_specific_capacity_cycle30_mah_g": 345.0},
+        {"recipe_id": "r3", "coating_gap_um": 200.0, "discharge_specific_capacity_cycle30_mah_g": 405.0},
+    ])
+    replay = RediscoveryReplay(
+        candidate_pool=pool,
+        candidate_id_column="recipe_id",
+        target_column="discharge_specific_capacity_cycle30_mah_g",
+        control_columns=["coating_gap_um"],
+        allow_flat_fallback=True,
+    )
+    with pytest.raises(ValueError, match="NEI_NOT_IMPLEMENTED_FOR_FROZEN_SURROGATE"):
+        replay.run(strategy="AICOSCIENTIST_PROCESS_SURROGATE_NEI", seed=42, initial_size=2, max_steps=1)
+
+    with pytest.raises(ValueError, match="NEI_NOT_IMPLEMENTED_FOR_FROZEN_SURROGATE"):
+        replay.run(strategy="aicointel_nei", seed=42, initial_size=2, max_steps=1)
+
+
+def test_process_surrogate_records_expected_improvement() -> None:
+    """Verify that AICOSCIENTIST_PROCESS_SURROGATE records EXPECTED_IMPROVEMENT acquisition."""
+    pool = pd.DataFrame([
+        {"recipe_id": "r1", "coating_gap_um": 100.0, "discharge_specific_capacity_cycle30_mah_g": 225.0},
+        {"recipe_id": "r2", "coating_gap_um": 150.0, "discharge_specific_capacity_cycle30_mah_g": 345.0},
+        {"recipe_id": "r3", "coating_gap_um": 200.0, "discharge_specific_capacity_cycle30_mah_g": 405.0},
+    ])
+    replay = RediscoveryReplay(
+        candidate_pool=pool,
+        candidate_id_column="recipe_id",
+        target_column="discharge_specific_capacity_cycle30_mah_g",
+        control_columns=["coating_gap_um"],
+        allow_flat_fallback=True,
+    )
+    traj = replay.run(strategy="AICOSCIENTIST_PROCESS_SURROGATE", seed=42, initial_size=2, max_steps=1)
+    step1 = traj.steps[0]
+    assert step1.training_view_summary is not None
+    assert step1.training_view_summary["acquisition_strategy"] == "EXPECTED_IMPROVEMENT"
+
