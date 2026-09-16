@@ -19,6 +19,7 @@
 | :--- | :---: | :---: | :---: | :---: |
 | **Hit@1** | 0.0% | 10.0% | 0.0% | 6.7% |
 | **Hit@3** | 50.0% | 80.0% | 0.0% | 20.0% |
+| **Hit@5** | 100.0% | 90.0% | 30.0% | 33.3% |
 | **Top-3 Hit@5** | 100.0% | 90.0% | 70.0% | N/A* |
 | **Mean Steps to Best** | 3.60 | 2.44 | 4.67 | 8.00 |
 | *(Note)* | | | | *Exact top-3 analytical random baseline omitted because initial designs may already contain non-best top-3 candidates.* |

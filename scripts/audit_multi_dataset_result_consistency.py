@@ -258,13 +258,162 @@ def run_consistency_audit() -> dict[str, Any]:
     assert "CALENDERING_STAGE_STATE_PREDICTION" in multi_report_text
     audit_results["checks"]["check_15_multi_dataset_report_clean"] = "PASS"
 
+    # 16. Verify report_context.json against all source benchmark artifacts
+    report_context_path = out_dir / "report_context.json"
+    assert report_context_path.exists(), f"Check 16 Failed: Missing {report_context_path}"
+    with open(report_context_path) as f:
+        report_context = json.load(f)
+    verify_report_context_against_sources(
+        report_context=report_context,
+        drak_policy_df=df_drak_policy,
+        nmc_policy_df=df_nmc_policy,
+        ultra_ablation_df=df_ultra_ablation,
+        ultra_comp_dict=ultra_comp,
+    )
+    audit_results["checks"]["check_16_report_context_source_parity"] = "PASS"
+
+    # 17. Verify rendered MULTI_DATASET_VALIDATION_REPORT.md matches report_context.json
+    verify_markdown_report_matches_context(multi_report_text, report_context)
+    audit_results["checks"]["check_17_multi_report_matches_context"] = "PASS"
+
+    # 18. Verify NMC622 Report Contains Hit@5 row
+    nmc_report_path = nmc_dir / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md"
+    nmc_report_text = nmc_report_path.read_text(encoding="utf-8")
+    verify_nmc622_report_contains_hit5(nmc_report_text)
+    audit_results["checks"]["check_18_nmc622_report_contains_hit5"] = "PASS"
+
+    # 19. Verify Absence of Unsupported Wording across all reports
+    ultra_report_path = ultra_dir / "WARWICK_ULTRASONIC_MULTIMODAL_REPORT.md"
+    ultra_report_text = ultra_report_path.read_text(encoding="utf-8")
+    reports_to_check = {
+        "MULTI_DATASET_VALIDATION_REPORT.md": multi_report_text,
+        "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md": nmc_report_text,
+        "WARWICK_ULTRASONIC_MULTIMODAL_REPORT.md": ultra_report_text,
+        "model_comparison_summary.json": json.dumps(ultra_comp),
+    }
+    verify_no_unsupported_wording(reports_to_check)
+    audit_results["checks"]["check_19_no_unsupported_wording"] = "PASS"
+
+    # 20. Execution trace audit comprehensive validation
+    assert trace["battery_process_runs_seen"] == 48
+    assert trace["horizon_projection_count"] == 48
+    assert trace["stage_feature_encoder_fit_count"] == 60  # 2 mats * 2 tgts * 5 folds * 3 modes
+    assert trace["encoded_source_transition_count"] == 2880
+    assert trace["validated_source_transition_count"] == 2880
+    assert trace["source_bound_modality_count"] == 960  # Fused + Ultrasound modes
+    assert trace["test_only_transition_count"] == 0
+    audit_results["checks"]["check_20_execution_trace_strictly_validated"] = "PASS"
+
     # Save final consistency audit JSON
     with open(out_dir / "consistency_audit.json", "w") as f:
         json.dump(audit_results, f, indent=2)
 
-    logger.info("ALL 15 DYNAMIC CONSISTENCY CHECKS PASSED SUCCESSFULLY!")
+    logger.info("ALL 20 DYNAMIC CONSISTENCY CHECKS PASSED SUCCESSFULLY!")
     return audit_results
+
+
+def verify_report_context_against_sources(
+    report_context: dict[str, Any],
+    drak_policy_df: pd.DataFrame,
+    nmc_policy_df: pd.DataFrame,
+    ultra_ablation_df: pd.DataFrame,
+    ultra_comp_dict: dict[str, Any],
+) -> None:
+    """Verify that report_context.json exactly reflects all source benchmark artifacts."""
+    # Drakopoulos
+    drak_uncon = drak_policy_df[drak_policy_df["benchmark_task"] == "UNCONSTRAINED_D30"]
+    drak_ai_hit5 = float(drak_uncon[drak_uncon["policy"] == "AICOSCIENTIST_PROCESS_SURROGATE"]["hit_rate_step_5"].iloc[0])
+    drak_bo_hit5 = float(drak_uncon[drak_uncon["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_rate_step_5"].iloc[0])
+    assert math.isclose(report_context["drakopoulos"]["ai_hit5"], drak_ai_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["drakopoulos"]["botorch_hit5"], drak_bo_hit5, rel_tol=1e-5)
+
+    # NMC622
+    nmc_ai_hit5 = float(nmc_policy_df[nmc_policy_df["policy"] == "AICOSCIENTIST_FULL_PROCESS_ENGINE"]["hit_at_5"].iloc[0])
+    nmc_bo_hit5 = float(nmc_policy_df[nmc_policy_df["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_at_5"].iloc[0])
+    assert math.isclose(report_context["nmc622"]["ai_hit5"], nmc_ai_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["nmc622"]["botorch_hit5"], nmc_bo_hit5, rel_tol=1e-5)
+
+    # Ultrasonic
+    for mat_key, mat_name in [("anode", "Anode"), ("cathode", "Cathode")]:
+        for tgt_key, tgt_col in [("thickness", "thickness_after_um"), ("density", "density_after_g_cm3")]:
+            slice_key = f"{mat_key}_{tgt_key}"
+            ctx_slice = report_context["ultrasonic"][slice_key]
+            comp_ridge = ultra_comp_dict["models"]["Ridge"]["results"][mat_name][tgt_col]
+            comp_sa = ultra_comp_dict["models"]["StageAwareProcessModel"]["results"][mat_name][tgt_col]
+
+            assert math.isclose(ctx_slice["ridge_process_only_r2"], comp_ridge["tabular_state_process_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["ridge_ultrasound_only_r2"], comp_ridge["ultrasound_only_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["ridge_fused_r2"], comp_ridge["tabular_plus_ultrasound_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["ridge_fusion_delta"], comp_ridge["fusion_delta_r2"], rel_tol=1e-5)
+
+            assert math.isclose(ctx_slice["stageaware_process_only_r2"], comp_sa["tabular_state_process_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["stageaware_ultrasound_only_r2"], comp_sa["ultrasound_only_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["stageaware_fused_r2"], comp_sa["tabular_plus_ultrasound_r2"], rel_tol=1e-5)
+            assert math.isclose(ctx_slice["stageaware_fusion_delta"], comp_sa["fusion_delta_r2"], rel_tol=1e-5)
+
+
+def verify_markdown_report_matches_context(
+    report_text: str,
+    report_context: dict[str, Any],
+) -> None:
+    """Verify that MULTI_DATASET_VALIDATION_REPORT.md renders context values faithfully."""
+    drak = report_context["drakopoulos"]
+    nmc = report_context["nmc622"]
+    ultra = report_context["ultrasonic"]
+
+    # Drakopoulos & NMC622
+    assert f"{drak['ai_hit5'] * 100:.1f}%" in report_text
+    assert f"{drak['botorch_hit5'] * 100:.1f}%" in report_text
+    assert drak["best_recipe"] in report_text
+    assert f"{nmc['ai_hit5'] * 100:.1f}%" in report_text
+    assert f"{nmc['botorch_hit5'] * 100:.1f}%" in report_text
+    assert nmc["best_condition"] in report_text
+
+    # Ultrasonic formatted strings
+    ctx_u_at = ultra["anode_thickness"]
+    ctx_u_ad = ultra["anode_density"]
+    ctx_u_ct = ultra["cathode_thickness"]
+
+    assert f"{ctx_u_ad['ridge_fusion_delta']:+.3f}" in report_text
+    assert f"{ctx_u_ad['stageaware_fusion_delta']:+.3f}" in report_text
+    assert f"{ctx_u_at['ridge_ultrasound_only_r2']:.3f}" in report_text
+    assert f"{ctx_u_at['stageaware_ultrasound_only_r2']:.3f}" in report_text
+    assert f"{ctx_u_at['ridge_fused_r2']:.3f}" in report_text
+    assert f"{ctx_u_at['stageaware_fused_r2']:.3f}" in report_text
+    assert f"{ctx_u_ad['ridge_process_only_r2']:.3f}" in report_text
+    assert f"{ctx_u_ad['stageaware_process_only_r2']:.3f}" in report_text
+    assert f"{ctx_u_ad['ridge_fused_r2']:.3f}" in report_text
+    assert f"{ctx_u_ad['stageaware_fused_r2']:.3f}" in report_text
+    assert f"{ctx_u_ct['ridge_process_only_r2']:.3f}" in report_text
+
+
+def verify_nmc622_report_contains_hit5(nmc_report_text: str) -> None:
+    """Verify WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md retains the primary Hit@5 row."""
+    found = False
+    for line in nmc_report_text.splitlines():
+        if "Hit@5" in line and "100.0%" in line and "90.0%" in line:
+            found = True
+            break
+    assert found, "Hit@5 row missing or formatted incorrectly in WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md"
+
+
+def verify_no_unsupported_wording(reports: dict[str, str]) -> None:
+    """Verify absence of prohibited or unsupported causal phrases across reports."""
+    prohibited_phrases = [
+        "due to finite sample size",
+        "optimal pilot-scale",
+        "3x acceleration",
+        "3× acceleration",
+        "robust transferability",
+        "directly encodes",
+    ]
+    for report_name, text in reports.items():
+        for phrase in prohibited_phrases:
+            assert phrase.lower() not in text.lower(), (
+                f"Prohibited phrase {phrase!r} found in {report_name}"
+            )
 
 
 if __name__ == "__main__":
     run_consistency_audit()
+

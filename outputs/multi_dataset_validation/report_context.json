@@ -1,0 +1,62 @@
+{
+  "drakopoulos": {
+    "ai_hit5": 1.0,
+    "botorch_hit5": 0.3,
+    "random_hit5": 0.3,
+    "analytic_random_hit5": 0.5555555555555556,
+    "simple_regret": 0.0,
+    "best_recipe": "protocol-c1c280b7366f",
+    "best_d30": 402.25
+  },
+  "nmc622": {
+    "ai_hit5": 1.0,
+    "botorch_hit5": 0.9,
+    "random_hit5": 0.3,
+    "analytic_random_hit5": 0.3333333333333333,
+    "simple_regret": 0.0,
+    "best_condition": "EXP_03",
+    "best_ratio": 0.7947
+  },
+  "ultrasonic": {
+    "anode_thickness": {
+      "ridge_process_only_r2": 0.9440219981478442,
+      "ridge_ultrasound_only_r2": 0.8354072958599721,
+      "ridge_fused_r2": 0.9140842520449576,
+      "ridge_fusion_delta": -0.029937746102886575,
+      "stageaware_process_only_r2": 0.992045343582972,
+      "stageaware_ultrasound_only_r2": 0.50130830807894,
+      "stageaware_fused_r2": 0.987538559810061,
+      "stageaware_fusion_delta": -0.004506783772911027
+    },
+    "anode_density": {
+      "ridge_process_only_r2": 0.8029760847905157,
+      "ridge_ultrasound_only_r2": 0.3992561586580903,
+      "ridge_fused_r2": 0.8346870673852174,
+      "ridge_fusion_delta": 0.03171098259470162,
+      "stageaware_process_only_r2": 0.8369834198804487,
+      "stageaware_ultrasound_only_r2": -0.0972452071458354,
+      "stageaware_fused_r2": 0.708941301394693,
+      "stageaware_fusion_delta": -0.12804211848575564
+    },
+    "cathode_thickness": {
+      "ridge_process_only_r2": 0.8913020856563196,
+      "ridge_ultrasound_only_r2": 0.2605800170847783,
+      "ridge_fused_r2": 0.7563366832152617,
+      "ridge_fusion_delta": -0.13496540244105792,
+      "stageaware_process_only_r2": -0.1796030086509898,
+      "stageaware_ultrasound_only_r2": -0.1237413102172977,
+      "stageaware_fused_r2": -0.179596653466459,
+      "stageaware_fusion_delta": 6.355184530792979e-06
+    },
+    "cathode_density": {
+      "ridge_process_only_r2": 0.7937461296730673,
+      "ridge_ultrasound_only_r2": -0.800796294872975,
+      "ridge_fused_r2": 0.6582790092866926,
+      "ridge_fusion_delta": -0.13546712038637476,
+      "stageaware_process_only_r2": -0.3440525984332949,
+      "stageaware_ultrasound_only_r2": -1.7381154250126176,
+      "stageaware_fused_r2": -0.0698315422049715,
+      "stageaware_fusion_delta": 0.2742210562283234
+    }
+  }
+}

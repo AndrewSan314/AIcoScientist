@@ -440,7 +440,7 @@ def run_benchmark() -> dict[str, Any]:
         ),
         "allowed_slide_wording": (
             f"AIcoScientist demonstrates pilot-plant calendering process optimization on physical NMC622 data (18 full factorial pilot conditions, 54 half-cells), "
-            f"rediscovering the source-observed optimal condition ({best_id}) with Hit@5 = {ai_sum['hit_at_5'] * 100:.1f}% (vs {exact_sum['hit_at_5'] * 100:.1f}% random baseline)."
+            f"rediscovering the source-observed best condition ({best_id}) with Hit@5 = {ai_sum['hit_at_5'] * 100:.1f}% (vs {exact_sum['hit_at_5'] * 100:.1f}% random baseline)."
         ),
     }
 
@@ -468,6 +468,7 @@ def run_benchmark() -> dict[str, Any]:
 | :--- | :---: | :---: | :---: | :---: |
 | **Hit@1** | {ai_sum['hit_at_1'] * 100:.1f}% | {botorch_sum['hit_at_1'] * 100:.1f}% | {random_sum['hit_at_1'] * 100:.1f}% | {exact_sum['hit_at_1'] * 100:.1f}% |
 | **Hit@3** | {ai_sum['hit_at_3'] * 100:.1f}% | {botorch_sum['hit_at_3'] * 100:.1f}% | {random_sum['hit_at_3'] * 100:.1f}% | {exact_sum['hit_at_3'] * 100:.1f}% |
+| **Hit@5** | {ai_sum['hit_at_5'] * 100:.1f}% | {botorch_sum['hit_at_5'] * 100:.1f}% | {random_sum['hit_at_5'] * 100:.1f}% | {exact_sum['hit_at_5'] * 100:.1f}% |
 | **Top-3 Hit@5** | {ai_sum['top3_hit_at_5'] * 100:.1f}% | {botorch_sum['top3_hit_at_5'] * 100:.1f}% | {random_sum['top3_hit_at_5'] * 100:.1f}% | N/A* |
 | **Mean Steps to Best** | {f"{ai_sum['mean_steps_to_best']:.2f}" if ai_sum['mean_steps_to_best'] is not None else "N/A"} | {f"{botorch_sum['mean_steps_to_best']:.2f}" if botorch_sum['mean_steps_to_best'] is not None else "N/A"} | {f"{random_sum['mean_steps_to_best']:.2f}" if random_sum['mean_steps_to_best'] is not None else "N/A"} | 8.00 |
 | *(Note)* | | | | *Exact top-3 analytical random baseline omitted because initial designs may already contain non-best top-3 candidates.* |

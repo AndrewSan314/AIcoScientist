@@ -16,6 +16,11 @@
     "check_12_ultrasonic_model_comparison_csv_match": "PASS",
     "check_13_ultrasonic_matrix_ablation_match": "PASS",
     "check_14_ultrasonic_multi_slide_summary_match": "PASS",
-    "check_15_multi_dataset_report_clean": "PASS"
+    "check_15_multi_dataset_report_clean": "PASS",
+    "check_16_report_context_source_parity": "PASS",
+    "check_17_multi_report_matches_context": "PASS",
+    "check_18_nmc622_report_contains_hit5": "PASS",
+    "check_19_no_unsupported_wording": "PASS",
+    "check_20_execution_trace_strictly_validated": "PASS"
   }
 }

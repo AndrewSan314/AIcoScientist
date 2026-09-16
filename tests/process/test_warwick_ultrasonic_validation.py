@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import pytest
 import numpy as np
+import pandas as pd
 import torch
 
 # Ensure repository root is in sys.path
@@ -334,25 +335,62 @@ def test_modality_slot_source_values_fingerprint(ultrasonic_adapter: WarwickUltr
 
 
 # -----------------------------------------------------------------------------
-# Test 12: Ultrasound-Only Mode Controls Zeroing
+# Test 12: Source-Level Ablation Masking (No Post-Binding Tensor Mutation)
 # -----------------------------------------------------------------------------
-def test_ultrasound_only_mode_zeroed_controls(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
-    """Verify ultrasound-only mode zeroes process controls and intermediate observations while preserving token."""
+def test_source_level_ablation_masking(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify make_ablation_stage_records masks features at source record level without post-binding tensor mutation."""
+    from scripts.run_warwick_ultrasonic_benchmark import make_ablation_stage_records
+
     runs = ultrasonic_adapter.load_cathode_runs()[:2]
     horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
     v = horizon.project(runs[0])
     s1 = [s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0]
-    encoder = StageFeatureEncoder.fit([s1])
+    s2 = [s for s in v.source_stages if s.stage_type == ProcessStage.CALENDERING][0]
+
+    base_encoder = StageFeatureEncoder.fit([s1, s2])
+    base_cdim = max(base_encoder.control_dim, 1)
+    base_odim = max(base_encoder.observation_dim, 1)
     slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
 
-    t_base = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
-    t_ultra = replace(t_base, controls=torch.zeros_like(t_base.controls), scalar_observations=torch.zeros_like(t_base.scalar_observations))
+    # 1. PROCESS_ONLY
+    s1_proc, s2_proc = make_ablation_stage_records(s1, s2, "PROCESS_ONLY")
+    assert len(s1_proc.modalities) == 0
+    enc_proc = StageFeatureEncoder.fit([s1_proc, s2_proc], control_dim=base_cdim, observation_dim=base_odim)
+    t1_proc = LegalStageTransition.from_encoded_source_stage(s1_proc, encoder=enc_proc, modality_slots=[])
+    enc_proc.validate_transition(s1_proc, t1_proc)
+    assert len(t1_proc.modality_inputs) == 0
 
-    assert t_ultra.controls.sum().item() == 0.0
-    assert t_ultra.scalar_observations.sum().item() == 0.0
-    assert "ultrasound" in t_ultra.modality_inputs
-    assert t_ultra.availability["ultrasound"] is True
-    assert getattr(t_ultra, "unsafe_test_only", None) is None
+    # 2. ULTRASOUND_ONLY: source records have empty controls & observations
+    s1_ultra, s2_ultra = make_ablation_stage_records(s1, s2, "ULTRASOUND_ONLY")
+    assert len(s1_ultra.controls) == 0
+    assert len(s1_ultra.intermediate_properties) == 0
+    assert len(s1_ultra.modalities) == 1
+    assert len(s2_ultra.controls) == 0
+    assert len(s2_ultra.intermediate_properties) == 0
+    assert len(s2_ultra.modalities) == 0
+
+    enc_ultra = StageFeatureEncoder.fit([s1_ultra, s2_ultra], control_dim=base_cdim, observation_dim=base_odim)
+    t1_ultra = LegalStageTransition.from_encoded_source_stage(s1_ultra, encoder=enc_ultra, modality_slots=[slot])
+    t2_ultra = LegalStageTransition.from_encoded_source_stage(s2_ultra, encoder=enc_ultra, modality_slots=[slot])
+
+    # Validate transitions against source records WITHOUT any post-binding tensor mutation
+    enc_ultra.validate_transition(s1_ultra, t1_ultra)
+    enc_ultra.validate_transition(s2_ultra, t2_ultra)
+
+    assert t1_ultra.controls.sum().item() == 0.0
+    assert t1_ultra.scalar_observations.sum().item() == 0.0
+    assert "ultrasound" in t1_ultra.modality_inputs
+    assert t1_ultra.availability["ultrasound"] is True
+    assert getattr(t1_ultra, "unsafe_test_only", None) is None
+
+    # 3. PROCESS_PLUS_ULTRASOUND
+    s1_fused, s2_fused = make_ablation_stage_records(s1, s2, "PROCESS_PLUS_ULTRASOUND")
+    assert len(s1_fused.modalities) == 1
+    enc_fused = StageFeatureEncoder.fit([s1_fused, s2_fused], control_dim=base_cdim, observation_dim=base_odim)
+    t1_fused = LegalStageTransition.from_encoded_source_stage(s1_fused, encoder=enc_fused, modality_slots=[slot])
+    enc_fused.validate_transition(s1_fused, t1_fused)
+    assert "ultrasound" in t1_fused.modality_inputs
+    assert t1_fused.controls.shape == (base_cdim,)
 
 
 # -----------------------------------------------------------------------------
@@ -429,3 +467,189 @@ def test_consistency_audit_catches_mutation() -> None:
         assert failed, "Consistency audit must fail on mutated benchmark matrix!"
     finally:
         matrix_path.write_text(orig_content, encoding="utf-8")
+
+
+# -----------------------------------------------------------------------------
+# Test 16: StageAware Deterministic Initialization & Training
+# -----------------------------------------------------------------------------
+def test_stage_aware_deterministic_initialization_and_training(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify PyTorch seed set before model construction ensures bit-exact reproducible predictions."""
+    from scripts.run_warwick_ultrasonic_benchmark import train_stage_aware_model, make_ablation_stage_records
+
+    runs = ultrasonic_adapter.load_cathode_runs()[:4]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
+
+    pairs = []
+    for r in runs:
+        v = horizon.project(r)
+        s1 = [s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0]
+        s2_raw = [s for s in v.source_stages if s.stage_type == ProcessStage.CALENDERING][0]
+        s2_cal = StageRecord(
+            stage_id=s2_raw.stage_id,
+            stage_type=s2_raw.stage_type,
+            sequence_index=s2_raw.sequence_index,
+            controls=s2_raw.controls,
+            intermediate_properties={},
+            modalities=[],
+            upstream_stage_id=s2_raw.upstream_stage_id,
+            provenance=s2_raw.provenance,
+        )
+        s1_m, s2_m = make_ablation_stage_records(s1, s2_cal, "PROCESS_PLUS_ULTRASOUND")
+        pairs.append((s1_m, s2_m))
+
+    encoder = StageFeatureEncoder.fit([s for p in pairs for s in p], control_dim=4, observation_dim=4)
+
+    transitions = []
+    for s1, s2 in pairs:
+        t1 = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
+        t2 = LegalStageTransition.from_encoded_source_stage(s2, encoder=encoder, modality_slots=[])
+        transitions.append([t1, t2])
+
+    train_trans = transitions[:3]
+    test_trans = transitions[3:]
+    y_tr = np.array([50.0, 52.0, 48.0])
+
+    def _init_and_train(seed: int) -> np.ndarray:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        model = MASPOProcessStateModel(
+            state_dim=16,
+            control_dim=4,
+            observation_dim=4,
+            modality_input_dims={"ultrasound": 29},
+            embedding_dim=16,
+        )
+        model.add_final_head("target")
+        return train_stage_aware_model(
+            model=model,
+            train_transitions=train_trans,
+            y_tr=y_tr,
+            test_transitions=test_trans,
+            target_col="target",
+            epochs=20,
+            seed=seed,
+        )
+
+    pred1 = _init_and_train(seed=123)
+    pred2 = _init_and_train(seed=123)
+    pred_diff_seed = _init_and_train(seed=999)
+
+    assert np.allclose(pred1, pred2, rtol=1e-7, atol=1e-7), "Identical seed must produce identical predictions!"
+    assert not np.allclose(pred1, pred_diff_seed, rtol=1e-3, atol=1e-3), "Different seeds should produce different outputs"
+
+
+# -----------------------------------------------------------------------------
+# Test 17: Unsafe Test-Only Detector Catches Synthetic Transition
+# -----------------------------------------------------------------------------
+def test_unsafe_test_only_detector(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify benchmark detection logic catches unsafe_test_only transitions in provenance."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:1]
+    s1 = [s for s in runs[0].stages if s.stage_type == ProcessStage.COATING][0]
+    s1_no_mod = replace(s1, modalities=[])
+
+    # 1. Unvalidated transition constructed via test-only factory
+    t_unsafe = LegalStageTransition.from_source_stage(
+        s1_no_mod,
+        controls=torch.zeros(4),
+        scalar_observations=torch.zeros(4),
+        modality_inputs={},
+        modality_bindings={},
+        test_only=True,
+    )
+    # Benchmark detection logic
+    is_unsafe = bool(t_unsafe.provenance.get("unsafe_test_only", False)) or bool(getattr(t_unsafe, "unsafe_test_only", False))
+    assert is_unsafe is True, "Detector must flag test_only transitions!"
+
+    # 2. Production transition
+    encoder = StageFeatureEncoder.fit([s1_no_mod], control_dim=4, observation_dim=4)
+    t_safe = LegalStageTransition.from_encoded_source_stage(s1_no_mod, encoder=encoder, modality_slots=[])
+    is_unsafe_safe = bool(t_safe.provenance.get("unsafe_test_only", False)) or bool(getattr(t_safe, "unsafe_test_only", False))
+    assert is_unsafe_safe is False
+
+
+# -----------------------------------------------------------------------------
+# Test 18: Report Context Parity with Source Artifacts and Markdown
+# -----------------------------------------------------------------------------
+def test_report_context_parity_and_markdown() -> None:
+    """Verify report_context.json matches source artifacts and markdown matches context."""
+    from scripts.audit_multi_dataset_result_consistency import (
+        verify_report_context_against_sources,
+        verify_markdown_report_matches_context,
+        verify_nmc622_report_contains_hit5,
+        verify_no_unsupported_wording,
+    )
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    drak_dir = repo_root / "outputs" / "drakopoulos_rediscovery_v4"
+    nmc_dir = repo_root / "outputs" / "warwick_nmc622_calendering"
+    ultra_dir = repo_root / "outputs" / "warwick_ultrasonic"
+    multi_dir = repo_root / "outputs" / "multi_dataset_validation"
+
+    with open(multi_dir / "report_context.json") as f:
+        report_context = json.load(f)
+
+    drak_df = pd.read_csv(drak_dir / "policy_summary.csv")
+    nmc_df = pd.read_csv(nmc_dir / "policy_summary.csv")
+    ultra_df = pd.read_csv(ultra_dir / "ablation_summary.csv")
+    with open(ultra_dir / "model_comparison_summary.json") as f:
+        ultra_comp = json.load(f)
+
+    verify_report_context_against_sources(report_context, drak_df, nmc_df, ultra_df, ultra_comp)
+
+    multi_md = (multi_dir / "MULTI_DATASET_VALIDATION_REPORT.md").read_text(encoding="utf-8")
+    verify_markdown_report_matches_context(multi_md, report_context)
+
+    nmc_md = (nmc_dir / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md").read_text(encoding="utf-8")
+    verify_nmc622_report_contains_hit5(nmc_md)
+
+    ultra_md = (ultra_dir / "WARWICK_ULTRASONIC_MULTIMODAL_REPORT.md").read_text(encoding="utf-8")
+    verify_no_unsupported_wording({
+        "multi": multi_md,
+        "nmc": nmc_md,
+        "ultra": ultra_md,
+        "ultra_comp": json.dumps(ultra_comp),
+    })
+
+
+# -----------------------------------------------------------------------------
+# Test 19: Deliberate Corruption Causes Audit and Verification Failures
+# -----------------------------------------------------------------------------
+def test_deliberate_corruption_fails_verification() -> None:
+    """Verify deliberate corruptions in metrics, tables, and wording fail immediately."""
+    from scripts.audit_multi_dataset_result_consistency import (
+        verify_report_context_against_sources,
+        verify_nmc622_report_contains_hit5,
+        verify_no_unsupported_wording,
+    )
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    multi_dir = repo_root / "outputs" / "multi_dataset_validation"
+    with open(multi_dir / "report_context.json") as f:
+        ctx = json.load(f)
+
+    # 1. Corrupt report_context
+    ctx_corrupted = json.loads(json.dumps(ctx))
+    ctx_corrupted["drakopoulos"]["ai_hit5"] = 0.50
+    drak_df = pd.read_csv(repo_root / "outputs" / "drakopoulos_rediscovery_v4" / "policy_summary.csv")
+    nmc_df = pd.read_csv(repo_root / "outputs" / "warwick_nmc622_calendering" / "policy_summary.csv")
+    ultra_df = pd.read_csv(repo_root / "outputs" / "warwick_ultrasonic" / "ablation_summary.csv")
+    with open(repo_root / "outputs" / "warwick_ultrasonic" / "model_comparison_summary.json") as f:
+        ultra_comp = json.load(f)
+
+    with pytest.raises(AssertionError):
+        verify_report_context_against_sources(ctx_corrupted, drak_df, nmc_df, ultra_df, ultra_comp)
+
+    # 2. Corrupt NMC622 report (remove Hit@5 row)
+    nmc_text = (repo_root / "outputs" / "warwick_nmc622_calendering" / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md").read_text(encoding="utf-8")
+    nmc_corrupted = "\n".join(line for line in nmc_text.splitlines() if "Hit@5" not in line)
+    with pytest.raises(AssertionError):
+        verify_nmc622_report_contains_hit5(nmc_corrupted)
+
+    # 3. Insert unsupported wording
+    with pytest.raises(AssertionError, match="Prohibited phrase"):
+        verify_no_unsupported_wording({"test_report": "The performance drop is due to finite sample size."})
+
+    with pytest.raises(AssertionError, match="Prohibited phrase"):
+        verify_no_unsupported_wording({"test_report": "Identifies the optimal pilot-scale condition."})
+

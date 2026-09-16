@@ -6,7 +6,7 @@ This report synthesizes empirical validation of the **AIcoScientist** battery-pr
 2. **Warwick NMC622 Pilot-Plant Calendering** (Cathode: full factorial pilot-scale calendering condition optimization)
 3. **Warwick Ultrasonic Acoustic Metrology** (Multimodal non-destructive stage-transition state prediction)
 
-Across all three benchmarks, AIcoScientist was evaluated without modifying underlying models post-hoc, strictly honoring information horizons, preventing data leakage, and testing against exact analytical baselines.
+Across all three benchmarks, AIcoScientist was evaluated without modifying underlying models post-hoc, strictly honoring information horizons and preventing data leakage. The two sequential-selection benchmarks use fixed budgets and explicit random/Bayesian baselines, while the ultrasonic stage-state benchmark uses grouped held-out cross-validation.
 
 ---
 
@@ -22,8 +22,8 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Transducer |
 | **Evaluated Candidates** | 12 strictly complete recipes | 18 full-factorial conditions (54 cells) | 48 samples (30 Anode, 18 Cathode) |
 | **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `CALENDERING_STAGE_STATE_PREDICTION` |
-| **Primary Target** | Cycle 30 Capacity ($D_30$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
-| **Target Direction** | Maximize $D_30$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
+| **Primary Target** | Cycle 30 Capacity ($D_{30}$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
+| **Target Direction** | Maximize $D_{30}$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
 | **Initial Design Budget** | $N_0 = 3$ | $N_0 = 3$ | Grouped 5-Fold Cross-Validation |
 | **Search Budget ($B$)** | $B = 5$ selections | $B = 5$ selections | Train-only scaling and PCA |
 | **Replay Seeds** | 10 predefined seeds | 10 predefined seeds | 5 grouped CV folds by Sample_ID |
@@ -31,7 +31,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Direct BoTorch Baseline** | 30.0% | 90.0% | N/A |
 | **Exact Random Baseline** | 55.6% ($P=5/9$) | 33.3% ($P=5/15$) | N/A |
 | **Simple Regret @ $B=5$** | **0.0000** | **0.0000** | N/A |
-| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **+0.032 (Ridge) / -0.125 (StageAware) $R^2$** on Anode Density |
+| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **+0.032 (Ridge) / -0.128 (StageAware) $R^2$** on Anode Density |
 
 ---
 
@@ -42,20 +42,20 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 
 ### 2. Pilot-Plant Condition Optimization (`pilot_plant_doe_condition_optimization`)
 - **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%) vs Direct BoTorch (90.0%) and the analytical random baseline of 33.3%.
-- **Finding**: Demonstrates consistent recovery across physical cell chemistries and manufacturing scales.
+- **Finding**: The same sequential optimization framework achieved source-observed-best recovery on two independent historical manufacturing datasets with different chemistry/process settings.
 
 ### 3. Multimodal Stage-State Transition Prediction (`multimodal_stage_state_prediction`)
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{ultra}$) combined with calendering machine controls ($u_{t+1}$) accurately predict post-calendering electrode quality ($z_{t+1}$).
-- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.914$ (Ridge) / 0.976 (StageAware).
-- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = 0.803$ (Ridge) / 0.844 (StageAware), while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.719$ (StageAwareProcessModel).
-- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
+- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ (Ridge) / 0.501 (StageAware) without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.914$ (Ridge) / 0.988 (StageAware).
+- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = 0.803$ (Ridge) / 0.837 (StageAware), while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.709$ (StageAwareProcessModel).
+- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
 
 ## 3. Strict Boundary of Supported Claims
 
 ### What IS Supported:
-1. **Pilot-Plant Process Optimization**: AIcoScientist successfully identifies optimal pilot-scale calendering recipes within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
+1. **Pilot-Plant Process Optimization**: AIcoScientist recovers the source-observed best DOE condition within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
 2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
 3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
 

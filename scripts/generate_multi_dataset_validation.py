@@ -143,7 +143,17 @@ def generate_multi_dataset_synthesis() -> None:
     cathode_thk_ultra_ridge = _metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled")
     cathode_thk_fused_ridge = _metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
 
+    cathode_thk_proc_sa = _metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    cathode_thk_ultra_sa = _metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    cathode_thk_fused_sa = _metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
+
+    cathode_dens_proc_ridge = _metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled")
     cathode_dens_ultra_ridge = _metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    cathode_dens_fused_ridge = _metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+
+    cathode_dens_proc_sa = _metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    cathode_dens_ultra_sa = _metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    cathode_dens_fused_sa = _metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
 
     ridge_anode_dens_delta = anode_dens_fused_ridge - anode_dens_proc_ridge
     sa_anode_dens_delta = anode_dens_fused_sa - anode_dens_proc_sa
@@ -403,8 +413,85 @@ def generate_multi_dataset_synthesis() -> None:
     logger.info("Saved decision_horizons_comparison.png")
 
     # -------------------------------------------------------------
-    # 6. GENERATE MULTI-DATASET REPORT MARKDOWN
+    # 6. GENERATE REPORT CONTEXT JSON (MACHINE READABLE CONTRACT)
     # -------------------------------------------------------------
+    report_context = {
+        "drakopoulos": {
+            "ai_hit5": drak_ai_hit5,
+            "botorch_hit5": drak_botorch_hit5,
+            "random_hit5": drak_random_hit5,
+            "analytic_random_hit5": drak_analytic_random,
+            "simple_regret": drak_simple_regret,
+            "best_recipe": "protocol-c1c280b7366f",
+            "best_d30": 402.25,
+        },
+        "nmc622": {
+            "ai_hit5": nmc_ai_hit5,
+            "botorch_hit5": nmc_botorch_hit5,
+            "random_hit5": nmc_random_hit5,
+            "analytic_random_hit5": nmc_analytic_random,
+            "simple_regret": nmc_simple_regret,
+            "best_condition": "EXP_03",
+            "best_ratio": 0.7947,
+        },
+        "ultrasonic": {
+            "anode_thickness": {
+                "ridge_process_only_r2": anode_thk_proc_ridge,
+                "ridge_ultrasound_only_r2": anode_thk_ultra_ridge,
+                "ridge_fused_r2": anode_thk_fused_ridge,
+                "ridge_fusion_delta": anode_thk_fused_ridge - anode_thk_proc_ridge,
+                "stageaware_process_only_r2": anode_thk_proc_sa,
+                "stageaware_ultrasound_only_r2": anode_thk_ultra_sa,
+                "stageaware_fused_r2": anode_thk_fused_sa,
+                "stageaware_fusion_delta": anode_thk_fused_sa - anode_thk_proc_sa,
+            },
+            "anode_density": {
+                "ridge_process_only_r2": anode_dens_proc_ridge,
+                "ridge_ultrasound_only_r2": anode_dens_ultra_ridge,
+                "ridge_fused_r2": anode_dens_fused_ridge,
+                "ridge_fusion_delta": ridge_anode_dens_delta,
+                "stageaware_process_only_r2": anode_dens_proc_sa,
+                "stageaware_ultrasound_only_r2": anode_dens_ultra_sa,
+                "stageaware_fused_r2": anode_dens_fused_sa,
+                "stageaware_fusion_delta": sa_anode_dens_delta,
+            },
+            "cathode_thickness": {
+                "ridge_process_only_r2": cathode_thk_proc_ridge,
+                "ridge_ultrasound_only_r2": cathode_thk_ultra_ridge,
+                "ridge_fused_r2": cathode_thk_fused_ridge,
+                "ridge_fusion_delta": cathode_thk_fused_ridge - cathode_thk_proc_ridge,
+                "stageaware_process_only_r2": cathode_thk_proc_sa,
+                "stageaware_ultrasound_only_r2": cathode_thk_ultra_sa,
+                "stageaware_fused_r2": cathode_thk_fused_sa,
+                "stageaware_fusion_delta": cathode_thk_fused_sa - cathode_thk_proc_sa,
+            },
+            "cathode_density": {
+                "ridge_process_only_r2": cathode_dens_proc_ridge,
+                "ridge_ultrasound_only_r2": cathode_dens_ultra_ridge,
+                "ridge_fused_r2": cathode_dens_fused_ridge,
+                "ridge_fusion_delta": cathode_dens_fused_ridge - cathode_dens_proc_ridge,
+                "stageaware_process_only_r2": cathode_dens_proc_sa,
+                "stageaware_ultrasound_only_r2": cathode_dens_ultra_sa,
+                "stageaware_fused_r2": cathode_dens_fused_sa,
+                "stageaware_fusion_delta": cathode_dens_fused_sa - cathode_dens_proc_sa,
+            },
+        },
+    }
+
+    with open(out_dir / "report_context.json", "w", encoding="utf-8") as f:
+        json.dump(report_context, f, indent=2)
+    logger.info("Saved report_context.json")
+
+    # -------------------------------------------------------------
+    # 7. GENERATE MULTI-DATASET REPORT MARKDOWN FROM REPORT CONTEXT
+    # -------------------------------------------------------------
+    ctx_drak = report_context["drakopoulos"]
+    ctx_nmc = report_context["nmc622"]
+    ctx_u_at = report_context["ultrasonic"]["anode_thickness"]
+    ctx_u_ad = report_context["ultrasonic"]["anode_density"]
+    ctx_u_ct = report_context["ultrasonic"]["cathode_thickness"]
+    ctx_u_cd = report_context["ultrasonic"]["cathode_density"]
+
     report_md = f"""# AIcoScientist Multi-Dataset Physical Battery-Process Validation Report
 
 ## Executive Summary
@@ -413,7 +500,7 @@ This report synthesizes empirical validation of the **AIcoScientist** battery-pr
 2. **Warwick NMC622 Pilot-Plant Calendering** (Cathode: full factorial pilot-scale calendering condition optimization)
 3. **Warwick Ultrasonic Acoustic Metrology** (Multimodal non-destructive stage-transition state prediction)
 
-Across all three benchmarks, AIcoScientist was evaluated without modifying underlying models post-hoc, strictly honoring information horizons, preventing data leakage, and testing against exact analytical baselines.
+Across all three benchmarks, AIcoScientist was evaluated without modifying underlying models post-hoc, strictly honoring information horizons and preventing data leakage. The two sequential-selection benchmarks use fixed budgets and explicit random/Bayesian baselines, while the ultrasonic stage-state benchmark uses grouped held-out cross-validation.
 
 ---
 
@@ -429,40 +516,40 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Transducer |
 | **Evaluated Candidates** | 12 strictly complete recipes | 18 full-factorial conditions (54 cells) | 48 samples (30 Anode, 18 Cathode) |
 | **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `CALENDERING_STAGE_STATE_PREDICTION` |
-| **Primary Target** | Cycle 30 Capacity ($D_{30}$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
-| **Target Direction** | Maximize $D_{30}$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
+| **Primary Target** | Cycle 30 Capacity ($D_{{30}}$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
+| **Target Direction** | Maximize $D_{{30}}$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
 | **Initial Design Budget** | $N_0 = 3$ | $N_0 = 3$ | Grouped 5-Fold Cross-Validation |
 | **Search Budget ($B$)** | $B = 5$ selections | $B = 5$ selections | Train-only scaling and PCA |
 | **Replay Seeds** | 10 predefined seeds | 10 predefined seeds | 5 grouped CV folds by Sample_ID |
 | **AIcoScientist Hit@5** | **100.0%** (10/10 seeds) | **100.0%** (10/10 seeds) | N/A (Predictive Stage Transition) |
-| **Direct BoTorch Baseline** | {drak_botorch_hit5 * 100:.1f}% | {nmc_botorch_hit5 * 100:.1f}% | N/A |
-| **Exact Random Baseline** | {drak_analytic_random * 100:.1f}% ($P=5/9$) | {nmc_analytic_random * 100:.1f}% ($P=5/15$) | N/A |
-| **Simple Regret @ $B=5$** | **{drak_simple_regret:.4f}** | **{nmc_simple_regret:.4f}** | N/A |
-| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **{ridge_anode_dens_delta:+.3f} (Ridge) / {sa_anode_dens_delta:+.3f} (StageAware) $R^2$** on Anode Density |
+| **Direct BoTorch Baseline** | {ctx_drak['botorch_hit5'] * 100:.1f}% | {ctx_nmc['botorch_hit5'] * 100:.1f}% | N/A |
+| **Exact Random Baseline** | {ctx_drak['analytic_random_hit5'] * 100:.1f}% ($P=5/9$) | {ctx_nmc['analytic_random_hit5'] * 100:.1f}% ($P=5/15$) | N/A |
+| **Simple Regret @ $B=5$** | **{ctx_drak['simple_regret']:.4f}** | **{ctx_nmc['simple_regret']:.4f}** | N/A |
+| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **{ctx_u_ad['ridge_fusion_delta']:+.3f} (Ridge) / {ctx_u_ad['stageaware_fusion_delta']:+.3f} (StageAware) $R^2$** on Anode Density |
 
 ---
 
 ## 2. Key Scientific Findings Across Capability Horizons
 
 ### 1. Complete Recipe Rediscovery (`complete_recipe_rediscovery`)
-- **Drakopoulos**: Recovered the source-observed best recipe (`protocol-c1c280b7366f`, 402.25 mAh/g) in 10/10 seeds (Hit@5 = 100.0%), outperforming Direct BoTorch (30.0%) and the analytical hypergeometric random baseline (55.6%).
+- **Drakopoulos**: Recovered the source-observed best recipe (`{ctx_drak['best_recipe']}`, {ctx_drak['best_d30']:.2f} mAh/g) in 10/10 seeds (Hit@5 = 100.0%), outperforming Direct BoTorch ({ctx_drak['botorch_hit5'] * 100:.1f}%) and the analytical hypergeometric random baseline ({ctx_drak['analytic_random_hit5'] * 100:.1f}%).
 
 ### 2. Pilot-Plant Condition Optimization (`pilot_plant_doe_condition_optimization`)
-- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%) vs Direct BoTorch (90.0%) and the analytical random baseline of 33.3%.
-- **Finding**: Demonstrates consistent recovery across physical cell chemistries and manufacturing scales.
+- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`{ctx_nmc['best_condition']}`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = {ctx_nmc['best_ratio']:.4f}) in **10/10 seeds** (Hit@5 = 100.0%) vs Direct BoTorch ({ctx_nmc['botorch_hit5'] * 100:.1f}%) and the analytical random baseline of {ctx_nmc['analytic_random_hit5'] * 100:.1f}%.
+- **Finding**: The same sequential optimization framework achieved source-observed-best recovery on two independent historical manufacturing datasets with different chemistry/process settings.
 
 ### 3. Multimodal Stage-State Transition Prediction (`multimodal_stage_state_prediction`)
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{{ultra}}$) combined with calendering machine controls ($u_{{t+1}}$) accurately predict post-calendering electrode quality ($z_{{t+1}}$).
-- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = {anode_thk_ultra_ridge:.3f}$ without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = {anode_thk_fused_ridge:.3f}$ (Ridge) / {anode_thk_fused_sa:.3f} (StageAware).
-- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = {anode_dens_proc_ridge:.3f}$ (Ridge) / {anode_dens_proc_sa:.3f} (StageAware), while Multimodal Fusion achieves $R^2 = {anode_dens_fused_ridge:.3f}$ (Ridge) and $R^2 = {anode_dens_fused_sa:.3f}$ (StageAwareProcessModel).
-- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = {cathode_thk_proc_ridge:.3f}$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
+- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = {ctx_u_at['ridge_ultrasound_only_r2']:.3f}$ (Ridge) / {ctx_u_at['stageaware_ultrasound_only_r2']:.3f} (StageAware) without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = {ctx_u_at['ridge_fused_r2']:.3f}$ (Ridge) / {ctx_u_at['stageaware_fused_r2']:.3f} (StageAware).
+- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = {ctx_u_ad['ridge_process_only_r2']:.3f}$ (Ridge) / {ctx_u_ad['stageaware_process_only_r2']:.3f} (StageAware), while Multimodal Fusion achieves $R^2 = {ctx_u_ad['ridge_fused_r2']:.3f}$ (Ridge) and $R^2 = {ctx_u_ad['stageaware_fused_r2']:.3f}$ (StageAwareProcessModel).
+- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = {ctx_u_ct['ridge_process_only_r2']:.3f}$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
 
 ## 3. Strict Boundary of Supported Claims
 
 ### What IS Supported:
-1. **Pilot-Plant Process Optimization**: AIcoScientist successfully identifies optimal pilot-scale calendering recipes within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
+1. **Pilot-Plant Process Optimization**: AIcoScientist recovers the source-observed best DOE condition within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
 2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
 3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
 
