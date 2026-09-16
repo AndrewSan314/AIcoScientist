@@ -69,24 +69,33 @@ def test_nmc622_information_horizon_firewall(nmc622_adapter: WarwickNMC622Calend
 
     for run in runs[:5]:
         view = horizon.project_for_recipe_selection(run)
-        # Calendering recipe controls must be exposed
+        # Pre-manufacturing planned recipe controls must be exposed
         assert "roll_temperature_c" in view.controls
-        assert "roll_gap_um" in view.controls
-        assert "number_of_passes" in view.controls
+        assert "target_density_g_cm3" in view.controls
         assert "target_coating_weight_gsm" in view.controls
 
-        # Measured final performance and intermediate cell properties must be strictly hidden
+        # Physical execution parameters, measured intermediate cell properties, and final KPIs must be strictly hidden
+        assert "roll_gap_um" not in view.controls
+        assert "number_of_passes" not in view.controls
+        assert "target_porosity_pct" not in view.controls
         assert "rate_performance_5c_over_0_2c" not in view.controls
         assert "rate_performance_3c_over_0_2c" not in view.controls
         assert "calendered_density_g_cm3" not in view.controls
         assert "calendered_thickness_um" not in view.controls
         assert len(view.intermediate_properties) == 0
 
+        # Verify hidden_observations contains execution and intermediate properties
+        hidden = horizon.hidden_observations(run)
+        assert "roll_gap_um" in hidden
+        assert "number_of_passes" in hidden
+        assert "calendered_density_g_cm3" in hidden
+        assert "rate_performance_5c_over_0_2c" in hidden
 
-def test_nmc622_global_optimum_consistency(nmc622_adapter: WarwickNMC622CalenderingAdapter) -> None:
-    """Verify EXP_03 is the unique global maximum for rate performance 5C:0.2C."""
+
+def test_nmc622_source_observed_best_consistency(nmc622_adapter: WarwickNMC622CalenderingAdapter) -> None:
+    """Verify EXP_03 is the unique source-observed maximum for rate performance 5C:0.2C."""
     runs = nmc622_adapter.load_runs()
-    cond_means: dict[str, float] = {}
+    cond_means: dict[str, list[float]] = {}
 
     for run in runs:
         cond_id = run.batch_id

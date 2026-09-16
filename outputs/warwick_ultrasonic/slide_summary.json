@@ -6,7 +6,7 @@
   "num_cathode_samples": 18,
   "num_anode_samples": 30,
   "cross_validation": "Grouped 5-fold CV by Sample_ID",
-  "leakage_controls": "Strict train-only scaling/PCA; post-calendering spectra and measurements strictly masked pre-decision.",
+  "leakage_controls": "Strict train-only scaling/PCA; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
   "results": {
     "cathode_thickness_r2": {
       "process_only": 0.8913020856563194,

@@ -132,3 +132,40 @@ def test_ultrasonic_pre_decision_horizon_isolation(ultrasonic_adapter: WarwickUl
         assert "post_calendering_density_g_cm3" not in cal_stage.controls
         assert "calendered_thickness_um" not in cal_stage.controls
         assert "calendered_density_g_cm3" not in cal_stage.controls
+
+
+def test_ultrasonic_frequency_grid_audit() -> None:
+    """Verify frequency_grid_audit.json records native alignment and no interpolation."""
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    audit_path = repo_root / "outputs" / "warwick_ultrasonic" / "frequency_grid_audit.json"
+    assert audit_path.exists(), f"Audit file not found at {audit_path}"
+    with open(audit_path) as f:
+        data = json.load(f)
+
+    assert data["materials"]["Cathode"]["num_samples"] == 18
+    assert data["materials"]["Cathode"]["num_points_per_spectrum"] == 29
+    assert data["materials"]["Cathode"]["frequency_grid_aligned"] is True
+    assert data["materials"]["Cathode"]["interpolation_required"] is False
+
+    assert data["materials"]["Anode"]["num_samples"] == 30
+    assert data["materials"]["Anode"]["num_points_per_spectrum"] == 36
+    assert data["materials"]["Anode"]["frequency_grid_aligned"] is True
+    assert data["materials"]["Anode"]["interpolation_required"] is False
+
+
+def test_ultrasonic_production_execution_trace() -> None:
+    """Verify ultrasonic benchmark records non-zero execution counts through production architecture."""
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    trace_path = repo_root / "outputs" / "warwick_ultrasonic" / "execution_trace_audit.json"
+    assert trace_path.exists(), f"Execution trace audit not found at {trace_path}"
+    with open(trace_path) as f:
+        data = json.load(f)
+
+    trace = data["execution_trace"]
+    assert trace["battery_process_runs_seen"] >= 48
+    assert trace["information_horizon_projections"] >= 48
+    assert trace["modality_encoder_invocations"] > 0
+    assert trace["gated_fusion_invocations"] > 0
+    assert trace["process_state_model_forward_count"] > 0
+    assert trace["stage_aware_model_forward_count"] > 0
+

@@ -238,14 +238,15 @@ class WarwickNMC622CalenderingAdapter(NormalizedRunAdapter):
                 if pre_tensile_kpa is not None and not np.isnan(pre_tensile_kpa):
                     coating_obs["pre_calendering_tensile_strength_kpa"] = MeasurementValue(pre_tensile_kpa, "kPa")
 
-                # Calendering stage
+                # Calendering stage - only planned DOE variables belong in pre-manufacturing controls
                 cal_ctrl = {
                     "roll_temperature_c": ParameterValue(roll_temp_c, "degC"),
-                    "roll_gap_um": ParameterValue(roll_gap_um, "um"),
-                    "number_of_passes": ParameterValue(float(num_passes), "count"),
+                    "target_density_g_cm3": ParameterValue(target_density_g_cm3, "g/cm3"),
                 }
+                # Physical execution parameters and measured compacted properties belong in intermediate observations
                 cal_obs = {
-                    "target_density_g_cm3": MeasurementValue(target_density_g_cm3, "g/cm3"),
+                    "roll_gap_um": MeasurementValue(roll_gap_um, "um"),
+                    "number_of_passes": MeasurementValue(float(num_passes), "count"),
                     "target_porosity_pct": MeasurementValue(target_porosity_pct, "%"),
                     "calendered_thickness_um": MeasurementValue(post_thick_um, "um"),
                     "calendered_coating_weight_gsm": MeasurementValue(post_weight_gsm, "g/m2"),
@@ -317,9 +318,9 @@ class WarwickNMC622CalenderingAdapter(NormalizedRunAdapter):
                 "experiment_id": exp_id,
                 "target_coating_weight_gsm": coat_stage.controls["target_coating_weight_gsm"].value,
                 "roll_temperature_c": cal_stage.controls["roll_temperature_c"].value,
-                "roll_gap_um": cal_stage.controls["roll_gap_um"].value,
-                "number_of_passes": cal_stage.controls["number_of_passes"].value,
-                "target_density_g_cm3": cal_stage.intermediate_properties["target_density_g_cm3"].value,
+                "target_density_g_cm3": cal_stage.controls["target_density_g_cm3"].value,
+                "roll_gap_um": cal_stage.intermediate_properties["roll_gap_um"].value,
+                "number_of_passes": cal_stage.intermediate_properties["number_of_passes"].value,
                 "target_porosity_pct": cal_stage.intermediate_properties["target_porosity_pct"].value,
                 "rate_performance_5c_over_0_2c": float(np.mean(rates)),
                 "rate_performance_5c_over_0_2c_std": float(np.std(rates, ddof=1)),

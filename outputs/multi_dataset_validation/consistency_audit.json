@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-09-16",
+  "checks": {
+    "drakopoulos_v4": {
+      "status": "PASS",
+      "details": {
+        "pool_size_strictly_complete": 12,
+        "aicoscientist_hit_at_5": 1.0,
+        "direct_botorch_hit_at_5": 0.3,
+        "empirical_random_hit_at_5": 0.3,
+        "exact_analytical_random": 0.5555555555555556,
+        "aicoscientist_simple_regret": 0.0,
+        "paper_doi": "10.1016/j.xcrp.2021.100683",
+        "dataset_doi": "10.17632/4dh2h3tsf4.1",
+        "capability_taxonomy": "complete_recipe_rediscovery"
+      }
+    },
+    "warwick_nmc622_calendering": {
+      "status": "PASS",
+      "details": {
+        "num_conditions": 18,
+        "num_replicate_cells": 54,
+        "aicoscientist_hit_at_5": 1.0,
+        "direct_botorch_hit_at_5": 0.9,
+        "empirical_random_hit_at_5": 0.3,
+        "exact_analytical_random": 0.3333333333333333,
+        "aicoscientist_simple_regret": 0.0,
+        "source_observed_best": "EXP_03",
+        "dataset_doi": "10.17632/wwhm2frfmy.1",
+        "capability_taxonomy": "pilot_plant_doe_condition_optimization",
+        "initial_designs_verified_matching_all_policies": true
+      }
+    },
+    "warwick_ultrasonic": {
+      "status": "PASS",
+      "details": {
+        "num_cathode_samples": 18,
+        "num_anode_samples": 30,
+        "total_samples": 48,
+        "frequency_grid_aligned_cathode": true,
+        "frequency_grid_aligned_anode": true,
+        "grouped_5fold_cv_leakage_free": true,
+        "execution_trace": {
+          "battery_process_runs_seen": 48,
+          "information_horizon_projections": 48,
+          "modality_encoder_invocations": 192192,
+          "gated_fusion_invocations": 288288,
+          "process_state_model_forward_count": 288288,
+          "stage_aware_model_forward_count": 576576
+        },
+        "dataset_doi": "10.17632/c62yn37d9h.4",
+        "capability_taxonomy": "multimodal_stage_state_prediction"
+      }
+    },
+    "cross_dataset_synthesis": {
+      "status": "PASS",
+      "matrix_consistent": true,
+      "slide_summary_consistent": true,
+      "all_dois_verified": true,
+      "all_capability_taxonomies_verified": true
+    }
+  }
+}

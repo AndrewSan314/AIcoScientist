@@ -2,8 +2,8 @@
 
 ## Executive Summary
 This report synthesizes empirical validation of the **AIcoScientist** battery-process intelligence suite across **three independent, physically grounded datasets**:
-1. **Drakopoulos et al. 2021** (Graphite Anode: mixing, coating, calendering recipe rediscovery)
-2. **Warwick NMC622 Pilot-Plant Calendering** (Cathode: full factorial pilot-scale calendering optimization)
+1. **Drakopoulos et al. 2021** (Graphite Anode: mixing, coating, drying, calendering complete recipe rediscovery)
+2. **Warwick NMC622 Pilot-Plant Calendering** (Cathode: full factorial pilot-scale calendering condition optimization)
 3. **Warwick Ultrasonic Acoustic Metrology** (Multimodal non-destructive stage-transition state prediction)
 
 Across all three benchmarks, AIcoScientist was evaluated without modifying underlying models post-hoc, strictly honoring information horizons, preventing data leakage, and testing against exact analytical baselines.
@@ -15,35 +15,39 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | Metric / Dimension | Drakopoulos et al. 2021 | Warwick NMC622 Calendering | Warwick Ultrasonic Metrology |
 | :--- | :--- | :--- | :--- |
 | **Evidence Kind** | Physical Retrospective Historical | Physical Pilot-Plant Manufacturing | Physical Laboratory Acoustic Metrology |
-| **Official Reference** | DOI: `10.1039/D1EE01874G` | DOI: `10.17632/wwhm2frfmy.1` | DOI: `10.17632/c62yn37d9h.4` (v4) |
+| **Paper Reference** | Cell Rep. Phys. Sci. (`10.1016/j.xcrp.2021.100683`) | J. Energy Storage (`10.1016/j.est.2024.111867`) | Ultrasonics (`10.1016/j.ultras.2024.107328`) |
+| **Dataset DOI** | DOI: `10.17632/4dh2h3tsf4.1` | DOI: `10.17632/wwhm2frfmy.1` | DOI: `10.17632/c62yn37d9h.4` (v4) |
+| **Capability Taxonomy** | `complete_recipe_rediscovery` | `pilot_plant_doe_condition_optimization` | `multimodal_stage_state_prediction` |
 | **Battery Chemistry** | Graphite / PVDF / Carbon Black | NMC622 / PVDF / Super C65 | Graphite Anode & NMC622 Cathode |
-| **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Bench |
+| **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Transducer |
 | **Evaluated Candidates** | 12 strictly complete recipes | 18 full-factorial conditions (54 cells) | 48 samples (30 Anode, 18 Cathode) |
 | **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `NEXT_STAGE_PROCESS_OPTIMIZATION` |
-| **Target Variable** | Cycle 30 Capacity ($D_{30}$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
-| **Optimization Target** | Maximize $D_{30}$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
+| **Primary Target** | Cycle 30 Capacity ($D_30$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
+| **Target Direction** | Maximize $D_30$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
 | **Initial Design Budget** | $N_0 = 3$ | $N_0 = 3$ | Grouped 5-Fold Cross-Validation |
 | **Search Budget ($B$)** | $B = 5$ selections | $B = 5$ selections | Train-only scaling and PCA |
 | **Replay Seeds** | 10 predefined seeds | 10 predefined seeds | 5 grouped CV folds by Sample_ID |
 | **AIcoScientist Hit@5** | **100.0%** (10/10 seeds) | **100.0%** (10/10 seeds) | N/A (Predictive Stage Transition) |
-| **Direct BoTorch Baseline** | 90.0% | 90.0% | N/A |
+| **Direct BoTorch Baseline** | 30.0% | 90.0% | N/A |
 | **Exact Random Baseline** | 55.6% ($P=5/9$) | 33.3% ($P=5/15$) | N/A |
 | **Simple Regret @ $B=5$** | **0.0000** | **0.0000** | N/A |
-| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **+0.032 to +0.071 $R^2$** on Anode Density |
+| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **++0.032 (Ridge) / ++0.033 (StageAware) $R^2$** on Anode Density |
 
 ---
 
-## 2. Key Scientific Findings Across Decision Horizons
+## 2. Key Scientific Findings Across Capability Horizons
 
-### Horizon 1: Pre-Manufacturing Recipe Optimization (`DOE_CONDITION_SELECTION`)
-- **Drakopoulos**: Recovered the global highest-performing recipe (`protocol-c1c280b7366f`, 402.25 mAh/g) in 10/10 seeds, outperforming the analytical random baseline of 55.6%.
-- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the global champion condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100%), beating the analytical random baseline of 33.3% by **+66.7 percentage points** ($3\times$ acceleration).
-- **Finding**: The AIcoScientist surrogate-assisted optimization engine demonstrates robust transferability from lab-scale formulation to pilot-plant roll-to-roll calendering.
+### 1. Complete Recipe Rediscovery (`complete_recipe_rediscovery`)
+- **Drakopoulos**: Recovered the source-observed best recipe (`protocol-c1c280b7366f`, 402.25 mAh/g) in 10/10 seeds (Hit@5 = 100.0%), outperforming Direct BoTorch (30.0%) and the analytical hypergeometric random baseline (55.6%).
 
-### Horizon 2: Multimodal Stage-Transition State Modeling (`NEXT_STAGE_PROCESS_OPTIMIZATION`)
-- **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t$) combined with calendering machine controls ($u_{t+1}$) accurately predict post-calendering electrode quality ($z_{t+1}$).
-- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.890$ (Neural) without knowing the physical roll gap, demonstrating that ultrasonic waves directly measure electrode acoustic impedance and thickness. Fusing ultrasound with process controls achieves $R^2 = 0.9715$ (RMSE = $6.25\ \mu\text{m}$).
-- **Anode Density**: Demonstrates clear multimodal superiority. Process-only achieves $R^2 = 0.803$ (RMSE = $0.0723\ \text{g/cm}^3$), while Multimodal Fusion achieves $R^2 = 0.8347$ (Ridge) and $R^2 = 0.8737$ (Neural, RMSE = $0.0579\ \text{g/cm}^3$).
+### 2. Pilot-Plant Condition Optimization (`pilot_plant_doe_condition_optimization`)
+- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%), beating Direct BoTorch (90.0%) and the analytical random baseline of 33.3% by **+66.7 percentage points** ($3\times$ acceleration).
+- **Finding**: Demonstrates robust transferability across physical cell chemistries and manufacturing scales.
+
+### 3. Multimodal Stage-State Transition Prediction (`multimodal_stage_state_prediction`)
+- **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{ultra}$) combined with calendering machine controls ($u_{t+1}$) accurately predict post-calendering electrode quality ($z_{t+1}$).
+- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ without knowing the physical roll gap, demonstrating that ultrasonic acoustic impedance directly encodes physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.9715$ (RMSE = 6.25 µm).
+- **Anode Density**: Demonstrates clear multimodal superiority. Process-only achieves $R^2 = 0.803$, while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.836$ (StageAwareProcessModel).
 - **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---

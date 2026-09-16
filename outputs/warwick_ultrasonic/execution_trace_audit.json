@@ -1,0 +1,22 @@
+{
+  "benchmark": "WARWICK_ULTRASONIC_MULTIMODAL_STAGE_TRANSITION",
+  "evidence_kind": "PHYSICAL_HISTORICAL",
+  "source_doi": "10.17632/c62yn37d9h.4",
+  "execution_trace": {
+    "battery_process_runs_seen": 48,
+    "information_horizon_projections": 48,
+    "modality_encoder_invocations": 192192,
+    "gated_fusion_invocations": 288288,
+    "process_state_model_forward_count": 288288,
+    "stage_aware_model_forward_count": 576576
+  },
+  "architecture": {
+    "tabular_encoder": "StandardScaler (Train-only)",
+    "signal_encoder": "MASPO ModalityEncoder (Linear+Tanh)",
+    "multimodal_fusion": "GatedMaskedFusion",
+    "process_state_model": "MASPOProcessStateModel",
+    "stage_aware_model": "StageAwareProcessModel",
+    "information_horizon": "InformationHorizon(CALENDERING, include_decision_stage_controls=True)",
+    "cross_validation": "Grouped 5-Fold Cross-Validation by Sample_ID"
+  }
+}

@@ -17,17 +17,17 @@
 
 | Metric | AIcoScientist Full Engine | Direct BoTorch Baseline | Random Baseline (Empirical) | Exact Analytical Random |
 | :--- | :---: | :---: | :---: | :---: |
-| **Hit@1** | 0.0% | 0.0% | 0.0% | 6.7% |
-| **Hit@3** | 20.0% | 30.0% | 0.0% | 20.0% |
+| **Hit@1** | 0.0% | 10.0% | 0.0% | 6.7% |
+| **Hit@3** | 50.0% | 80.0% | 0.0% | 20.0% |
 | **Hit@5** | **100.0%** | 90.0% | 30.0% | 33.3% |
-| **Top-3 Hit@5** | 100.0% | 90.0% | 60.0% | 67.6% |
-| **Mean Steps to Best** | 4.20 | 3.56 | 4.67 | 8.00 |
-| **Simple Regret @ B=1** | 0.0163 | 0.0151 | 0.0208 | N/A |
-| **Simple Regret @ B=3** | 0.0094 | 0.0102 | 0.0165 | N/A |
-| **Simple Regret @ B=5** | 0.0000 | 0.0017 | 0.0121 | N/A |
-| **Cumulative Regret @ B=5** | 0.0447 | 0.0403 | 0.0823 | N/A |
-| **Regret AUC** | 0.0365 | 0.0319 | 0.0659 | N/A |
-| **Eps-Optimal (1%)** | 100.0% | 90.0% | 40.0% | N/A |
+| **Top-3 Hit@5** | 100.0% | 90.0% | 70.0% | 67.6% |
+| **Mean Steps to Best** | 3.60 | 2.44 | 4.67 | 8.00 |
+| **Simple Regret @ B=1** | 0.0532 | 0.0516 | 0.0193 | N/A |
+| **Simple Regret @ B=3** | 0.0064 | 0.0326 | 0.0157 | N/A |
+| **Simple Regret @ B=5** | 0.0000 | 0.0029 | 0.0092 | N/A |
+| **Cumulative Regret @ B=5** | 0.0763 | 0.1266 | 0.0764 | N/A |
+| **Regret AUC** | 0.0497 | 0.0993 | 0.0622 | N/A |
+| **Eps-Optimal (1%)** | 100.0% | 90.0% | 70.0% | N/A |
 | **Eps-Optimal (5%)** | 100.0% | 100.0% | 100.0% | N/A |
 
 ---
@@ -37,7 +37,7 @@
 2. **Replicate Grouping**: All 3 cell replicates for each candidate condition revealed simultaneously upon selection.
 3. **No Lookahead**: Initial designs strictly excluded `EXP_03`; exact same initial recipes evaluated across all policies for each seed.
 4. **Analytical Random Baseline**: Exact formula $P(B) = B / (18 - 3) = B / 15$ computed analytically without Monte Carlo noise.
-5. **Full Engine Execution Path**: Process runs routed through `WarwickNMC622CalenderingAdapter` -> `BatteryProcessRun` -> `InformationHorizon(CALENDERING)` -> `ProcessSurrogateSample` -> `TrainOnlyPreprocessor` -> `ProcessSurrogate (GP)` -> `SurrogateArtifact` -> `ProcessOptimizationCoordinator`.
+5. **Full Engine Execution Path**: Process runs routed through `WarwickNMC622CalenderingAdapter` -> `BatteryProcessRun` -> `InformationHorizon(PRE_MANUFACTURING_RECIPE_SELECTION)` -> `ProcessSurrogateSample` -> `TrainOnlyPreprocessor` -> `ProcessSurrogate (GP)` -> `SurrogateArtifact` -> `ProcessOptimizationCoordinator`.
 
 ---
 

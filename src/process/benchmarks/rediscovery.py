@@ -889,6 +889,7 @@ class RediscoveryReplay:
         initial_size: int = 3,
         max_steps: int | None = None,
         beta: float = 2.0,
+        initial_candidate_ids: Sequence[str] | None = None,
     ) -> RediscoveryTrajectory:
         """Executes offline closed-loop rediscovery replay for a given policy and seed.
         
@@ -916,8 +917,23 @@ class RediscoveryReplay:
                 f"initial size {initial_size} excluding best candidate."
             )
 
-        rng = np.random.default_rng(seed)
-        sampled_initial = rng.choice(initial_eligible_pool, size=initial_size, replace=False).tolist()
+        if initial_candidate_ids is not None:
+            init_ids = [str(cid) for cid in initial_candidate_ids]
+            if len(init_ids) != initial_size:
+                raise ValueError(
+                    f"initial_candidate_ids length ({len(init_ids)}) != initial_size ({initial_size})"
+                )
+            if len(set(init_ids)) != len(init_ids):
+                raise ValueError("initial_candidate_ids contains duplicate candidates")
+            if hidden_best in init_ids:
+                raise ValueError(f"Hidden best {hidden_best!r} must not appear in initial design")
+            for cid in init_ids:
+                if cid not in all_candidate_ids:
+                    raise KeyError(f"Candidate {cid!r} in initial_candidate_ids not found in candidate pool")
+            sampled_initial = init_ids
+        else:
+            rng = np.random.default_rng(seed)
+            sampled_initial = rng.choice(initial_eligible_pool, size=initial_size, replace=False).tolist()
 
         canonical_strat = resolve_strategy(strategy) if strategy.lower() in ("random", "greedy", "gp_ucb", "expected_improvement", "noisy_expected_improvement") else strategy
 

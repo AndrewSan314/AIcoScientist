@@ -298,6 +298,84 @@ def audit_warwick_nmc622() -> dict[str, Any]:
     with open(out_dir / "primary_target_preregistration.json", "w") as f:
         json.dump(prereg, f, indent=2)
 
+    # 5b. Decision Variable Audit (Distinguishing planned pre-manufacturing vs execution)
+    decision_var_audit = [
+        {
+            "variable": "roll_temperature_c",
+            "source_column": "Roll temperature (oC)",
+            "semantic_role": "CONTROL",
+            "available_at_pre_manufacturing": True,
+            "use_in_primary_doe_selection": True,
+            "reason": "Explicit planned 3-level DOE factor (85, 120, 145 degC) chosen before manufacturing execution.",
+        },
+        {
+            "variable": "target_density_g_cm3",
+            "source_column": "Target density (g/cm3)",
+            "semantic_role": "TARGET_STATE",
+            "available_at_pre_manufacturing": True,
+            "use_in_primary_doe_selection": True,
+            "reason": "Canonical planned electrode density target (P: 2.7/2.8, M: 2.95/3.0, D: 3.2 g/cm3) chosen before manufacturing.",
+        },
+        {
+            "variable": "target_coating_weight_gsm",
+            "source_column": "Target coating weight (GSM)",
+            "semantic_role": "UPSTREAM_CONTEXT",
+            "available_at_pre_manufacturing": True,
+            "use_in_primary_doe_selection": True,
+            "reason": "Planned cathode mass loading regime (Low: 122.48 gsm, High: 183.72 gsm) established in upstream coating.",
+        },
+        {
+            "variable": "target_porosity_pct",
+            "source_column": "Calculated target porosity (%)",
+            "semantic_role": "TARGET_STATE",
+            "available_at_pre_manufacturing": True,
+            "use_in_primary_doe_selection": False,
+            "reason": "Deterministic 1:1 algebraic transform of target_density_g_cm3; excluded to prevent collinearity and redundant features.",
+        },
+        {
+            "variable": "roll_gap_um",
+            "source_column": "Roll gap (um)- includes 2 shims  of ~500 um",
+            "semantic_role": "EXECUTION_ACTUATION",
+            "available_at_pre_manufacturing": False,
+            "use_in_primary_doe_selection": False,
+            "reason": "Calender roll gap adjusted dynamically during pilot-plant run to achieve the target compacted state; not an independent pre-manufacturing DOE factor.",
+        },
+        {
+            "variable": "number_of_passes",
+            "source_column": "Number of passes",
+            "semantic_role": "EXECUTION_PARAMETER",
+            "available_at_pre_manufacturing": False,
+            "use_in_primary_doe_selection": False,
+            "reason": "Execution quantity reflecting how many machine passes were required to achieve compaction; not a pre-manufacturing design selection.",
+        },
+        {
+            "variable": "calendered_thickness_um",
+            "source_column": "Coating thickness from discs (um) [Calendered]",
+            "semantic_role": "INTERMEDIATE_OBSERVATION",
+            "available_at_pre_manufacturing": False,
+            "use_in_primary_doe_selection": False,
+            "reason": "Measured physical property after calendering execution; strictly hidden from pre-decision inputs.",
+        },
+        {
+            "variable": "calendered_density_g_cm3",
+            "source_column": "Density from discs (g/cm3) [Calendered]",
+            "semantic_role": "INTERMEDIATE_OBSERVATION",
+            "available_at_pre_manufacturing": False,
+            "use_in_primary_doe_selection": False,
+            "reason": "Measured physical density after calendering; strictly hidden from pre-decision inputs.",
+        },
+        {
+            "variable": "rate_performance_5c_over_0_2c",
+            "source_column": "5C:0.2C",
+            "semantic_role": "FINAL_KPI",
+            "available_at_pre_manufacturing": False,
+            "use_in_primary_doe_selection": False,
+            "reason": "Primary optimization objective evaluated in electrochemical testing; revealed only through oracle.",
+        },
+    ]
+    with open(out_dir / "decision_variable_audit.json", "w") as f:
+        json.dump(decision_var_audit, f, indent=2)
+
     # 6. Source Schema CSV (Semantic Mapping)
     semantic_map = [
         {"variable_name": "target_coating_weight_gsm", "source_column": "Target coating weight (GSM)", "unit": "g/m2", "role": "UPSTREAM_CONTEXT", "stage": "COATING", "availability_time": "PRE_MANUFACTURING"},

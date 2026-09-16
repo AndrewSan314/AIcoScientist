@@ -66,7 +66,7 @@ def run_benchmark() -> dict[str, Any]:
     pool = adapter.get_candidate_pool()
     runs_by_recipe = adapter.get_runs_by_recipe()
 
-    ctrl_cols = ["roll_temperature_c", "roll_gap_um", "number_of_passes", "target_coating_weight_gsm"]
+    ctrl_cols = ["roll_temperature_c", "target_density_g_cm3", "target_coating_weight_gsm"]
     target_col = "rate_performance_5c_over_0_2c"
 
     # Identify source-observed best condition
@@ -121,7 +121,11 @@ def run_benchmark() -> dict[str, Any]:
                 strategy=strat_key,
                 seed=seed,
                 initial_size=INITIAL_SIZE,
+                initial_candidate_ids=initial_designs[seed],
                 max_steps=BUDGET,
+            )
+            assert list(traj.initial_candidate_ids) == initial_designs[seed], (
+                f"Initial design mismatch for policy {display_policy} seed {seed}"
             )
             # Tag policy name
             traj.policy = display_policy
@@ -336,7 +340,7 @@ def run_benchmark() -> dict[str, Any]:
         std_bsf = np.array(std_bsf)
         plt.plot(steps_axis, mean_bsf, label=pol, color=colors.get(pol, "black"), marker=markers.get(pol, "o"), linewidth=2)
         plt.fill_between(steps_axis, mean_bsf - std_bsf, mean_bsf + std_bsf, color=colors.get(pol, "black"), alpha=0.15)
-    plt.axhline(best_val, color="crimson", linestyle="--", label=f"Global Optimum ({best_val:.4f})")
+    plt.axhline(best_val, color="crimson", linestyle="--", label=f"Source-Observed Best ({best_val:.4f})")
     plt.xlabel("Sequential Selection Step", fontsize=11)
     plt.ylabel("Best-So-Far Rate Performance 5C:0.2C", fontsize=11)
     plt.title("Best-So-Far Metric Progression on Warwick NMC622", fontsize=12, fontweight="bold")
@@ -478,7 +482,7 @@ def run_benchmark() -> dict[str, Any]:
 2. **Replicate Grouping**: All 3 cell replicates for each candidate condition revealed simultaneously upon selection.
 3. **No Lookahead**: Initial designs strictly excluded `{best_id}`; exact same initial recipes evaluated across all policies for each seed.
 4. **Analytical Random Baseline**: Exact formula $P(B) = B / (18 - 3) = B / 15$ computed analytically without Monte Carlo noise.
-5. **Full Engine Execution Path**: Process runs routed through `WarwickNMC622CalenderingAdapter` -> `BatteryProcessRun` -> `InformationHorizon(CALENDERING)` -> `ProcessSurrogateSample` -> `TrainOnlyPreprocessor` -> `ProcessSurrogate (GP)` -> `SurrogateArtifact` -> `ProcessOptimizationCoordinator`.
+5. **Full Engine Execution Path**: Process runs routed through `WarwickNMC622CalenderingAdapter` -> `BatteryProcessRun` -> `InformationHorizon(PRE_MANUFACTURING_RECIPE_SELECTION)` -> `ProcessSurrogateSample` -> `TrainOnlyPreprocessor` -> `ProcessSurrogate (GP)` -> `SurrogateArtifact` -> `ProcessOptimizationCoordinator`.
 
 ---
 

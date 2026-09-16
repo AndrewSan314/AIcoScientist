@@ -24,15 +24,15 @@
   ],
   "results": {
     "aicoscientist_hit_at_1": 0.0,
-    "aicoscientist_hit_at_3": 0.2,
+    "aicoscientist_hit_at_3": 0.5,
     "aicoscientist_hit_at_5": 1.0,
     "aicoscientist_top3_hit_at_5": 1.0,
     "direct_botorch_hit_at_5": 0.9,
     "empirical_random_hit_at_5": 0.3,
     "exact_analytical_random_hit_at_5": 0.3333333333333333,
     "aicoscientist_simple_regret_at_5": 0.0,
-    "direct_botorch_simple_regret_at_5": 0.001707218528115062,
-    "random_simple_regret_at_5": 0.012080026758740415,
+    "direct_botorch_simple_regret_at_5": 0.0028673026705336225,
+    "random_simple_regret_at_5": 0.009211455486235087,
     "beat_exact_random": true
   },
   "supported_claim": "On the pilot-plant Warwick NMC622 calendering dataset, AIcoScientist achieved Hit@5 = 100.0%, exceeding the exact random analytical baseline of 33.3% by +66.7 percentage points.",
