@@ -268,8 +268,14 @@ class SourceBoundModalityInput:
             decoded_values_fingerprint = _provenance_dict(observation.provenance).get("decoded_values_fingerprint")
             if decoded_values_fingerprint != source_values_fingerprint(observation.values):
                 raise ValueError("file-backed modality requires a trusted decoded_values_fingerprint")
+        raw_values = observation.values
+        if isinstance(raw_values, Mapping):
+            if "fft_magnitude" in raw_values:
+                raw_values = raw_values["fft_magnitude"]
+            elif "values" in raw_values:
+                raw_values = raw_values["values"]
         try:
-            tensor = torch.as_tensor(observation.values, dtype=torch.float32)
+            tensor = torch.as_tensor(raw_values, dtype=torch.float32)
         except (TypeError, ValueError, RuntimeError) as exc:
             raise ValueError(f"source modality {observation.modality_id!r} is not supported by the trusted numeric preprocessor") from exc
         if tensor.ndim == 0:

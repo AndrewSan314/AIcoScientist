@@ -64,7 +64,7 @@ def generate_multi_dataset_synthesis() -> None:
     drak_random = drak_uncon[drak_uncon["policy"] == "random"].iloc[0]
 
     drak_ai_hit5 = float(drak_ai["hit_rate_step_5"])  # 1.0 (100.0%)
-    drak_botorch_hit5 = float(drak_botorch["hit_rate_step_5"])  # 0.3 (30.0%, NOT 90.0%!)
+    drak_botorch_hit5 = float(drak_botorch["hit_rate_step_5"])  # 0.3 (30.0%)
     drak_random_hit5 = float(drak_random["hit_rate_step_5"])  # 0.3 (30.0%)
     if "unconstrained" not in drak_slide or "analytic_random_hit_at_5" not in drak_slide["unconstrained"]:
         raise KeyError("DRAKOPOULOS_ARTIFACT_FIELD_MISSING: unconstrained.analytic_random_hit_at_5 missing in slide_summary.json")
@@ -117,6 +117,36 @@ def generate_multi_dataset_synthesis() -> None:
     if ultra_comp_path.exists():
         with open(ultra_comp_path) as f:
             ultra_comp = json.load(f)
+
+    # Dynamic metrics from Warwick Ultrasonic ablation_summary.csv
+    def _metric(mat: str, tgt: str, mdl: str, col: str) -> float:
+        sub = df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == mdl)]
+        return float(sub[col].iloc[0])
+
+    anode_dens_proc_ridge = _metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled")
+    anode_dens_ultra_ridge = _metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    anode_dens_fused_ridge = _metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+
+    anode_dens_proc_sa = _metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    anode_dens_ultra_sa = _metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    anode_dens_fused_sa = _metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
+
+    anode_thk_proc_ridge = _metric("Anode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled")
+    anode_thk_ultra_ridge = _metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    anode_thk_fused_ridge = _metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+
+    anode_thk_proc_sa = _metric("Anode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    anode_thk_ultra_sa = _metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    anode_thk_fused_sa = _metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
+
+    cathode_thk_proc_ridge = _metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled")
+    cathode_thk_ultra_ridge = _metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    cathode_thk_fused_ridge = _metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+
+    cathode_dens_ultra_ridge = _metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+
+    ridge_anode_dens_delta = anode_dens_fused_ridge - anode_dens_proc_ridge
+    sa_anode_dens_delta = anode_dens_fused_sa - anode_dens_proc_sa
 
     # -------------------------------------------------------------
     # 2. BUILD MULTI-BENCHMARK MATRIX CSV
@@ -185,7 +215,7 @@ def generate_multi_dataset_synthesis() -> None:
             "process_stages": "Stage Transition (Coating z_t -> Calendering u_{t+1} -> Post-Calendering z_{t+1})",
             "total_candidates": 48,
             "strictly_complete_eval_pool": 48,
-            "decision_horizon": "NEXT_STAGE_PROCESS_OPTIMIZATION (z_t + u_{t+1} -> z_{t+1})",
+            "decision_horizon": "CALENDERING_STAGE_STATE_PREDICTION (z_t + u_{t+1} -> z_{t+1})",
             "primary_target": "Post-Calendering Thickness (um) & Density (g/cm3)",
             "target_direction": "MINIMIZE_PREDICTION_ERROR",
             "initial_design_size": 0,
@@ -196,15 +226,13 @@ def generate_multi_dataset_synthesis() -> None:
             "random_empirical_hit_at_5": None,
             "random_analytic_hit_at_5": None,
             "aicoscientist_simple_regret_b5": None,
-            "multimodal_r2_or_bo_hit": f"Anode Thick R2={float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge, Anode Dens R2={float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge",
+            "multimodal_r2_or_bo_hit": f"Anode Thick R2={anode_thk_fused_ridge:.3f} Ridge, Anode Dens R2={anode_dens_fused_ridge:.3f} Ridge",
             "source_observed_best": "N/A (Supervised stage-state prediction)",
             "key_finding": (
                 f"Multimodal fusion outperforms process-only on Anode Density (Ridge R2: "
-                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_ONLY')]['ridge_r2_pooled'].iloc[0]):.3f} -> "
-                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f}). "
-                f"Acoustic spectrum alone directly predicts physical thickness (R2 = "
-                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge / "
-                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['stage_aware_r2_pooled'].iloc[0]):.3f} StageAware)."
+                f"{anode_dens_proc_ridge:.3f} -> {anode_dens_fused_ridge:.3f}). "
+                f"Acoustic spectrum alone predicts physical thickness (R2 = "
+                f"{anode_thk_ultra_ridge:.3f} Ridge / {anode_thk_ultra_sa:.3f} StageAware)."
             ),
         },
     ]
@@ -216,12 +244,6 @@ def generate_multi_dataset_synthesis() -> None:
     # -------------------------------------------------------------
     # 3. GENERATE SLIDE SUMMARY JSON
     # -------------------------------------------------------------
-    u_thick_fused_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0])
-    u_thick_ultra_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['ridge_r2_pooled'].iloc[0])
-    u_thick_stage_ultra_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['stage_aware_r2_pooled'].iloc[0])
-    u_dens_proc_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_ONLY')]['ridge_r2_pooled'].iloc[0])
-    u_dens_fused_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0])
-
     slide_summary = {
         "title": "AIcoScientist Multi-Dataset Physical Battery-Process Validation",
         "scope": "Three Independent Physical Benchmarks across Active BO and Multimodal State Modeling",
@@ -265,7 +287,7 @@ def generate_multi_dataset_synthesis() -> None:
                 "system": "Electrode Non-Destructive Ultrasonic Acoustic Metrology",
                 "evidence": "48 physical samples (30 Anode, 18 Cathode), grouped 5-fold CV",
                 "task": "Multimodal stage-state transition prediction (z_t + u_{t+1} -> z_{t+1})",
-                "result": f"Anode Thickness R2={u_thick_fused_r2:.3f} (Ultrasound-only R2={u_thick_ultra_r2:.3f} Ridge / {u_thick_stage_ultra_r2:.3f} StageAware), Anode Density R2={u_dens_fused_r2:.3f} (Ridge fusion gain: {u_dens_proc_r2:.3f} -> {u_dens_fused_r2:.3f})",
+                "result": f"Anode Thickness R2={anode_thk_fused_ridge:.3f} (Ultrasound-only R2={anode_thk_ultra_ridge:.3f} Ridge / {anode_thk_ultra_sa:.3f} StageAware), Anode Density R2={anode_dens_fused_ridge:.3f} (Ridge fusion gain: {anode_dens_proc_ridge:.3f} -> {anode_dens_fused_ridge:.3f})",
                 "status": "VALIDATED",
             },
         },
@@ -279,7 +301,7 @@ def generate_multi_dataset_synthesis() -> None:
             "Drakopoulos recovery: 100% Hit@5 vs 30% Direct BoTorch and 55.6% analytical random baseline.",
             "Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe EXP_03 in 3.6 average BO steps.",
             "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
-            f"Acoustic feature superiority: Ultrasound alone achieves R2={u_thick_ultra_r2:.3f} (Ridge) / {u_thick_stage_ultra_r2:.3f} (StageAware) on anode thickness; multimodal fusion boosts anode density Ridge R2 from {u_dens_proc_r2:.3f} to {u_dens_fused_r2:.3f}.",
+            f"Acoustic feature predictive signal: Ultrasound alone achieves R2={anode_thk_ultra_ridge:.3f} (Ridge) / {anode_thk_ultra_sa:.3f} (StageAware) on anode thickness; multimodal fusion improves anode density Ridge R2 from {anode_dens_proc_ridge:.3f} to {anode_dens_fused_ridge:.3f}.",
             "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing.",
         ],
         "strictly_unsupported_claims": [
@@ -327,14 +349,8 @@ def generate_multi_dataset_synthesis() -> None:
     axes[1].tick_params(axis="x", rotation=15)
 
     # Panel C: Warwick Ultrasonic Anode Multimodal R2
-    anode_dens_abl = df_ultra_ablation[(df_ultra_ablation["material"] == "Anode") & (df_ultra_ablation["target"] == "density_after_g_cm3")]
     ultra_labels = ["Ultrasound Only", "Process Only", "Fused (Ridge)", "Fused (StageAware)"]
-    u_only_r2 = float(anode_dens_abl[anode_dens_abl["model"] == "ULTRASOUND_ONLY"]["ridge_r2_pooled"].iloc[0])
-    p_only_r2 = float(anode_dens_abl[anode_dens_abl["model"] == "PROCESS_ONLY"]["ridge_r2_pooled"].iloc[0])
-    f_ridge_r2 = float(anode_dens_abl[anode_dens_abl["model"] == "PROCESS_PLUS_ULTRASOUND"]["ridge_r2_pooled"].iloc[0])
-    f_stage_r2 = float(anode_dens_abl[anode_dens_abl["model"] == "PROCESS_PLUS_ULTRASOUND"]["stage_aware_r2_pooled"].iloc[0])
-
-    ultra_vals = [u_only_r2, p_only_r2, f_ridge_r2, f_stage_r2]
+    ultra_vals = [anode_dens_ultra_ridge, anode_dens_proc_ridge, anode_dens_fused_ridge, anode_dens_fused_sa]
     axes[2].bar(ultra_labels, ultra_vals, color=["#f59e0b", "#6b7280", "#3b82f6", "#8b5cf6"], width=0.55, edgecolor="black")
     axes[2].set_ylim(0, 1.05)
     axes[2].set_ylabel("Prediction $R^2$ (5-Fold Grouped CV)", fontsize=11, fontweight="bold")
@@ -356,14 +372,14 @@ def generate_multi_dataset_synthesis() -> None:
 
     horizons = [
         "DOE_CONDITION_SELECTION\n(Pre-Manufacturing Recipe Optimization)",
-        "NEXT_STAGE_PROCESS_OPTIMIZATION\n(Intermediate State Transition $z_t + u_{t+1} \\to z_{t+1}$)",
+        "CALENDERING_STAGE_STATE_PREDICTION\n(Stage Transition $z_t + u_{t+1} \\to z_{t+1}$)",
         "REAL_TIME_IN_LINE_CONTROL\n(Millisecond Closed-Loop Feedback)",
     ]
     y_pos = np.arange(len(horizons))
 
     status_text = [
         "VALIDATED on 2 Physical Datasets:\n• Drakopoulos (Hit@5 = 100% vs 30% BoTorch / 55.6% Random)\n• Warwick NMC622 (Hit@5 = 100% vs 90% BoTorch / 33.3% Random)",
-        "VALIDATED on Warwick Ultrasonic:\n• 48 Electrodes, Grouped 5-Fold CV\n• Anode Thickness $R^2=0.97$, Density $R^2=0.85$",
+        "VALIDATED on Warwick Ultrasonic:\n• 48 Electrodes, Grouped 5-Fold CV\n• Anode Thickness $R^2=0.91$, Density $R^2=0.83$",
         "FUTURE WORK (Not supported by retrospective data;\nrequires prospective hardware-in-the-loop)",
     ]
     colors = ["#10b981", "#3b82f6", "#9ca3af"]
@@ -412,7 +428,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Battery Chemistry** | Graphite / PVDF / Carbon Black | NMC622 / PVDF / Super C65 | Graphite Anode & NMC622 Cathode |
 | **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Transducer |
 | **Evaluated Candidates** | 12 strictly complete recipes | 18 full-factorial conditions (54 cells) | 48 samples (30 Anode, 18 Cathode) |
-| **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `NEXT_STAGE_PROCESS_OPTIMIZATION` |
+| **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `CALENDERING_STAGE_STATE_PREDICTION` |
 | **Primary Target** | Cycle 30 Capacity ($D_{30}$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
 | **Target Direction** | Maximize $D_{30}$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
 | **Initial Design Budget** | $N_0 = 3$ | $N_0 = 3$ | Grouped 5-Fold Cross-Validation |
@@ -422,7 +438,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Direct BoTorch Baseline** | {drak_botorch_hit5 * 100:.1f}% | {nmc_botorch_hit5 * 100:.1f}% | N/A |
 | **Exact Random Baseline** | {drak_analytic_random * 100:.1f}% ($P=5/9$) | {nmc_analytic_random * 100:.1f}% ($P=5/15$) | N/A |
 | **Simple Regret @ $B=5$** | **{drak_simple_regret:.4f}** | **{nmc_simple_regret:.4f}** | N/A |
-| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **+{f_ridge_r2 - p_only_r2:+.3f} (Ridge) / +{f_stage_r2 - p_only_r2:+.3f} (StageAware) $R^2$** on Anode Density |
+| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **{ridge_anode_dens_delta:+.3f} (Ridge) / {sa_anode_dens_delta:+.3f} (StageAware) $R^2$** on Anode Density |
 
 ---
 
@@ -432,14 +448,14 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 - **Drakopoulos**: Recovered the source-observed best recipe (`protocol-c1c280b7366f`, 402.25 mAh/g) in 10/10 seeds (Hit@5 = 100.0%), outperforming Direct BoTorch (30.0%) and the analytical hypergeometric random baseline (55.6%).
 
 ### 2. Pilot-Plant Condition Optimization (`pilot_plant_doe_condition_optimization`)
-- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%), beating Direct BoTorch (90.0%) and the analytical random baseline of 33.3% by **+66.7 percentage points** ($3\\times$ acceleration).
-- **Finding**: Demonstrates robust transferability across physical cell chemistries and manufacturing scales.
+- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%) vs Direct BoTorch (90.0%) and the analytical random baseline of 33.3%.
+- **Finding**: Demonstrates consistent recovery across physical cell chemistries and manufacturing scales.
 
 ### 3. Multimodal Stage-State Transition Prediction (`multimodal_stage_state_prediction`)
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{{ultra}}$) combined with calendering machine controls ($u_{{t+1}}$) accurately predict post-calendering electrode quality ($z_{{t+1}}$).
-- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ without knowing the physical roll gap, demonstrating that ultrasonic acoustic impedance directly encodes physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.9715$ (RMSE = 6.25 µm).
-- **Anode Density**: Demonstrates clear multimodal superiority. Process-only achieves $R^2 = {p_only_r2:.3f}$, while Multimodal Fusion achieves $R^2 = {f_ridge_r2:.3f}$ (Ridge) and $R^2 = {f_stage_r2:.3f}$ (StageAwareProcessModel).
-- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
+- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = {anode_thk_ultra_ridge:.3f}$ without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = {anode_thk_fused_ridge:.3f}$ (Ridge) / {anode_thk_fused_sa:.3f} (StageAware).
+- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = {anode_dens_proc_ridge:.3f}$ (Ridge) / {anode_dens_proc_sa:.3f} (StageAware), while Multimodal Fusion achieves $R^2 = {anode_dens_fused_ridge:.3f}$ (Ridge) and $R^2 = {anode_dens_fused_sa:.3f}$ (StageAwareProcessModel).
+- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = {cathode_thk_proc_ridge:.3f}$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
 
@@ -447,7 +463,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 
 ### What IS Supported:
 1. **Pilot-Plant Process Optimization**: AIcoScientist successfully identifies optimal pilot-scale calendering recipes within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
-2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry strong physical state information that improves prediction of compacted electrode density and thickness when combined with process controls.
+2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
 3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
 
 ### What is NOT Supported:
@@ -462,7 +478,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 2. `outputs/multi_dataset_validation/figures/decision_horizons_comparison.png`: Conceptual taxonomy contrasting pre-manufacturing recipe selection, intermediate stage transition, and real-time control.
 """
 
-    with open(out_dir / "MULTI_DATASET_VALIDATION_REPORT.md", "w") as f:
+    with open(out_dir / "MULTI_DATASET_VALIDATION_REPORT.md", "w", encoding="utf-8") as f:
         f.write(report_md)
     logger.info("Saved MULTI_DATASET_VALIDATION_REPORT.md")
 

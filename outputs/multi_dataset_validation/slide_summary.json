@@ -41,7 +41,7 @@
       "system": "Electrode Non-Destructive Ultrasonic Acoustic Metrology",
       "evidence": "48 physical samples (30 Anode, 18 Cathode), grouped 5-fold CV",
       "task": "Multimodal stage-state transition prediction (z_t + u_{t+1} -> z_{t+1})",
-      "result": "Anode Thickness R2=0.914 (Ultrasound-only R2=0.835 Ridge / 0.881 StageAware), Anode Density R2=0.835 (Ridge fusion gain: 0.803 -> 0.835)",
+      "result": "Anode Thickness R2=0.914 (Ultrasound-only R2=0.835 Ridge / 0.527 StageAware), Anode Density R2=0.835 (Ridge fusion gain: 0.803 -> 0.835)",
       "status": "VALIDATED"
     }
   },
@@ -55,7 +55,7 @@
     "Drakopoulos recovery: 100% Hit@5 vs 30% Direct BoTorch and 55.6% analytical random baseline.",
     "Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe EXP_03 in 3.6 average BO steps.",
     "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
-    "Acoustic feature superiority: Ultrasound alone achieves R2=0.835 (Ridge) / 0.881 (StageAware) on anode thickness; multimodal fusion boosts anode density Ridge R2 from 0.803 to 0.835.",
+    "Acoustic feature predictive signal: Ultrasound alone achieves R2=0.835 (Ridge) / 0.527 (StageAware) on anode thickness; multimodal fusion improves anode density Ridge R2 from 0.803 to 0.835.",
     "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing."
   ],
   "strictly_unsupported_claims": [

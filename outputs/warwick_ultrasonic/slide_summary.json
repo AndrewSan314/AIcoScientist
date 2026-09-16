@@ -1,26 +1,33 @@
 {
   "benchmark": "WARWICK_ULTRASONIC_MULTIMODAL_STAGE_TRANSITION",
-  "capability": "multimodal_stage_state_modeling",
+  "capability": "multimodal_stage_state_prediction",
   "evidence_kind": "PHYSICAL_HISTORICAL",
   "official_doi": "10.17632/c62yn37d9h.4",
   "num_cathode_samples": 18,
   "num_anode_samples": 30,
   "cross_validation": "Grouped 5-fold CV by Sample_ID",
-  "leakage_controls": "Strict train-only scaling/PCA; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
+  "leakage_controls": "Strict train-only scaling/PCA/StageFeatureEncoder; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
   "results": {
     "cathode_thickness_r2": {
       "process_only_ridge": 0.8913020856563196,
       "ultrasound_only_ridge": 0.2605800170847783,
-      "fused_ridge": 0.7563366832152617
+      "fused_ridge": 0.7563366832152617,
+      "process_only_stage_aware": -0.17960286527624847,
+      "ultrasound_only_stage_aware": 0.0045278846578864496,
+      "fused_stage_aware": -0.17957222818091134
     },
     "anode_density_r2": {
       "process_only_ridge": 0.8029760847905157,
       "ultrasound_only_ridge": 0.3992561586580903,
-      "fused_ridge": 0.8346870673852174
+      "fused_ridge": 0.8346870673852174,
+      "process_only_stage_aware": 0.8435123348430503,
+      "ultrasound_only_stage_aware": -0.27589054239181876,
+      "fused_stage_aware": 0.7185921971948166
     },
-    "anode_density_multimodal_superiority_ridge": true
+    "anode_density_multimodal_superiority_ridge": true,
+    "anode_density_multimodal_superiority_stage_aware": false
   },
-  "supported_claim": "On the physical Warwick Ultrasonic dataset, combining process controls with non-destructive ultrasonic spectroscopy demonstrates predictive accuracy for post-calendering electrode states (Anode thickness R\u00b2 = 0.944 Ridge / 0.992 StageAware, Anode density R\u00b2 = 0.835 Ridge), with Ridge improving over process-only density modeling (R\u00b2 = 0.803 -> 0.835). Standalone ultrasound directly predicts Anode thickness (R\u00b2 = 0.835 Ridge / 0.881 StageAware).",
-  "unsupported_claim": "Does NOT claim that deep neural fusion improves over tabular models on small sample sizes (StageAware Anode density 0.910 -> 0.836); does NOT demonstrate closed-loop recipe optimization or electrochemical cycling improvement; validates stage-state transition prediction (z_t + u_{t+1} -> z_{t+1}) only.",
-  "allowed_slide_wording": "AIcoScientist demonstrates multimodal stage-state transition modeling (z_t + u_{t+1} -> z_{t+1}) on physical ultrasonic electrode data (30 anode, 18 cathode samples, grouped 5-fold CV), accurately predicting post-calendering thickness (R\u00b2=0.94) and demonstrating acoustic signal (R\u00b2=0.84)."
+  "supported_claim": "On the physical Warwick Ultrasonic dataset, combining process controls with non-destructive ultrasonic spectroscopy demonstrates predictive accuracy for post-calendering electrode states (Anode thickness R\u00b2 = 0.914 Ridge / 0.976 StageAware, Anode density R\u00b2 = 0.835 Ridge), with Ridge improving over process-only density modeling (R\u00b2 = 0.803 -> 0.835). Standalone ultrasound correlates with Anode thickness (R\u00b2 = 0.835 Ridge / 0.527 StageAware).",
+  "unsupported_claim": "Does NOT claim that deep neural fusion improves over tabular models on small sample sizes (StageAware Anode density 0.844 -> 0.719); does NOT demonstrate closed-loop recipe optimization or electrochemical cycling improvement; validates stage-state transition prediction (z_t + u_{t+1} -> z_{t+1}) only.",
+  "allowed_slide_wording": "AIcoScientist demonstrates multimodal stage-state transition modeling (z_t + u_{t+1} -> z_{t+1}) on physical ultrasonic electrode data (30 anode, 18 cathode samples, grouped 5-fold CV), predicting post-calendering thickness (R\u00b2=0.91) and demonstrating acoustic signal (R\u00b2=0.84)."
 }

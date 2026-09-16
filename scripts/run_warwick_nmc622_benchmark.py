@@ -468,9 +468,9 @@ def run_benchmark() -> dict[str, Any]:
 | :--- | :---: | :---: | :---: | :---: |
 | **Hit@1** | {ai_sum['hit_at_1'] * 100:.1f}% | {botorch_sum['hit_at_1'] * 100:.1f}% | {random_sum['hit_at_1'] * 100:.1f}% | {exact_sum['hit_at_1'] * 100:.1f}% |
 | **Hit@3** | {ai_sum['hit_at_3'] * 100:.1f}% | {botorch_sum['hit_at_3'] * 100:.1f}% | {random_sum['hit_at_3'] * 100:.1f}% | {exact_sum['hit_at_3'] * 100:.1f}% |
-| **Hit@5** | **{ai_sum['hit_at_5'] * 100:.1f}%** | {botorch_sum['hit_at_5'] * 100:.1f}% | {random_sum['hit_at_5'] * 100:.1f}% | {exact_sum['hit_at_5'] * 100:.1f}% |
-| **Top-3 Hit@5** | {ai_sum['top3_hit_at_5'] * 100:.1f}% | {botorch_sum['top3_hit_at_5'] * 100:.1f}% | {random_sum['top3_hit_at_5'] * 100:.1f}% | {exact_sum['top3_hit_at_5'] * 100:.1f}% |
+| **Top-3 Hit@5** | {ai_sum['top3_hit_at_5'] * 100:.1f}% | {botorch_sum['top3_hit_at_5'] * 100:.1f}% | {random_sum['top3_hit_at_5'] * 100:.1f}% | N/A* |
 | **Mean Steps to Best** | {f"{ai_sum['mean_steps_to_best']:.2f}" if ai_sum['mean_steps_to_best'] is not None else "N/A"} | {f"{botorch_sum['mean_steps_to_best']:.2f}" if botorch_sum['mean_steps_to_best'] is not None else "N/A"} | {f"{random_sum['mean_steps_to_best']:.2f}" if random_sum['mean_steps_to_best'] is not None else "N/A"} | 8.00 |
+| *(Note)* | | | | *Exact top-3 analytical random baseline omitted because initial designs may already contain non-best top-3 candidates.* |
 | **Simple Regret @ B=1** | {ai_sum['simple_regret_at_1']:.4f} | {botorch_sum['simple_regret_at_1']:.4f} | {random_sum['simple_regret_at_1']:.4f} | N/A |
 | **Simple Regret @ B=3** | {ai_sum['simple_regret_at_3']:.4f} | {botorch_sum['simple_regret_at_3']:.4f} | {random_sum['simple_regret_at_3']:.4f} | N/A |
 | **Simple Regret @ B=5** | {ai_sum['simple_regret_at_5']:.4f} | {botorch_sum['simple_regret_at_5']:.4f} | {random_sum['simple_regret_at_5']:.4f} | N/A |
@@ -498,7 +498,7 @@ def run_benchmark() -> dict[str, Any]:
 - `outputs/warwick_nmc622_calendering/figures/nmc622_simple_regret.png`
 - `outputs/warwick_nmc622_calendering/figures/nmc622_engine_vs_baselines.png`
 """
-    with open(out_dir / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md", "w") as f:
+    with open(out_dir / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md", "w", encoding="utf-8") as f:
         f.write(report_md)
 
     logger.info("Warwick NMC622 Benchmark run completed successfully!")

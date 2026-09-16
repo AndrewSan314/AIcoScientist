@@ -8,7 +8,7 @@
 - **Total Unique Conditions**: 18
 - **Total Cell Replicates**: 54 (3 cells per condition)
 - **Primary Target**: `rate_performance_5c_over_0_2c` (MAXIMIZE)
-- **Source-Observed Best Condition**: `EXP_03` (``) with mean = **0.7947 ± 0.0194**
+- **Source-Observed Best Condition**: `EXP_03` (``) with mean = **0.7947 Â± 0.0194**
 - **Sequential Protocol**: Initial design = 3, Additional budget = 5, Seeds = 10 fixed predefined seeds (`[11, 23, 42, 67, 101, 137, 179, 223, 281, 353]`).
 
 ---
@@ -19,9 +19,9 @@
 | :--- | :---: | :---: | :---: | :---: |
 | **Hit@1** | 0.0% | 10.0% | 0.0% | 6.7% |
 | **Hit@3** | 50.0% | 80.0% | 0.0% | 20.0% |
-| **Hit@5** | **100.0%** | 90.0% | 30.0% | 33.3% |
-| **Top-3 Hit@5** | 100.0% | 90.0% | 70.0% | nan% |
+| **Top-3 Hit@5** | 100.0% | 90.0% | 70.0% | N/A* |
 | **Mean Steps to Best** | 3.60 | 2.44 | 4.67 | 8.00 |
+| *(Note)* | | | | *Exact top-3 analytical random baseline omitted because initial designs may already contain non-best top-3 candidates.* |
 | **Simple Regret @ B=1** | 0.0532 | 0.0516 | 0.0193 | N/A |
 | **Simple Regret @ B=3** | 0.0064 | 0.0326 | 0.0157 | N/A |
 | **Simple Regret @ B=5** | 0.0000 | 0.0029 | 0.0092 | N/A |

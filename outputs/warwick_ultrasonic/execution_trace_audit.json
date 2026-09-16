@@ -4,14 +4,22 @@
   "source_doi": "10.17632/c62yn37d9h.4",
   "execution_trace": {
     "battery_process_runs_seen": 48,
+    "horizon_projection_count": 48,
     "information_horizon_projections": 48,
-    "modality_encoder_invocations": 192192,
-    "gated_fusion_invocations": 288288,
-    "process_state_model_forward_count": 288288,
-    "stage_aware_model_forward_count": 576576
+    "stage_feature_encoder_fit_count": 60,
+    "encoded_source_transition_count": 2880,
+    "source_bound_modality_count": 960,
+    "maspo_public_forward_count": 230688,
+    "stage_aware_public_transition_count": 922752,
+    "final_prediction_count": 288,
+    "test_only_transition_count": 0,
+    "modality_encoder_invocations": 960,
+    "gated_fusion_invocations": 230688,
+    "process_state_model_forward_count": 230688,
+    "stage_aware_model_forward_count": 922752
   },
   "architecture": {
-    "tabular_encoder": "StandardScaler (Train-only)",
+    "tabular_encoder": "StageFeatureEncoder (Train-only)",
     "signal_encoder": "MASPO ModalityEncoder (Linear+Tanh)",
     "multimodal_fusion": "GatedMaskedFusion",
     "process_state_model": "MASPOProcessStateModel",

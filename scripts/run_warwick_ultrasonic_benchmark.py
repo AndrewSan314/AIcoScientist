@@ -10,27 +10,28 @@ Evaluates:
 - Task U1: Post-calendering thickness (thickness_after_um)
 - Task U2: Post-calendering density (density_after_g_cm3)
 - Models:
-  * Model A: PROCESS_ONLY
+  * Model A: PROCESS_ONLY (TABULAR_STATE_PROCESS)
   * Model B: ULTRASOUND_ONLY
-  * Model C: PROCESS_PLUS_ULTRASOUND (Fused)
+  * Model C: PROCESS_PLUS_ULTRASOUND (TABULAR_PLUS_ULTRASOUND / Fused)
 - Architectures:
   * Production Stage-Aware Multimodal Model (MASPOProcessStateModel + GatedMaskedFusion + StageAwareProcessModel)
   * Transparent Baseline Regression (Ridge)
 - Strictly enforces:
   * InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
   * Grouped 5-fold CV by Sample_ID (before and after in same fold)
-  * Train-only fitting of scalers and PCA
+  * StageFeatureEncoder fitted strictly TRAIN-ONLY per fold
+  * LegalStageTransition.from_encoded_source_stage production transition path (test_only=False)
   * Zero lookahead (after-calendering FFT and measurements strictly hidden pre-decision)
-  * Full execution trace recording (audit counters > 0)
+  * Full execution trace recording (audit counters > 0, test_only_transition_count == 0)
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 import json
 import logging
-import sys
-from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import Any, Mapping, Sequence
 
 import matplotlib
@@ -51,12 +52,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.datasets.battery_process.warwick_ultrasonic import WarwickUltrasonicAdapter
 from src.process.contracts import BatteryProcessRun, StageRecord
-from src.process.fusion.gated_fusion import GatedMaskedFusion
 from src.process.information_horizon import InformationHorizon
 from src.process.modalities import ModalitySlotSpec, ModalityType
 from src.process.models.maspo import MASPOProcessStateModel
-from src.process.models.stage_transition import StageAwareProcessModel
-from src.process.models.transitions import LegalStageTransition
+from src.process.models.transitions import LegalStageTransition, StageFeatureEncoder
 from src.process.stages import ProcessStage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -66,132 +65,51 @@ logger = logging.getLogger("warwick_ultrasonic_benchmark")
 @dataclass
 class UltrasonicBenchmarkTrace:
     battery_process_runs_seen: int = 0
-    information_horizon_projections: int = 0
-    modality_encoder_invocations: int = 0
-    gated_fusion_invocations: int = 0
-    process_state_model_forward_count: int = 0
-    stage_aware_model_forward_count: int = 0
+    horizon_projection_count: int = 0
+    stage_feature_encoder_fit_count: int = 0
+    encoded_source_transition_count: int = 0
+    source_bound_modality_count: int = 0
+    maspo_public_forward_count: int = 0
+    stage_aware_public_transition_count: int = 0
+    final_prediction_count: int = 0
+    test_only_transition_count: int = 0
 
     def to_dict(self) -> dict[str, int]:
         return {
             "battery_process_runs_seen": self.battery_process_runs_seen,
-            "information_horizon_projections": self.information_horizon_projections,
-            "modality_encoder_invocations": self.modality_encoder_invocations,
-            "gated_fusion_invocations": self.gated_fusion_invocations,
-            "process_state_model_forward_count": self.process_state_model_forward_count,
-            "stage_aware_model_forward_count": self.stage_aware_model_forward_count,
+            "horizon_projection_count": self.horizon_projection_count,
+            "information_horizon_projections": self.horizon_projection_count,  # alias for backwards compatibility
+            "stage_feature_encoder_fit_count": self.stage_feature_encoder_fit_count,
+            "encoded_source_transition_count": self.encoded_source_transition_count,
+            "source_bound_modality_count": self.source_bound_modality_count,
+            "maspo_public_forward_count": self.maspo_public_forward_count,
+            "stage_aware_public_transition_count": self.stage_aware_public_transition_count,
+            "final_prediction_count": self.final_prediction_count,
+            "test_only_transition_count": self.test_only_transition_count,
+            # Backwards compatibility fields
+            "modality_encoder_invocations": self.source_bound_modality_count,
+            "gated_fusion_invocations": self.maspo_public_forward_count,
+            "process_state_model_forward_count": self.maspo_public_forward_count,
+            "stage_aware_model_forward_count": self.stage_aware_public_transition_count,
         }
 
 
-class StageAwareMultimodalProcessModel(nn.Module):
-    """Production Stage-Aware Multimodal Process Model.
-    
-    Composed of:
-    - MASPOProcessStateModel: manages stage transitions and modality encoding
-    - GatedMaskedFusion: fuses process and ultrasound modality embeddings
-    - StageAwareProcessModel: transitions latent process state across COATING and CALENDERING
-    """
-
-    def __init__(self, in_dim_proc: int, in_dim_ultra: int, embedding_dim: int = 16, state_dim: int = 16) -> None:
-        super().__init__()
-        self.state_model = MASPOProcessStateModel(
-            state_dim=state_dim,
-            control_dim=in_dim_proc,
-            observation_dim=in_dim_proc,
-            modality_input_dims={"ultrasound": in_dim_ultra},
-            embedding_dim=embedding_dim,
-        )
-        self.state_model.add_final_head("post_calendering_state")
-
-    def forward(
-        self,
-        x_proc: torch.Tensor,
-        x_ultra: torch.Tensor | None,
-        mode: str = "fused",
-        tracer: UltrasonicBenchmarkTrace | None = None,
-    ) -> torch.Tensor:
-        batch_size = x_proc.shape[0]
-        if tracer is not None:
-            tracer.process_state_model_forward_count += batch_size
-
-        # Modality encoding & GatedMaskedFusion at COATING stage
-        if mode in ("ultrasound_only", "fused") and x_ultra is not None:
-            if tracer is not None:
-                tracer.modality_encoder_invocations += batch_size
-                tracer.gated_fusion_invocations += batch_size
-            fused_modality = self.state_model.fuse_observations(
-                {"ultrasound": x_ultra},
-                {"ultrasound": torch.ones(batch_size, dtype=torch.bool, device=x_proc.device)},
-            )
-        else:
-            if tracer is not None:
-                tracer.gated_fusion_invocations += batch_size
-            fused_modality = self.state_model.fuse_observations(
-                {},
-                {"ultrasound": torch.zeros(batch_size, dtype=torch.bool, device=x_proc.device)},
-            )
-
-        if fused_modality.ndim == 1:
-            fused_modality = fused_modality.unsqueeze(0).expand(batch_size, -1)
-
-        # In ultrasound_only mode, mask process inputs to zero
-        if mode == "ultrasound_only":
-            eff_proc = torch.zeros_like(x_proc)
-        else:
-            eff_proc = x_proc
-
-        initial_state = self.state_model.initial_state.unsqueeze(0).expand(batch_size, -1)
-        obs_with_fusion = torch.cat([eff_proc, fused_modality], dim=-1)
-
-        # Transition 1: COATING stage
-        s_coating = self.state_model.stage_model.transition_stage(
-            initial_state, ProcessStage.COATING, eff_proc, obs_with_fusion
-        )
-        if tracer is not None:
-            tracer.stage_aware_model_forward_count += batch_size
-
-        # Transition 2: CALENDERING stage (pre-decision: roll gap control applied, measurements unrevealed)
-        empty_modality = self.state_model.empty_modality_state.unsqueeze(0).expand(batch_size, -1)
-        cal_obs = torch.cat([torch.zeros_like(eff_proc), empty_modality], dim=-1)
-        s_cal = self.state_model.stage_model.transition_stage(
-            s_coating, ProcessStage.CALENDERING, eff_proc, cal_obs
-        )
-        if tracer is not None:
-            tracer.stage_aware_model_forward_count += batch_size
-
-        # Final head prediction from post-calendering latent state
-        pred = self.state_model.stage_model.final_heads["post_calendering_state"](s_cal).squeeze(-1)
-        return pred
-
-
 def train_stage_aware_model(
-    x_p_tr: np.ndarray,
-    x_u_tr: np.ndarray | None,
+    model: MASPOProcessStateModel,
+    train_transitions: Sequence[Sequence[LegalStageTransition]],
     y_tr: np.ndarray,
-    x_p_te: np.ndarray,
-    x_u_te: np.ndarray | None,
-    mode: str = "fused",
-    epochs: int = 250,
+    test_transitions: Sequence[Sequence[LegalStageTransition]],
+    target_col: str,
+    epochs: int = 200,
     lr: float = 0.01,
     weight_decay: float = 1e-4,
     seed: int = 42,
     tracer: UltrasonicBenchmarkTrace | None = None,
 ) -> np.ndarray:
     torch.manual_seed(seed)
-    in_dim_p = x_p_tr.shape[1]
-    in_dim_u = x_u_tr.shape[1] if x_u_tr is not None else 1
-    model = StageAwareMultimodalProcessModel(in_dim_p, in_dim_u, embedding_dim=16, state_dim=16)
-
-    # Scale target for training stability
     y_mean = float(np.mean(y_tr))
     y_std = float(np.std(y_tr)) if float(np.std(y_tr)) > 1e-6 else 1.0
-    y_tr_norm = (y_tr - y_mean) / y_std
-
-    t_yp = torch.as_tensor(y_tr_norm, dtype=torch.float32)
-    t_xp_tr = torch.as_tensor(x_p_tr, dtype=torch.float32)
-    t_xu_tr = torch.as_tensor(x_u_tr, dtype=torch.float32) if x_u_tr is not None else None
-    t_xp_te = torch.as_tensor(x_p_te, dtype=torch.float32)
-    t_xu_te = torch.as_tensor(x_u_te, dtype=torch.float32) if x_u_te is not None else None
+    t_y_tr = torch.tensor((y_tr - y_mean) / y_std, dtype=torch.float32)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     loss_fn = nn.MSELoss()
@@ -199,14 +117,21 @@ def train_stage_aware_model(
     model.train()
     for _ in range(epochs):
         optimizer.zero_grad()
-        out = model(t_xp_tr, t_xu_tr, mode=mode, tracer=tracer)
-        loss = loss_fn(out, t_yp)
+        out = model.forward_batch(train_transitions, target=target_col)
+        loss = loss_fn(out, t_y_tr)
         loss.backward()
         optimizer.step()
+        if tracer is not None:
+            tracer.maspo_public_forward_count += len(train_transitions)
+            tracer.stage_aware_public_transition_count += 4 * len(train_transitions)
 
     model.eval()
     with torch.no_grad():
-        out_te = model(t_xp_te, t_xu_te, mode=mode, tracer=tracer).numpy()
+        out_te = model.forward_batch(test_transitions, target=target_col).cpu().numpy()
+        if tracer is not None:
+            tracer.maspo_public_forward_count += len(test_transitions)
+            tracer.stage_aware_public_transition_count += 4 * len(test_transitions)
+            tracer.final_prediction_count += len(test_transitions)
 
     return out_te * y_std + y_mean
 
@@ -231,10 +156,6 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
     ]
 
     materials = ["Cathode", "Anode"]
-    process_cols_map = {
-        "Cathode": ["roll_gap", "web_speed", "coat_weight_gsm", "thickness_before_um", "density_before_g_cm3"],
-        "Anode": ["roll_gap", "calendering_speed", "thickness_before_um", "density_before_g_cm3"],
-    }
 
     fold_records: list[dict[str, Any]] = []
     ablation_records: list[dict[str, Any]] = []
@@ -252,37 +173,33 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
 
         # Enforce InformationHorizon projection on all runs
         run_views = {}
+        sample_stage_records = []
+        proc_rows = []
+        fft_rows = []
+
         for r in runs:
             view = horizon.project(r)
             run_views[r.cell_id] = view
-            tracer.information_horizon_projections += 1
+            tracer.horizon_projection_count += 1
 
-        sample_ids = [r.cell_id for r in runs]
-        sub = pd.DataFrame({"sample_id": sample_ids})
-        sub["fold"] = sub["sample_id"].map(splits[mat])
-        runs_dict = {r.cell_id: r for r in runs}
-
-        # Extract features and targets strictly from BatteryProcessRun and HorizonView
-        proc_rows = []
-        fft_rows = []
-        transitions_per_sample = []
-
-        slot = ModalitySlotSpec(
-            slot_name="pre_calendering_ultrasound",
-            stage=ProcessStage.COATING,
-            modality_type=ModalityType.ULTRASOUND_SPECTRUM,
-            model_input_name="ultrasound",
-            expected_input_dim=len(run_views[sample_ids[0]].modalities[0].values["fft_magnitude"]),
-            required=False,
-            allowed_missing=True,
-        )
-
-        for s_id in sample_ids:
-            r = runs_dict[s_id]
-            view = run_views[s_id]
+            # Extract source stages
             st_coat = [s for s in view.source_stages if s.stage_type == ProcessStage.COATING][0]
             st_cal = [s for s in view.source_stages if s.stage_type == ProcessStage.CALENDERING][0]
 
+            # Enforce zero lookahead: mask post-calendering intermediate properties and modalities
+            st_cal_masked = StageRecord(
+                stage_id=st_cal.stage_id,
+                stage_type=st_cal.stage_type,
+                sequence_index=st_cal.sequence_index,
+                controls=st_cal.controls,
+                intermediate_properties={},
+                modalities=[],
+                upstream_stage_id=st_cal.upstream_stage_id,
+                provenance=st_cal.provenance,
+            )
+            sample_stage_records.append((st_coat, st_cal_masked))
+
+            # Tabular features for Ridge baseline
             if mat == "Cathode":
                 p_vec = [
                     float(view.controls["calendering.roll_gap_um"].value),
@@ -299,56 +216,26 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     float(view.intermediate_properties["coating.pre_calendering_density_g_cm3"].value),
                 ]
             proc_rows.append(p_vec)
-            mod_fft = view.modalities[0].values["fft_magnitude"]
+            mod_fft = st_coat.modalities[0].values["fft_magnitude"]
             fft_rows.append(mod_fft)
 
-            # Construct source-bound LegalStageTransition for Stage 1 (COATING)
-            ctrl_dim = max(len(st_coat.controls), len(st_cal.controls))
-            obs_dim = len(st_coat.intermediate_properties)
-
-            c_coat = torch.zeros((1, ctrl_dim), dtype=torch.float32)
-            for k_idx, (k, val) in enumerate(st_coat.controls.items()):
-                c_coat[0, k_idx] = float(val.value)
-            o_coat = torch.tensor([[float(v.value) for v in st_coat.intermediate_properties.values()]], dtype=torch.float32)
-            mod_val = torch.tensor(mod_fft, dtype=torch.float32).unsqueeze(0)
-
-            t_coat = LegalStageTransition.from_source_stage(
-                st_coat,
-                controls=c_coat,
-                scalar_observations=o_coat,
-                modality_inputs={st_coat.modalities[0].modality_id: mod_val},
-                modality_slots=[slot],
-                test_only=True,
-            )
-
-            # Construct source-bound LegalStageTransition for Stage 2 (CALENDERING)
-            st_cal_masked = StageRecord(
-                stage_id=st_cal.stage_id,
-                stage_type=st_cal.stage_type,
-                sequence_index=st_cal.sequence_index,
-                controls=st_cal.controls,
-                intermediate_properties={},
-                modalities=[],
-                upstream_stage_id=st_cal.upstream_stage_id,
-                provenance=st_cal.provenance,
-            )
-            c_cal = torch.zeros((1, ctrl_dim), dtype=torch.float32)
-            for k_idx, (k, val) in enumerate(st_cal.controls.items()):
-                c_cal[0, k_idx] = float(val.value)
-            o_cal = torch.zeros((1, obs_dim), dtype=torch.float32)
-
-            t_cal = LegalStageTransition.from_source_stage(
-                st_cal_masked,
-                controls=c_cal,
-                scalar_observations=o_cal,
-                modality_inputs={},
-                modality_slots=[],
-                test_only=True,
-            )
-            transitions_per_sample.append([t_coat, t_cal])
+        sample_ids = [r.cell_id for r in runs]
+        sub = pd.DataFrame({"sample_id": sample_ids})
+        sub["fold"] = sub["sample_id"].map(splits[mat])
+        runs_dict = {r.cell_id: r for r in runs}
 
         proc_arr = np.array(proc_rows, dtype=float)
         fft_arr = np.array(fft_rows, dtype=float)
+
+        slot = ModalitySlotSpec(
+            slot_name="pre_calendering_ultrasound",
+            stage=ProcessStage.COATING,
+            modality_type=ModalityType.ULTRASOUND_SPECTRUM,
+            model_input_name="ultrasound",
+            expected_input_dim=len(fft_rows[0]),
+            required=False,
+            allowed_missing=True,
+        )
 
         for target_col, target_label in tasks:
             logger.info(f"Evaluating {mat} -> {target_col}")
@@ -370,7 +257,7 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     tr_mask = (sub["fold"] != fold).values
                     te_mask = (sub["fold"] == fold).values
 
-                    # Fit preprocessors TRAIN ONLY
+                    # Ridge baseline preprocessors (fit TRAIN ONLY)
                     scaler_p = StandardScaler().fit(proc_arr[tr_mask])
                     xp_tr = scaler_p.transform(proc_arr[tr_mask])
                     xp_te = scaler_p.transform(proc_arr[te_mask])
@@ -384,33 +271,75 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     y_tr = y_all[tr_mask]
                     y_te = y_all[te_mask]
 
-                    # Feature setup
                     if model_name == "PROCESS_ONLY":
                         clf_x_tr, clf_x_te = xp_tr, xp_te
-                        s_mode = "process_only"
-                        s_xp_tr, s_xu_tr = xp_tr, xu_tr
-                        s_xp_te, s_xu_te = xp_te, xu_te
                     elif model_name == "ULTRASOUND_ONLY":
                         clf_x_tr, clf_x_te = xu_tr, xu_te
-                        s_mode = "ultrasound_only"
-                        s_xp_tr, s_xu_tr = xp_tr, xu_tr
-                        s_xp_te, s_xu_te = xp_te, xu_te
                     else:  # PROCESS_PLUS_ULTRASOUND
                         clf_x_tr = np.hstack([xp_tr, xu_tr])
                         clf_x_te = np.hstack([xp_te, xu_te])
-                        s_mode = "fused"
-                        s_xp_tr, s_xu_tr = xp_tr, xu_tr
-                        s_xp_te, s_xu_te = xp_te, xu_te
 
                     # Train Ridge Baseline
                     ridge = Ridge(alpha=5.0).fit(clf_x_tr, y_tr)
                     p_ridge = ridge.predict(clf_x_te)
                     ridge_preds[te_mask] = p_ridge
 
-                    # Train Production Stage-Aware Multimodal Process Model
+                    # Fit StageFeatureEncoder strictly TRAIN ONLY
+                    train_stage_records = [rec for idx, is_tr in enumerate(tr_mask) if is_tr for rec in sample_stage_records[idx]]
+                    encoder = StageFeatureEncoder.fit(train_stage_records)
+                    tracer.stage_feature_encoder_fit_count += 1
+
+                    # Build source-bound LegalStageTransitions
+                    def _build_transitions(st_pair: tuple[StageRecord, StageRecord]) -> list[LegalStageTransition]:
+                        s1, s2 = st_pair
+                        if model_name == "PROCESS_PLUS_ULTRASOUND":
+                            t1 = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
+                            t2 = LegalStageTransition.from_encoded_source_stage(s2, encoder=encoder, modality_slots=[slot])
+                            tracer.encoded_source_transition_count += 2
+                            tracer.source_bound_modality_count += 1
+                        elif model_name == "PROCESS_ONLY":
+                            s1_no_mod = replace(s1, modalities=[])
+                            t1 = LegalStageTransition.from_encoded_source_stage(s1_no_mod, encoder=encoder, modality_slots=[])
+                            t2 = LegalStageTransition.from_encoded_source_stage(s2, encoder=encoder, modality_slots=[])
+                            tracer.encoded_source_transition_count += 2
+                        else:  # ULTRASOUND_ONLY
+                            t1_base = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
+                            t2_base = LegalStageTransition.from_encoded_source_stage(s2, encoder=encoder, modality_slots=[slot])
+                            t1 = replace(t1_base, controls=torch.zeros_like(t1_base.controls), scalar_observations=torch.zeros_like(t1_base.scalar_observations))
+                            t2 = replace(t2_base, controls=torch.zeros_like(t2_base.controls), scalar_observations=torch.zeros_like(t2_base.scalar_observations))
+                            tracer.encoded_source_transition_count += 2
+                            tracer.source_bound_modality_count += 1
+
+                        for t in (t1, t2):
+                            if getattr(t, "unsafe_test_only", None) is not None or t.provenance.get("test_only", False):
+                                tracer.test_only_transition_count += 1
+                        return [t1, t2]
+
+                    train_transitions = [_build_transitions(sample_stage_records[idx]) for idx in np.where(tr_mask)[0]]
+                    test_transitions = [_build_transitions(sample_stage_records[idx]) for idx in np.where(te_mask)[0]]
+
+                    assert tracer.test_only_transition_count == 0, "Production transition violated: test_only found!"
+
+                    # Production Stage-Aware MASPO Process State Model
+                    model = MASPOProcessStateModel(
+                        state_dim=16,
+                        control_dim=encoder.control_dim,
+                        observation_dim=encoder.observation_dim,
+                        modality_input_dims={"ultrasound": slot.expected_input_dim},
+                        embedding_dim=16,
+                    )
+                    model.add_final_head(target_col)
+
                     p_stage = train_stage_aware_model(
-                        s_xp_tr, s_xu_tr, y_tr, s_xp_te, s_xu_te,
-                        mode=s_mode, seed=42 + fold, tracer=tracer,
+                        model,
+                        train_transitions,
+                        y_tr,
+                        test_transitions,
+                        target_col,
+                        epochs=200,
+                        lr=0.01,
+                        seed=42 + fold,
+                        tracer=tracer,
                     )
                     stage_aware_preds[te_mask] = p_stage
 
@@ -451,7 +380,6 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                 f_mae_pool = float(mean_absolute_error(y_all, stage_aware_preds))
                 f_rmse_pool = float(np.sqrt(mean_squared_error(y_all, stage_aware_preds)))
 
-                # Mean and std across folds
                 r_r2_mean = float(np.nanmean([m["r2"] for m in per_fold_ridge]))
                 r_r2_std = float(np.nanstd([m["r2"] for m in per_fold_ridge]))
                 f_r2_mean = float(np.nanmean([m["r2"] for m in per_fold_stage]))
@@ -488,11 +416,9 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
     df_folds.to_csv(out_dir / "fold_metrics.csv", index=False)
     df_ablation.to_csv(out_dir / "ablation_summary.csv", index=False)
 
-    # Separate Cathode and Anode CSVs
     df_ablation[df_ablation["material"] == "Cathode"].to_csv(out_dir / "cathode_metrics.csv", index=False)
     df_ablation[df_ablation["material"] == "Anode"].to_csv(out_dir / "anode_metrics.csv", index=False)
 
-    # Generate Model Comparison Summary
     def _get_metric(m: str, t: str, mod: str, col: str) -> float:
         sub_m = df_ablation[(df_ablation["material"] == m) & (df_ablation["target"] == t) & (df_ablation["model"] == mod)]
         return float(sub_m[col].iloc[0]) if not sub_m.empty else 0.0
@@ -615,7 +541,7 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
         "source_doi": "10.17632/c62yn37d9h.4",
         "execution_trace": tracer.to_dict(),
         "architecture": {
-            "tabular_encoder": "StandardScaler (Train-only)",
+            "tabular_encoder": "StageFeatureEncoder (Train-only)",
             "signal_encoder": "MASPO ModalityEncoder (Linear+Tanh)",
             "multimodal_fusion": "GatedMaskedFusion",
             "process_state_model": "MASPOProcessStateModel",
@@ -785,52 +711,72 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
     # -------------------------------------------------------------
     # SLIDE SUMMARY & MARKDOWN REPORT
     # -------------------------------------------------------------
-    anode_dens_proc = df_ablation[(df_ablation["material"] == "Anode") & (df_ablation["target"] == "density_after_g_cm3") & (df_ablation["model"] == "PROCESS_ONLY")]["ridge_r2_pooled"].iloc[0]
-    anode_dens_ultra = df_ablation[(df_ablation["material"] == "Anode") & (df_ablation["target"] == "density_after_g_cm3") & (df_ablation["model"] == "ULTRASOUND_ONLY")]["ridge_r2_pooled"].iloc[0]
-    anode_dens_fused = df_ablation[(df_ablation["material"] == "Anode") & (df_ablation["target"] == "density_after_g_cm3") & (df_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["ridge_r2_pooled"].iloc[0]
+    anode_dens_proc_ridge = _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled")
+    anode_dens_ultra_ridge = _get_metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    anode_dens_fused_ridge = _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
 
-    cathode_thk_proc = df_ablation[(df_ablation["material"] == "Cathode") & (df_ablation["target"] == "thickness_after_um") & (df_ablation["model"] == "PROCESS_ONLY")]["ridge_r2_pooled"].iloc[0]
-    cathode_thk_ultra = df_ablation[(df_ablation["material"] == "Cathode") & (df_ablation["target"] == "thickness_after_um") & (df_ablation["model"] == "ULTRASOUND_ONLY")]["ridge_r2_pooled"].iloc[0]
-    cathode_thk_fused = df_ablation[(df_ablation["material"] == "Cathode") & (df_ablation["target"] == "thickness_after_um") & (df_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["ridge_r2_pooled"].iloc[0]
+    anode_dens_proc_sa = _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    anode_dens_ultra_sa = _get_metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    anode_dens_fused_sa = _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
 
-    anode_density_improved = bool(anode_dens_fused > anode_dens_proc and anode_dens_fused > anode_dens_ultra)
+    cathode_thk_proc_ridge = _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled")
+    cathode_thk_ultra_ridge = _get_metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    cathode_thk_fused_ridge = _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+
+    cathode_thk_proc_sa = _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled")
+    cathode_thk_ultra_sa = _get_metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    cathode_thk_fused_sa = _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
+
+    anode_thk_ultra_ridge = _get_metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled")
+    anode_thk_ultra_sa = _get_metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled")
+    anode_thk_fused_ridge = _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled")
+    anode_thk_fused_sa = _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled")
+
+    cathode_dens_ultra_ridge = _get_metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled")
 
     slide_summary = {
         "benchmark": "WARWICK_ULTRASONIC_MULTIMODAL_STAGE_TRANSITION",
-        "capability": "multimodal_stage_state_modeling",
+        "capability": "multimodal_stage_state_prediction",
         "evidence_kind": "PHYSICAL_HISTORICAL",
         "official_doi": "10.17632/c62yn37d9h.4",
         "num_cathode_samples": len(df_manifest[df_manifest["material"] == "Cathode"]),
         "num_anode_samples": len(df_manifest[df_manifest["material"] == "Anode"]),
         "cross_validation": "Grouped 5-fold CV by Sample_ID",
-        "leakage_controls": "Strict train-only scaling/PCA; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
+        "leakage_controls": "Strict train-only scaling/PCA/StageFeatureEncoder; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
         "results": {
             "cathode_thickness_r2": {
-                "process_only_ridge": float(cathode_thk_proc),
-                "ultrasound_only_ridge": float(cathode_thk_ultra),
-                "fused_ridge": float(cathode_thk_fused),
+                "process_only_ridge": float(cathode_thk_proc_ridge),
+                "ultrasound_only_ridge": float(cathode_thk_ultra_ridge),
+                "fused_ridge": float(cathode_thk_fused_ridge),
+                "process_only_stage_aware": float(cathode_thk_proc_sa),
+                "ultrasound_only_stage_aware": float(cathode_thk_ultra_sa),
+                "fused_stage_aware": float(cathode_thk_fused_sa),
             },
             "anode_density_r2": {
-                "process_only_ridge": float(anode_dens_proc),
-                "ultrasound_only_ridge": float(anode_dens_ultra),
-                "fused_ridge": float(anode_dens_fused),
+                "process_only_ridge": float(anode_dens_proc_ridge),
+                "ultrasound_only_ridge": float(anode_dens_ultra_ridge),
+                "fused_ridge": float(anode_dens_fused_ridge),
+                "process_only_stage_aware": float(anode_dens_proc_sa),
+                "ultrasound_only_stage_aware": float(anode_dens_ultra_sa),
+                "fused_stage_aware": float(anode_dens_fused_sa),
             },
-            "anode_density_multimodal_superiority_ridge": anode_density_improved,
+            "anode_density_multimodal_superiority_ridge": bool(anode_dens_fused_ridge > anode_dens_proc_ridge),
+            "anode_density_multimodal_superiority_stage_aware": bool(anode_dens_fused_sa > anode_dens_proc_sa),
         },
         "supported_claim": (
             f"On the physical Warwick Ultrasonic dataset, combining process controls with non-destructive ultrasonic spectroscopy "
-            f"demonstrates predictive accuracy for post-calendering electrode states (Anode thickness R² = 0.944 Ridge / 0.992 StageAware, "
-            f"Anode density R² = {anode_dens_fused:.3f} Ridge), with Ridge improving over process-only density modeling "
-            f"(R² = {anode_dens_proc:.3f} -> {anode_dens_fused:.3f}). Standalone ultrasound directly predicts Anode thickness (R² = 0.835 Ridge / 0.881 StageAware)."
+            f"demonstrates predictive accuracy for post-calendering electrode states (Anode thickness R² = {anode_thk_fused_ridge:.3f} Ridge / {anode_thk_fused_sa:.3f} StageAware, "
+            f"Anode density R² = {anode_dens_fused_ridge:.3f} Ridge), with Ridge improving over process-only density modeling "
+            f"(R² = {anode_dens_proc_ridge:.3f} -> {anode_dens_fused_ridge:.3f}). Standalone ultrasound correlates with Anode thickness (R² = {anode_thk_ultra_ridge:.3f} Ridge / {anode_thk_ultra_sa:.3f} StageAware)."
         ),
         "unsupported_claim": (
-            "Does NOT claim that deep neural fusion improves over tabular models on small sample sizes (StageAware Anode density 0.910 -> 0.836); "
+            f"Does NOT claim that deep neural fusion improves over tabular models on small sample sizes (StageAware Anode density {anode_dens_proc_sa:.3f} -> {anode_dens_fused_sa:.3f}); "
             "does NOT demonstrate closed-loop recipe optimization or electrochemical cycling improvement; "
             "validates stage-state transition prediction (z_t + u_{t+1} -> z_{t+1}) only."
         ),
         "allowed_slide_wording": (
             f"AIcoScientist demonstrates multimodal stage-state transition modeling (z_t + u_{{t+1}} -> z_{{t+1}}) on physical ultrasonic electrode data "
-            f"(30 anode, 18 cathode samples, grouped 5-fold CV), accurately predicting post-calendering thickness (R²=0.94) and demonstrating acoustic signal (R²=0.84)."
+            f"(30 anode, 18 cathode samples, grouped 5-fold CV), predicting post-calendering thickness (R²={anode_thk_fused_ridge:.2f}) and demonstrating acoustic signal (R²={anode_thk_ultra_ridge:.2f})."
         ),
     }
 
@@ -844,8 +790,8 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
 - **Official Source**: Mendeley Data, DOI: `10.17632/c62yn37d9h.4` (Version 4)
 - **Samples**: 18 NMC622 Cathode samples, 30 Graphite Anode samples
 - **Split Strategy**: Strict Grouped 5-Fold Cross-Validation by `Sample_ID`
-- **Zero-Lookahead Guarantee**: Preprocessing (StandardScaler, PCA) fitted strictly train-only. After-calendering ultrasonic spectra and thickness/density measurements strictly forbidden in pre-decision inputs via `InformationHorizon(CALENDERING, include_decision_stage_controls=True)`.
-- **Production Architecture**: Routed through `MASPOProcessStateModel` + `GatedMaskedFusion` + `StageAwareProcessModel`.
+- **Zero-Lookahead Guarantee**: Preprocessing (StandardScaler, PCA, StageFeatureEncoder) fitted strictly train-only. After-calendering ultrasonic spectra and thickness/density measurements strictly forbidden in pre-decision inputs via `InformationHorizon(CALENDERING, include_decision_stage_controls=True)`.
+- **Production Architecture**: Routed through `MASPOProcessStateModel` + `GatedMaskedFusion` + `StageAwareProcessModel` via `LegalStageTransition.from_encoded_source_stage`.
 
 ---
 
@@ -873,15 +819,15 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
 
 ## 3. Key Scientific Findings & Claim Boundaries
 1. **Ultrasound Alone Has Strong Standalone Predictive Signal**:
-   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy ($R^2 = 0.835$ Ridge, $0.881$ StageAware) without knowing the machine roll gap, proving that acoustic transmission spectra physically encode electrode structure.
+   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy ($R^2 = {anode_thk_ultra_ridge:.3f}$ Ridge, ${anode_thk_ultra_sa:.3f}$ StageAware) without knowing the machine roll gap, showing that acoustic transmission spectra physically correlate with electrode structure.
 2. **Transparent Baseline Fusion Gain vs Neural Architecture Dynamics**:
-   - Linear Ridge demonstrates multimodal fusion gain on Anode Density: Fused ($R^2 = {anode_dens_fused:.4f}$) outperforms Process-Only ($R^2 = {anode_dens_proc:.4f}$).
-   - In contrast, the higher-capacity neural `StageAwareProcessModel` achieves higher tabular performance ($R^2 = 0.910$) but does not show fusion gain ($R^2 = 0.836$) on this small dataset ($N=30$), highlighting the importance of reporting both architectures transparently.
+   - Linear Ridge demonstrates multimodal fusion gain on Anode Density: Fused ($R^2 = {anode_dens_fused_ridge:.4f}$) outperforms Process-Only ($R^2 = {anode_dens_proc_ridge:.4f}$).
+   - In contrast, the higher-capacity neural `StageAwareProcessModel` achieves tabular performance ($R^2 = {anode_dens_proc_sa:.4f}$) and fused performance ($R^2 = {anode_dens_fused_sa:.4f}$) on this small dataset ($N=30$), highlighting the importance of reporting both architectures transparently.
 3. **Process-Dominated Regimes & Negative Boundaries**:
-   - On thickness, mechanical roll gap is the dominant physical control ($R^2 \\ge 0.89$ on Cathode, $R^2 \\ge 0.94$ on Anode).
-   - On Cathode density, ultrasound-only shows negative generalization ($R^2 < 0$), establishing an explicit negative boundary.
+   - On thickness, mechanical roll gap is the dominant physical control ($R^2 = {cathode_thk_proc_ridge:.3f}$ on Cathode, $R^2 = {anode_thk_fused_ridge:.3f}$ on Anode).
+   - On Cathode density, ultrasound-only shows negative generalization ($R^2 = {cathode_dens_ultra_ridge:.3f}$), establishing an explicit negative boundary.
 4. **Boundary of Claim**:
-   - This benchmark validates **multimodal stage-state transition modeling**. It does NOT claim closed-loop recipe optimization or factory control.
+   - This benchmark validates **multimodal stage-state transition prediction**. It does NOT claim closed-loop recipe optimization or factory control.
 
 ---
 
@@ -894,7 +840,7 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
 - `outputs/warwick_ultrasonic/figures/predicted_vs_true_density.png`
 - `outputs/warwick_ultrasonic/figures/stage_transition_diagram.png`
 """
-    with open(out_dir / "WARWICK_ULTRASONIC_MULTIMODAL_REPORT.md", "w") as f:
+    with open(out_dir / "WARWICK_ULTRASONIC_MULTIMODAL_REPORT.md", "w", encoding="utf-8") as f:
         f.write(report_md)
 
     logger.info("Warwick Ultrasonic Benchmark completed successfully!")

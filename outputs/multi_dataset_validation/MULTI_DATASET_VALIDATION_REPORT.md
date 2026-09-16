@@ -21,7 +21,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Battery Chemistry** | Graphite / PVDF / Carbon Black | NMC622 / PVDF / Super C65 | Graphite Anode & NMC622 Cathode |
 | **Manufacturing Scale** | Laboratory Coin/Pouch Cell | Pilot-Plant Roll-to-Roll Calender | Pilot Electrodes with Ultrasonic Transducer |
 | **Evaluated Candidates** | 12 strictly complete recipes | 18 full-factorial conditions (54 cells) | 48 samples (30 Anode, 18 Cathode) |
-| **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `NEXT_STAGE_PROCESS_OPTIMIZATION` |
+| **Decision Horizon** | `DOE_CONDITION_SELECTION` | `DOE_CONDITION_SELECTION` | `CALENDERING_STAGE_STATE_PREDICTION` |
 | **Primary Target** | Cycle 30 Capacity ($D_30$, mAh/g) | Rate 5C:0.2C Capacity Ratio | Post-calendering thickness & density |
 | **Target Direction** | Maximize $D_30$ | Maximize 5C:0.2C Ratio | Minimize Stage-Transition MSE |
 | **Initial Design Budget** | $N_0 = 3$ | $N_0 = 3$ | Grouped 5-Fold Cross-Validation |
@@ -31,7 +31,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 | **Direct BoTorch Baseline** | 30.0% | 90.0% | N/A |
 | **Exact Random Baseline** | 55.6% ($P=5/9$) | 33.3% ($P=5/15$) | N/A |
 | **Simple Regret @ $B=5$** | **0.0000** | **0.0000** | N/A |
-| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **++0.032 (Ridge) / ++0.033 (StageAware) $R^2$** on Anode Density |
+| **Multimodal Signal Gain** | N/A (Tabular process only) | N/A (Tabular process only) | **+0.032 (Ridge) / -0.125 (StageAware) $R^2$** on Anode Density |
 
 ---
 
@@ -41,13 +41,13 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 - **Drakopoulos**: Recovered the source-observed best recipe (`protocol-c1c280b7366f`, 402.25 mAh/g) in 10/10 seeds (Hit@5 = 100.0%), outperforming Direct BoTorch (30.0%) and the analytical hypergeometric random baseline (55.6%).
 
 ### 2. Pilot-Plant Condition Optimization (`pilot_plant_doe_condition_optimization`)
-- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 °C roll temperature, 3.2 g/cm³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%), beating Direct BoTorch (90.0%) and the analytical random baseline of 33.3% by **+66.7 percentage points** ($3\times$ acceleration).
-- **Finding**: Demonstrates robust transferability across physical cell chemistries and manufacturing scales.
+- **Warwick NMC622**: Evaluated across 18 pilot-scale DOE conditions with 54 half-cell replicates. Recovered the source-observed best condition (`EXP_03`: low mass loading, 85 Â°C roll temperature, 3.2 g/cmÂ³ target density; 5C:0.2C ratio = 0.7947) in **10/10 seeds** (Hit@5 = 100.0%) vs Direct BoTorch (90.0%) and the analytical random baseline of 33.3%.
+- **Finding**: Demonstrates consistent recovery across physical cell chemistries and manufacturing scales.
 
 ### 3. Multimodal Stage-State Transition Prediction (`multimodal_stage_state_prediction`)
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{ultra}$) combined with calendering machine controls ($u_{t+1}$) accurately predict post-calendering electrode quality ($z_{t+1}$).
-- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ without knowing the physical roll gap, demonstrating that ultrasonic acoustic impedance directly encodes physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.9715$ (RMSE = 6.25 µm).
-- **Anode Density**: Demonstrates clear multimodal superiority. Process-only achieves $R^2 = 0.803$, while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.836$ (StageAwareProcessModel).
+- **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.914$ (Ridge) / 0.976 (StageAware).
+- **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = 0.803$ (Ridge) / 0.844 (StageAware), while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.719$ (StageAwareProcessModel).
 - **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). Ultrasound alone struggled on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
@@ -56,7 +56,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 
 ### What IS Supported:
 1. **Pilot-Plant Process Optimization**: AIcoScientist successfully identifies optimal pilot-scale calendering recipes within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
-2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry strong physical state information that improves prediction of compacted electrode density and thickness when combined with process controls.
+2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
 3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
 
 ### What is NOT Supported:

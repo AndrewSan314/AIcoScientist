@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 
 import torch
 from torch import nn
@@ -111,6 +111,22 @@ class MASPOProcessStateModel(nn.Module):
             if stage in pre_states:
                 outputs[f"{stage.value}.{target}"] = _prediction(head(pre_states[stage]), single)
         return outputs
+
+    def forward_batch(
+        self,
+        batch_transitions: Sequence[Sequence[LegalStageTransition]],
+        target: str | None = None,
+    ) -> torch.Tensor:
+        """Execute public forward path for a batch of transition sequences."""
+        preds = []
+        for transitions in batch_transitions:
+            out = self.forward(self.initial_state, transitions)
+            if target is not None:
+                preds.append(out[target])
+            else:
+                first_key = next(iter(out))
+                preds.append(out[first_key])
+        return torch.stack(preds)
 
 
 def _prediction(value: torch.Tensor, single: bool) -> torch.Tensor:

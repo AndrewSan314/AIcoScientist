@@ -1,38 +1,22 @@
 #!/usr/bin/env python3
 """Audit Multi-Dataset Benchmark Result Consistency, Provenance, and Firewalls.
 
-Audits:
-1. Drakopoulos v4:
-   - Policy summary numbers (AIcoScientist 100%, Direct BoTorch 30%, Random 30%, Analytical 55.6%)
-   - Correct DOIs (Paper: 10.1016/j.xcrp.2021.100683, Dataset: 10.17632/4dh2h3tsf4.1)
-   - Capability taxonomy: complete_recipe_rediscovery
-2. Warwick NMC622:
-   - 18 DOE conditions, 54 replicate cells
-   - Pre-manufacturing controls strictly decision variables (roll_temperature_c, target_density_g_cm3, target_coating_weight_gsm)
-   - Intermediate properties strictly masked (roll_gap_um, number_of_passes, target_porosity_pct)
-   - Shared initial designs in initial_designs.json match trajectory files byte-for-byte across all 10 seeds and all 3 policies
-   - Source-observed best condition EXP_03 (0.7947)
-   - Policy summary numbers (AIcoScientist 100%, Direct BoTorch 90%, Random 30%, Analytical 33.3%)
-   - Correct DOIs (10.17632/wwhm2frfmy.1)
-   - Capability taxonomy: pilot_plant_doe_condition_optimization
-3. Warwick Ultrasonic:
-   - 48 physical samples (18 Cathode, 30 Anode)
-   - Frequency grids aligned and uniform (Cathode 29 pts, Anode 36 pts, zero interpolation)
-   - Grouped 5-fold CV by Sample_ID strictly isolated (zero fold overlap)
-   - InformationHorizon pre-decision boundary strictly verified
-   - Production architecture execution trace counts strictly > 0:
-     * battery_process_runs_seen >= 48
-     * information_horizon_projections >= 48
-     * modality_encoder_invocations > 0
-     * gated_fusion_invocations > 0
-     * process_state_model_forward_count > 0
-     * stage_aware_model_forward_count > 0
-   - Correct DOIs (10.17632/c62yn37d9h.4)
-   - Capability taxonomy: multimodal_stage_state_prediction
-4. Cross-Dataset Synthesis Consistency:
-   - benchmark_matrix.csv metrics match individual benchmark CSVs exactly
-   - slide_summary.json metrics match individual benchmark slide summaries exactly
-   - No uncalibrated physics surrogates or unsupported real-time control claims
+Audits 15 dynamic artifact-to-artifact relationships (no hardcoded self-fulfilling constants):
+1. Drakopoulos v4: benchmark_matrix.csv hit rate equals policy_summary.csv (AICOSCIENTIST_PROCESS_SURROGATE).
+2. Drakopoulos v4: benchmark_matrix.csv BoTorch hit rate equals policy_summary.csv (DIRECT_BOTORCH_BASELINE).
+3. Drakopoulos v4: multi_dataset slide_summary.json matches drakopoulos slide_summary.json.
+4. Warwick NMC622: benchmark_matrix.csv hit rate equals policy_summary.csv (AICOSCIENTIST_FULL_PROCESS_ENGINE).
+5. Warwick NMC622: benchmark_matrix.csv BoTorch hit rate equals policy_summary.csv (DIRECT_BOTORCH_BASELINE).
+6. Warwick NMC622: multi_dataset slide_summary.json matches warwick_nmc622 slide_summary.json.
+7. Warwick NMC622: Replay trajectory initial candidates match initial_designs.json across all seeds and policies.
+8. Warwick NMC622: Decision variable firewall in decision_variable_audit.json excludes post-process variables.
+9. Warwick Ultrasonic: frequency_grid_audit.json records native alignment and zero interpolation.
+10. Warwick Ultrasonic: split_manifest.json guarantees zero cross-fold leakage across 5 folds.
+11. Warwick Ultrasonic: execution_trace_audit.json verifies production pipeline trace counters and test_only == 0.
+12. Warwick Ultrasonic: model_comparison_summary.json matches ablation_summary.csv dynamically across all cells.
+13. Warwick Ultrasonic: benchmark_matrix.csv row matches ablation_summary.csv metrics dynamically.
+14. Warwick Ultrasonic: multi_dataset slide_summary.json matches warwick_ultrasonic ablation_summary.csv.
+15. Multi-Dataset Validation Report: MULTI_DATASET_VALIDATION_REPORT.md has zero stale literals or unsupported claims.
 
 Generates:
 - outputs/multi_dataset_validation/consistency_audit.json
@@ -43,8 +27,8 @@ from __future__ import annotations
 import json
 import logging
 import math
-import sys
 from pathlib import Path
+import sys
 from typing import Any
 
 import pandas as pd
@@ -65,212 +49,220 @@ def run_consistency_audit() -> dict[str, Any]:
     }
 
     # =============================================================
-    # CHECK 1: DRAKOPOULOS V4
+    # ARTIFACT PATHS
     # =============================================================
-    logger.info("Auditing Drakopoulos v4...")
     drak_dir = repo_root / "outputs" / "drakopoulos_rediscovery_v4"
     drak_policy_path = drak_dir / "policy_summary.csv"
-    assert drak_policy_path.exists(), f"Missing {drak_policy_path}"
-    df_drak = pd.read_csv(drak_policy_path)
-    drak_uncon = df_drak[df_drak["benchmark_task"] == "UNCONSTRAINED_D30"]
+    drak_slide_path = drak_dir / "slide_summary.json"
 
-    drak_ai_row = drak_uncon[drak_uncon["policy"] == "AICOSCIENTIST_PROCESS_SURROGATE"].iloc[0]
-    drak_botorch_row = drak_uncon[drak_uncon["policy"] == "DIRECT_BOTORCH_BASELINE"].iloc[0]
-    drak_random_row = drak_uncon[drak_uncon["policy"] == "random"].iloc[0]
-
-    drak_checks = {
-        "pool_size_strictly_complete": 12,
-        "aicoscientist_hit_at_5": float(drak_ai_row["hit_rate_step_5"]),
-        "direct_botorch_hit_at_5": float(drak_botorch_row["hit_rate_step_5"]),
-        "empirical_random_hit_at_5": float(drak_random_row["hit_rate_step_5"]),
-        "exact_analytical_random": float(5 / 9),
-        "aicoscientist_simple_regret": float(drak_ai_row["mean_simple_regret"]),
-        "paper_doi": "10.1016/j.xcrp.2021.100683",
-        "dataset_doi": "10.17632/4dh2h3tsf4.1",
-        "capability_taxonomy": "complete_recipe_rediscovery",
-    }
-    assert drak_checks["aicoscientist_hit_at_5"] == 1.0, f"Expected Drakopoulos Hit@5=1.0, got {drak_checks['aicoscientist_hit_at_5']}"
-    assert drak_checks["direct_botorch_hit_at_5"] == 0.3, f"Expected Drakopoulos Direct BoTorch Hit@5=0.3, got {drak_checks['direct_botorch_hit_at_5']}"
-    assert drak_checks["empirical_random_hit_at_5"] == 0.3, f"Expected Drakopoulos Random Hit@5=0.3, got {drak_checks['empirical_random_hit_at_5']}"
-    assert math.isclose(drak_checks["exact_analytical_random"], 5 / 9, rel_tol=1e-3)
-    assert drak_checks["aicoscientist_simple_regret"] == 0.0
-
-    audit_results["checks"]["drakopoulos_v4"] = {"status": "PASS", "details": drak_checks}
-
-    # =============================================================
-    # CHECK 2: WARWICK NMC622 CALENDERING
-    # =============================================================
-    logger.info("Auditing Warwick NMC622 Calendering...")
     nmc_dir = repo_root / "outputs" / "warwick_nmc622_calendering"
     nmc_policy_path = nmc_dir / "policy_summary.csv"
     nmc_init_path = nmc_dir / "initial_designs.json"
     nmc_var_audit_path = nmc_dir / "decision_variable_audit.json"
+    nmc_slide_path = nmc_dir / "slide_summary.json"
 
-    assert nmc_policy_path.exists(), f"Missing {nmc_policy_path}"
-    assert nmc_init_path.exists(), f"Missing {nmc_init_path}"
-    assert nmc_var_audit_path.exists(), f"Missing {nmc_var_audit_path}"
+    ultra_dir = repo_root / "outputs" / "warwick_ultrasonic"
+    ultra_grid_audit_path = ultra_dir / "frequency_grid_audit.json"
+    ultra_trace_audit_path = ultra_dir / "execution_trace_audit.json"
+    ultra_split_path = ultra_dir / "split_manifest.json"
+    ultra_ablation_path = ultra_dir / "ablation_summary.csv"
+    ultra_comp_path = ultra_dir / "model_comparison_summary.json"
+    ultra_slide_path = ultra_dir / "slide_summary.json"
 
-    df_nmc = pd.read_csv(nmc_policy_path)
+    matrix_path = out_dir / "benchmark_matrix.csv"
+    multi_slide_path = out_dir / "slide_summary.json"
+    multi_report_path = out_dir / "MULTI_DATASET_VALIDATION_REPORT.md"
+
+    # Verify all artifacts exist
+    artifacts = [
+        drak_policy_path, drak_slide_path,
+        nmc_policy_path, nmc_init_path, nmc_var_audit_path, nmc_slide_path,
+        ultra_grid_audit_path, ultra_trace_audit_path, ultra_split_path,
+        ultra_ablation_path, ultra_comp_path, ultra_slide_path,
+        matrix_path, multi_slide_path, multi_report_path,
+    ]
+    for p in artifacts:
+        if not p.exists():
+            raise FileNotFoundError(f"Required benchmark artifact missing: {p}")
+
+    df_drak_policy = pd.read_csv(drak_policy_path)
+    with open(drak_slide_path) as f:
+        drak_slide = json.load(f)
+
+    df_nmc_policy = pd.read_csv(nmc_policy_path)
     with open(nmc_init_path) as f:
         nmc_initial_designs = json.load(f)
     with open(nmc_var_audit_path) as f:
         nmc_var_audit = json.load(f)
+    with open(nmc_slide_path) as f:
+        nmc_slide = json.load(f)
 
-    # 1. Variable semantics
-    selected_controls = [item["variable"] for item in nmc_var_audit if item.get("use_in_primary_doe_selection")]
-    excluded_vars = [item["variable"] for item in nmc_var_audit if not item.get("use_in_primary_doe_selection")]
+    with open(ultra_grid_audit_path) as f:
+        ultra_grid_audit = json.load(f)
+    with open(ultra_trace_audit_path) as f:
+        ultra_trace_audit = json.load(f)
+    with open(ultra_split_path) as f:
+        ultra_splits = json.load(f)
+    df_ultra_ablation = pd.read_csv(ultra_ablation_path)
+    with open(ultra_comp_path) as f:
+        ultra_comp = json.load(f)
+    with open(ultra_slide_path) as f:
+        ultra_slide = json.load(f)
 
-    assert selected_controls == ["roll_temperature_c", "target_density_g_cm3", "target_coating_weight_gsm"]
-    assert "roll_gap_um" in excluded_vars
-    assert "number_of_passes" in excluded_vars
-    assert "target_porosity_pct" in excluded_vars
+    df_matrix = pd.read_csv(matrix_path)
+    with open(multi_slide_path) as f:
+        multi_slide = json.load(f)
+    multi_report_text = multi_report_path.read_text(encoding="utf-8")
 
-    # 2. Replay provenance match across all seeds and policies
-    provenance_mismatches = []
+    # =============================================================
+    # 15 DYNAMIC CROSS-ARTIFACT CHECKS
+    # =============================================================
+
+    # 1. Drakopoulos: benchmark_matrix AI Hit@5 == policy_summary.csv
+    drak_uncon = df_drak_policy[df_drak_policy["benchmark_task"] == "UNCONSTRAINED_D30"]
+    drak_ai_hit5 = float(drak_uncon[drak_uncon["policy"] == "AICOSCIENTIST_PROCESS_SURROGATE"]["hit_rate_step_5"].iloc[0])
+    matrix_drak_ai = float(df_matrix[df_matrix["benchmark_id"] == "DRAKOPOULOS_REDISCOVERY_V4"]["aicoscientist_hit_at_5"].iloc[0])
+    assert math.isclose(drak_ai_hit5, matrix_drak_ai, rel_tol=1e-6), f"Check 1 Failed: {drak_ai_hit5} != {matrix_drak_ai}"
+    drak_hit_str = str(df_matrix[df_matrix["benchmark_id"] == "DRAKOPOULOS_REDISCOVERY_V4"]["multimodal_r2_or_bo_hit"].iloc[0])
+    assert f"Hit@5 = {drak_ai_hit5 * 100:.1f}%" in drak_hit_str, f"Check 1 Failed: {drak_hit_str} does not match {drak_ai_hit5}"
+    audit_results["checks"]["check_01_drak_ai_hit5_matrix_match"] = "PASS"
+
+    # 2. Drakopoulos: benchmark_matrix BoTorch Hit@5 == policy_summary.csv
+    drak_botorch_hit5 = float(drak_uncon[drak_uncon["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_rate_step_5"].iloc[0])
+    matrix_drak_botorch = float(df_matrix[df_matrix["benchmark_id"] == "DRAKOPOULOS_REDISCOVERY_V4"]["botorch_baseline_hit_at_5"].iloc[0])
+    assert math.isclose(drak_botorch_hit5, matrix_drak_botorch, rel_tol=1e-6), f"Check 2 Failed: {drak_botorch_hit5} != {matrix_drak_botorch}"
+    audit_results["checks"]["check_02_drak_botorch_hit5_matrix_match"] = "PASS"
+
+    # 3. Drakopoulos: multi slide_summary matches drakopoulos slide_summary
+    assert math.isclose(multi_slide["benchmarks"]["drakopoulos_2021"]["aicoscientist_hit_at_5"], drak_ai_hit5, rel_tol=1e-6)
+    assert math.isclose(multi_slide["benchmarks"]["drakopoulos_2021"]["direct_botorch_hit_at_5"], drak_botorch_hit5, rel_tol=1e-6)
+    audit_results["checks"]["check_03_drak_slide_summary_match"] = "PASS"
+
+    # 4. Warwick NMC622: benchmark_matrix AI Hit@5 == policy_summary.csv
+    nmc_ai_hit5 = float(df_nmc_policy[df_nmc_policy["policy"] == "AICOSCIENTIST_FULL_PROCESS_ENGINE"]["hit_at_5"].iloc[0])
+    matrix_nmc_ai = float(df_matrix[df_matrix["benchmark_id"] == "WARWICK_NMC622_CALENDERING"]["aicoscientist_hit_at_5"].iloc[0])
+    assert math.isclose(nmc_ai_hit5, matrix_nmc_ai, rel_tol=1e-6), f"Check 4 Failed: {nmc_ai_hit5} != {matrix_nmc_ai}"
+    nmc_hit_str = str(df_matrix[df_matrix["benchmark_id"] == "WARWICK_NMC622_CALENDERING"]["multimodal_r2_or_bo_hit"].iloc[0])
+    assert f"Hit@5 = {nmc_ai_hit5 * 100:.1f}%" in nmc_hit_str, f"Check 4 Failed: {nmc_hit_str} does not match {nmc_ai_hit5}"
+    audit_results["checks"]["check_04_nmc_ai_hit5_matrix_match"] = "PASS"
+
+    # 5. Warwick NMC622: benchmark_matrix BoTorch Hit@5 == policy_summary.csv
+    nmc_botorch_hit5 = float(df_nmc_policy[df_nmc_policy["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_at_5"].iloc[0])
+    matrix_nmc_botorch = float(df_matrix[df_matrix["benchmark_id"] == "WARWICK_NMC622_CALENDERING"]["botorch_baseline_hit_at_5"].iloc[0])
+    assert math.isclose(nmc_botorch_hit5, matrix_nmc_botorch, rel_tol=1e-6), f"Check 5 Failed: {nmc_botorch_hit5} != {matrix_nmc_botorch}"
+    audit_results["checks"]["check_05_nmc_botorch_hit5_matrix_match"] = "PASS"
+
+    # 6. Warwick NMC622: multi slide_summary matches warwick_nmc622 slide_summary
+    assert math.isclose(multi_slide["benchmarks"]["warwick_nmc622_2024"]["aicoscientist_hit_at_5"], nmc_ai_hit5, rel_tol=1e-6)
+    assert math.isclose(multi_slide["benchmarks"]["warwick_nmc622_2024"]["direct_botorch_hit_at_5"], nmc_botorch_hit5, rel_tol=1e-6)
+    audit_results["checks"]["check_06_nmc_slide_summary_match"] = "PASS"
+
+    # 7. Warwick NMC622: Replay trajectory candidates match initial_designs.json across all seeds and policies
     policies = ["aicoscientist_full_process_engine", "direct_botorch_baseline", "random_baseline"]
     for seed_str, expected_ids in nmc_initial_designs.items():
         for pol in policies:
             traj_file = nmc_dir / "trajectories" / f"{pol}_seed_{seed_str}.json"
-            assert traj_file.exists(), f"Missing trajectory file {traj_file}"
-            with open(traj_file) as f:
-                traj_data = json.load(f)
-            if traj_data["initial_candidate_ids"] != expected_ids:
-                provenance_mismatches.append(f"{pol} seed {seed_str}: {traj_data['initial_candidate_ids']} != {expected_ids}")
+            assert traj_file.exists(), f"Check 7 Failed: Missing {traj_file}"
+            with open(traj_file) as tf:
+                traj_data = json.load(tf)
+            assert traj_data["initial_candidate_ids"] == expected_ids, f"Check 7 Failed: Mismatch in {traj_file}"
+    audit_results["checks"]["check_07_nmc_initial_designs_byte_match"] = "PASS"
 
-    assert len(provenance_mismatches) == 0, f"Provenance mismatches found: {provenance_mismatches}"
+    # 8. Warwick NMC622: Decision variable firewall in decision_variable_audit.json
+    selected_controls = [item["variable"] for item in nmc_var_audit if item.get("use_in_primary_doe_selection")]
+    excluded_vars = [item["variable"] for item in nmc_var_audit if not item.get("use_in_primary_doe_selection")]
+    assert set(selected_controls) == {"roll_temperature_c", "target_density_g_cm3", "target_coating_weight_gsm"}
+    assert "roll_gap_um" in excluded_vars
+    assert "number_of_passes" in excluded_vars
+    assert "target_porosity_pct" in excluded_vars
+    audit_results["checks"]["check_08_nmc_variable_firewall_enforced"] = "PASS"
 
-    nmc_ai_row = df_nmc[df_nmc["policy"] == "AICOSCIENTIST_FULL_PROCESS_ENGINE"].iloc[0]
-    nmc_botorch_row = df_nmc[df_nmc["policy"] == "DIRECT_BOTORCH_BASELINE"].iloc[0]
-    nmc_random_row = df_nmc[df_nmc["policy"] == "RANDOM_BASELINE"].iloc[0]
-    nmc_exact_row = df_nmc[df_nmc["policy"] == "EXACT_ANALYTICAL_RANDOM"].iloc[0]
+    # 9. Warwick Ultrasonic: frequency_grid_audit.json records native alignment and zero interpolation
+    assert ultra_grid_audit["materials"]["Cathode"]["num_points_per_spectrum"] == 29
+    assert ultra_grid_audit["materials"]["Cathode"]["frequency_grid_aligned"] is True
+    assert ultra_grid_audit["materials"]["Cathode"]["interpolation_required"] is False
+    assert ultra_grid_audit["materials"]["Anode"]["num_points_per_spectrum"] == 36
+    assert ultra_grid_audit["materials"]["Anode"]["frequency_grid_aligned"] is True
+    assert ultra_grid_audit["materials"]["Anode"]["interpolation_required"] is False
+    audit_results["checks"]["check_09_ultrasonic_grid_audit_aligned"] = "PASS"
 
-    nmc_checks = {
-        "num_conditions": 18,
-        "num_replicate_cells": 54,
-        "aicoscientist_hit_at_5": float(nmc_ai_row["hit_at_5"]),
-        "direct_botorch_hit_at_5": float(nmc_botorch_row["hit_at_5"]),
-        "empirical_random_hit_at_5": float(nmc_random_row["hit_at_5"]),
-        "exact_analytical_random": float(nmc_exact_row["hit_at_5"]),
-        "aicoscientist_simple_regret": float(nmc_ai_row["simple_regret_at_5"]),
-        "source_observed_best": "EXP_03",
-        "dataset_doi": "10.17632/wwhm2frfmy.1",
-        "capability_taxonomy": "pilot_plant_doe_condition_optimization",
-        "initial_designs_verified_matching_all_policies": True,
-    }
-    assert nmc_checks["aicoscientist_hit_at_5"] == 1.0
-    assert nmc_checks["direct_botorch_hit_at_5"] == 0.9
-    assert nmc_checks["empirical_random_hit_at_5"] == 0.3
-    assert math.isclose(nmc_checks["exact_analytical_random"], 5 / 15, rel_tol=1e-3)
-    assert nmc_checks["aicoscientist_simple_regret"] == 0.0
-
-    audit_results["checks"]["warwick_nmc622_calendering"] = {"status": "PASS", "details": nmc_checks}
-
-    # =============================================================
-    # CHECK 3: WARWICK ULTRASONIC METROLOGY
-    # =============================================================
-    logger.info("Auditing Warwick Ultrasonic Metrology...")
-    ultra_dir = repo_root / "outputs" / "warwick_ultrasonic"
-    grid_audit_path = ultra_dir / "frequency_grid_audit.json"
-    trace_audit_path = ultra_dir / "execution_trace_audit.json"
-    split_path = ultra_dir / "split_manifest.json"
-    ablation_path = ultra_dir / "ablation_summary.csv"
-
-    assert grid_audit_path.exists(), f"Missing {grid_audit_path}"
-    assert trace_audit_path.exists(), f"Missing {trace_audit_path}"
-    assert split_path.exists(), f"Missing {split_path}"
-    assert ablation_path.exists(), f"Missing {ablation_path}"
-
-    with open(grid_audit_path) as f:
-        grid_audit = json.load(f)
-    with open(trace_audit_path) as f:
-        trace_audit = json.load(f)
-    with open(split_path) as f:
-        splits = json.load(f)
-    df_ablation = pd.read_csv(ablation_path)
-
-    # 1. Grid audit checks
-    assert grid_audit["materials"]["Cathode"]["num_samples"] == 18
-    assert grid_audit["materials"]["Cathode"]["num_points_per_spectrum"] == 29
-    assert grid_audit["materials"]["Cathode"]["frequency_grid_aligned"] is True
-    assert grid_audit["materials"]["Cathode"]["interpolation_required"] is False
-
-    assert grid_audit["materials"]["Anode"]["num_samples"] == 30
-    assert grid_audit["materials"]["Anode"]["num_points_per_spectrum"] == 36
-    assert grid_audit["materials"]["Anode"]["frequency_grid_aligned"] is True
-    assert grid_audit["materials"]["Anode"]["interpolation_required"] is False
-
-    # 2. Grouped split isolation (zero cross-fold sample leakage)
+    # 10. Warwick Ultrasonic: split_manifest.json has 0 fold overlap across 5 folds
     for mat in ["Cathode", "Anode"]:
-        sample_folds = splits[mat]
+        sample_folds = ultra_splits[mat]
         fold_samples: dict[int, set[str]] = {f: set() for f in range(1, 6)}
         for s_id, f in sample_folds.items():
             fold_samples[f].add(s_id)
         for f1 in range(1, 6):
             for f2 in range(f1 + 1, 6):
-                assert len(fold_samples[f1].intersection(fold_samples[f2])) == 0, f"Leakage between fold {f1} and {f2}"
+                overlap = fold_samples[f1].intersection(fold_samples[f2])
+                assert len(overlap) == 0, f"Check 10 Failed: Overlap between fold {f1} and {f2}"
+    audit_results["checks"]["check_10_ultrasonic_zero_fold_overlap"] = "PASS"
 
-    # 3. Production execution trace
-    t_counts = trace_audit["execution_trace"]
-    assert t_counts["battery_process_runs_seen"] >= 48
-    assert t_counts["information_horizon_projections"] >= 48
-    assert t_counts["modality_encoder_invocations"] > 0
-    assert t_counts["gated_fusion_invocations"] > 0
-    assert t_counts["process_state_model_forward_count"] > 0
-    assert t_counts["stage_aware_model_forward_count"] > 0
+    # 11. Warwick Ultrasonic: production execution trace counters and test_only == 0
+    trace = ultra_trace_audit["execution_trace"]
+    assert trace.get("horizon_projection_count", 0) >= 48
+    assert trace.get("stage_feature_encoder_fit_count", 0) > 0
+    assert trace.get("encoded_source_transition_count", 0) > 0
+    assert trace.get("source_bound_modality_count", 0) > 0
+    assert trace.get("maspo_public_forward_count", 0) > 0
+    assert trace.get("stage_aware_public_transition_count", 0) > 0
+    assert trace.get("final_prediction_count", 0) > 0
+    assert trace.get("test_only_transition_count", -1) == 0, f"Check 11 Failed: test_only_transition_count is {trace.get('test_only_transition_count')}"
+    audit_results["checks"]["check_11_ultrasonic_production_trace_verified"] = "PASS"
 
-    ultra_checks = {
-        "num_cathode_samples": 18,
-        "num_anode_samples": 30,
-        "total_samples": 48,
-        "frequency_grid_aligned_cathode": True,
-        "frequency_grid_aligned_anode": True,
-        "grouped_5fold_cv_leakage_free": True,
-        "execution_trace": t_counts,
-        "dataset_doi": "10.17632/c62yn37d9h.4",
-        "capability_taxonomy": "multimodal_stage_state_prediction",
-    }
-    audit_results["checks"]["warwick_ultrasonic"] = {"status": "PASS", "details": ultra_checks}
+    # 12. Warwick Ultrasonic: model_comparison_summary.json matches ablation_summary.csv dynamically
+    for mat in ["Cathode", "Anode"]:
+        for tgt in ["thickness_after_um", "density_after_g_cm3"]:
+            # Ridge
+            r_res = ultra_comp["models"]["Ridge"]["results"][mat][tgt]
+            r_proc = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "PROCESS_ONLY")]["ridge_r2_pooled"].iloc[0])
+            r_ultra = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "ULTRASOUND_ONLY")]["ridge_r2_pooled"].iloc[0])
+            r_fused = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["ridge_r2_pooled"].iloc[0])
+            assert math.isclose(r_res["tabular_state_process_r2"], r_proc, rel_tol=1e-5)
+            assert math.isclose(r_res["ultrasound_only_r2"], r_ultra, rel_tol=1e-5)
+            assert math.isclose(r_res["tabular_plus_ultrasound_r2"], r_fused, rel_tol=1e-5)
+            assert math.isclose(r_res["fusion_delta_r2"], r_fused - r_proc, rel_tol=1e-5)
 
-    # =============================================================
-    # CHECK 4: CROSS-DATASET SYNTHESIS CONSISTENCY
-    # =============================================================
-    logger.info("Auditing Cross-Dataset Synthesis...")
-    matrix_path = out_dir / "benchmark_matrix.csv"
-    multi_slide_path = out_dir / "slide_summary.json"
+            # StageAware
+            sa_res = ultra_comp["models"]["StageAwareProcessModel"]["results"][mat][tgt]
+            sa_proc = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "PROCESS_ONLY")]["stage_aware_r2_pooled"].iloc[0])
+            sa_ultra = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "ULTRASOUND_ONLY")]["stage_aware_r2_pooled"].iloc[0])
+            sa_fused = float(df_ultra_ablation[(df_ultra_ablation["material"] == mat) & (df_ultra_ablation["target"] == tgt) & (df_ultra_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["stage_aware_r2_pooled"].iloc[0])
+            assert math.isclose(sa_res["tabular_state_process_r2"], sa_proc, rel_tol=1e-5)
+            assert math.isclose(sa_res["ultrasound_only_r2"], sa_ultra, rel_tol=1e-5)
+            assert math.isclose(sa_res["tabular_plus_ultrasound_r2"], sa_fused, rel_tol=1e-5)
+            assert math.isclose(sa_res["fusion_delta_r2"], sa_fused - sa_proc, rel_tol=1e-5)
+    audit_results["checks"]["check_12_ultrasonic_model_comparison_csv_match"] = "PASS"
 
-    assert matrix_path.exists(), f"Missing {matrix_path}"
-    assert multi_slide_path.exists(), f"Missing {multi_slide_path}"
+    # 13. Warwick Ultrasonic: benchmark_matrix.csv row matches ablation_summary.csv metrics dynamically
+    u_row = df_matrix[df_matrix["benchmark_id"] == "WARWICK_ULTRASONIC_METROLOGY"].iloc[0]
+    anode_thick_fused = float(df_ultra_ablation[(df_ultra_ablation["material"] == "Anode") & (df_ultra_ablation["target"] == "thickness_after_um") & (df_ultra_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["ridge_r2_pooled"].iloc[0])
+    anode_dens_fused = float(df_ultra_ablation[(df_ultra_ablation["material"] == "Anode") & (df_ultra_ablation["target"] == "density_after_g_cm3") & (df_ultra_ablation["model"] == "PROCESS_PLUS_ULTRASOUND")]["ridge_r2_pooled"].iloc[0])
+    assert f"{anode_thick_fused:.3f}" in str(u_row["multimodal_r2_or_bo_hit"])
+    assert f"{anode_dens_fused:.3f}" in str(u_row["multimodal_r2_or_bo_hit"])
+    audit_results["checks"]["check_13_ultrasonic_matrix_ablation_match"] = "PASS"
 
-    df_matrix = pd.read_csv(matrix_path)
-    with open(multi_slide_path) as f:
-        multi_slide = json.load(f)
+    # 14. Warwick Ultrasonic: multi slide_summary matches warwick_ultrasonic slide_summary
+    u_slide_res = multi_slide["benchmarks"]["warwick_ultrasonic_2024"]["result"]
+    assert f"{anode_thick_fused:.3f}" in u_slide_res
+    assert f"{anode_dens_fused:.3f}" in u_slide_res
+    audit_results["checks"]["check_14_ultrasonic_multi_slide_summary_match"] = "PASS"
 
-    # Validate benchmark_matrix.csv
-    row_drak = df_matrix[df_matrix["benchmark_id"] == "DRAKOPOULOS_REDISCOVERY_V4"].iloc[0]
-    row_nmc = df_matrix[df_matrix["benchmark_id"] == "WARWICK_NMC622_CALENDERING"].iloc[0]
-
-    assert row_drak["aicoscientist_hit_at_5"] == 1.0
-    assert row_drak["botorch_baseline_hit_at_5"] == 0.3
-    assert row_drak["dataset_doi"] == "10.17632/4dh2h3tsf4.1"
-    assert row_drak["paper_doi"] == "10.1016/j.xcrp.2021.100683"
-
-    assert row_nmc["aicoscientist_hit_at_5"] == 1.0
-    assert row_nmc["botorch_baseline_hit_at_5"] == 0.9
-    assert row_nmc["dataset_doi"] == "10.17632/wwhm2frfmy.1"
-
-    audit_results["checks"]["cross_dataset_synthesis"] = {
-        "status": "PASS",
-        "matrix_consistent": True,
-        "slide_summary_consistent": True,
-        "all_dois_verified": True,
-        "all_capability_taxonomies_verified": True,
-    }
+    # 15. Multi-Dataset Synthesis Report: MULTI_DATASET_VALIDATION_REPORT.md has zero stale literals or unsupported claims
+    stale_literals = ["0.9715", "6.25", "0.849", "0.874", "0.895", "+0.033"]
+    for lit in stale_literals:
+        assert lit not in multi_report_text, f"Check 15 Failed: Stale literal {lit!r} found in MULTI_DATASET_VALIDATION_REPORT.md"
+    unsupported_claims = ["directly encodes", "3x acceleration", "3× acceleration", "robust transferability"]
+    for claim in unsupported_claims:
+        assert claim not in multi_report_text, f"Check 15 Failed: Unsupported claim {claim!r} found in MULTI_DATASET_VALIDATION_REPORT.md"
+    assert "CALENDERING_STAGE_STATE_PREDICTION" in multi_report_text
+    audit_results["checks"]["check_15_multi_dataset_report_clean"] = "PASS"
 
     # Save final consistency audit JSON
     with open(out_dir / "consistency_audit.json", "w") as f:
         json.dump(audit_results, f, indent=2)
 
-    logger.info("CONSISTENCY AUDIT COMPLETED: STATUS PASS!")
+    logger.info("ALL 15 DYNAMIC CONSISTENCY CHECKS PASSED SUCCESSFULLY!")
     return audit_results
 
 

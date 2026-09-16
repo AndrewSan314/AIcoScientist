@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
@@ -25,7 +26,7 @@ from src.process.contracts import (
     StageRecord,
 )
 from src.process.information_horizon import InformationHorizon
-from src.process.modalities import ModalityObservation, ModalityType
+from src.process.modalities import ModalityObservation, ModalityType, source_values_fingerprint
 from src.process.stages import ProcessStage
 
 
@@ -160,16 +161,18 @@ class WarwickUltrasonicAdapter(NormalizedRunAdapter):
                 if pd.notna(pre_density):
                     coating_obs["pre_calendering_density_g_cm3"] = MeasurementValue(pre_density, "g/cm3")
 
+                val_b = {"fft_frequency": freq_b, "fft_magnitude": mag_b}
+                prov_b = replace(base_prov, decoded_values_fingerprint=source_values_fingerprint(val_b))
                 coating_modalities = [
                     ModalityObservation(
                         modality_id=f"{sample_id}:before_spectrum",
                         modality_type=ModalityType.ULTRASOUND_SPECTRUM,
                         observed_at_stage=ProcessStage.COATING,
                         source_path=str(p_before.relative_to(data_root)),
-                        values={"fft_frequency": freq_b, "fft_magnitude": mag_b},
+                        values=val_b,
                         units="MHz/a.u.",
                         shape=(len(mag_b),),
-                        provenance=base_prov,
+                        provenance=prov_b,
                     )
                 ]
 
@@ -192,16 +195,18 @@ class WarwickUltrasonicAdapter(NormalizedRunAdapter):
                 if pd.notna(post_density):
                     cal_obs["calendered_density_g_cm3"] = MeasurementValue(post_density, "g/cm3")
 
+                val_a = {"fft_frequency": freq_a, "fft_magnitude": mag_a}
+                prov_a = replace(base_prov, decoded_values_fingerprint=source_values_fingerprint(val_a))
                 cal_modalities = [
                     ModalityObservation(
                         modality_id=f"{sample_id}:after_spectrum",
                         modality_type=ModalityType.ULTRASOUND_SPECTRUM,
                         observed_at_stage=ProcessStage.CALENDERING,
                         source_path=str(p_after.relative_to(data_root)),
-                        values={"fft_frequency": freq_a, "fft_magnitude": mag_a},
+                        values=val_a,
                         units="MHz/a.u.",
                         shape=(len(mag_a),),
-                        provenance=base_prov,
+                        provenance=prov_a,
                     )
                 ]
 

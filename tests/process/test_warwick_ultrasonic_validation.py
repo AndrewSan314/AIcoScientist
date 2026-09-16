@@ -1,18 +1,26 @@
-"""Tests validating Warwick Ultrasonic Adapter, Grouped CV Split, and Leakage Firewall."""
+"""Tests validating Warwick Ultrasonic Adapter, Grouped CV Split, Leakage Firewall, and Production Transitions."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 import json
-import sys
+import math
 from pathlib import Path
+import sys
 import pytest
 import numpy as np
+import torch
 
 # Ensure repository root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from scripts.audit_multi_dataset_result_consistency import run_consistency_audit
 from src.datasets.battery_process.warwick_ultrasonic import WarwickUltrasonicAdapter
-from src.process.contracts import BatteryProcessRun, ModalityType
+from src.process.contracts import BatteryProcessRun, MeasurementValue, ModalityType, StageRecord
+from src.process.information_horizon import InformationHorizon
+from src.process.modalities import ModalitySlotSpec, SourceBoundModalityInput, source_values_fingerprint
+from src.process.models.maspo import MASPOProcessStateModel
+from src.process.models.transitions import LegalStageTransition, StageFeatureEncoder
 from src.process.stages import ProcessStage
 
 
@@ -25,6 +33,9 @@ def ultrasonic_adapter() -> WarwickUltrasonicAdapter:
     return WarwickUltrasonicAdapter(raw_dir)
 
 
+# -----------------------------------------------------------------------------
+# Test 1: Adapter Loading and Provenance
+# -----------------------------------------------------------------------------
 def test_ultrasonic_adapter_load_runs(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
     """Verify adapter loads exactly 18 Cathode and 30 Anode runs (48 total)."""
     runs = ultrasonic_adapter.load_runs()
@@ -41,6 +52,9 @@ def test_ultrasonic_adapter_load_runs(ultrasonic_adapter: WarwickUltrasonicAdapt
     assert "10.17632/c62yn37d9h.4" in sample_run.provenance.source_doi
 
 
+# -----------------------------------------------------------------------------
+# Test 2: Spectra Integrity
+# -----------------------------------------------------------------------------
 def test_ultrasonic_spectra_integrity(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
     """Verify each run contains valid pre- and post-calendering ultrasonic spectra and physical measurements."""
     runs = ultrasonic_adapter.load_runs()
@@ -76,16 +90,17 @@ def test_ultrasonic_spectra_integrity(ultrasonic_adapter: WarwickUltrasonicAdapt
         d_after = run.final_kpis["post_calendering_density_g_cm3"].value
         assert t_after > 0
         assert d_after > 0
-        # Post-calendering density is higher due to compaction
         assert d_after >= d_before
 
 
+# -----------------------------------------------------------------------------
+# Test 3: Leakage Firewall & Grouped CV Split
+# -----------------------------------------------------------------------------
 def test_ultrasonic_leakage_firewall_and_grouped_cv() -> None:
     """Verify benchmark split_manifest.json strictly isolates Sample_IDs without cross-fold leakage."""
     repo_root = Path(__file__).resolve().parent.parent.parent
     split_path = repo_root / "outputs" / "warwick_ultrasonic" / "split_manifest.json"
-    if not split_path.exists():
-        pytest.skip(f"Split manifest not found at {split_path}")
+    assert split_path.exists(), f"Split manifest not found at {split_path}"
 
     with open(split_path) as f:
         splits_data = json.load(f)
@@ -94,11 +109,9 @@ def test_ultrasonic_leakage_firewall_and_grouped_cv() -> None:
         expected_count = 18 if material == "Cathode" else 30
         assert len(sample_fold_map) == expected_count
 
-        # Fold indices must span exactly 1 to 5
         fold_indices = set(sample_fold_map.values())
         assert fold_indices == {1, 2, 3, 4, 5}
 
-        # Check disjointness across folds
         samples_per_fold: dict[int, set[str]] = {k: set() for k in range(1, 6)}
         for sample_id, fold_idx in sample_fold_map.items():
             assert 1 <= fold_idx <= 5
@@ -110,6 +123,9 @@ def test_ultrasonic_leakage_firewall_and_grouped_cv() -> None:
                 assert len(overlap) == 0, f"Sample overlap between fold {f1} and {f2}: {overlap}"
 
 
+# -----------------------------------------------------------------------------
+# Test 4: Pre-Decision Horizon Isolation
+# -----------------------------------------------------------------------------
 def test_ultrasonic_pre_decision_horizon_isolation(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
     """Verify that stage transition pre-decision context (z_t + u_{t+1}) hides all post-calendering information."""
     runs = ultrasonic_adapter.load_runs()
@@ -134,6 +150,9 @@ def test_ultrasonic_pre_decision_horizon_isolation(ultrasonic_adapter: WarwickUl
         assert "calendered_density_g_cm3" not in cal_stage.controls
 
 
+# -----------------------------------------------------------------------------
+# Test 5: Frequency Grid Audit
+# -----------------------------------------------------------------------------
 def test_ultrasonic_frequency_grid_audit() -> None:
     """Verify frequency_grid_audit.json records native alignment and no interpolation."""
     repo_root = Path(__file__).resolve().parent.parent.parent
@@ -153,8 +172,11 @@ def test_ultrasonic_frequency_grid_audit() -> None:
     assert data["materials"]["Anode"]["interpolation_required"] is False
 
 
+# -----------------------------------------------------------------------------
+# Test 6: Production Execution Trace Audit
+# -----------------------------------------------------------------------------
 def test_ultrasonic_production_execution_trace() -> None:
-    """Verify ultrasonic benchmark records non-zero execution counts through production architecture."""
+    """Verify ultrasonic benchmark records truthful non-zero execution counts and test_only == 0."""
     repo_root = Path(__file__).resolve().parent.parent.parent
     trace_path = repo_root / "outputs" / "warwick_ultrasonic" / "execution_trace_audit.json"
     assert trace_path.exists(), f"Execution trace audit not found at {trace_path}"
@@ -163,9 +185,247 @@ def test_ultrasonic_production_execution_trace() -> None:
 
     trace = data["execution_trace"]
     assert trace["battery_process_runs_seen"] >= 48
-    assert trace["information_horizon_projections"] >= 48
-    assert trace["modality_encoder_invocations"] > 0
-    assert trace["gated_fusion_invocations"] > 0
-    assert trace["process_state_model_forward_count"] > 0
-    assert trace["stage_aware_model_forward_count"] > 0
+    assert trace["horizon_projection_count"] >= 48
+    assert trace["stage_feature_encoder_fit_count"] > 0
+    assert trace["encoded_source_transition_count"] > 0
+    assert trace["source_bound_modality_count"] > 0
+    assert trace["maspo_public_forward_count"] > 0
+    assert trace["stage_aware_public_transition_count"] > 0
+    assert trace["final_prediction_count"] > 0
+    assert trace["test_only_transition_count"] == 0
 
+
+# -----------------------------------------------------------------------------
+# Test 7: Zero Lookahead Perturbation Test
+# -----------------------------------------------------------------------------
+def test_no_lookahead_perturbation(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Perturbing post-calendering properties must NOT affect the pre-decision transition."""
+    runs = ultrasonic_adapter.load_cathode_runs()
+    r = runs[0]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    v_orig = horizon.project(r)
+
+    # Perturb the post-calendering stage measurements in a clone
+    cal_stage = [s for s in r.stages if s.stage_type == ProcessStage.CALENDERING][0]
+    cal_perturbed = replace(
+        cal_stage,
+        intermediate_properties={
+            **cal_stage.intermediate_properties,
+            "calendered_thickness_um": MeasurementValue(999999.0, "um"),
+            "calendered_density_g_cm3": MeasurementValue(999999.0, "g/cm3"),
+        },
+    )
+    r_perturbed = replace(
+        r,
+        stages=tuple(cal_perturbed if s.stage_type == ProcessStage.CALENDERING else s for s in r.stages),
+        final_kpis={"post_calendering_thickness_um": MeasurementValue(999999.0, "um")},
+    )
+    v_perturbed = horizon.project(r_perturbed)
+
+    # Pre-decision controls, intermediate properties, and modalities must be identical
+    assert v_orig.controls == v_perturbed.controls
+    assert v_orig.intermediate_properties == v_perturbed.intermediate_properties
+    assert len(v_orig.modalities) == len(v_perturbed.modalities)
+    assert np.allclose(v_orig.modalities[0].values["fft_magnitude"], v_perturbed.modalities[0].values["fft_magnitude"])
+
+
+# -----------------------------------------------------------------------------
+# Test 8: Source-Bound Transition Provenance
+# -----------------------------------------------------------------------------
+def test_source_bound_transition_provenance(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify LegalStageTransition.from_encoded_source_stage produces unsafe_test_only is None and valid fingerprint."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:3]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    st_records = []
+    for r in runs:
+        v = horizon.project(r)
+        st_records.append([s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0])
+    encoder = StageFeatureEncoder.fit(st_records)
+    slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
+
+    t = LegalStageTransition.from_encoded_source_stage(st_records[0], encoder=encoder, modality_slots=[slot])
+    assert getattr(t, "unsafe_test_only", None) is None
+    assert t.provenance.get("encoder_fingerprint") == encoder.fingerprint
+    assert "source_stage_fingerprint" in t.provenance
+    assert t.controls.shape == (encoder.control_dim,)
+    assert t.scalar_observations.shape == (encoder.observation_dim,)
+
+
+# -----------------------------------------------------------------------------
+# Test 9: Train-Only StageFeatureEncoder Isolation
+# -----------------------------------------------------------------------------
+def test_encoder_fit_isolation(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify StageFeatureEncoder.fit on train folds does not see test fold records."""
+    runs = ultrasonic_adapter.load_anode_runs()
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    with open(repo_root / "outputs" / "warwick_ultrasonic" / "split_manifest.json") as f:
+        splits = json.load(f)["Anode"]
+
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    fold1_train = [r for r in runs if splits[r.cell_id] != 1]
+    fold1_test = [r for r in runs if splits[r.cell_id] == 1]
+
+    train_records = []
+    for r in fold1_train:
+        v = horizon.project(r)
+        train_records.extend(v.source_stages)
+
+    encoder = StageFeatureEncoder.fit(train_records)
+    assert encoder.control_dim > 0
+    assert encoder.observation_dim > 0
+    # Confirm encoder was built strictly from train records
+    test_ids = {r.cell_id for r in fold1_test}
+    for rec in train_records:
+        assert not any(rec.stage_id.startswith(tid) for tid in test_ids)
+
+
+# -----------------------------------------------------------------------------
+# Test 10: MASPO forward_batch Output Tensor Shape
+# -----------------------------------------------------------------------------
+def test_maspo_forward_batch_output_shape(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify MASPOProcessStateModel.forward_batch outputs a 1D tensor of shape (batch_size,)."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:4]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    pairs = []
+    for r in runs:
+        v = horizon.project(r)
+        s1 = [s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0]
+        s2 = [s for s in v.source_stages if s.stage_type == ProcessStage.CALENDERING][0]
+        s2_m = StageRecord(s2.stage_id, s2.stage_type, s2.sequence_index, s2.controls, {}, [], s2.upstream_stage_id, s2.provenance)
+        pairs.append((s1, s2_m))
+
+    encoder = StageFeatureEncoder.fit([s for p in pairs for s in p])
+    slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
+
+    model = MASPOProcessStateModel(16, encoder.control_dim, encoder.observation_dim, {"ultrasound": 29}, 16)
+    model.add_final_head("target_metric")
+
+    batch = []
+    for s1, s2 in pairs:
+        t1 = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
+        t2 = LegalStageTransition.from_encoded_source_stage(s2, encoder=encoder, modality_slots=[slot])
+        batch.append([t1, t2])
+
+    preds = model.forward_batch(batch, target="target_metric")
+    assert preds.shape == (len(runs),)
+    assert torch.isfinite(preds).all()
+
+
+# -----------------------------------------------------------------------------
+# Test 11: Modality Fingerprint Verification and Anti-Tamper
+# -----------------------------------------------------------------------------
+def test_modality_slot_source_values_fingerprint(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify SourceBoundModalityInput validates against decoded values fingerprint."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:1]
+    s1 = [s for s in runs[0].stages if s.stage_type == ProcessStage.COATING][0]
+    mod = s1.modalities[0]
+    slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
+
+    # Valid binding
+    bound = SourceBoundModalityInput.from_observation(mod, slot)
+    assert bound.model_input_name == "ultrasound"
+    assert bound.tensor.shape == (29,)
+
+    # Tampered values fingerprint must raise ValueError
+    tampered_prov = replace(mod.provenance, decoded_values_fingerprint="invalid_hash_12345")
+    tampered_mod = replace(mod, provenance=tampered_prov)
+    with pytest.raises(ValueError, match="trusted decoded_values_fingerprint"):
+        SourceBoundModalityInput.from_observation(tampered_mod, slot)
+
+
+# -----------------------------------------------------------------------------
+# Test 12: Ultrasound-Only Mode Controls Zeroing
+# -----------------------------------------------------------------------------
+def test_ultrasound_only_mode_zeroed_controls(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify ultrasound-only mode zeroes process controls and intermediate observations while preserving token."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:2]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    v = horizon.project(runs[0])
+    s1 = [s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0]
+    encoder = StageFeatureEncoder.fit([s1])
+    slot = ModalitySlotSpec("pre_calendering_ultrasound", ProcessStage.COATING, ModalityType.ULTRASOUND_SPECTRUM, "ultrasound", 29, False, True)
+
+    t_base = LegalStageTransition.from_encoded_source_stage(s1, encoder=encoder, modality_slots=[slot])
+    t_ultra = replace(t_base, controls=torch.zeros_like(t_base.controls), scalar_observations=torch.zeros_like(t_base.scalar_observations))
+
+    assert t_ultra.controls.sum().item() == 0.0
+    assert t_ultra.scalar_observations.sum().item() == 0.0
+    assert "ultrasound" in t_ultra.modality_inputs
+    assert t_ultra.availability["ultrasound"] is True
+    assert getattr(t_ultra, "unsafe_test_only", None) is None
+
+
+# -----------------------------------------------------------------------------
+# Test 13: Process-Only Mode Empty Modality State
+# -----------------------------------------------------------------------------
+def test_process_only_mode_empty_modality(ultrasonic_adapter: WarwickUltrasonicAdapter) -> None:
+    """Verify process-only mode yields empty modality inputs and false availability."""
+    runs = ultrasonic_adapter.load_cathode_runs()[:2]
+    horizon = InformationHorizon(ProcessStage.CALENDERING, include_decision_stage_controls=True)
+    v = horizon.project(runs[0])
+    s1 = [s for s in v.source_stages if s.stage_type == ProcessStage.COATING][0]
+    encoder = StageFeatureEncoder.fit([s1])
+
+    s1_no_mod = replace(s1, modalities=[])
+    t_proc = LegalStageTransition.from_encoded_source_stage(s1_no_mod, encoder=encoder, modality_slots=[])
+
+    assert len(t_proc.modality_inputs) == 0
+    assert t_proc.controls.shape == (encoder.control_dim,)
+    assert t_proc.scalar_observations.shape == (encoder.observation_dim,)
+    assert getattr(t_proc, "unsafe_test_only", None) is None
+
+
+# -----------------------------------------------------------------------------
+# Test 14: Model Comparison Summary Schema and Dynamic Separation
+# -----------------------------------------------------------------------------
+def test_model_comparison_summary_schema_and_deltas() -> None:
+    """Verify model_comparison_summary.json enforces strict separation between Ridge and StageAware deltas."""
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    summary_path = repo_root / "outputs" / "warwick_ultrasonic" / "model_comparison_summary.json"
+    assert summary_path.exists(), f"Summary path not found at {summary_path}"
+    with open(summary_path) as f:
+        data = json.load(f)
+
+    # Verify Ridge and StageAware branches exist separately
+    assert "Ridge" in data["models"]
+    assert "StageAwareProcessModel" in data["models"]
+
+    # Verify deltas are computed strictly intra-model
+    for mat in ["Cathode", "Anode"]:
+        for tgt in ["thickness_after_um", "density_after_g_cm3"]:
+            r_res = data["models"]["Ridge"]["results"][mat][tgt]
+            sa_res = data["models"]["StageAwareProcessModel"]["results"][mat][tgt]
+
+            assert math.isclose(r_res["fusion_delta_r2"], r_res["tabular_plus_ultrasound_r2"] - r_res["tabular_state_process_r2"], rel_tol=1e-5)
+            assert math.isclose(sa_res["fusion_delta_r2"], sa_res["tabular_plus_ultrasound_r2"] - sa_res["tabular_state_process_r2"], rel_tol=1e-5)
+
+    # Check for stale literals in text
+    supported_text = data["claim_boundaries"]["supported"]
+    for stale in ["0.9715", "6.25", "0.849", "0.874", "0.895", "+0.033"]:
+        assert stale not in supported_text
+
+
+# -----------------------------------------------------------------------------
+# Test 15: Consistency Audit Fail-Closed Mutation Test
+# -----------------------------------------------------------------------------
+def test_consistency_audit_catches_mutation() -> None:
+    """Verify that run_consistency_audit passes normally and raises AssertionError on intentional mutation."""
+    # 1. Base audit must pass
+    base_res = run_consistency_audit()
+    assert base_res["status"] == "PASS"
+
+    # 2. Mutate an artifact and verify audit catches it
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    matrix_path = repo_root / "outputs" / "multi_dataset_validation" / "benchmark_matrix.csv"
+    orig_content = matrix_path.read_text(encoding="utf-8")
+    try:
+        mutated_content = orig_content.replace("Hit@5 = 100.0%", "Hit@5 = 85.0%")
+        matrix_path.write_text(mutated_content, encoding="utf-8")
+        failed = False
+        try:
+            run_consistency_audit()
+        except AssertionError:
+            failed = True
+        assert failed, "Consistency audit must fail on mutated benchmark matrix!"
+    finally:
+        matrix_path.write_text(orig_content, encoding="utf-8")

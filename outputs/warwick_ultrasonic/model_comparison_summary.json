@@ -41,30 +41,30 @@
       "results": {
         "Cathode": {
           "thickness_after_um": {
-            "tabular_state_process_r2": 0.9560527832772694,
-            "ultrasound_only_r2": 0.06153033939270358,
-            "tabular_plus_ultrasound_r2": 0.9140762526612175,
-            "fusion_delta_r2": -0.04197653061605189
+            "tabular_state_process_r2": -0.17960286527624847,
+            "ultrasound_only_r2": 0.0045278846578864496,
+            "tabular_plus_ultrasound_r2": -0.17957222818091134,
+            "fusion_delta_r2": 3.063709533712711e-05
           },
           "density_after_g_cm3": {
-            "tabular_state_process_r2": 0.9140545049302784,
-            "ultrasound_only_r2": -2.2306402034077966,
-            "tabular_plus_ultrasound_r2": 0.8105917959485166,
-            "fusion_delta_r2": -0.1034627089817618
+            "tabular_state_process_r2": -0.3440497666605262,
+            "ultrasound_only_r2": -1.3560340251437246,
+            "tabular_plus_ultrasound_r2": -0.34404868659962107,
+            "fusion_delta_r2": 1.0800609051564436e-06
           }
         },
         "Anode": {
           "thickness_after_um": {
-            "tabular_state_process_r2": 0.9919386433668604,
-            "ultrasound_only_r2": 0.8807903549878184,
-            "tabular_plus_ultrasound_r2": 0.9801929096262932,
-            "fusion_delta_r2": -0.011745733740567199
+            "tabular_state_process_r2": 0.9947448543180177,
+            "ultrasound_only_r2": 0.5268078390769471,
+            "tabular_plus_ultrasound_r2": 0.9756815757827216,
+            "fusion_delta_r2": -0.019063278535296102
           },
           "density_after_g_cm3": {
-            "tabular_state_process_r2": 0.9097505782904898,
-            "ultrasound_only_r2": -0.6323944065901328,
-            "tabular_plus_ultrasound_r2": 0.8355489647802397,
-            "fusion_delta_r2": -0.07420161351025012
+            "tabular_state_process_r2": 0.8435123348430503,
+            "ultrasound_only_r2": -0.27589054239181876,
+            "tabular_plus_ultrasound_r2": 0.7185921971948166,
+            "fusion_delta_r2": -0.12492013764823373
           }
         }
       }
@@ -77,7 +77,7 @@
     "cathode_density_ultrasound_negative_boundary": true
   },
   "claim_boundaries": {
-    "supported": "Ultrasound alone achieves strong predictive accuracy for post-calendering anode thickness (R2 = 0.835 Ridge, 0.881 StageAware) without knowledge of mechanical roll gap. For anode density, linear Ridge demonstrates positive multimodal fusion gain (R2 = 0.803 -> 0.835). However, the neural StageAwareProcessModel does not outperform its tabular baseline on anode density (R2 = 0.910 -> 0.836) due to finite sample size (N=30).",
+    "supported": "Ultrasound alone achieves strong predictive accuracy for post-calendering anode thickness (R2 = 0.835 Ridge, 0.527 StageAware) without knowledge of mechanical roll gap. For anode density, linear Ridge demonstrates positive multimodal fusion gain (R2 = 0.803 -> 0.835). However, the neural StageAwareProcessModel does not outperform its tabular baseline on anode density (R2 = 0.844 -> 0.719) due to finite sample size (N=30).",
     "unsupported": "Ultrasound metrology does NOT improve cathode density prediction (negative CV R2), and does NOT perform closed-loop recipe optimization or electrochemical cycling validation."
   }
 }
