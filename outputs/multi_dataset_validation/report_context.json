@@ -6,7 +6,7 @@
     "analytic_random_hit5": 0.5555555555555556,
     "simple_regret": 0.0,
     "best_recipe": "protocol-c1c280b7366f",
-    "best_d30": 402.25
+    "best_d30": 402.2490501560316
   },
   "nmc622": {
     "ai_hit5": 1.0,
@@ -15,7 +15,7 @@
     "analytic_random_hit5": 0.3333333333333333,
     "simple_regret": 0.0,
     "best_condition": "EXP_03",
-    "best_ratio": 0.7947
+    "best_ratio": 0.7947399912874302
   },
   "ultrasonic": {
     "anode_thickness": {

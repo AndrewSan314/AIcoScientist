@@ -36,5 +36,5 @@
     "beat_exact_random": true
   },
   "supported_claim": "On the pilot-plant Warwick NMC622 calendering dataset, AIcoScientist achieved Hit@5 = 100.0%, exceeding the exact random analytical baseline of 33.3% by +66.7 percentage points.",
-  "allowed_slide_wording": "AIcoScientist demonstrates pilot-plant calendering process optimization on physical NMC622 data (18 full factorial pilot conditions, 54 half-cells), rediscovering the source-observed optimal condition (EXP_03) with Hit@5 = 100.0% (vs 33.3% random baseline)."
+  "allowed_slide_wording": "AIcoScientist demonstrates pilot-plant calendering process optimization on physical NMC622 data (18 full factorial pilot conditions, 54 half-cells), rediscovering the source-observed best condition (EXP_03) with Hit@5 = 100.0% (vs 33.3% random baseline)."
 }

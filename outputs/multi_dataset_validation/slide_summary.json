@@ -48,7 +48,7 @@
   "scientific_conclusions": [
     "AIcoScientist's Bayesian optimization engine demonstrates strong performance across distinct physical manufacturing regimes: from lab-scale anode formulation (Drakopoulos) to pilot-scale cathode calendering (Warwick NMC622), achieving 100% Hit@5 across 20 independent replay seeds.",
     "AIcoScientist's multimodal fusion architecture reliably integrates non-destructive acoustic spectra with tabular process parameters, demonstrating genuine multimodal predictive gain on Graphite Anode density and thickness.",
-    "Rigorous firewalling guarantees scientific integrity: all evaluations adhere strictly to grouped CV and pre-decision information horizons without lookahead."
+    "Rigorous firewalling guarantees scientific integrity: the sequential-selection benchmarks use fixed replay seeds and hidden-target evaluation, while the ultrasonic benchmark uses grouped 5-fold CV with train-only preprocessing."
   ],
   "allowed_slide_bullets": [
     "Generalizes beyond Drakopoulos: 100% Hit@5 on Warwick NMC622 pilot-plant calendering (vs 33.3% random baseline and 90% BoTorch).",
@@ -56,7 +56,7 @@
     "Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe EXP_03 in 3.6 average BO steps.",
     "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
     "Acoustic feature predictive signal: Ultrasound alone achieves R2=0.835 (Ridge) / 0.501 (StageAware) on anode thickness; multimodal fusion improves anode density Ridge R2 from 0.803 to 0.835.",
-    "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing."
+    "Zero lookahead & zero leakage: sequential benchmarks use fixed seeds and candidate masking; ultrasonic CV is strictly grouped by sample ID with train-only preprocessing."
   ],
   "strictly_unsupported_claims": [
     "DO NOT claim closed-loop real-time wet-lab execution; all benchmarks are historical offline replays and offline cross-validation.",

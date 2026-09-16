@@ -70,6 +70,8 @@ def generate_multi_dataset_synthesis() -> None:
         raise KeyError("DRAKOPOULOS_ARTIFACT_FIELD_MISSING: unconstrained.analytic_random_hit_at_5 missing in slide_summary.json")
     drak_analytic_random = float(drak_slide["unconstrained"]["analytic_random_hit_at_5"])
     drak_simple_regret = float(drak_ai["mean_simple_regret"])  # 0.0
+    drak_best_recipe = str(drak_slide["unconstrained"]["source_best_recipe_id"])
+    drak_best_d30 = float(drak_slide["unconstrained"]["source_best_d30_mah_g"])
 
     # Benchmark 2: Warwick NMC622
     nmc_dir = repo_root / "outputs" / "warwick_nmc622_calendering"
@@ -95,6 +97,8 @@ def generate_multi_dataset_synthesis() -> None:
     nmc_random_hit5 = float(nmc_random["hit_at_5"])  # 0.3 (30.0%)
     nmc_analytic_random = float(nmc_exact["hit_at_5"])  # 0.3333
     nmc_simple_regret = float(nmc_ai["simple_regret_at_5"])  # 0.0
+    nmc_best_condition = str(nmc_slide["source_observed_best_condition"])
+    nmc_best_ratio = float(nmc_slide["source_observed_best_target"])
 
     # Benchmark 3: Warwick Ultrasonic
     ultra_dir = repo_root / "outputs" / "warwick_ultrasonic"
@@ -185,7 +189,7 @@ def generate_multi_dataset_synthesis() -> None:
             "random_analytic_hit_at_5": drak_analytic_random,
             "aicoscientist_simple_regret_b5": drak_simple_regret,
             "multimodal_r2_or_bo_hit": f"Hit@5 = {drak_ai_hit5 * 100:.1f}%",
-            "source_observed_best": "protocol-c1c280b7366f (402.25 mAh/g)",
+            "source_observed_best": f"{drak_best_recipe} ({drak_best_d30:.2f} mAh/g)",
             "key_finding": f"Recovered source-observed best recipe in 10/10 seeds ({drak_ai_hit5*100:.0f}%) vs Direct BoTorch ({drak_botorch_hit5*100:.0f}%) and analytical random ({drak_analytic_random*100:.1f}%).",
         },
         {
@@ -211,7 +215,7 @@ def generate_multi_dataset_synthesis() -> None:
             "random_analytic_hit_at_5": nmc_analytic_random,
             "aicoscientist_simple_regret_b5": nmc_simple_regret,
             "multimodal_r2_or_bo_hit": f"Hit@5 = {nmc_ai_hit5 * 100:.1f}%",
-            "source_observed_best": "EXP_03 (0.7947 ratio)",
+            "source_observed_best": f"{nmc_best_condition} ({nmc_best_ratio:.4f} ratio)",
             "key_finding": f"Recovered source-observed best condition in 10/10 seeds ({nmc_ai_hit5*100:.0f}%) vs Direct BoTorch ({nmc_botorch_hit5*100:.0f}%) and analytical random ({nmc_analytic_random*100:.1f}%).",
         },
         {
@@ -304,15 +308,15 @@ def generate_multi_dataset_synthesis() -> None:
         "scientific_conclusions": [
             "AIcoScientist's Bayesian optimization engine demonstrates strong performance across distinct physical manufacturing regimes: from lab-scale anode formulation (Drakopoulos) to pilot-scale cathode calendering (Warwick NMC622), achieving 100% Hit@5 across 20 independent replay seeds.",
             "AIcoScientist's multimodal fusion architecture reliably integrates non-destructive acoustic spectra with tabular process parameters, demonstrating genuine multimodal predictive gain on Graphite Anode density and thickness.",
-            "Rigorous firewalling guarantees scientific integrity: all evaluations adhere strictly to grouped CV and pre-decision information horizons without lookahead.",
+            "Rigorous firewalling guarantees scientific integrity: the sequential-selection benchmarks use fixed replay seeds and hidden-target evaluation, while the ultrasonic benchmark uses grouped 5-fold CV with train-only preprocessing.",
         ],
         "allowed_slide_bullets": [
             "Generalizes beyond Drakopoulos: 100% Hit@5 on Warwick NMC622 pilot-plant calendering (vs 33.3% random baseline and 90% BoTorch).",
             "Drakopoulos recovery: 100% Hit@5 vs 30% Direct BoTorch and 55.6% analytical random baseline.",
-            "Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe EXP_03 in 3.6 average BO steps.",
+            f"Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe {nmc_best_condition} in 3.6 average BO steps.",
             "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
             f"Acoustic feature predictive signal: Ultrasound alone achieves R2={anode_thk_ultra_ridge:.3f} (Ridge) / {anode_thk_ultra_sa:.3f} (StageAware) on anode thickness; multimodal fusion improves anode density Ridge R2 from {anode_dens_proc_ridge:.3f} to {anode_dens_fused_ridge:.3f}.",
-            "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing.",
+            "Zero lookahead & zero leakage: sequential benchmarks use fixed seeds and candidate masking; ultrasonic CV is strictly grouped by sample ID with train-only preprocessing.",
         ],
         "strictly_unsupported_claims": [
             "DO NOT claim closed-loop real-time wet-lab execution; all benchmarks are historical offline replays and offline cross-validation.",
@@ -422,8 +426,8 @@ def generate_multi_dataset_synthesis() -> None:
             "random_hit5": drak_random_hit5,
             "analytic_random_hit5": drak_analytic_random,
             "simple_regret": drak_simple_regret,
-            "best_recipe": "protocol-c1c280b7366f",
-            "best_d30": 402.25,
+            "best_recipe": drak_best_recipe,
+            "best_d30": drak_best_d30,
         },
         "nmc622": {
             "ai_hit5": nmc_ai_hit5,
@@ -431,8 +435,8 @@ def generate_multi_dataset_synthesis() -> None:
             "random_hit5": nmc_random_hit5,
             "analytic_random_hit5": nmc_analytic_random,
             "simple_regret": nmc_simple_regret,
-            "best_condition": "EXP_03",
-            "best_ratio": 0.7947,
+            "best_condition": nmc_best_condition,
+            "best_ratio": nmc_best_ratio,
         },
         "ultrasonic": {
             "anode_thickness": {
@@ -542,7 +546,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{{ultra}}$) combined with calendering machine controls ($u_{{t+1}}$) accurately predict post-calendering electrode quality ($z_{{t+1}}$).
 - **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = {ctx_u_at['ridge_ultrasound_only_r2']:.3f}$ (Ridge) / {ctx_u_at['stageaware_ultrasound_only_r2']:.3f} (StageAware) without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = {ctx_u_at['ridge_fused_r2']:.3f}$ (Ridge) / {ctx_u_at['stageaware_fused_r2']:.3f} (StageAware).
 - **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = {ctx_u_ad['ridge_process_only_r2']:.3f}$ (Ridge) / {ctx_u_ad['stageaware_process_only_r2']:.3f} (StageAware), while Multimodal Fusion achieves $R^2 = {ctx_u_ad['ridge_fused_r2']:.3f}$ (Ridge) and $R^2 = {ctx_u_ad['stageaware_fused_r2']:.3f}$ (StageAwareProcessModel).
-- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = {ctx_u_ct['ridge_process_only_r2']:.3f}$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
+- **Cathode Regime**: The tabular process-state baseline strongly predicts cathode thickness ($R^2 = {ctx_u_ct['ridge_process_only_r2']:.3f}$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
 
@@ -551,7 +555,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 ### What IS Supported:
 1. **Pilot-Plant Process Optimization**: AIcoScientist recovers the source-observed best DOE condition within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
 2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
-3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
+3. **Rigorous Offline Evaluation**: The sequential-selection benchmarks use fixed replay seeds and hidden-target evaluation, while the ultrasonic benchmark uses grouped 5-fold CV with train-only preprocessing.
 
 ### What is NOT Supported:
 1. **NO Closed-Loop Real-Time Control**: The current benchmarks validate offline retrospective selection and offline cross-validation; they do not demonstrate millisecond-level feedback control on operating production lines.

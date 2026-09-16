@@ -590,12 +590,19 @@ def test_report_context_parity_and_markdown() -> None:
         report_context = json.load(f)
 
     drak_df = pd.read_csv(drak_dir / "policy_summary.csv")
+    with open(drak_dir / "slide_summary.json") as f:
+        drak_slide = json.load(f)
     nmc_df = pd.read_csv(nmc_dir / "policy_summary.csv")
+    with open(nmc_dir / "slide_summary.json") as f:
+        nmc_slide = json.load(f)
     ultra_df = pd.read_csv(ultra_dir / "ablation_summary.csv")
     with open(ultra_dir / "model_comparison_summary.json") as f:
         ultra_comp = json.load(f)
 
-    verify_report_context_against_sources(report_context, drak_df, nmc_df, ultra_df, ultra_comp)
+    verify_report_context_against_sources(
+        report_context, drak_df, nmc_df, ultra_df, ultra_comp,
+        drak_slide_dict=drak_slide, nmc_slide_dict=nmc_slide,
+    )
 
     multi_md = (multi_dir / "MULTI_DATASET_VALIDATION_REPORT.md").read_text(encoding="utf-8")
     verify_markdown_report_matches_context(multi_md, report_context)
@@ -628,17 +635,33 @@ def test_deliberate_corruption_fails_verification() -> None:
     with open(multi_dir / "report_context.json") as f:
         ctx = json.load(f)
 
-    # 1. Corrupt report_context
-    ctx_corrupted = json.loads(json.dumps(ctx))
-    ctx_corrupted["drakopoulos"]["ai_hit5"] = 0.50
     drak_df = pd.read_csv(repo_root / "outputs" / "drakopoulos_rediscovery_v4" / "policy_summary.csv")
+    with open(repo_root / "outputs" / "drakopoulos_rediscovery_v4" / "slide_summary.json") as f:
+        drak_slide = json.load(f)
     nmc_df = pd.read_csv(repo_root / "outputs" / "warwick_nmc622_calendering" / "policy_summary.csv")
+    with open(repo_root / "outputs" / "warwick_nmc622_calendering" / "slide_summary.json") as f:
+        nmc_slide = json.load(f)
     ultra_df = pd.read_csv(repo_root / "outputs" / "warwick_ultrasonic" / "ablation_summary.csv")
     with open(repo_root / "outputs" / "warwick_ultrasonic" / "model_comparison_summary.json") as f:
         ultra_comp = json.load(f)
 
+    # 1. Corrupt report_context ai_hit5
+    ctx_corrupted = json.loads(json.dumps(ctx))
+    ctx_corrupted["drakopoulos"]["ai_hit5"] = 0.50
     with pytest.raises(AssertionError):
-        verify_report_context_against_sources(ctx_corrupted, drak_df, nmc_df, ultra_df, ultra_comp)
+        verify_report_context_against_sources(ctx_corrupted, drak_df, nmc_df, ultra_df, ultra_comp, drak_slide, nmc_slide)
+
+    # 1b. Corrupt best_recipe
+    ctx_corrupted_recipe = json.loads(json.dumps(ctx))
+    ctx_corrupted_recipe["drakopoulos"]["best_recipe"] = "protocol-wrong"
+    with pytest.raises(AssertionError):
+        verify_report_context_against_sources(ctx_corrupted_recipe, drak_df, nmc_df, ultra_df, ultra_comp, drak_slide, nmc_slide)
+
+    # 1c. Corrupt nmc best_condition
+    ctx_corrupted_nmc = json.loads(json.dumps(ctx))
+    ctx_corrupted_nmc["nmc622"]["best_condition"] = "EXP_99"
+    with pytest.raises(AssertionError):
+        verify_report_context_against_sources(ctx_corrupted_nmc, drak_df, nmc_df, ultra_df, ultra_comp, drak_slide, nmc_slide)
 
     # 2. Corrupt NMC622 report (remove Hit@5 row)
     nmc_text = (repo_root / "outputs" / "warwick_nmc622_calendering" / "WARWICK_NMC622_PROCESS_BENCHMARK_REPORT.md").read_text(encoding="utf-8")
@@ -652,4 +675,13 @@ def test_deliberate_corruption_fails_verification() -> None:
 
     with pytest.raises(AssertionError, match="Prohibited phrase"):
         verify_no_unsupported_wording({"test_report": "Identifies the optimal pilot-scale condition."})
+
+    with pytest.raises(AssertionError, match="Prohibited phrase"):
+        verify_no_unsupported_wording({"test_report": "Roll gap mechanically dictates thickness."})
+
+    with pytest.raises(AssertionError, match="Prohibited phrase"):
+        verify_no_unsupported_wording({"test_report": "All evaluations adhere strictly to grouped cross-validation."})
+
+    with pytest.raises(AssertionError, match="Prohibited phrase"):
+        verify_no_unsupported_wording({"test_report": "Rediscovering the source-observed optimal condition."})
 

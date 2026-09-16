@@ -269,6 +269,8 @@ def run_consistency_audit() -> dict[str, Any]:
         nmc_policy_df=df_nmc_policy,
         ultra_ablation_df=df_ultra_ablation,
         ultra_comp_dict=ultra_comp,
+        drak_slide_dict=drak_slide,
+        nmc_slide_dict=nmc_slide,
     )
     audit_results["checks"]["check_16_report_context_source_parity"] = "PASS"
 
@@ -318,20 +320,48 @@ def verify_report_context_against_sources(
     nmc_policy_df: pd.DataFrame,
     ultra_ablation_df: pd.DataFrame,
     ultra_comp_dict: dict[str, Any],
+    drak_slide_dict: dict[str, Any] | None = None,
+    nmc_slide_dict: dict[str, Any] | None = None,
 ) -> None:
     """Verify that report_context.json exactly reflects all source benchmark artifacts."""
     # Drakopoulos
     drak_uncon = drak_policy_df[drak_policy_df["benchmark_task"] == "UNCONSTRAINED_D30"]
     drak_ai_hit5 = float(drak_uncon[drak_uncon["policy"] == "AICOSCIENTIST_PROCESS_SURROGATE"]["hit_rate_step_5"].iloc[0])
     drak_bo_hit5 = float(drak_uncon[drak_uncon["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_rate_step_5"].iloc[0])
+    drak_rand_hit5 = float(drak_uncon[drak_uncon["policy"] == "random"]["hit_rate_step_5"].iloc[0])
+    drak_simple_regret = float(drak_uncon[drak_uncon["policy"] == "AICOSCIENTIST_PROCESS_SURROGATE"]["mean_simple_regret"].iloc[0])
+
     assert math.isclose(report_context["drakopoulos"]["ai_hit5"], drak_ai_hit5, rel_tol=1e-5)
     assert math.isclose(report_context["drakopoulos"]["botorch_hit5"], drak_bo_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["drakopoulos"]["random_hit5"], drak_rand_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["drakopoulos"]["simple_regret"], drak_simple_regret, rel_tol=1e-5)
+
+    if drak_slide_dict is not None:
+        drak_best_recipe = str(drak_slide_dict["unconstrained"]["source_best_recipe_id"])
+        drak_best_d30 = float(drak_slide_dict["unconstrained"]["source_best_d30_mah_g"])
+        drak_analytic_rand = float(drak_slide_dict["unconstrained"]["analytic_random_hit_at_5"])
+        assert report_context["drakopoulos"]["best_recipe"] == drak_best_recipe
+        assert math.isclose(report_context["drakopoulos"]["best_d30"], drak_best_d30, rel_tol=1e-5)
+        assert math.isclose(report_context["drakopoulos"]["analytic_random_hit5"], drak_analytic_rand, rel_tol=1e-5)
 
     # NMC622
     nmc_ai_hit5 = float(nmc_policy_df[nmc_policy_df["policy"] == "AICOSCIENTIST_FULL_PROCESS_ENGINE"]["hit_at_5"].iloc[0])
     nmc_bo_hit5 = float(nmc_policy_df[nmc_policy_df["policy"] == "DIRECT_BOTORCH_BASELINE"]["hit_at_5"].iloc[0])
+    nmc_rand_hit5 = float(nmc_policy_df[nmc_policy_df["policy"] == "RANDOM_BASELINE"]["hit_at_5"].iloc[0])
+    nmc_analytic_rand = float(nmc_policy_df[nmc_policy_df["policy"] == "EXACT_ANALYTICAL_RANDOM"]["hit_at_5"].iloc[0])
+    nmc_simple_regret = float(nmc_policy_df[nmc_policy_df["policy"] == "AICOSCIENTIST_FULL_PROCESS_ENGINE"]["simple_regret_at_5"].iloc[0])
+
     assert math.isclose(report_context["nmc622"]["ai_hit5"], nmc_ai_hit5, rel_tol=1e-5)
     assert math.isclose(report_context["nmc622"]["botorch_hit5"], nmc_bo_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["nmc622"]["random_hit5"], nmc_rand_hit5, rel_tol=1e-5)
+    assert math.isclose(report_context["nmc622"]["analytic_random_hit5"], nmc_analytic_rand, rel_tol=1e-5)
+    assert math.isclose(report_context["nmc622"]["simple_regret"], nmc_simple_regret, rel_tol=1e-5)
+
+    if nmc_slide_dict is not None:
+        nmc_best_cond = str(nmc_slide_dict["source_observed_best_condition"])
+        nmc_best_ratio = float(nmc_slide_dict["source_observed_best_target"])
+        assert report_context["nmc622"]["best_condition"] == nmc_best_cond
+        assert math.isclose(report_context["nmc622"]["best_ratio"], nmc_best_ratio, rel_tol=1e-4)
 
     # Ultrasonic
     for mat_key, mat_name in [("anode", "Anode"), ("cathode", "Cathode")]:
@@ -402,6 +432,9 @@ def verify_no_unsupported_wording(reports: dict[str, str]) -> None:
     prohibited_phrases = [
         "due to finite sample size",
         "optimal pilot-scale",
+        "source-observed optimal condition",
+        "mechanically dictates",
+        "all evaluations adhere strictly to grouped cross-validation",
         "3x acceleration",
         "3× acceleration",
         "robust transferability",

@@ -48,7 +48,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 - **Warwick Ultrasonic**: Addressed whether non-destructive acoustic signals before calendering ($z_t, x_t^{ultra}$) combined with calendering machine controls ($u_{t+1}$) accurately predict post-calendering electrode quality ($z_{t+1}$).
 - **Anode Thickness**: Ultrasonic spectroscopy alone achieves $R^2 = 0.835$ (Ridge) / 0.501 (StageAware) without knowing the physical roll gap, demonstrating that acoustic transmission correlates with physical electrode thickness. Fusing ultrasound with process controls achieves $R^2 = 0.914$ (Ridge) / 0.988 (StageAware).
 - **Anode Density**: Demonstrates transparent baseline comparison. Process-only achieves $R^2 = 0.803$ (Ridge) / 0.837 (StageAware), while Multimodal Fusion achieves $R^2 = 0.835$ (Ridge) and $R^2 = 0.709$ (StageAwareProcessModel).
-- **Cathode Regime**: Roll gap mechanically dictates thickness ($R^2 = 0.891$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
+- **Cathode Regime**: The tabular process-state baseline strongly predicts cathode thickness ($R^2 = 0.891$ process-only). StageAware performance was weak on the smaller cathode cohort ($N=18$), providing an essential negative result boundary.
 
 ---
 
@@ -57,7 +57,7 @@ Across all three benchmarks, AIcoScientist was evaluated without modifying under
 ### What IS Supported:
 1. **Pilot-Plant Process Optimization**: AIcoScientist recovers the source-observed best DOE condition within five sequential Bayesian iterations, consistently achieving 100% Hit@5 across independent manufacturing datasets.
 2. **Multimodal Stage-State Transition**: Non-destructive ultrasonic frequency-domain signals carry physical state information that correlates with compacted electrode density and thickness when combined with process controls.
-3. **Rigorous Offline Evaluation**: All evaluations adhere strictly to grouped cross-validation, train-only transformation fitting, and explicit information horizon masking.
+3. **Rigorous Offline Evaluation**: The sequential-selection benchmarks use fixed replay seeds and hidden-target evaluation, while the ultrasonic benchmark uses grouped 5-fold CV with train-only preprocessing.
 
 ### What is NOT Supported:
 1. **NO Closed-Loop Real-Time Control**: The current benchmarks validate offline retrospective selection and offline cross-validation; they do not demonstrate millisecond-level feedback control on operating production lines.
