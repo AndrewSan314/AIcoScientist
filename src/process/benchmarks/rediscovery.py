@@ -816,10 +816,12 @@ class RediscoveryReplay:
         benchmark_task: str = "UNCONSTRAINED_D30",
         runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
         allow_flat_fallback: bool | None = None,
+        target_units: str | None = None,
     ) -> None:
         self._candidate_pool = candidate_pool.copy()
         self._candidate_id_column = candidate_id_column
         self._target_column = target_column
+        self._target_units = target_units
         self._control_columns = list(control_columns) if control_columns is not None else [
             c for c in candidate_pool.columns if c not in (candidate_id_column, target_column)
         ]
@@ -845,6 +847,38 @@ class RediscoveryReplay:
             self._dataset_fingerprint = hashlib.sha256(raw_bytes).hexdigest()
         else:
             self._dataset_fingerprint = dataset_fingerprint
+
+    def _resolve_target_units(self) -> str:
+        if self._target_units is not None:
+            return self._target_units
+        runs_dict = self._get_runs_by_recipe()
+        if runs_dict:
+            for r_list in runs_dict.values():
+                for r in r_list:
+                    if self._target_column in r.final_kpis:
+                        val = r.final_kpis[self._target_column]
+                        if hasattr(val, "units") and val.units:
+                            return str(val.units)
+                    for st in r.stages:
+                        if self._target_column in st.intermediate_properties:
+                            val = st.intermediate_properties[self._target_column]
+                            if hasattr(val, "units") and val.units:
+                                return str(val.units)
+        # Check heuristic from target name
+        tgt_lower = self._target_column.lower()
+        if "_mah_g" in tgt_lower or tgt_lower.endswith("_mah_g") or self._dataset_id == "drakopoulos_graphite":
+            return "mAh/g"
+        elif "_mah" in tgt_lower or tgt_lower.endswith("_mah"):
+            return "mAh"
+        elif "_ratio" in tgt_lower or "_over_" in tgt_lower or tgt_lower.startswith("ratio_"):
+            return "dimensionless_ratio"
+        elif "_pct" in tgt_lower or tgt_lower.endswith("_pct"):
+            return "%"
+        elif "_um" in tgt_lower:
+            return "um"
+        elif "_g_cm3" in tgt_lower:
+            return "g/cm3"
+        return "unknown"
 
     @property
     def execution_trace(self) -> EngineExecutionTrace:
@@ -1145,6 +1179,7 @@ class RediscoveryReplay:
                 step_trace.surrogates_fitted += 1
 
                 split_fp = hashlib.sha256(f"split_{seed}_{step}".encode()).hexdigest()
+                resolved_units = self._resolve_target_units()
                 artifact = SurrogateArtifact(
                     surrogate=surrogate,
                     preprocessor=preprocessor,
@@ -1152,7 +1187,7 @@ class RediscoveryReplay:
                     split_fingerprint=split_fp,
                     target_names=(oracle.target_column,),
                     input_schema=schema,
-                    target_units={oracle.target_column: "mAh/g"},
+                    target_units={oracle.target_column: resolved_units},
                     model_version="process-surrogate-v4",
                     training_config={"seed": seed * 1000 + step, "step": step},
                 )
@@ -1191,6 +1226,28 @@ class RediscoveryReplay:
                 else:
                     coord_strat = "expected_improvement"
 
+                # Dynamically derive hidden observation names from source runs or candidate pool
+                hidden_obs: set[str] = set()
+                runs_dict = self._get_runs_by_recipe()
+                if runs_dict:
+                    for r_list in runs_dict.values():
+                        for r in r_list:
+                            for st in r.stages:
+                                hidden_obs.update(st.intermediate_properties.keys())
+                            hidden_obs.update(r.final_kpis.keys())
+                else:
+                    for c in self._candidate_pool.columns:
+                        if c != self._candidate_id_column and c not in observable_ctrls:
+                            hidden_obs.add(c)
+                dynamic_hidden_obs_names = sorted(hidden_obs - set(observable_ctrls))
+                if not dynamic_hidden_obs_names and self._dataset_id == "drakopoulos_graphite":
+                    dynamic_hidden_obs_names = [
+                        "active_mass_mg",
+                        "electrode_thickness_um",
+                        "porosity_pct",
+                        "discharge_specific_capacity_cycle30_mah_g",
+                    ]
+
                 training_view_summary = {
                     "num_revealed_samples": len(samples),
                     "observable_controls": observable_ctrls,
@@ -1200,14 +1257,9 @@ class RediscoveryReplay:
                     "training_run_ids": [s.run_id for s in samples],
                     "number_of_training_runs": len(samples),
                     "target_name": oracle.target_column,
-                    "target_units": "mAh/g",
+                    "target_units": resolved_units,
                     "visible_planned_control_names": observable_ctrls,
-                    "hidden_observation_names": [
-                        "active_mass_mg",
-                        "electrode_thickness_um",
-                        "porosity_pct",
-                        "discharge_specific_capacity_cycle30_mah_g",
-                    ],
+                    "hidden_observation_names": dynamic_hidden_obs_names,
                     "dataset_fingerprint": self._dataset_fingerprint,
                     "split_fingerprint": split_fp,
                     "schema_fingerprint": schema.schema_fingerprint,
@@ -1227,7 +1279,7 @@ class RediscoveryReplay:
                 pool_slice = visible[[oracle.candidate_id_column] + [c for c in cand_cols if c in visible.columns]].copy()
                 space = ProcessSearchSpace.from_finite_pool(pool_slice, id_column=oracle.candidate_id_column)
                 process_obj = ProcessOptimizationObjective([
-                    ObjectiveSpec(oracle.target_column, "minimize" if self._minimize else "maximize", units="mAh/g")
+                    ObjectiveSpec(oracle.target_column, "minimize" if self._minimize else "maximize", units=resolved_units)
                 ])
 
                 self._execution_trace.coordinator_calls += 1
@@ -1435,6 +1487,7 @@ def run_rediscovery_benchmark(
     dataset_fingerprint: str | None = None,
     benchmark_task: str = "UNCONSTRAINED_D30",
     runs_by_recipe: Mapping[str, Sequence[BatteryProcessRun]] | None = None,
+    target_units: str | None = None,
 ) -> dict[str, Any]:
     """Runs full multi-policy, multi-seed offline closed-loop rediscovery benchmark."""
     all_trajectories: dict[str, list[RediscoveryTrajectory]] = {}
@@ -1456,6 +1509,7 @@ def run_rediscovery_benchmark(
             dataset_fingerprint=dataset_fingerprint,
             benchmark_task=benchmark_task,
             runs_by_recipe=runs_by_recipe,
+            target_units=target_units,
         )
         if primary_replay is None:
             primary_replay = policy_replay

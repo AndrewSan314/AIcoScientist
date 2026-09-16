@@ -1,30 +1,27 @@
 {
-  "dataset": "warwick_ultrasonic",
+  "dataset_id": "warwick_ultrasonic",
   "source_doi": "10.17632/c62yn37d9h.4",
-  "audit_date": "2026-09-16",
   "materials": {
     "Cathode": {
       "num_samples": 18,
       "num_points_per_spectrum": 29,
-      "frequency_min_mhz": 0.998,
-      "frequency_max_mhz": 14.963,
-      "frequency_spacing_mhz": 0.499,
       "frequency_grid_aligned": true,
-      "uniform_sampling": true,
       "interpolation_required": false,
-      "audit_notes": "All 18 pre-calendering Cathode spectra possess identical byte-for-byte frequency grids spanning 0.998 to 14.963 MHz in 29 steps. Zero interpolation or resampling distortion was applied."
+      "frequency_min_mhz": 0.9975062344139651,
+      "frequency_max_mhz": 14.962593516209477,
+      "frequency_step_mhz": 0.49875311720698257,
+      "frequency_vector_sha256": "6bcdf453f4ba5ba7b01f564242228e2317022110d14712769a7a71adde921be2"
     },
     "Anode": {
       "num_samples": 30,
       "num_points_per_spectrum": 36,
+      "frequency_grid_aligned": true,
+      "interpolation_required": false,
       "frequency_min_mhz": 0.8,
       "frequency_max_mhz": 14.8,
-      "frequency_spacing_mhz": 0.4,
-      "frequency_grid_aligned": true,
-      "uniform_sampling": true,
-      "interpolation_required": false,
-      "audit_notes": "All 30 pre-calendering Anode spectra possess identical byte-for-byte frequency grids spanning 0.8 to 14.8 MHz in 36 steps. Zero interpolation or resampling distortion was applied."
+      "frequency_step_mhz": 0.4,
+      "frequency_vector_sha256": "6dea884b89965ec98be726fe4f6244030cbe0c8526f39488c9102cda2c95e1ba"
     }
   },
-  "conclusion": "Frequency grids for both materials are natively aligned across all physical samples. No spectral interpolation distortion is required or present in the benchmark."
+  "status": "PASS"
 }

@@ -36,11 +36,13 @@
 
 ## 3. Key Scientific Findings & Claim Boundaries
 1. **Ultrasound Alone Has Strong Standalone Predictive Signal**:
-   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy without knowing the machine roll gap, proving that acoustic transmission spectra physically encode electrode structure.
-2. **Multimodal Fusion Superiority on Anode Density**:
-   - Fused (Process + Ultrasound) achieves $R^2 = 0.8347$, outperforming both Process-Only ($R^2 = 0.8030$) and Ultrasound-Only ($R^2 = 0.3993$).
-3. **Process-Dominated Regimes**:
-   - On thickness, mechanical roll gap is the dominant physical control ($R^2 \ge 0.90$).
+   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy ($R^2 = 0.835$ Ridge, $0.881$ StageAware) without knowing the machine roll gap, proving that acoustic transmission spectra physically encode electrode structure.
+2. **Transparent Baseline Fusion Gain vs Neural Architecture Dynamics**:
+   - Linear Ridge demonstrates multimodal fusion gain on Anode Density: Fused ($R^2 = 0.8347$) outperforms Process-Only ($R^2 = 0.8030$).
+   - In contrast, the higher-capacity neural `StageAwareProcessModel` achieves higher tabular performance ($R^2 = 0.910$) but does not show fusion gain ($R^2 = 0.836$) on this small dataset ($N=30$), highlighting the importance of reporting both architectures transparently.
+3. **Process-Dominated Regimes & Negative Boundaries**:
+   - On thickness, mechanical roll gap is the dominant physical control ($R^2 \ge 0.89$ on Cathode, $R^2 \ge 0.94$ on Anode).
+   - On Cathode density, ultrasound-only shows negative generalization ($R^2 < 0$), establishing an explicit negative boundary.
 4. **Boundary of Claim**:
    - This benchmark validates **multimodal stage-state transition modeling**. It does NOT claim closed-loop recipe optimization or factory control.
 

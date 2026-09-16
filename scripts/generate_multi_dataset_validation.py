@@ -66,7 +66,9 @@ def generate_multi_dataset_synthesis() -> None:
     drak_ai_hit5 = float(drak_ai["hit_rate_step_5"])  # 1.0 (100.0%)
     drak_botorch_hit5 = float(drak_botorch["hit_rate_step_5"])  # 0.3 (30.0%, NOT 90.0%!)
     drak_random_hit5 = float(drak_random["hit_rate_step_5"])  # 0.3 (30.0%)
-    drak_analytic_random = float(drak_slide.get("unconstrained", {}).get("analytic_random_hit_at_5", 5 / 9))  # 0.5556
+    if "unconstrained" not in drak_slide or "analytic_random_hit_at_5" not in drak_slide["unconstrained"]:
+        raise KeyError("DRAKOPOULOS_ARTIFACT_FIELD_MISSING: unconstrained.analytic_random_hit_at_5 missing in slide_summary.json")
+    drak_analytic_random = float(drak_slide["unconstrained"]["analytic_random_hit_at_5"])
     drak_simple_regret = float(drak_ai["mean_simple_regret"])  # 0.0
 
     # Benchmark 2: Warwick NMC622
@@ -99,6 +101,7 @@ def generate_multi_dataset_synthesis() -> None:
     ultra_ablation_path = ultra_dir / "ablation_summary.csv"
     ultra_slide_path = ultra_dir / "slide_summary.json"
     ultra_trace_path = ultra_dir / "execution_trace_audit.json"
+    ultra_comp_path = ultra_dir / "model_comparison_summary.json"
     if not ultra_ablation_path.exists() or not ultra_slide_path.exists() or not ultra_trace_path.exists():
         raise FileNotFoundError(
             f"WARWICK_ULTRASONIC_ARTIFACTS_MISSING: {ultra_ablation_path} or {ultra_slide_path} not found. "
@@ -110,6 +113,10 @@ def generate_multi_dataset_synthesis() -> None:
         ultra_slide = json.load(f)
     with open(ultra_trace_path) as f:
         ultra_trace = json.load(f)
+    ultra_comp = {}
+    if ultra_comp_path.exists():
+        with open(ultra_comp_path) as f:
+            ultra_comp = json.load(f)
 
     # -------------------------------------------------------------
     # 2. BUILD MULTI-BENCHMARK MATRIX CSV
@@ -189,9 +196,16 @@ def generate_multi_dataset_synthesis() -> None:
             "random_empirical_hit_at_5": None,
             "random_analytic_hit_at_5": None,
             "aicoscientist_simple_regret_b5": None,
-            "multimodal_r2_or_bo_hit": "Anode Thick R2=0.972, Anode Dens R2=0.874",
+            "multimodal_r2_or_bo_hit": f"Anode Thick R2={float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge, Anode Dens R2={float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge",
             "source_observed_best": "N/A (Supervised stage-state prediction)",
-            "key_finding": "Multimodal fusion outperforms process-only on Anode Density (R2: 0.803 -> 0.835 Ridge, 0.806 -> 0.849 StageAware). Acoustic spectrum directly encodes physical thickness.",
+            "key_finding": (
+                f"Multimodal fusion outperforms process-only on Anode Density (Ridge R2: "
+                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_ONLY')]['ridge_r2_pooled'].iloc[0]):.3f} -> "
+                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0]):.3f}). "
+                f"Acoustic spectrum alone directly predicts physical thickness (R2 = "
+                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['ridge_r2_pooled'].iloc[0]):.3f} Ridge / "
+                f"{float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['stage_aware_r2_pooled'].iloc[0]):.3f} StageAware)."
+            ),
         },
     ]
 
@@ -202,6 +216,12 @@ def generate_multi_dataset_synthesis() -> None:
     # -------------------------------------------------------------
     # 3. GENERATE SLIDE SUMMARY JSON
     # -------------------------------------------------------------
+    u_thick_fused_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0])
+    u_thick_ultra_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['ridge_r2_pooled'].iloc[0])
+    u_thick_stage_ultra_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'thickness_after_um') & (df_ultra_ablation['model'] == 'ULTRASOUND_ONLY')]['stage_aware_r2_pooled'].iloc[0])
+    u_dens_proc_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_ONLY')]['ridge_r2_pooled'].iloc[0])
+    u_dens_fused_r2 = float(df_ultra_ablation[(df_ultra_ablation['material'] == 'Anode') & (df_ultra_ablation['target'] == 'density_after_g_cm3') & (df_ultra_ablation['model'] == 'PROCESS_PLUS_ULTRASOUND')]['ridge_r2_pooled'].iloc[0])
+
     slide_summary = {
         "title": "AIcoScientist Multi-Dataset Physical Battery-Process Validation",
         "scope": "Three Independent Physical Benchmarks across Active BO and Multimodal State Modeling",
@@ -245,7 +265,7 @@ def generate_multi_dataset_synthesis() -> None:
                 "system": "Electrode Non-Destructive Ultrasonic Acoustic Metrology",
                 "evidence": "48 physical samples (30 Anode, 18 Cathode), grouped 5-fold CV",
                 "task": "Multimodal stage-state transition prediction (z_t + u_{t+1} -> z_{t+1})",
-                "result": "Anode Thickness R2=0.972 (RMSE 6.25 um), Anode Density R2=0.835-0.849 (Fused superior to process-only 0.803-0.806)",
+                "result": f"Anode Thickness R2={u_thick_fused_r2:.3f} (Ultrasound-only R2={u_thick_ultra_r2:.3f} Ridge / {u_thick_stage_ultra_r2:.3f} StageAware), Anode Density R2={u_dens_fused_r2:.3f} (Ridge fusion gain: {u_dens_proc_r2:.3f} -> {u_dens_fused_r2:.3f})",
                 "status": "VALIDATED",
             },
         },
@@ -259,7 +279,7 @@ def generate_multi_dataset_synthesis() -> None:
             "Drakopoulos recovery: 100% Hit@5 vs 30% Direct BoTorch and 55.6% analytical random baseline.",
             "Pilot-plant scale: 18 conditions, 54 physical cells; finds source-observed best recipe EXP_03 in 3.6 average BO steps.",
             "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
-            "Acoustic feature superiority: Ultrasound alone achieves R2=0.835 on anode thickness; multimodal fusion boosts anode density R2 to 0.835-0.849.",
+            f"Acoustic feature superiority: Ultrasound alone achieves R2={u_thick_ultra_r2:.3f} (Ridge) / {u_thick_stage_ultra_r2:.3f} (StageAware) on anode thickness; multimodal fusion boosts anode density Ridge R2 from {u_dens_proc_r2:.3f} to {u_dens_fused_r2:.3f}.",
             "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing.",
         ],
         "strictly_unsupported_claims": [

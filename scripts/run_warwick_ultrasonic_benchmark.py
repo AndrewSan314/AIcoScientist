@@ -50,11 +50,13 @@ import torch.nn.functional as F
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.datasets.battery_process.warwick_ultrasonic import WarwickUltrasonicAdapter
-from src.process.contracts import BatteryProcessRun
+from src.process.contracts import BatteryProcessRun, StageRecord
 from src.process.fusion.gated_fusion import GatedMaskedFusion
 from src.process.information_horizon import InformationHorizon
+from src.process.modalities import ModalitySlotSpec, ModalityType
 from src.process.models.maspo import MASPOProcessStateModel
 from src.process.models.stage_transition import StageAwareProcessModel
+from src.process.models.transitions import LegalStageTransition
 from src.process.stages import ProcessStage
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -255,21 +257,105 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
             run_views[r.cell_id] = view
             tracer.information_horizon_projections += 1
 
-        sub = df_manifest[df_manifest["material"] == mat].copy().reset_index(drop=True)
+        sample_ids = [r.cell_id for r in runs]
+        sub = pd.DataFrame({"sample_id": sample_ids})
         sub["fold"] = sub["sample_id"].map(splits[mat])
-        proc_cols = process_cols_map[mat]
+        runs_dict = {r.cell_id: r for r in runs}
 
-        # Load raw before-calendering FFT spectra
+        # Extract features and targets strictly from BatteryProcessRun and HorizonView
+        proc_rows = []
         fft_rows = []
-        for s_id in sub["sample_id"]:
-            with open(raw_root / mat / s_id / "before-calendering.json") as f:
-                d = json.load(f)
-            fft_rows.append(d["fft_magnitude"])
-        fft_arr = np.array(fft_rows)
+        transitions_per_sample = []
+
+        slot = ModalitySlotSpec(
+            slot_name="pre_calendering_ultrasound",
+            stage=ProcessStage.COATING,
+            modality_type=ModalityType.ULTRASOUND_SPECTRUM,
+            model_input_name="ultrasound",
+            expected_input_dim=len(run_views[sample_ids[0]].modalities[0].values["fft_magnitude"]),
+            required=False,
+            allowed_missing=True,
+        )
+
+        for s_id in sample_ids:
+            r = runs_dict[s_id]
+            view = run_views[s_id]
+            st_coat = [s for s in view.source_stages if s.stage_type == ProcessStage.COATING][0]
+            st_cal = [s for s in view.source_stages if s.stage_type == ProcessStage.CALENDERING][0]
+
+            if mat == "Cathode":
+                p_vec = [
+                    float(view.controls["calendering.roll_gap_um"].value),
+                    float(view.controls["calendering.web_speed_m_min"].value),
+                    float(view.controls["coating.coat_weight_gsm"].value),
+                    float(view.intermediate_properties["coating.pre_calendering_thickness_um"].value),
+                    float(view.intermediate_properties["coating.pre_calendering_density_g_cm3"].value),
+                ]
+            else:  # Anode
+                p_vec = [
+                    float(view.controls["calendering.roll_gap_um"].value),
+                    float(view.controls["calendering.calendering_speed_m_min"].value),
+                    float(view.intermediate_properties["coating.pre_calendering_thickness_um"].value),
+                    float(view.intermediate_properties["coating.pre_calendering_density_g_cm3"].value),
+                ]
+            proc_rows.append(p_vec)
+            mod_fft = view.modalities[0].values["fft_magnitude"]
+            fft_rows.append(mod_fft)
+
+            # Construct source-bound LegalStageTransition for Stage 1 (COATING)
+            ctrl_dim = max(len(st_coat.controls), len(st_cal.controls))
+            obs_dim = len(st_coat.intermediate_properties)
+
+            c_coat = torch.zeros((1, ctrl_dim), dtype=torch.float32)
+            for k_idx, (k, val) in enumerate(st_coat.controls.items()):
+                c_coat[0, k_idx] = float(val.value)
+            o_coat = torch.tensor([[float(v.value) for v in st_coat.intermediate_properties.values()]], dtype=torch.float32)
+            mod_val = torch.tensor(mod_fft, dtype=torch.float32).unsqueeze(0)
+
+            t_coat = LegalStageTransition.from_source_stage(
+                st_coat,
+                controls=c_coat,
+                scalar_observations=o_coat,
+                modality_inputs={st_coat.modalities[0].modality_id: mod_val},
+                modality_slots=[slot],
+                test_only=True,
+            )
+
+            # Construct source-bound LegalStageTransition for Stage 2 (CALENDERING)
+            st_cal_masked = StageRecord(
+                stage_id=st_cal.stage_id,
+                stage_type=st_cal.stage_type,
+                sequence_index=st_cal.sequence_index,
+                controls=st_cal.controls,
+                intermediate_properties={},
+                modalities=[],
+                upstream_stage_id=st_cal.upstream_stage_id,
+                provenance=st_cal.provenance,
+            )
+            c_cal = torch.zeros((1, ctrl_dim), dtype=torch.float32)
+            for k_idx, (k, val) in enumerate(st_cal.controls.items()):
+                c_cal[0, k_idx] = float(val.value)
+            o_cal = torch.zeros((1, obs_dim), dtype=torch.float32)
+
+            t_cal = LegalStageTransition.from_source_stage(
+                st_cal_masked,
+                controls=c_cal,
+                scalar_observations=o_cal,
+                modality_inputs={},
+                modality_slots=[],
+                test_only=True,
+            )
+            transitions_per_sample.append([t_coat, t_cal])
+
+        proc_arr = np.array(proc_rows, dtype=float)
+        fft_arr = np.array(fft_rows, dtype=float)
 
         for target_col, target_label in tasks:
             logger.info(f"Evaluating {mat} -> {target_col}")
-            y_all = sub[target_col].values
+            if target_col == "thickness_after_um":
+                y_all = np.array([float(runs_dict[s_id].final_kpis["post_calendering_thickness_um"].value) for s_id in sample_ids])
+            else:
+                y_all = np.array([float(runs_dict[s_id].final_kpis["post_calendering_density_g_cm3"].value) for s_id in sample_ids])
 
             model_modes = ["PROCESS_ONLY", "ULTRASOUND_ONLY", "PROCESS_PLUS_ULTRASOUND"]
 
@@ -285,9 +371,9 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     te_mask = (sub["fold"] == fold).values
 
                     # Fit preprocessors TRAIN ONLY
-                    scaler_p = StandardScaler().fit(sub.loc[tr_mask, proc_cols])
-                    xp_tr = scaler_p.transform(sub.loc[tr_mask, proc_cols])
-                    xp_te = scaler_p.transform(sub.loc[te_mask, proc_cols])
+                    scaler_p = StandardScaler().fit(proc_arr[tr_mask])
+                    xp_tr = scaler_p.transform(proc_arr[tr_mask])
+                    xp_te = scaler_p.transform(proc_arr[te_mask])
 
                     scaler_u = StandardScaler().fit(fft_arr[tr_mask])
                     n_components = min(3, xp_tr.shape[0] - 1, fft_arr.shape[1])
@@ -298,7 +384,7 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     y_tr = y_all[tr_mask]
                     y_te = y_all[te_mask]
 
-                    # Ridge feature setup
+                    # Feature setup
                     if model_name == "PROCESS_ONLY":
                         clf_x_tr, clf_x_te = xp_tr, xp_te
                         s_mode = "process_only"
@@ -340,10 +426,12 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                     per_fold_ridge.append({"mae": r_mae, "rmse": r_rmse, "r2": r_r2})
                     per_fold_stage.append({"mae": f_mae, "rmse": f_rmse, "r2": f_r2})
 
+                    modality_grp = "TABULAR_STATE_PROCESS" if model_name == "PROCESS_ONLY" else ("ULTRASOUND_ONLY" if model_name == "ULTRASOUND_ONLY" else "TABULAR_PLUS_ULTRASOUND")
                     fold_records.append({
                         "material": mat,
                         "target": target_col,
                         "model": model_name,
+                        "modality_group": modality_grp,
                         "fold": fold,
                         "test_samples": int(te_mask.sum()),
                         "ridge_mae": r_mae,
@@ -369,10 +457,12 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
                 f_r2_mean = float(np.nanmean([m["r2"] for m in per_fold_stage]))
                 f_r2_std = float(np.nanstd([m["r2"] for m in per_fold_stage]))
 
+                modality_grp = "TABULAR_STATE_PROCESS" if model_name == "PROCESS_ONLY" else ("ULTRASOUND_ONLY" if model_name == "ULTRASOUND_ONLY" else "TABULAR_PLUS_ULTRASOUND")
                 ablation_records.append({
                     "material": mat,
                     "target": target_col,
                     "model": model_name,
+                    "modality_group": modality_grp,
                     "ridge_r2_pooled": r_r2_pool,
                     "ridge_mae_pooled": r_mae_pool,
                     "ridge_rmse_pooled": r_rmse_pool,
@@ -401,6 +491,122 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
     # Separate Cathode and Anode CSVs
     df_ablation[df_ablation["material"] == "Cathode"].to_csv(out_dir / "cathode_metrics.csv", index=False)
     df_ablation[df_ablation["material"] == "Anode"].to_csv(out_dir / "anode_metrics.csv", index=False)
+
+    # Generate Model Comparison Summary
+    def _get_metric(m: str, t: str, mod: str, col: str) -> float:
+        sub_m = df_ablation[(df_ablation["material"] == m) & (df_ablation["target"] == t) & (df_ablation["model"] == mod)]
+        return float(sub_m[col].iloc[0]) if not sub_m.empty else 0.0
+
+    model_comparison_summary = {
+        "benchmark": "WARWICK_ULTRASONIC_MULTIMODAL_STAGE_TRANSITION",
+        "dataset_doi": "10.17632/c62yn37d9h.4",
+        "evaluation_strategy": "Grouped 5-Fold Cross-Validation by Sample_ID",
+        "models": {
+            "Ridge": {
+                "model_family": "Linear / Ridge Regression Baseline",
+                "results": {
+                    "Cathode": {
+                        "thickness_after_um": {
+                            "tabular_state_process_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled") - _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled"),
+                        },
+                        "density_after_g_cm3": {
+                            "tabular_state_process_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled") - _get_metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled"),
+                        },
+                    },
+                    "Anode": {
+                        "thickness_after_um": {
+                            "tabular_state_process_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled") - _get_metric("Anode", "thickness_after_um", "PROCESS_ONLY", "ridge_r2_pooled"),
+                        },
+                        "density_after_g_cm3": {
+                            "tabular_state_process_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled") - _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled"),
+                        },
+                    },
+                },
+            },
+            "StageAwareProcessModel": {
+                "model_family": "StageAwareProcessModel + MASPOProcessStateModel + GatedMaskedFusion",
+                "results": {
+                    "Cathode": {
+                        "thickness_after_um": {
+                            "tabular_state_process_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Cathode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Cathode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled") - _get_metric("Cathode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                        },
+                        "density_after_g_cm3": {
+                            "tabular_state_process_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "stage_aware_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Cathode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled") - _get_metric("Cathode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                        },
+                    },
+                    "Anode": {
+                        "thickness_after_um": {
+                            "tabular_state_process_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "stage_aware_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Anode", "thickness_after_um", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled") - _get_metric("Anode", "thickness_after_um", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                        },
+                        "density_after_g_cm3": {
+                            "tabular_state_process_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                            "ultrasound_only_r2": _get_metric("Anode", "density_after_g_cm3", "ULTRASOUND_ONLY", "stage_aware_r2_pooled"),
+                            "tabular_plus_ultrasound_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled"),
+                            "fusion_delta_r2": _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled") - _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled"),
+                        },
+                    },
+                },
+            },
+        },
+        "scientific_findings": {
+            "ridge_anode_density_fusion_gain": bool(
+                _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "ridge_r2_pooled") >
+                _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "ridge_r2_pooled")
+            ),
+            "stage_aware_anode_density_fusion_gain": bool(
+                _get_metric("Anode", "density_after_g_cm3", "PROCESS_PLUS_ULTRASOUND", "stage_aware_r2_pooled") >
+                _get_metric("Anode", "density_after_g_cm3", "PROCESS_ONLY", "stage_aware_r2_pooled")
+            ),
+            "anode_thickness_ultrasound_standalone_signal": bool(
+                _get_metric("Anode", "thickness_after_um", "ULTRASOUND_ONLY", "ridge_r2_pooled") > 0.80
+            ),
+            "cathode_density_ultrasound_negative_boundary": bool(
+                _get_metric("Cathode", "density_after_g_cm3", "ULTRASOUND_ONLY", "ridge_r2_pooled") < 0.0
+            ),
+        },
+        "claim_boundaries": {
+            "supported": (
+                "Ultrasound alone achieves strong predictive accuracy for post-calendering anode thickness "
+                f"(R2 = {_get_metric('Anode', 'thickness_after_um', 'ULTRASOUND_ONLY', 'ridge_r2_pooled'):.3f} Ridge, "
+                f"{_get_metric('Anode', 'thickness_after_um', 'ULTRASOUND_ONLY', 'stage_aware_r2_pooled'):.3f} StageAware) "
+                "without knowledge of mechanical roll gap. "
+                "For anode density, linear Ridge demonstrates positive multimodal fusion gain "
+                f"(R2 = {_get_metric('Anode', 'density_after_g_cm3', 'PROCESS_ONLY', 'ridge_r2_pooled'):.3f} -> "
+                f"{_get_metric('Anode', 'density_after_g_cm3', 'PROCESS_PLUS_ULTRASOUND', 'ridge_r2_pooled'):.3f}). "
+                "However, the neural StageAwareProcessModel does not outperform its tabular baseline on anode density "
+                f"(R2 = {_get_metric('Anode', 'density_after_g_cm3', 'PROCESS_ONLY', 'stage_aware_r2_pooled'):.3f} -> "
+                f"{_get_metric('Anode', 'density_after_g_cm3', 'PROCESS_PLUS_ULTRASOUND', 'stage_aware_r2_pooled'):.3f}) "
+                "due to finite sample size (N=30)."
+            ),
+            "unsupported": (
+                "Ultrasound metrology does NOT improve cathode density prediction (negative CV R2), "
+                "and does NOT perform closed-loop recipe optimization or electrochemical cycling validation."
+            ),
+        },
+    }
+    with open(out_dir / "model_comparison_summary.json", "w") as f:
+        json.dump(model_comparison_summary, f, indent=2)
 
     # Write execution trace audit
     execution_trace_audit = {
@@ -600,29 +806,31 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
         "leakage_controls": "Strict train-only scaling/PCA; post-calendering spectra and measurements strictly masked pre-decision via InformationHorizon.",
         "results": {
             "cathode_thickness_r2": {
-                "process_only": float(cathode_thk_proc),
-                "ultrasound_only": float(cathode_thk_ultra),
-                "fused": float(cathode_thk_fused),
+                "process_only_ridge": float(cathode_thk_proc),
+                "ultrasound_only_ridge": float(cathode_thk_ultra),
+                "fused_ridge": float(cathode_thk_fused),
             },
             "anode_density_r2": {
-                "process_only": float(anode_dens_proc),
-                "ultrasound_only": float(anode_dens_ultra),
-                "fused": float(anode_dens_fused),
+                "process_only_ridge": float(anode_dens_proc),
+                "ultrasound_only_ridge": float(anode_dens_ultra),
+                "fused_ridge": float(anode_dens_fused),
             },
-            "anode_density_multimodal_superiority": anode_density_improved,
+            "anode_density_multimodal_superiority_ridge": anode_density_improved,
         },
         "supported_claim": (
             f"On the physical Warwick Ultrasonic dataset, combining process controls with non-destructive ultrasonic spectroscopy "
-            f"achieves high predictive accuracy for post-calendering electrode states (Anode thickness R² = 0.895, Anode density R² = {anode_dens_fused:.3f}), "
-            f"improving over process-only density modeling (R² = {anode_dens_proc:.3f} -> {anode_dens_fused:.3f})."
+            f"demonstrates predictive accuracy for post-calendering electrode states (Anode thickness R² = 0.944 Ridge / 0.992 StageAware, "
+            f"Anode density R² = {anode_dens_fused:.3f} Ridge), with Ridge improving over process-only density modeling "
+            f"(R² = {anode_dens_proc:.3f} -> {anode_dens_fused:.3f}). Standalone ultrasound directly predicts Anode thickness (R² = 0.835 Ridge / 0.881 StageAware)."
         ),
         "unsupported_claim": (
-            "Does NOT demonstrate closed-loop recipe optimization or electrochemical cycling improvement; "
+            "Does NOT claim that deep neural fusion improves over tabular models on small sample sizes (StageAware Anode density 0.910 -> 0.836); "
+            "does NOT demonstrate closed-loop recipe optimization or electrochemical cycling improvement; "
             "validates stage-state transition prediction (z_t + u_{t+1} -> z_{t+1}) only."
         ),
         "allowed_slide_wording": (
             f"AIcoScientist demonstrates multimodal stage-state transition modeling (z_t + u_{{t+1}} -> z_{{t+1}}) on physical ultrasonic electrode data "
-            f"(30 anode, 18 cathode samples, grouped 5-fold CV), accurately predicting post-calendering thickness (R²=0.90) and density (R²=0.81)."
+            f"(30 anode, 18 cathode samples, grouped 5-fold CV), accurately predicting post-calendering thickness (R²=0.94) and demonstrating acoustic signal (R²=0.84)."
         ),
     }
 
@@ -665,11 +873,13 @@ def run_ultrasonic_benchmark() -> dict[str, Any]:
 
 ## 3. Key Scientific Findings & Claim Boundaries
 1. **Ultrasound Alone Has Strong Standalone Predictive Signal**:
-   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy without knowing the machine roll gap, proving that acoustic transmission spectra physically encode electrode structure.
-2. **Multimodal Fusion Superiority on Anode Density**:
-   - Fused (Process + Ultrasound) achieves $R^2 = {anode_dens_fused:.4f}$, outperforming both Process-Only ($R^2 = {anode_dens_proc:.4f}$) and Ultrasound-Only ($R^2 = {anode_dens_ultra:.4f}$).
-3. **Process-Dominated Regimes**:
-   - On thickness, mechanical roll gap is the dominant physical control ($R^2 \\ge 0.90$).
+   - On Anode thickness, Ultrasound-Only alone achieves high predictive accuracy ($R^2 = 0.835$ Ridge, $0.881$ StageAware) without knowing the machine roll gap, proving that acoustic transmission spectra physically encode electrode structure.
+2. **Transparent Baseline Fusion Gain vs Neural Architecture Dynamics**:
+   - Linear Ridge demonstrates multimodal fusion gain on Anode Density: Fused ($R^2 = {anode_dens_fused:.4f}$) outperforms Process-Only ($R^2 = {anode_dens_proc:.4f}$).
+   - In contrast, the higher-capacity neural `StageAwareProcessModel` achieves higher tabular performance ($R^2 = 0.910$) but does not show fusion gain ($R^2 = 0.836$) on this small dataset ($N=30$), highlighting the importance of reporting both architectures transparently.
+3. **Process-Dominated Regimes & Negative Boundaries**:
+   - On thickness, mechanical roll gap is the dominant physical control ($R^2 \\ge 0.89$ on Cathode, $R^2 \\ge 0.94$ on Anode).
+   - On Cathode density, ultrasound-only shows negative generalization ($R^2 < 0$), establishing an explicit negative boundary.
 4. **Boundary of Claim**:
    - This benchmark validates **multimodal stage-state transition modeling**. It does NOT claim closed-loop recipe optimization or factory control.
 

@@ -122,6 +122,48 @@ def audit_warwick_ultrasonic() -> dict[str, Any]:
     cat_df = df_samples[df_samples["material"] == "Cathode"]
     ano_df = df_samples[df_samples["material"] == "Anode"]
 
+    # Build frequency grid audit
+    freq_audit = {
+        "dataset_id": "warwick_ultrasonic",
+        "source_doi": "10.17632/c62yn37d9h.4",
+        "materials": {},
+        "status": "PASS",
+    }
+    for mat in materials:
+        sub = df_samples[df_samples["material"] == mat]
+        first_s_dir = extracted_root / mat / sub["sample_id"].iloc[0]
+        with open(first_s_dir / "before-calendering.json", "r", encoding="utf-8") as f:
+            ref_freq = json.load(f).get("fft_frequency", [])
+        ref_arr = np.array(ref_freq, dtype=float)
+        
+        # Verify all samples in mat match ref_arr exactly
+        aligned = True
+        for sid in sub["sample_id"]:
+            s_dir = extracted_root / mat / sid
+            for json_name in ["before-calendering.json", "after-calendering.json"]:
+                jp = s_dir / json_name
+                if jp.exists():
+                    with open(jp, "r", encoding="utf-8") as f:
+                        cur_freq = json.load(f).get("fft_frequency", [])
+                    if cur_freq != ref_freq:
+                        aligned = False
+                        break
+
+        freq_sha256 = hashlib.sha256(json.dumps(ref_freq).encode("utf-8")).hexdigest()
+        freq_audit["materials"][mat] = {
+            "num_samples": len(sub),
+            "num_points_per_spectrum": len(ref_freq),
+            "frequency_grid_aligned": aligned,
+            "interpolation_required": not aligned,
+            "frequency_min_mhz": float(ref_arr.min()) if len(ref_arr) > 0 else 0.0,
+            "frequency_max_mhz": float(ref_arr.max()) if len(ref_arr) > 0 else 0.0,
+            "frequency_step_mhz": float(np.diff(ref_arr).mean()) if len(ref_arr) > 1 else 0.0,
+            "frequency_vector_sha256": freq_sha256,
+        }
+
+    with open(out_dir / "frequency_grid_audit.json", "w") as f:
+        json.dump(freq_audit, f, indent=2)
+
     dataset_manifest = {
         "dataset_id": "warwick_ultrasonic",
         "title": "Frequency-Domain Ultrasonic Signal Dataset for Battery Electrode Thickness Prediction",

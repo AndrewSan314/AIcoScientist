@@ -115,6 +115,7 @@ def run_benchmark() -> dict[str, Any]:
                 dataset_id="warwick_nmc622_calendering",
                 runs_by_recipe=runs_by_recipe,
                 allow_flat_fallback=False if display_policy == "AICOSCIENTIST_FULL_PROCESS_ENGINE" else True,
+                target_units="dimensionless_ratio",
             )
 
             traj = replay.run(
@@ -179,19 +180,22 @@ def run_benchmark() -> dict[str, Any]:
 
         # Regret metrics at B=1, 3, 5
         s_reg_1 = float(np.mean([t.steps[0].simple_regret for t in trajs]))
-        s_reg_3 = float(np.mean([t.steps[2].simple_regret for t in trajs]))
-        s_reg_5 = float(np.mean([t.steps[4].simple_regret for t in trajs]))
-        c_reg_5 = float(np.mean([t.steps[4].cumulative_regret for t in trajs]))
+        s_reg_3 = float(np.mean([t.steps[min(2, len(t.steps)-1)].simple_regret for t in trajs]))
+        s_reg_5 = float(np.mean([t.steps[min(4, len(t.steps)-1)].simple_regret for t in trajs]))
+        c_reg_5 = float(np.mean([t.steps[min(4, len(t.steps)-1)].cumulative_regret for t in trajs]))
 
-        # Regret AUC
-        auc_vals = [compute_regret_auc([s.simple_regret for s in t.steps]) for t in trajs]
-        mean_auc = float(np.mean(auc_vals))
+        auc_list = []
+        for t in trajs:
+            regrets = [s.simple_regret for s in t.steps]
+            auc_list.append(compute_regret_auc(regrets))
+        mean_auc = float(np.mean(auc_list))
 
-        # Epsilon-optimal recovery: best-so-far within x% of optimum (best_val)
-        # diff = (best_val - best_so_far) / best_val
-        eps_1 = sum(1 for t in trajs if t.steps[-1].simple_regret / best_val <= 0.01) / n
-        eps_25 = sum(1 for t in trajs if t.steps[-1].simple_regret / best_val <= 0.025) / n
-        eps_5 = sum(1 for t in trajs if t.steps[-1].simple_regret / best_val <= 0.05) / n
+        best_val = pool[target_col].max()
+        worst_val = pool[target_col].min()
+        val_range = best_val - worst_val
+        eps_1 = sum(1 for t in trajs if t.steps[-1].simple_regret <= 0.01 * val_range) / n
+        eps_25 = sum(1 for t in trajs if t.steps[-1].simple_regret <= 0.025 * val_range) / n
+        eps_5 = sum(1 for t in trajs if t.steps[-1].simple_regret <= 0.05 * val_range) / n
 
         summary_rows.append({
             "policy": pol,
@@ -219,7 +223,7 @@ def run_benchmark() -> dict[str, Any]:
         "hit_at_1": analytical_hit_rates[1],
         "hit_at_3": analytical_hit_rates[3],
         "hit_at_5": analytical_hit_rates[5],
-        "top3_hit_at_5": analytical_top3_rates[5],
+        "top3_hit_at_5": np.nan,  # Top-1 is primary; top-3 analytical removed to avoid mismatch with conditional initial designs
         "mean_steps_to_best": (1 + 15) / 2,  # 8.0 expectation
         "median_steps_to_best": 8.0,
         "simple_regret_at_1": np.nan,

@@ -13,11 +13,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "588515b27aaf6cc9200f759334fdb5abe93cca2a25e6aae14d0b3d330a5f58ac",
-      "0412ed3a266631fa3e95c0692c82afabe6328d0c77a329a8252a3f8efafafe85",
-      "e04ec64c2d7532de32eade0f59100a2a5baba627eac5737b0ec842a90f5a9b6e",
-      "dcc817e8baf4516368939f9ad105739bade1e9e7a5d5060823cf6619a9a2ba9b",
-      "afb64f3e455f6b38c74a6381339166badcb447c4cf93742431bb695bae03d830"
+      "21e988c9e3d7573fc808930dda7f3e1c93c64b7778c7df38fa4c975e94fe542e",
+      "216d982152f42d813e69b008198160d29935b1b87ee6fd16d10226d25d9d972a",
+      "e7096bb482b7a5c6025b22b01ebb6bc5dde4fe6913f39e3e88d2ea80d9408297",
+      "32a40ecac9a802b890dad1e3672597d7099afb54ee576af5ae26805fb0e1a5a1",
+      "93c6d998966b5b0b310e2f98f0e8a28a9b8f8266bed46955eed68d04cc368a78"
     ],
     "verified": true,
     "seed": 11
@@ -36,11 +36,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "40bcdfe1011ab5cd8b3745eab69a24d6f714ddde1b0fcff01adbfbdf808d9da9",
-      "e910620121b2cc166894fa9ebc50ce8fc205b16cdeac82c94e9e0c2fba2ff9a4",
-      "8a233420561b076d3b1cb084acdffed4585cb8eb1927b9dbe5ff3a3ec0a0d3b6",
-      "f514079ad31be551153447735da137d743c2ec91adb061c98263619601684716",
-      "dc68dac1384cddbfa10897f109d866606fa91a11553eb0fec8f710e30bfc4a27"
+      "4cf14f9d7f11820b49a68eddbab00bc0de87e52104bf3af98cffba865c9d1789",
+      "2a0b45aa94c94f7b35a63c87ff5acfec22fde540b35e3a7ac605366df653341d",
+      "f477c9e36a85a94717d54c886997145954c601050b44f52064c01de5f5f1c2db",
+      "4382d66b8bfc35a675bee318e3b7677c58e5a7e3cae292b6834155670570d1fd",
+      "6a788f04b0c236cb19dcf81dfdc718d668cd24f6b96bc455440b2dd6a7ad9355"
     ],
     "verified": true,
     "seed": 23
@@ -59,11 +59,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "0b7e472326fa79fc39096ec2eb38773ea23760c968dc15bffc48a03453238b83",
-      "a5bf09ea22fb0fbc9ca2d680424b1272867494112926a8cccaa3d12e246472c0",
-      "1a6ba000b50908b77a365513739bfa829b208324e0d0b72c4dceeeb8e4bb9198",
-      "b5a9b13cba58e455107d0825f1a3e3e87471d8a14eca92190241b29aef6826d5",
-      "9028dbe95fb9c5c65161ddfa5f9a9959e430ab2846af502147e99b15c4320d5c"
+      "6ca990865a3f9c0c851b9d8582bd13bf87ffb41bd5b33728cd9913c4023808d8",
+      "53294c97501fea139be179438ae3ea1b28f55ed3610a375dcbe48200d36aad3f",
+      "31bd5456319b59bd55add37e0ca249f264547832575ee19d7f52c18c893bd7e8",
+      "134818ebd667f4ccb76f5782ee39ae4947cd6b0ef05340b997cd5819d8e0aaba",
+      "55b4f01e470f3dc193bbbe7d4f48744e974361674303d0e18f8f7641063fdb76"
     ],
     "verified": true,
     "seed": 42
@@ -82,11 +82,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "c1437950ffdc1422fbff70e8e891590365888304486c000fc3465935d265d22f",
-      "179ce3ab75e7a57a7e2c42cb3cddd6db8c59ccf15b8cf191261965b02196e95b",
-      "daa6c2ca0ae7cec408afefb7b2534cb7a2a30819f4dbd9dab15e88101dd6754d",
-      "1fb62c4dc9f72fbdd01685e683ba934649444789cd63b1380c97bde6c6676289",
-      "62007538561769dfc723892627a6e5d5ee9e7e148492b09b965dc11a35d4b995"
+      "e071a3240bf776fb7a90b1b64ec6ff3bf114b1ad9da42a36e80696914074705e",
+      "7282ce336483ec2878de17fa7a17ec58ccddee5f70ea3451c436204c6a03f315",
+      "3ee28124d50e6bb8309cfcea0354477d8c1cedf862e37c5bbb6ba6e845e18955",
+      "860700206d6410f855773d39853bbbebf9925607f16ee268c6952d52e3aab034",
+      "28e9dac806d155938c6b65914fbdde5c89b61013bdb10662b84907b8d4e295da"
     ],
     "verified": true,
     "seed": 67
@@ -105,11 +105,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "c60bf92738d3050bc38bcc18e1f27d46fa1ce356788004aa1925c95746a6512d",
-      "8797c106bb9f2a2c70c0160cc6739070eb0c7d3c89968024f92f9578d288e4f1",
-      "958d2ae518346fb4f57a9e8594047e66397c20fcae9a8056c1cf6b6955588993",
-      "0b56853e5d4755d2d9faf9ed5702e2e4764453613b46571fe0ca2208374af1d8",
-      "4e02996db1517407f71f699d1240743948c32ec37899ab662b7196651bacd0b7"
+      "ce97f445c43ef92b33baff462de1cf41d621f1fba40f4e87731b8bc3bf02a4f7",
+      "112334ba45d2648217823dd50b4f32d60d198ad629dfab2f6542967bb7c2d569",
+      "e66265fefa3f3e73b7ac9dbe54817f53ebdd7d99fdf7106a1623d18cade59a34",
+      "369f8c23140905c3ddd6c86bcdfaf89d7b814d6587d9319c8bd0c8a8144ea945",
+      "8d687dbc2810d81df82d1c5785e58f42a503816985dc4ea32f95d6dfb270fc48"
     ],
     "verified": true,
     "seed": 101
@@ -128,11 +128,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "cc89460b7e47272de23d17c7f067923f5fb914e7b36b7a7293041fe7bc88c1fe",
-      "75c924fada0562c9489e30da38121b6d8775d052ef659cc0cf67975186b7402c",
-      "b4a72f1e534b44b2a3519d1d57e308685b8fa104917632963c422fef734ca371",
-      "30c47a0b6b17768990bea7d37aaab87ee1169d9b2dbca0b14c23d7d6e8195791",
-      "6dcb9e48927e7af13634ce7858f16240993e164bcb948e6833d4caa1f3a7b95e"
+      "0d3efd7f3931d455b84e48353577e6259004e99548d46cd201116db663e56562",
+      "2f428f3af8889d08788bbdde4b02509c2cc2eef6a5a9321b0295763b35839a38",
+      "77d1e8910f7782c92dded23a69f76cac7b4c5f66d0343b97c0aa3f81cade92d2",
+      "79de71957d3d50d9d3e650085e400f67c6c945702c1ca5e2ee12abb1e4dd82d4",
+      "61ebc36a3c559516a90088af9f3503eaae262ca4416d2004abc6ddbafb9c8589"
     ],
     "verified": true,
     "seed": 137
@@ -151,11 +151,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "96aecf62ff1282bd80d68df73cc47b2d93556445532f37128535a4150a9eae56",
-      "8ffbcba5eee2a86cffc213f42950a81bf5198f3cad286b35ea0a1d4e324c5fd5",
-      "9381808b4458a345a5ee700c93cda36b36be8fa28463a04882b7082705a4fbbb",
-      "d6308f235faf7192d6651931be0c1bec2a829738e5a2527712691c14822d53cb",
-      "3d8ef07869d830867ca0d16496f54abf01dc94ae229f136b31eef4ff6b780435"
+      "3a2244410642812d972fb6736700d4d7e7b4cc37a8c24e78ce6a1e8f3f78d58a",
+      "2afc803ee23e84eb6746108ba69e4f27414b5b017bbfd1afdbe42b6026f7697e",
+      "12b8410f63e04fdbd24de4bd215d19088de5b9981d15cca84b2f430d319abd27",
+      "2825c712c6d7b52a9a281d699eec894dd8d4e0256ea400f4491ae44f3ff4f3ce",
+      "cb950355d6462ad309499f3f7dcb89b315a06f19fc48db87f1b5b2b56e7b0e63"
     ],
     "verified": true,
     "seed": 179
@@ -174,11 +174,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "41023b57d7c8cff8fc0eef6fe75c1ea16f67b1317f71e32a77bdbeed747b868c",
-      "53b4904a7f108fa765114cbfc76390314f9565345307ebc48477fa8ab91c451a",
-      "285e110e73fc3060abdebdf465dd732de4cdac060682f48a4a37a1bafbedb41c",
-      "daf52888ae76c188281a36933b97f67f528712cdccf5be2cd72579ebf82a9a56",
-      "4c6dad040bd6b67a459d143c62daa84f2382ad3590e15f4fd271bdc774c39987"
+      "6fda441f022a550ac750c75dee7cf2eda525fcd519472e50cc836c7cef80cdd6",
+      "dfc54f8999aafaf1abc102c57b456008319732a7923f540af1c572ce49321d79",
+      "c5a88ee539fe43d18d546d9ae487444582bee078bfb416dd4b736acaf75abebd",
+      "52ec839f80ee70825f8972864a254590bc12fb3c15b160eb6d45d899aca6fbb4",
+      "e74de66d679783c34cb8731bf621618965efa4412da8e0d0e2e339e88c1e8ed8"
     ],
     "verified": true,
     "seed": 223
@@ -197,11 +197,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "6579068e66ad5aed862b56a4047cb2c568d309a5ed1a9d0030dbf5e1f03403f0",
-      "aab0a723e799a6b055d9bf9412ac4f21d8523740cd3e844a44553036ecde42ae",
-      "4e425e1443db4373b70145576f5ddbf4b3b0515ec3956df475669b6f9a67f8c6",
-      "18986330d81689bab80501ec7b106199916e4cd1b713c17fa1fd201cae9a1fcd",
-      "c1cacdef197164e90a7fe3f4bc15a352c061bbfb39f2e563a438c92212a090de"
+      "82750ab01a4acbc34ada4aaa81486aa15a15b4f7d4ac3f470c79669a6cc1f838",
+      "e68ad53c487ecf41224e98869bd8bb7ae34e163c3ec10dda8e8cef3a532a52a2",
+      "9c792a18f6979904ca725a5999d36bfed4f7c7a99178c9bb4890e07e67593811",
+      "ea0975da9bde328a95598b3966a1f5c3a58b430e9aecb10b00d0aaf8d683e8c7",
+      "57bb094caca01056df29342f79a28b0be38c74b06036617d597b0c2c2cc3d328"
     ],
     "verified": true,
     "seed": 281
@@ -220,11 +220,11 @@
     "uses_direct_botorch_backend": false,
     "optimizer_backend_type": "none",
     "surrogate_artifact_fingerprints": [
-      "9f70a3bbaa2a1c9c845b917709a2f7dd8353562caf3da3437c50fb191bea7c6f",
-      "67d1b97c6aa15b5dbac71c5bdc91e5726807a599740811e619e42a11b70b7888",
-      "cf8634ad6dc28ee5163a1bd9f98bb1b3943ad8b3982db0ffd1e0d418ae46038e",
-      "742d64f890635dd1448f9af81cd634eda856d2e80ecc7025ec1a02b12d448953",
-      "aeb5be21f848b41c5515d7ecdb67c0a8d40fc1bd3ecb138ef6df0991a8644f62"
+      "6ee5e6c7f47cf9acb666a36f3ae17aba903501badcc61dd5ea286b8975aec12d",
+      "46f2f4281ccabf90191c393c41185bd53b4e6d271f10476e6d9e961bb4377d0b",
+      "eb46608a0a152685e553b0bd0af7d9e3765285a82b80f722af90e7392a7e2dde",
+      "55829cf1f03413bada0410d28264f32572bfe4693f15dc7a32a8e9c357910cf4",
+      "3e361d676c06edf29b9a3a8b0682cc689338350b469d6ddfb0686626f21a1331"
     ],
     "verified": true,
     "seed": 353

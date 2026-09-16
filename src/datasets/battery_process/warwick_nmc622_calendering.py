@@ -62,10 +62,18 @@ class WarwickNMC622CalenderingAdapter(NormalizedRunAdapter):
 
     def __init__(self, root: str | Path | None = None) -> None:
         if root is not None:
-            self.root = Path(root)
+            r_path = Path(root)
+            if r_path.is_file() and r_path.suffix.lower() == ".zip":
+                extracted_dir = r_path.parent / r_path.stem
+                if extracted_dir.exists():
+                    r_path = extracted_dir
+                else:
+                    r_path = r_path.parent
+            self.root = r_path
         else:
             # Check default directories in order of preference
             candidate_roots = [
+                Path("data/external/warwick_nmc622_calendering/raw/Characteristics of Electrodes and Lithium-ion Cells at Pilot-Plant Manufacturing Scale"),
                 Path("data/external/warwick_nmc622_calendering/raw"),
                 Path("data/external/warwick_nmc622_calendering"),
                 Path("data/external/Data of Physical and Electrochemical Characteristics of Calendered NMC622 Electrodes and Lithium-ion Cells at Pilot-Plant Scale Battery Manufacturing/Characteristics of Electrodes and Lithium-ion Cells at Pilot-Plant Manufacturing Scale"),
