@@ -34,6 +34,10 @@ data/external/**/*.zip
 data/external/**/*.pkl
 data/external/aging_matrix_2025/
 data/external/Graphite-based electrodes for Li-ion batteries Formulation and manufacturing process optimization via machine learning/
+data/external/Data of Physical and Electrochemical Characteristics of Calendered NMC622 Electrodes and Lithium-ion Cells at Pilot-Plant Scale Battery Manufacturing/
+data/external/Frequency-Domain Ultrasonic Signal Dataset for Bat/
+data/external/warwick_nmc622_calendering/
+data/external/warwick_ultrasonic/
 data/external/attia_2020/*
 !data/external/attia_2020/manifest.json
 *.mat

@@ -1,0 +1,38 @@
+{
+  "dataset_name": "Frequency-Domain Ultrasonic Signal Dataset for Battery Electrode Thickness Prediction",
+  "doi": "10.17632/c62yn37d9h.4",
+  "version": "4",
+  "num_cathode_samples": 18,
+  "num_anode_samples": 30,
+  "cathode_fft_length": 29,
+  "anode_fft_length": 36,
+  "cathode_frequency_range_mhz": [
+    0.9975062344139651,
+    14.962593516209477
+  ],
+  "anode_frequency_range_mhz": [
+    0.8,
+    14.8
+  ],
+  "missing_before_after_pairs": 0,
+  "duplicate_sample_ids": 0,
+  "meta_features_cathode": [
+    "Roll_Gap",
+    "Web_speed",
+    "Coat_Weight",
+    "Thickness (before)",
+    "Density (before)"
+  ],
+  "meta_features_anode": [
+    "Roll_Gap",
+    "Calendering_Speed",
+    "Thickness (before)",
+    "Density (before)"
+  ],
+  "targets": [
+    "Thickness (after)",
+    "Density (after)"
+  ],
+  "cv_strategy": "Grouped 5-Fold Cross-Validation by Sample_ID (before and after strictly in same fold)",
+  "train_only_preprocessing": true
+}

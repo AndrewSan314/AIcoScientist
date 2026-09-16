@@ -1,0 +1,87 @@
+{
+  "dataset_name": "Data of Physical and Electrochemical Characteristics of Calendered NMC622 Electrodes and Lithium-ion Cells at Pilot-Plant Scale Battery Manufacturing",
+  "doi": "10.17632/wwhm2frfmy.1",
+  "files_audited": [
+    {
+      "filename": "1- Tables/Half-cell (Cathode) Electrochemical Performance.xlsx",
+      "sheets": [
+        "Table",
+        "Group1",
+        "Group2",
+        "Group3",
+        "Group4",
+        "Group5",
+        "Group6",
+        "Group7",
+        "Group8",
+        "Group9",
+        "Group10",
+        "Group11",
+        "Group12",
+        "Group13",
+        "Group14",
+        "Group15",
+        "Group16",
+        "Group17",
+        "Group18"
+      ],
+      "purpose": "DOE table + 18 experimental group sheets containing cell replicate C-rate gravimetric/volumetric performance, ASI impedance, and rate capability"
+    },
+    {
+      "filename": "1- Tables/Intermediate measurements during calendering.xlsx",
+      "sheets": [
+        "Cathode",
+        "Cathode-Intermediate"
+      ],
+      "purpose": "Intermediate physical metrology before and after calendering (thickness, weight, density, porosity, tensile strength, roll gap, passes)"
+    },
+    {
+      "filename": "1- Tables/Half-cell Electrochemical Performance Cycling Performance.xlsx",
+      "sheets": [
+        "Sheet1"
+      ],
+      "purpose": "50-cycle cycling degradation across 54 half-cells"
+    },
+    {
+      "filename": "2- Megtec and Mesys",
+      "purpose": "High-frequency pilot-line coater, dryer, and basis-weight gauge telemetry logs (dryer temp, fan speed, tension, wet/dry weight profiles)"
+    },
+    {
+      "filename": "3- Biologic",
+      "purpose": "Raw BioLogic .mpt potentiostat cycling data files for individual coin cells"
+    },
+    {
+      "filename": "4- Images/Calendering SEM+EDS.docx",
+      "purpose": "Cross-sectional SEM and EDS elemental mapping images for calendered electrodes"
+    }
+  ],
+  "sanity_checks": {
+    "num_unique_doe_conditions": 18,
+    "expected_doe_conditions": 18,
+    "doe_conditions_match": true,
+    "num_cells": 54,
+    "expected_cells": 54,
+    "cells_match": true,
+    "cells_per_condition": 3,
+    "target_coverage_100_percent": true,
+    "replicate_std_is_positive": true
+  },
+  "source_observed_best": {
+    "experiment_id": "EXP_03",
+    "condition_no": 3,
+    "electrode_id": "NEX_CAT_240_L_85_D",
+    "loading_regime": "LOW",
+    "target_coating_weight_gsm": 122.48,
+    "roll_temperature_c": 85.0,
+    "target_density_g_cm3": 3.2,
+    "target_porosity_pct": 28.22,
+    "roll_gap_um": 458.0,
+    "mean_target_value": 0.7947399912874302,
+    "std_target_value": 0.015812657770145445,
+    "replicate_values": [
+      0.8170347003154574,
+      0.785099182707105,
+      0.7820860908397282
+    ]
+  }
+}

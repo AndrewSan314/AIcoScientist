@@ -1,0 +1,23 @@
+variable_name,source_column,unit,role,stage,availability_time
+target_coating_weight_gsm,Target coating weight (GSM),g/m2,UPSTREAM_CONTEXT,COATING,PRE_MANUFACTURING
+loading_regime,Electrode ID (_L_ vs _H_),categorical,UPSTREAM_CONTEXT,COATING,PRE_MANUFACTURING
+roll_temperature_c,Roll temperature (oC),degC,CONTROL,CALENDERING,CALENDERING_ACTUATION
+roll_gap_um,Roll gap (um)- includes 2 shims of ~500 um,um,CONTROL,CALENDERING,CALENDERING_ACTUATION
+number_of_passes,Number of passes,count,CONTROL,CALENDERING,CALENDERING_ACTUATION
+target_density_g_cm3,Target density (g/cm3),g/cm3,TARGET_STATE,CALENDERING,PRE_MANUFACTURING
+target_porosity_pct,Calculated target porosity (%),%,TARGET_STATE,CALENDERING,PRE_MANUFACTURING
+pre_calendering_thickness_um,Coating thickness from discs (um) [Before],um,INTERMEDIATE_OBSERVATION,COATING,POST_COATING_PRE_CALENDER
+pre_calendering_coating_weight_gsm,Coating weight from discs (gsm) [Before],g/m2,INTERMEDIATE_OBSERVATION,COATING,POST_COATING_PRE_CALENDER
+pre_calendering_density_g_cm3,Density from discs (g/cm3) [Before],g/cm3,INTERMEDIATE_OBSERVATION,COATING,POST_COATING_PRE_CALENDER
+pre_calendering_porosity_pct,Porosity from discs (%) [Before],%,INTERMEDIATE_OBSERVATION,COATING,POST_COATING_PRE_CALENDER
+pre_calendering_tensile_strength_kpa,Electrode max. tensile strength (kPa) [Before],kPa,INTERMEDIATE_OBSERVATION,COATING,POST_COATING_PRE_CALENDER
+calendered_thickness_um,Coating thickness from discs (um) [Calendered],um,INTERMEDIATE_OBSERVATION,CALENDERING,POST_CALENDERING
+calendered_coating_weight_gsm,Coating weight from discs (gsm) [Calendered],g/m2,INTERMEDIATE_OBSERVATION,CALENDERING,POST_CALENDERING
+calendered_density_g_cm3,Density from discs (g/cm3) [Calendered],g/cm3,INTERMEDIATE_OBSERVATION,CALENDERING,POST_CALENDERING
+calendered_porosity_pct,Porosity from discs (%) [Calendered],%,INTERMEDIATE_OBSERVATION,CALENDERING,POST_CALENDERING
+calendered_tensile_strength_kpa,Electrode max. tensile strength (kPa) [Calendered],kPa,INTERMEDIATE_OBSERVATION,CALENDERING,POST_CALENDERING
+rate_performance_5c_over_0_2c,Rate charge 5C:0.2C,dimensionless_ratio,FINAL_KPI,FINAL_CHARACTERIZATION,POST_ELECTROCHEMICAL_TEST
+discharge_capacity_0_2c_mah_g,Gravimetric Discharge Capacity At C/5- 6,mAh/g,FINAL_KPI,FINAL_CHARACTERIZATION,POST_ELECTROCHEMICAL_TEST
+discharge_capacity_5c_mah_g,Gravimetric Discharge Capacity At 5C,mAh/g,FINAL_KPI,FINAL_CHARACTERIZATION,POST_ELECTROCHEMICAL_TEST
+first_cycle_loss_pct,First cycle loss (%),%,FINAL_KPI,FINAL_CHARACTERIZATION,POST_ELECTROCHEMICAL_TEST
+cycle_50_retention_pct,Capacity at C/2 (cycle 50) / (cycle 1) * 100,%,FINAL_KPI,FINAL_CHARACTERIZATION,POST_ELECTROCHEMICAL_TEST

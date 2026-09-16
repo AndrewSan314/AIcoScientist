@@ -1,0 +1,33 @@
+{
+  "dataset_id": "warwick_nmc622_calendering",
+  "official_source": "https://data.mendeley.com/datasets/wwhm2frfmy/1",
+  "source_doi": "10.17632/wwhm2frfmy.1",
+  "version": "1",
+  "retrieval_date": "2026-09-16",
+  "license": "CC0 1.0",
+  "archive_filename": "Characteristics of Electrodes and Lithium-ion Cells at Pilot-Plant Manufacturing Scale.zip",
+  "archive_sha256": "bf93b0196d861838a7eeee8267d66a38cfda23306db76e7af6a10e79f077e9b3",
+  "total_extracted_files": 177,
+  "num_unique_experiments": 18,
+  "num_replicate_cells": 54,
+  "replicates_per_condition": 3,
+  "primary_target": "rate_performance_5c_over_0_2c",
+  "source_observed_best": {
+    "experiment_id": "EXP_03",
+    "condition_no": 3,
+    "electrode_id": "NEX_CAT_240_L_85_D",
+    "loading_regime": "LOW",
+    "target_coating_weight_gsm": 122.48,
+    "roll_temperature_c": 85.0,
+    "target_density_g_cm3": 3.2,
+    "target_porosity_pct": 28.22,
+    "roll_gap_um": 458.0,
+    "mean_target_value": 0.7947399912874302,
+    "std_target_value": 0.015812657770145445,
+    "replicate_values": [
+      0.8170347003154574,
+      0.785099182707105,
+      0.7820860908397282
+    ]
+  }
+}

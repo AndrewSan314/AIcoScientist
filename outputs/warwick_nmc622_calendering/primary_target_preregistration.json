@@ -1,0 +1,30 @@
+{
+  "preregistered_primary_target": "rate_performance_5c_over_0_2c",
+  "source_workbook": "Half-cell (Cathode) Electrochemical Performance.xlsx",
+  "source_sheet_mapping": "Group1 ... Group18, Row 'Rate charge 5C:0.2C'",
+  "physical_interpretation": "Ratio of discharge gravimetric capacity at 5C to discharge capacity at 0.2C (C/5-6)",
+  "units": "dimensionless_ratio",
+  "optimization_direction": "MAXIMIZE",
+  "eligible_experiments": 18,
+  "target_completeness_pct": 100.0,
+  "source_observed_best_condition": {
+    "experiment_id": "EXP_03",
+    "condition_no": 3,
+    "electrode_id": "NEX_CAT_240_L_85_D",
+    "loading_regime": "LOW",
+    "target_coating_weight_gsm": 122.48,
+    "roll_temperature_c": 85.0,
+    "target_density_g_cm3": 3.2,
+    "target_porosity_pct": 28.22,
+    "roll_gap_um": 458.0,
+    "mean_target_value": 0.7947399912874302,
+    "std_target_value": 0.015812657770145445,
+    "replicate_values": [
+      0.8170347003154574,
+      0.785099182707105,
+      0.7820860908397282
+    ]
+  },
+  "preregistration_timestamp_iso": "2026-09-16T02:25:18.642578+00:00",
+  "hierarchy_fallback_reason": "Primary preferred target Rate Performance 5C:0.2C verified 100% complete across all 18 DOE conditions and 54 cell replicates; no fallback required."
+}

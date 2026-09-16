@@ -1,0 +1,40 @@
+{
+  "benchmark": "WARWICK_NMC622_CALENDERING_REDISCOVERY",
+  "capability": "calendering_process_optimization",
+  "evidence_kind": "PILOT_LINE_HISTORICAL",
+  "num_conditions": 18,
+  "num_replicate_cells": 54,
+  "target": "rate_performance_5c_over_0_2c",
+  "direction": "MAXIMIZE",
+  "source_observed_best_condition": "EXP_03",
+  "source_observed_best_target": 0.7947399912874302,
+  "budget": 5,
+  "num_seeds": 10,
+  "seeds": [
+    11,
+    23,
+    42,
+    67,
+    101,
+    137,
+    179,
+    223,
+    281,
+    353
+  ],
+  "results": {
+    "aicoscientist_hit_at_1": 0.0,
+    "aicoscientist_hit_at_3": 0.2,
+    "aicoscientist_hit_at_5": 1.0,
+    "aicoscientist_top3_hit_at_5": 1.0,
+    "direct_botorch_hit_at_5": 0.9,
+    "empirical_random_hit_at_5": 0.3,
+    "exact_analytical_random_hit_at_5": 0.3333333333333333,
+    "aicoscientist_simple_regret_at_5": 0.0,
+    "direct_botorch_simple_regret_at_5": 0.001707218528115062,
+    "random_simple_regret_at_5": 0.012080026758740415,
+    "beat_exact_random": true
+  },
+  "supported_claim": "On the pilot-plant Warwick NMC622 calendering dataset, AIcoScientist achieved Hit@5 = 100.0%, exceeding the exact random analytical baseline of 33.3% by +66.7 percentage points.",
+  "allowed_slide_wording": "AIcoScientist demonstrates pilot-plant calendering process optimization on physical NMC622 data (18 full factorial pilot conditions, 54 half-cells), rediscovering the source-observed optimal condition (EXP_03) with Hit@5 = 100.0% (vs 33.3% random baseline)."
+}

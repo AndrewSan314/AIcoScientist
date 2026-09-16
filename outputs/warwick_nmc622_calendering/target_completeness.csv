@@ -1,0 +1,6 @@
+target_id,source_name,units,direction,experiment_coverage,replicate_coverage,coverage_pct,is_complete
+rate_performance_5c_over_0_2c,Rate charge 5C:0.2C (Discharge 5C : 0.2C),dimensionless_ratio,MAXIMIZE,18/18,54/54,100.0,True
+discharge_capacity_5c_mah_g,Gravimetric Discharge Capacity At 5C,mAh/g,MAXIMIZE,18/18,54/54,100.0,True
+discharge_capacity_0_2c_mah_g,Gravimetric Discharge Capacity At C/5-6,mAh/g,MAXIMIZE,18/18,54/54,100.0,True
+cycle_50_retention_pct,Capacity retention at Cycle 50 (C/2),%,MAXIMIZE,18/18,54/54,100.0,True
+first_cycle_coulombic_efficiency_pct,100 - First cycle loss (%),%,MAXIMIZE,17/18,53/54,94.4,False

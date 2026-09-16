@@ -1,0 +1,150 @@
+{
+  "policy": "DIRECT_BOTORCH_BASELINE",
+  "seed": 223,
+  "engine_path": "DIRECT_BOTORCH_BASELINE",
+  "initial_candidate_ids": [
+    "EXP_07",
+    "EXP_10",
+    "EXP_16"
+  ],
+  "hidden_best_id": "EXP_03",
+  "hidden_best_value": 0.7947399912874302,
+  "initial_best_value": 0.6876224052265055,
+  "rediscovered": true,
+  "experiments_to_best": 4,
+  "top3_rediscovered": true,
+  "experiments_to_top3": 4,
+  "final_simple_regret": 0.0,
+  "final_cumulative_regret": 0.05168521158941586,
+  "execution_trace": {
+    "source_adapter_invocations": 0,
+    "battery_process_runs_seen": 0,
+    "recipe_selection_horizon_invocations": 0,
+    "process_surrogate_samples_created": 0,
+    "process_surrogate_fit_count": 0,
+    "surrogate_artifact_fingerprints": [],
+    "coordinator_proposal_count": 0,
+    "optimizer_backend_type": "BoTorchBackend",
+    "oracle_reveal_count": 8,
+    "direct_botorch_calls": 5,
+    "random_steps": 0,
+    "training_recipe_ids_by_step": [],
+    "candidate_ids_scored_by_step": [],
+    "runs_loaded": 0,
+    "horizon_projections": 0,
+    "samples_created": 0,
+    "surrogates_fitted": 0,
+    "artifacts_created": 0,
+    "coordinator_calls": 0,
+    "proposals_generated": 0,
+    "oracle_reveals": 8,
+    "botorch_calls": 5
+  },
+  "steps": [
+    {
+      "step": 1,
+      "selected_id": "EXP_02",
+      "revealed_target": 0.7775115874242916,
+      "best_so_far": 0.7775115874242916,
+      "simple_regret": 0.01722840386313862,
+      "cumulative_regret": 0.01722840386313862,
+      "hidden_best_rank": 8,
+      "is_hidden_best": false,
+      "predicted_mean": 0.6308162163105322,
+      "predicted_std": 0.18584144301236738,
+      "acquisition_value": -3.005432480795982,
+      "engine_path": "DIRECT_BOTORCH_BASELINE",
+      "surrogate_artifact_fingerprint": null,
+      "dataset_fingerprint": "da0eddd60a249e3394c3c5e19e96ac46b3472c6d29b999008ea6c44db6be5435",
+      "information_horizon": "NONE (FLAT TABLE)",
+      "training_view_summary": {
+        "backend": "BoTorchBackend",
+        "num_observations": 3
+      }
+    },
+    {
+      "step": 2,
+      "selected_id": "EXP_04",
+      "revealed_target": 0.7388540816692358,
+      "best_so_far": 0.7775115874242916,
+      "simple_regret": 0.01722840386313862,
+      "cumulative_regret": 0.03445680772627724,
+      "hidden_best_rank": 5,
+      "is_hidden_best": false,
+      "predicted_mean": 0.5243609251811671,
+      "predicted_std": 0.3209974818169833,
+      "acquisition_value": -3.194177111046459,
+      "engine_path": "DIRECT_BOTORCH_BASELINE",
+      "surrogate_artifact_fingerprint": null,
+      "dataset_fingerprint": "da0eddd60a249e3394c3c5e19e96ac46b3472c6d29b999008ea6c44db6be5435",
+      "information_horizon": "NONE (FLAT TABLE)",
+      "training_view_summary": {
+        "backend": "BoTorchBackend",
+        "num_observations": 4
+      }
+    },
+    {
+      "step": 3,
+      "selected_id": "EXP_01",
+      "revealed_target": 0.766066964582094,
+      "best_so_far": 0.7775115874242916,
+      "simple_regret": 0.01722840386313862,
+      "cumulative_regret": 0.05168521158941586,
+      "hidden_best_rank": 3,
+      "is_hidden_best": false,
+      "predicted_mean": 0.4525147494780485,
+      "predicted_std": 0.3299342039803647,
+      "acquisition_value": -3.5394308203044607,
+      "engine_path": "DIRECT_BOTORCH_BASELINE",
+      "surrogate_artifact_fingerprint": null,
+      "dataset_fingerprint": "da0eddd60a249e3394c3c5e19e96ac46b3472c6d29b999008ea6c44db6be5435",
+      "information_horizon": "NONE (FLAT TABLE)",
+      "training_view_summary": {
+        "backend": "BoTorchBackend",
+        "num_observations": 5
+      }
+    },
+    {
+      "step": 4,
+      "selected_id": "EXP_03",
+      "revealed_target": 0.7947399912874302,
+      "best_so_far": 0.7947399912874302,
+      "simple_regret": 0.0,
+      "cumulative_regret": 0.05168521158941586,
+      "hidden_best_rank": 1,
+      "is_hidden_best": true,
+      "predicted_mean": 0.7474897436895191,
+      "predicted_std": 0.05194688435767463,
+      "acquisition_value": -4.934660886158456,
+      "engine_path": "DIRECT_BOTORCH_BASELINE",
+      "surrogate_artifact_fingerprint": null,
+      "dataset_fingerprint": "da0eddd60a249e3394c3c5e19e96ac46b3472c6d29b999008ea6c44db6be5435",
+      "information_horizon": "NONE (FLAT TABLE)",
+      "training_view_summary": {
+        "backend": "BoTorchBackend",
+        "num_observations": 6
+      }
+    },
+    {
+      "step": 5,
+      "selected_id": "EXP_06",
+      "revealed_target": 0.7884053971541913,
+      "best_so_far": 0.7947399912874302,
+      "simple_regret": 0.0,
+      "cumulative_regret": 0.05168521158941586,
+      "hidden_best_rank": null,
+      "is_hidden_best": false,
+      "predicted_mean": 0.7491063232598453,
+      "predicted_std": 0.025367727557655626,
+      "acquisition_value": -7.765404045242874,
+      "engine_path": "DIRECT_BOTORCH_BASELINE",
+      "surrogate_artifact_fingerprint": null,
+      "dataset_fingerprint": "da0eddd60a249e3394c3c5e19e96ac46b3472c6d29b999008ea6c44db6be5435",
+      "information_horizon": "NONE (FLAT TABLE)",
+      "training_view_summary": {
+        "backend": "BoTorchBackend",
+        "num_observations": 7
+      }
+    }
+  ]
+}

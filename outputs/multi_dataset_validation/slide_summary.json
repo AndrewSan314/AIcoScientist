@@ -1,0 +1,44 @@
+{
+  "title": "AIcoScientist Multi-Dataset Physical Battery-Process Validation",
+  "scope": "Three Independent Physical Benchmarks across Active BO and Multimodal State Modeling",
+  "benchmarks": {
+    "drakopoulos_2021": {
+      "system": "Graphite Anode Formulation & Coating & Calendering",
+      "evidence": "12 strictly complete historical recipes",
+      "task": "D30 capacity optimization (BO)",
+      "result": "Hit@5 = 100% vs 55.6% analytical random",
+      "status": "VALIDATED"
+    },
+    "warwick_nmc622_2024": {
+      "system": "NMC622 Pilot-Plant Calendering Full Factorial DOE",
+      "evidence": "18 conditions, 54 pilot-scale half-cells",
+      "task": "Rate 5C:0.2C performance optimization (BO)",
+      "result": "Hit@5 = 100% vs 33.3% analytical random (+66.7 pp, 3x improvement)",
+      "status": "VALIDATED"
+    },
+    "warwick_ultrasonic_2024": {
+      "system": "Electrode Non-Destructive Ultrasonic Acoustic Metrology",
+      "evidence": "48 physical samples (30 Anode, 18 Cathode), 5-fold grouped CV",
+      "task": "Multimodal stage-state transition prediction (z_t + u_{t+1} -> z_{t+1})",
+      "result": "Anode Thickness R2=0.972 (RMSE 6.25 um), Anode Density R2=0.874 (RMSE 0.058 g/cm3)",
+      "status": "VALIDATED"
+    }
+  },
+  "scientific_conclusions": [
+    "AIcoScientist's Bayesian optimization engine generalizes seamlessly from small-lab anode manufacturing (Drakopoulos) to pilot-scale cathode calendering (Warwick NMC622), achieving 100% Hit@5 across 20 independent replay seeds.",
+    "AIcoScientist's multimodal fusion architecture reliably merges physical non-destructive acoustic signals with tabular process parameters, demonstrating genuine multimodal predictive superiority on Graphite Anode density and thickness.",
+    "Rigorous firewalling prevents data leakage: all evaluations adhere strictly to grouped CV and pre-decision information horizons without lookahead."
+  ],
+  "allowed_slide_bullets": [
+    "Generalizes beyond Drakopoulos: 100% Hit@5 on Warwick NMC622 pilot-plant calendering (vs 33.3% random baseline).",
+    "Pilot-plant scale: 18 conditions, 54 physical cells; finds optimal high-rate recipe EXP_03 in 4.2 average BO steps.",
+    "Multimodal physical metrology: First validation on Warwick Ultrasonic non-destructive acoustic spectra (48 electrode samples).",
+    "Acoustic feature superiority: Ultrasound alone achieves R2=0.835-0.890 on anode thickness; multimodal fusion boosts anode density R2 to 0.835-0.874.",
+    "Zero lookahead & zero leakage: All cross-validation strictly grouped by sample ID with train-only preprocessing."
+  ],
+  "strictly_unsupported_claims": [
+    "DO NOT claim closed-loop real-time wet-lab execution; all benchmarks are historical offline replays and offline cross-validation.",
+    "DO NOT claim ultrasonic metrology alone solved cathode density; cathode (N=18) was dominated by process roll gap and showed negative ultrasound-only generalization.",
+    "DO NOT claim automated electrochemical cycling optimization on the ultrasonic dataset; that dataset contains physical metrology without cycling."
+  ]
+}
