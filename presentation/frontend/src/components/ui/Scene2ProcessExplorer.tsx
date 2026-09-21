@@ -1,14 +1,31 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronDown, Cpu, Eye, Layers, Microscope } from 'lucide-react';
+import {
+  ArrowLeft,
+  Camera,
+  ChevronDown,
+  Cpu,
+  Eye,
+  Layers,
+  Microscope,
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+  Square,
+  Video,
+} from 'lucide-react';
 import type { ExhibitionScenario } from '../../data/types';
 import { isDecisionStage, type ProcessExperiencePhase } from '../../data/processExperience';
 import { ProcessDecisionExperience } from './ProcessDecisionExperience';
+import type { TourUpdateInfo } from '../3d/CameraRig';
 
 interface Scene2ProcessExplorerProps {
   scenario: ExhibitionScenario;
   selectedStageId: string;
   processPhase: ProcessExperiencePhase;
   replayStep: number;
+  isCinematicTourActive?: boolean;
+  tourInfo?: TourUpdateInfo | null;
   onSelectStage: (stageId: string) => void;
   onBeginDecision: () => void;
   onRunProcess: () => void;
@@ -17,6 +34,11 @@ interface Scene2ProcessExplorerProps {
   onReturnOverview: () => void;
   onNavigateMicrostructure: () => void;
   onNavigateOptimization: () => void;
+  onStartVideoTour?: () => void;
+  onExitVideoTour?: () => void;
+  onToggleTourPause?: () => void;
+  onStepTour?: (direction: 1 | -1) => void;
+  onToggleCleanScreen?: () => void;
 }
 
 const MECHANISM: Record<string, string> = {
@@ -43,6 +65,8 @@ export const Scene2ProcessExplorer: React.FC<Scene2ProcessExplorerProps> = ({
   selectedStageId,
   processPhase,
   replayStep,
+  isCinematicTourActive,
+  tourInfo,
   onSelectStage,
   onBeginDecision,
   onRunProcess,
@@ -51,6 +75,11 @@ export const Scene2ProcessExplorer: React.FC<Scene2ProcessExplorerProps> = ({
   onReturnOverview,
   onNavigateMicrostructure,
   onNavigateOptimization,
+  onStartVideoTour,
+  onExitVideoTour,
+  onToggleTourPause,
+  onStepTour,
+  onToggleCleanScreen,
 }) => {
   const [learnMore, setLearnMore] = useState(false);
   const [materialRole, setMaterialRole] = useState(0);
@@ -66,20 +95,108 @@ export const Scene2ProcessExplorer: React.FC<Scene2ProcessExplorerProps> = ({
 
   return (
     <>
-      <div className="pointer-events-auto absolute left-1/2 top-32 z-20 flex w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] -translate-x-1/2 gap-1.5 overflow-x-auto rounded-2xl border border-white/70 bg-white/88 p-1.5 shadow-lg backdrop-blur-xl xl:w-auto">
-        <button onClick={onReturnOverview} aria-label="Full Line Overview" className={`rounded-xl px-3 py-2 text-xs font-semibold ${isOverview ? 'bg-[#142A35] text-white' : 'text-slate-500 hover:bg-slate-100'}`}><Layers className="h-4 w-4" /></button>
+      <div className="pointer-events-auto absolute left-1/2 top-32 z-20 flex w-[calc(100vw-48px)] max-w-[calc(100vw-48px)] -translate-x-1/2 items-center gap-1.5 overflow-x-auto rounded-2xl border border-white/70 bg-white/88 p-1.5 shadow-lg backdrop-blur-xl xl:w-auto">
+        <button onClick={onReturnOverview} aria-label="Full Line Overview" className={`rounded-xl px-3 py-2 text-xs font-semibold ${isOverview && !isCinematicTourActive ? 'bg-[#142A35] text-white' : 'text-slate-500 hover:bg-slate-100'}`}><Layers className="h-4 w-4" /></button>
         {scenario.stages.map((item) => (
           <button
             key={item.id}
             onClick={() => selectStage(item.id)}
-            className={`whitespace-nowrap rounded-xl px-3 py-2 text-[11px] font-semibold transition ${item.id === selectedStageId ? 'bg-[#087F8C] text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
+            className={`whitespace-nowrap rounded-xl px-3 py-2 text-[11px] font-semibold transition ${item.id === selectedStageId && !isCinematicTourActive ? 'bg-[#087F8C] text-white shadow' : 'text-slate-600 hover:bg-slate-100'}`}
           >
             {item.order}. {item.label}
           </button>
         ))}
+
+        {/* Video Tour Trigger Button */}
+        <button
+          onClick={isCinematicTourActive ? onExitVideoTour : onStartVideoTour}
+          className={`flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-2 text-[11px] font-bold transition shadow-sm ${
+            isCinematicTourActive
+              ? 'bg-gradient-to-r from-[#F59E42] to-[#E53935] text-white animate-pulse'
+              : 'bg-teal-50 text-[#087F8C] border border-teal-200/80 hover:bg-teal-100'
+          }`}
+          title="Start continuous cinematic camera tour across the manufacturing pipeline (ideal for video capture)"
+        >
+          <Video className="h-3.5 w-3.5" />
+          <span>{isCinematicTourActive ? 'Stop Tour' : '🎬 Video Tour'}</span>
+        </button>
+
+        {/* Clean Screen Trigger Button */}
+        <button
+          onClick={onToggleCleanScreen}
+          className="flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+          title="Toggle Clean Screen mode (Hotkey: H) for clean screen recording"
+        >
+          <Camera className="h-3.5 w-3.5 text-[#087F8C]" />
+          <span className="hidden sm:inline">Clean (H)</span>
+        </button>
       </div>
 
-      {isOverview ? (
+      {/* 1. CINEMATIC VIDEO TOUR LOWER-THIRD TELEMETRY OVERLAY */}
+      {isCinematicTourActive && tourInfo ? (
+        <div className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 z-30 w-[94vw] max-w-4xl rounded-3xl border border-white/25 bg-[#142A35]/94 p-5 text-white shadow-2xl backdrop-blur-2xl transition-all duration-300">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F59E42] opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F59E42]" />
+              </span>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#38BDF8]">
+                {tourInfo.stage.category} · STATION {String(tourInfo.stageIndex + 1).padStart(2, '0')}/{String(tourInfo.totalStages).padStart(2, '0')}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onStepTour?.(-1)}
+                className="rounded-xl border border-white/15 bg-white/10 p-2 text-white/80 hover:bg-white/20 transition"
+                title="Previous Station"
+              >
+                <SkipBack className="h-4 w-4" />
+              </button>
+              <button
+                onClick={onToggleTourPause}
+                className="flex items-center gap-1.5 rounded-xl bg-[#087F8C] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0aa2b3] transition shadow-md"
+              >
+                {tourInfo.isPaused ? <Play className="h-3.5 w-3.5 fill-current" /> : <Pause className="h-3.5 w-3.5 fill-current" />}
+                <span>{tourInfo.isPaused ? 'Resume' : 'Pause'}</span>
+              </button>
+              <button
+                onClick={() => onStepTour?.(1)}
+                className="rounded-xl border border-white/15 bg-white/10 p-2 text-white/80 hover:bg-white/20 transition"
+                title="Next Station"
+              >
+                <SkipForward className="h-4 w-4" />
+              </button>
+              <button
+                onClick={onExitVideoTour}
+                className="rounded-xl border border-red-500/40 bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/30 transition"
+              >
+                <Square className="h-3.5 w-3.5 inline mr-1 fill-current" /> Exit
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3.5 grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            <div className="md:col-span-2">
+              <h3 className="text-xl font-extrabold tracking-tight text-white">{tourInfo.stage.label}</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{tourInfo.stage.action}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/35 p-3 flex flex-col justify-center">
+              <div className="text-[9px] font-bold uppercase tracking-widest text-[#38BDF8]">Live Process Telemetry</div>
+              <div className="mt-1 font-mono text-[11px] leading-relaxed text-emerald-300">{tourInfo.stage.telemetry}</div>
+            </div>
+          </div>
+
+          {/* Station Progress Bar */}
+          <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full bg-gradient-to-r from-[#087F8C] via-[#38BDF8] to-[#F59E42] transition-all duration-150"
+              style={{ width: `${Math.round(tourInfo.progress * 100)}%` }}
+            />
+          </div>
+        </div>
+      ) : isOverview ? (
         <section className="pointer-events-auto absolute bottom-28 left-8 z-20 w-[390px] rounded-3xl border border-[#DCE8EC] bg-white/92 p-5 shadow-xl backdrop-blur-xl">
           <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#087F8C]">MANUFACTURING LINE STAGES · Process Journey</div>
           <h2 className="mt-2 text-xl font-bold text-[#142A35]">Enter a working mechanism</h2>

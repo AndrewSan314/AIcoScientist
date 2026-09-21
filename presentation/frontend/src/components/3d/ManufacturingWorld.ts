@@ -37,6 +37,19 @@ export class ManufacturingWorld {
   private processStageId = 'overview';
   private processPhase: ProcessExperiencePhase = 'OVERVIEW';
   private processBlend = 0;
+  private uncoilerRoll?: THREE.Mesh;
+  private transportTrackGroup = new THREE.Group();
+  private carrierPallets: Array<{
+    group: THREE.Group;
+    specimenMesh: THREE.Mesh;
+    beaconRing: THREE.Mesh;
+    offset: number;
+  }> = [];
+  private dosingParticleGroup = new THREE.Group();
+  private dosingParticles: THREE.Mesh[] = [];
+  private vaporParticleGroup = new THREE.Group();
+  private vaporParticles: THREE.Mesh[] = [];
+  private nipFlareMesh?: THREE.Mesh;
 
   constructor(onStageClick?: StageInteractionCallback) {
     this.group = new THREE.Group();
@@ -149,6 +162,10 @@ export class ManufacturingWorld {
     // 7. Continuous Moving Electrode Foil Web
     this.buildElectrodeWeb();
     this.buildProcessOverlays();
+
+    // 8. Continuous Material Transport Pipeline & Active Physical Transformations
+    this.buildMaterialTransportPipeline();
+    this.buildActivePhysicalEffects();
   }
 
   private loadHeroAsset(path: string, parent: THREE.Group, fallbackGroup: THREE.Group, onLoaded?: (scene: THREE.Group) => void) {
@@ -560,6 +577,7 @@ export class ManufacturingWorld {
     roll.rotation.x = Math.PI / 2;
     roll.position.set(0, 1.8, 0);
     roll.castShadow = true;
+    this.uncoilerRoll = roll;
     group.add(roll);
 
     // Expanding Air Shaft Core Chucks
@@ -1204,7 +1222,209 @@ export class ManufacturingWorld {
     this.group.add(assembly);
   }
 
+  private buildMaterialTransportPipeline() {
+    this.transportTrackGroup = new THREE.Group();
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.35, metalness: 0.7 });
+    const steelRailMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, metalness: 0.95, roughness: 0.12 });
+    const glowLineMat = new THREE.MeshBasicMaterial({ color: 0x087F8C });
+    const sensorMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.5 });
+    const sensorLedMat = new THREE.MeshBasicMaterial({ color: 0xF59E42 });
+
+    // 1. Dual Continuous Machined Guide Rails along X: -18.0 to 19.5 at Y = 0.92, Z = 1.35
+    for (const zOffset of [-0.22, 0.22]) {
+      const railGeo = new THREE.BoxGeometry(37.5, 0.05, 0.05);
+      const rail = new THREE.Mesh(railGeo, steelRailMat);
+      rail.position.set(0.75, 0.92, 1.35 + zOffset);
+      rail.castShadow = true;
+      this.transportTrackGroup.add(rail);
+    }
+
+    // Central Maglev Stator Strip
+    const statorGeo = new THREE.BoxGeometry(37.5, 0.03, 0.36);
+    const stator = new THREE.Mesh(statorGeo, frameMat);
+    stator.position.set(0.75, 0.90, 1.35);
+    stator.receiveShadow = true;
+    this.transportTrackGroup.add(stator);
+
+    // Tech Neon Guide Track Strip
+    const glowGeo = new THREE.BoxGeometry(37.5, 0.015, 0.04);
+    const glow = new THREE.Mesh(glowGeo, glowLineMat);
+    glow.position.set(0.75, 0.925, 1.35);
+    this.transportTrackGroup.add(glow);
+
+    // Stanchion Support Towers every 4.5 units along X
+    for (let x = -17.5; x <= 19.0; x += 4.5) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.90, 0.60), frameMat);
+      post.position.set(x, 0.45, 1.35);
+      post.castShadow = true;
+      this.transportTrackGroup.add(post);
+
+      const baseFoot = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.08, 0.72), frameMat);
+      baseFoot.position.set(x, 0.04, 1.35);
+      this.transportTrackGroup.add(baseFoot);
+    }
+
+    // Optical Workstation Gates / Proximity Sensors at Key Process Coordinates
+    const stationPositions = [-15.5, -11.0, -2.5, 4.0, 11.0, 17.5];
+    stationPositions.forEach((x) => {
+      const arch = new THREE.Group();
+      arch.position.set(x, 0.92, 1.35);
+
+      const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.65), sensorMat);
+      bracket.position.y = 0.22;
+      arch.add(bracket);
+
+      const led = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 12), sensorLedMat);
+      led.position.set(0, 0.42, 0.30);
+      arch.add(led);
+
+      this.transportTrackGroup.add(arch);
+    });
+
+    this.group.add(this.transportTrackGroup);
+
+    // 2. Continuous Autonomous Material Carrier Pallets
+    const palletChassisMat = new THREE.MeshStandardMaterial({
+      color: 0x1E293B,
+      metalness: 0.82,
+      roughness: 0.22,
+    });
+    const chuckMat = new THREE.MeshStandardMaterial({
+      color: 0xCFD8DC,
+      metalness: 0.90,
+      roughness: 0.15,
+    });
+    const bumperMat = new THREE.MeshStandardMaterial({
+      color: 0x087F8C,
+      metalness: 0.4,
+      roughness: 0.3,
+    });
+
+    const palletCount = 4;
+    const loopLength = 36.5;
+
+    for (let i = 0; i < palletCount; i++) {
+      const palletGroup = new THREE.Group();
+      const offset = (i / palletCount) * loopLength;
+      palletGroup.position.set(-17.5 + offset, 0.96, 1.35);
+
+      // Chassis Body
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.07, 0.55), palletChassisMat);
+      body.castShadow = true;
+      palletGroup.add(body);
+
+      // Safety Edge Bumpers
+      for (const xB of [-0.42, 0.42]) {
+        const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.52), bumperMat);
+        bumper.position.set(xB, 0, 0);
+        palletGroup.add(bumper);
+      }
+
+      // Vacuum Chuck Nest
+      const nest = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.025, 32), chuckMat);
+      nest.position.y = 0.045;
+      palletGroup.add(nest);
+
+      // Battery Electrode Specimen
+      const specimenMat = new THREE.MeshStandardMaterial({
+        color: 0x94A3B8,
+        roughness: 0.85,
+        metalness: 0.15,
+      });
+      const specimenMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.02, 32), specimenMat);
+      specimenMesh.position.y = 0.065;
+      specimenMesh.castShadow = true;
+      palletGroup.add(specimenMesh);
+
+      // Floating Tech Beacon Ring
+      const beaconRingMat = new THREE.MeshBasicMaterial({
+        color: 0x087F8C,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide,
+      });
+      const beaconRing = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.26, 32), beaconRingMat);
+      beaconRing.rotation.x = -Math.PI / 2;
+      beaconRing.position.y = 0.28;
+      palletGroup.add(beaconRing);
+
+      this.group.add(palletGroup);
+      this.carrierPallets.push({
+        group: palletGroup,
+        specimenMesh,
+        beaconRing,
+        offset,
+      });
+    }
+  }
+
+  private buildActivePhysicalEffects() {
+    // 1. Slurry Formulation Dosing Cascade at X = -15.5
+    this.dosingParticleGroup = new THREE.Group();
+    this.dosingParticleGroup.position.set(-15.5, 0, 0);
+
+    const powderGeo = new THREE.SphereGeometry(0.035, 8, 8);
+    const powderColors = [0x334155, 0x0F172A, 0xCBD5E1, 0xF59E42]; // Active material, carbon, binder, dopant
+    for (let i = 0; i < 24; i++) {
+      const pMat = new THREE.MeshStandardMaterial({
+        color: powderColors[i % powderColors.length],
+        roughness: 0.9,
+      });
+      const p = new THREE.Mesh(powderGeo, pMat);
+      p.position.set(
+        (Math.random() - 0.5) * 0.35,
+        1.6 + Math.random() * 1.5,
+        (Math.random() - 0.5) * 0.35
+      );
+      p.userData = {
+        speed: 1.2 + Math.random() * 0.8,
+        minY: 1.55,
+        maxY: 3.1,
+      };
+      this.dosingParticles.push(p);
+      this.dosingParticleGroup.add(p);
+    }
+    this.group.add(this.dosingParticleGroup);
+
+    // 2. IR Drying Tunnel Rising Vapor / Evaporation Shimmer at X = 1.0 to 7.0
+    this.vaporParticleGroup = new THREE.Group();
+    const vaporGeo = new THREE.SphereGeometry(0.065, 8, 8);
+    const vaporMat = new THREE.MeshBasicMaterial({
+      color: 0xE2E8F0,
+      transparent: true,
+      opacity: 0.32,
+    });
+    for (let i = 0; i < 18; i++) {
+      const v = new THREE.Mesh(vaporGeo, vaporMat.clone());
+      const xStart = 1.8 + Math.random() * 4.6;
+      v.position.set(xStart, 2.1 + Math.random() * 0.8, (Math.random() - 0.5) * 0.6);
+      v.userData = {
+        speed: 0.45 + Math.random() * 0.4,
+        xBase: xStart,
+        minY: 2.05,
+        maxY: 3.4,
+      };
+      this.vaporParticles.push(v);
+      this.vaporParticleGroup.add(v);
+    }
+    this.group.add(this.vaporParticleGroup);
+
+    // 3. Calendering High-Pressure Nip Flare Line at X = 11.0, Y = 2.0, Z = 0
+    const flareGeo = new THREE.PlaneGeometry(0.18, 2.2);
+    flareGeo.rotateX(-Math.PI / 2);
+    const flareMat = new THREE.MeshBasicMaterial({
+      color: 0xF59E42,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+    });
+    this.nipFlareMesh = new THREE.Mesh(flareGeo, flareMat);
+    this.nipFlareMesh.position.set(11.0, 2.015, 0);
+    this.group.add(this.nipFlareMesh);
+  }
+
   private addAnnotation(text: string, position: THREE.Vector3, color = '#087F8C') {
+    if (typeof document === 'undefined') return;
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 112;
@@ -1403,12 +1623,13 @@ export class ManufacturingWorld {
     }
 
     this.webMotionMarkers.forEach((marker, index) => {
-      marker.visible = processRunning;
-      if (processRunning) marker.position.x = -5.5 + ((elapsed * 2.2 + index * 1.45) % 25);
+      marker.visible = true;
+      const speed = processRunning ? 3.5 : 0.85;
+      marker.position.x = -5.5 + ((elapsed * speed + index * 1.45) % 25);
     });
     if (this.coatingBead) {
-      this.coatingBead.visible = processRunning && this.processStageId === 'coating';
-      this.coatingBead.scale.y = .7 + Math.sin(elapsed * 7) * .18;
+      this.coatingBead.visible = true;
+      this.coatingBead.scale.y = 0.7 + Math.sin(elapsed * 7) * 0.18;
     }
     if (this.nipResponse) {
       this.nipResponse.visible = processRunning && this.processStageId === 'calendering';
@@ -1422,6 +1643,116 @@ export class ManufacturingWorld {
       this.assemblyProbe.visible = this.processStageId === 'cell_assembly' && this.processPhase !== 'PROCESS_ENTERING';
       const probe = this.assemblyProbe.children[1];
       probe.position.y = probe.userData.restY + Math.sin(elapsed * 2.4) * .12;
+    }
+
+    // Continuous uncoiler rotation
+    if (this.uncoilerRoll) {
+      this.uncoilerRoll.rotation.x += delta * (processRunning ? 2.8 : 0.45);
+    }
+
+    // Continuous material transport carrier movement along guide rail
+    const transportSpeed = processRunning ? 3.2 : 1.1;
+    const loopLength = 36.5;
+
+    this.carrierPallets.forEach((pallet, idx) => {
+      pallet.offset = (pallet.offset + delta * transportSpeed) % loopLength;
+      const x = -17.5 + pallet.offset;
+      pallet.group.position.x = x;
+
+      // Vertical hover bob
+      pallet.beaconRing.position.y = 0.28 + Math.sin(elapsed * 3.5 + idx) * 0.025;
+      pallet.beaconRing.rotation.z += delta * 1.2;
+
+      // Specimen appearance dynamic morph based on process station position
+      const specMat = pallet.specimenMesh.material as THREE.MeshStandardMaterial;
+      const beaconMat = pallet.beaconRing.material as THREE.MeshBasicMaterial;
+
+      if (x < -13.5) {
+        // Stage 1 Formulation: Precursor powder bed
+        specMat.color.setHex(0x94A3B8);
+        specMat.roughness = 0.95;
+        specMat.metalness = 0.1;
+        specMat.emissive.setHex(0x000000);
+        specMat.emissiveIntensity = 0;
+        pallet.specimenMesh.scale.set(1, 0.7, 1);
+        beaconMat.color.setHex(0x087F8C);
+      } else if (x < -4.5) {
+        // Stage 2 Planetary Mixer: Liquid slurry batch
+        specMat.color.setHex(this.activeScenario === 'drakopoulos_graphite' ? 0x111827 : 0x1E293B);
+        specMat.roughness = 0.22;
+        specMat.metalness = 0.35;
+        specMat.emissive.setHex(0x000000);
+        specMat.emissiveIntensity = 0;
+        pallet.specimenMesh.scale.set(1, 0.9, 1);
+        beaconMat.color.setHex(0x38BDF8);
+      } else if (x < 1.0) {
+        // Stage 3 Precision Coater: Extruded wet film
+        specMat.color.setHex(this.activeScenario === 'drakopoulos_graphite' ? 0x1C2321 : 0x393E46);
+        specMat.roughness = 0.18;
+        specMat.metalness = 0.55;
+        specMat.emissive.setHex(0x000000);
+        specMat.emissiveIntensity = 0;
+        pallet.specimenMesh.scale.set(1, 1.0, 1);
+        beaconMat.color.setHex(0x087F8C);
+      } else if (x < 8.5) {
+        // Stage 4 Drying Tunnel: Heating up, solvent evaporation
+        specMat.color.setHex(this.activeScenario === 'drakopoulos_graphite' ? 0x222831 : 0x475569);
+        specMat.roughness = 0.82;
+        specMat.metalness = 0.15;
+        pallet.specimenMesh.scale.set(1, 0.92, 1);
+        const inOven = x > 1.8 && x < 6.8;
+        if (inOven) {
+          specMat.emissive.setHex(0xF59E42);
+          specMat.emissiveIntensity = 0.35 + Math.sin(elapsed * 5.0 + idx) * 0.18;
+        } else {
+          specMat.emissive.setHex(0x000000);
+          specMat.emissiveIntensity = 0;
+        }
+        beaconMat.color.setHex(0xF59E42);
+      } else if (x < 14.5) {
+        // Stage 5 Precision Calendering: High compaction, metallic sheen
+        specMat.color.setHex(this.activeScenario === 'drakopoulos_graphite' ? 0x1A1D20 : 0x334155);
+        specMat.roughness = 0.14;
+        specMat.metalness = 0.85;
+        specMat.emissive.setHex(0x000000);
+        specMat.emissiveIntensity = 0;
+        pallet.specimenMesh.scale.set(1, 0.65, 1);
+        beaconMat.color.setHex(0x10B981);
+      } else {
+        // Stage 6 Cycler Station: Completed test cell
+        specMat.color.setHex(0xD4AF37);
+        specMat.roughness = 0.25;
+        specMat.metalness = 0.95;
+        specMat.emissive.setHex(0x10B981);
+        specMat.emissiveIntensity = 0.45 + Math.sin(elapsed * 7.0) * 0.25;
+        pallet.specimenMesh.scale.set(1, 0.8, 1);
+        beaconMat.color.setHex(0x10B981);
+      }
+    });
+
+    // Formulation particle cascade
+    this.dosingParticles.forEach((p) => {
+      p.position.y -= delta * (p.userData.speed as number);
+      if (p.position.y < (p.userData.minY as number)) {
+        p.position.y = (p.userData.maxY as number);
+      }
+    });
+
+    // Drying tunnel vapor particles
+    this.vaporParticles.forEach((v) => {
+      v.position.y += delta * (v.userData.speed as number);
+      const vMat = v.material as THREE.MeshBasicMaterial;
+      const progress = (v.position.y - 2.05) / (3.4 - 2.05);
+      vMat.opacity = Math.max(0, 0.32 * (1 - progress));
+      if (v.position.y > (v.userData.maxY as number)) {
+        v.position.y = (v.userData.minY as number);
+        v.position.x = (v.userData.xBase as number) + (Math.random() - 0.5) * 0.3;
+      }
+    });
+
+    // Calender nip compression flare
+    if (this.nipFlareMesh) {
+      (this.nipFlareMesh.material as THREE.MeshBasicMaterial).opacity = 0.45 + Math.sin(elapsed * 7.5) * 0.25;
     }
 
     // 2. Pulse interactive beacons

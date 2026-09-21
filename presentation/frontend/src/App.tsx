@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Camera } from 'lucide-react';
 import { ScenarioId, ExhibitionScenario } from './data/types';
 import { DRAKOPOULOS_SCENARIO, WARWICK_SCENARIO } from './data/exhibitionData';
 import { validateAllScenarios } from './data/validation';
 import { PersistentWorldCanvas } from './components/3d/PersistentWorldCanvas';
+import type { TourUpdateInfo } from './components/3d/CameraRig';
 import { Navbar } from './components/ui/Navbar';
 import { SceneNavigator } from './components/ui/SceneNavigator';
 import { Scene1Hero } from './components/ui/Scene1Hero';
@@ -30,6 +32,11 @@ export const App: React.FC = () => {
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState<boolean>(false);
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [processPhase, setProcessPhase] = useState<ProcessExperiencePhase>('OVERVIEW');
+  const [isCinematicTourActive, setIsCinematicTourActive] = useState<boolean>(false);
+  const [tourInfo, setTourInfo] = useState<TourUpdateInfo | null>(null);
+  const [tourActionTrigger, setTourActionTrigger] = useState<{ action: 'next' | 'prev' | 'togglePause'; timestamp: number } | null>(null);
+  const [isCleanScreenMode, setIsCleanScreenMode] = useState<boolean>(false);
+  const [isOptimizationOrbiting, setIsOptimizationOrbiting] = useState<boolean>(false);
 
   const activeScenario = SCENARIOS[activeScenarioId];
 
@@ -51,6 +58,7 @@ export const App: React.FC = () => {
     setMicrostructureCompression(0.25);
     setAutoMorphMicrostructure(false);
     setProcessPhase('OVERVIEW');
+    setIsOptimizationOrbiting(false);
   }, []);
 
   // 4. Scene Transition Handlers
@@ -59,6 +67,12 @@ export const App: React.FC = () => {
     if (sceneNumber === 3) {
       // Focus calendering when entering microstructure
       setSelectedStageId('calendering');
+    }
+    if (sceneNumber !== 2) {
+      setIsCinematicTourActive(false);
+    }
+    if (sceneNumber !== 4) {
+      setIsOptimizationOrbiting(false);
     }
   }, []);
 
@@ -118,8 +132,11 @@ export const App: React.FC = () => {
         );
       } else if (e.key === 'r' || e.key === 'R') {
         setCameraResetCounter((c) => c + 1);
+      } else if (e.key === 'h' || e.key === 'H') {
+        setIsCleanScreenMode((prev) => !prev);
       } else if (e.key === 'Escape') {
         setEvidenceDrawerOpen(false);
+        setIsCleanScreenMode(false);
       }
     };
 
@@ -140,24 +157,42 @@ export const App: React.FC = () => {
         autoMorphMicrostructure={autoMorphMicrostructure}
         cameraResetTrigger={cameraResetCounter}
         selectedCandidateId={selectedCandidateId}
+        isOptimizationOrbiting={isOptimizationOrbiting}
+        isCinematicTourActive={isCinematicTourActive}
+        onCinematicTourUpdate={(info) => setTourInfo(info)}
+        tourActionTrigger={tourActionTrigger}
         onStageSelect={handleStageSelect}
         onCandidateSelect={(id) => setSelectedCandidateId(id)}
         onSceneSelect={handleSceneSelect}
       />
 
+      {/* Floating Exit Button when Clean Screen Mode is enabled */}
+      {isCleanScreenMode && (
+        <button
+          onClick={() => setIsCleanScreenMode(false)}
+          className="pointer-events-auto fixed top-4 right-4 z-50 flex items-center gap-2 rounded-full border border-white/40 bg-[#142A35]/85 px-4 py-2 text-xs font-bold text-white shadow-2xl backdrop-blur-xl hover:bg-[#142A35] transition"
+          title="Exit Clean Screen (Hotkey: H)"
+        >
+          <Camera className="h-4 w-4 text-[#38BDF8]" />
+          <span>Exit Clean Screen (H)</span>
+        </button>
+      )}
+
       {/* 2. TOP NAVBAR */}
-      <Navbar
-        scenarios={SCENARIOS}
-        activeScenarioId={activeScenarioId}
-        currentScene={currentScene}
-        onScenarioChange={handleScenarioChange}
-        onSceneSelect={handleSceneSelect}
-        onResetCamera={() => setCameraResetCounter((c) => c + 1)}
-        onToggleEvidenceDrawer={() => setEvidenceDrawerOpen(true)}
-      />
+      <div className={`transition-opacity duration-300 ${isCleanScreenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <Navbar
+          scenarios={SCENARIOS}
+          activeScenarioId={activeScenarioId}
+          currentScene={currentScene}
+          onScenarioChange={handleScenarioChange}
+          onSceneSelect={handleSceneSelect}
+          onResetCamera={() => setCameraResetCounter((c) => c + 1)}
+          onToggleEvidenceDrawer={() => setEvidenceDrawerOpen(true)}
+        />
+      </div>
 
       {/* 3. SCENE CONTEXTUAL HUD OVERLAYS */}
-      <main className="relative w-full h-full pointer-events-none z-10">
+      <main className={`relative w-full h-full pointer-events-none z-10 transition-opacity duration-300 ${isCleanScreenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         {currentScene === 1 && (
           <Scene1Hero
             scenario={activeScenario}
@@ -172,6 +207,8 @@ export const App: React.FC = () => {
             selectedStageId={selectedStageId}
             processPhase={processPhase}
             replayStep={replayStep}
+            isCinematicTourActive={isCinematicTourActive}
+            tourInfo={tourInfo}
             onSelectStage={handleStageSelect}
             onBeginDecision={() => {
               const decision = pendingDecision(activeScenario, replayStep);
@@ -192,6 +229,11 @@ export const App: React.FC = () => {
             onReturnOverview={() => setProcessPhase('PROCESS_EXIT')}
             onNavigateMicrostructure={() => handleSceneSelect(3)}
             onNavigateOptimization={() => handleSceneSelect(4)}
+            onStartVideoTour={() => setIsCinematicTourActive(true)}
+            onExitVideoTour={() => setIsCinematicTourActive(false)}
+            onToggleTourPause={() => setTourActionTrigger({ action: 'togglePause', timestamp: Date.now() })}
+            onStepTour={(dir) => setTourActionTrigger({ action: dir === 1 ? 'next' : 'prev', timestamp: Date.now() })}
+            onToggleCleanScreen={() => setIsCleanScreenMode((prev) => !prev)}
           />
         )}
 
@@ -218,6 +260,8 @@ export const App: React.FC = () => {
             onSelectCandidate={(id) => setSelectedCandidateId(id)}
             selectedCandidateId={selectedCandidateId}
             onProceedToEvidence={() => handleSceneSelect(5)}
+            isOrbiting={isOptimizationOrbiting}
+            onToggleOrbit={() => setIsOptimizationOrbiting((prev) => !prev)}
           />
         )}
 
@@ -232,10 +276,12 @@ export const App: React.FC = () => {
       </main>
 
       {/* 4. BOTTOM DOCKED SCENE NAVIGATOR */}
-      <SceneNavigator
-        currentScene={currentScene}
-        onSceneSelect={handleSceneSelect}
-      />
+      <div className={`transition-opacity duration-300 ${isCleanScreenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <SceneNavigator
+          currentScene={currentScene}
+          onSceneSelect={handleSceneSelect}
+        />
+      </div>
 
       {/* 5. SCIENTIFIC EVIDENCE & LIMITATIONS DRAWER */}
       <EvidenceLimitationsDrawer

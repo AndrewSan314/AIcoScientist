@@ -125,6 +125,26 @@ async function run() {
     await assertScene(page, 2, 'Roll temperature');
     await saveScreenshot(page, '04_calendering_equipment.png');
 
+    // 4b. Test Cinematic Video Tour with live telemetry card
+    console.log('Activating Cinematic Video Tour in Scene 2...');
+    await clickRequired(page, 'button', ['Video Tour'], 'start video tour');
+    await new Promise((r) => setTimeout(r, 1500));
+    await saveScreenshot(page, '04b_cinematic_video_tour.png');
+
+    // 4c. Test Clean Screen mode (Key 'H')
+    console.log('Toggling Clean Screen mode (Key H)...');
+    await page.keyboard.press('KeyH');
+    await new Promise((r) => setTimeout(r, 800));
+    await saveScreenshot(page, '04c_clean_screen_recording.png');
+
+    // Exit Clean Screen mode
+    await page.keyboard.press('KeyH');
+    await new Promise((r) => setTimeout(r, 600));
+
+    // Exit Video Tour
+    await clickRequired(page, 'button', ['Exit', 'Stop Tour'], 'exit video tour');
+    await new Promise((r) => setTimeout(r, 600));
+
     // 5. Scene 3: Inside the Electrode (Microstructure before morph: 0% compression)
     console.log('Navigating to Scene 3: Inside the Electrode...');
     await clickRequired(page, 'nav button', ['Inside the Electrode'], 'Scene 3 navigation');
@@ -180,6 +200,12 @@ async function run() {
     await new Promise((r) => setTimeout(r, 1800));
     await assertScene(page, 4, 'Candidate Search Space');
     await saveScreenshot(page, '08_warwick_optimization_studio.png');
+
+    // 8b. Toggle 3D Turntable Orbit in Scene 4
+    console.log('Toggling 3D Turntable Orbit in Scene 4...');
+    await clickRequired(page, 'button', ['3D Orbit'], 'toggle 3D orbit');
+    await new Promise((r) => setTimeout(r, 1200));
+    await saveScreenshot(page, '08b_optimization_gp_manifold_orbit.png');
 
     // 9. Advance source-backed Warwick seed-11 replay to Step 5.
     console.log('Advancing Warwick replay to source-backed Step 5...');

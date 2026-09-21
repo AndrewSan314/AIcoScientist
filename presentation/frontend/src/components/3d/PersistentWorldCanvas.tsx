@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { CameraRig } from './CameraRig';
+import { CameraRig, type TourUpdateInfo } from './CameraRig';
 import { ManufacturingWorld } from './ManufacturingWorld';
 import { ElectrodeMicrostructure } from './ElectrodeMicrostructure';
 import { OptimizationVisualization } from './OptimizationVisualization';
@@ -19,6 +19,10 @@ interface PersistentWorldCanvasProps {
   autoMorphMicrostructure: boolean;
   cameraResetTrigger?: number;
   selectedCandidateId?: string;
+  isOptimizationOrbiting?: boolean;
+  isCinematicTourActive?: boolean;
+  onCinematicTourUpdate?: (info: TourUpdateInfo | null) => void;
+  tourActionTrigger?: { action: 'next' | 'prev' | 'togglePause'; timestamp: number } | null;
   onStageSelect?: (stageId: string) => void;
   onCandidateSelect?: (candidateId: string) => void;
   onSceneSelect?: (sceneNumber: number) => void;
@@ -34,6 +38,10 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
   autoMorphMicrostructure,
   cameraResetTrigger,
   selectedCandidateId,
+  isOptimizationOrbiting,
+  isCinematicTourActive,
+  onCinematicTourUpdate,
+  tourActionTrigger,
   onStageSelect,
   onCandidateSelect,
   onSceneSelect
@@ -370,6 +378,13 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
     }
   }, [replayStep]);
 
+  // Update optimization 3D orbit
+  useEffect(() => {
+    if (optimizationRef.current) {
+      optimizationRef.current.setOrbiting(!!isOptimizationOrbiting);
+    }
+  }, [isOptimizationOrbiting]);
+
   // Update microstructure compression progress
   useEffect(() => {
     if (microstructureRef.current) {
@@ -402,6 +417,33 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
       }
     }
   }, [cameraResetTrigger]);
+
+  // Cinematic Tour Lifecycle
+  useEffect(() => {
+    if (!cameraRigRef.current) return;
+    if (isCinematicTourActive) {
+      cameraRigRef.current.startCinematicTour(activeScenario.id, (info) => {
+        onCinematicTourUpdate?.(info);
+      });
+    } else {
+      if (cameraRigRef.current.isTourActive()) {
+        cameraRigRef.current.stopCinematicTour();
+      }
+      onCinematicTourUpdate?.(null);
+    }
+  }, [isCinematicTourActive, activeScenario.id]);
+
+  // Cinematic Tour Action Triggers (Next / Prev / TogglePause)
+  useEffect(() => {
+    if (!cameraRigRef.current || !tourActionTrigger) return;
+    if (tourActionTrigger.action === 'next') {
+      cameraRigRef.current.stepTour(1);
+    } else if (tourActionTrigger.action === 'prev') {
+      cameraRigRef.current.stepTour(-1);
+    } else if (tourActionTrigger.action === 'togglePause') {
+      cameraRigRef.current.toggleTourPause();
+    }
+  }, [tourActionTrigger]);
 
   return (
     <div

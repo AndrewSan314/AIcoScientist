@@ -149,6 +149,171 @@ const PROCESS_WAYPOINTS: Record<string, { explore: CameraWaypoint; run: CameraWa
   },
 };
 
+export interface TourStageData {
+  stageId: string;
+  order: number;
+  label: string;
+  category: string;
+  action: string;
+  telemetry: string;
+  waypoint: CameraWaypoint;
+  duration: number;
+}
+
+export interface TourUpdateInfo {
+  stageIndex: number;
+  totalStages: number;
+  stage: TourStageData;
+  progress: number;
+  isPaused: boolean;
+}
+
+export const DRAKOPOULOS_TOUR_STAGES: TourStageData[] = [
+  {
+    stageId: 'formulation',
+    order: 1,
+    label: 'Slurry Formulation & Gravimetric Dosing',
+    category: 'STAGE 01 · PRECURSOR FEED',
+    action: 'Micro-gravimetric delivery of graphite active powder, carbon black, and PVDF binder solution',
+    telemetry: 'Solids: 48.5% · Solvent: NMP 99.8% · Dosing Accuracy: ±0.05 g · Temp: 22.5 °C',
+    waypoint: { position: new THREE.Vector3(-15.2, 5.2, 8.8), target: new THREE.Vector3(-15.5, 2.0, 0), fov: 36 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'mixing',
+    order: 2,
+    label: 'Planetary High-Shear Vacuum Mixing',
+    category: 'STAGE 02 · HYDRODYNAMIC DISPERSION',
+    action: 'Planetary dual-shaft shear dispersion under 0.95 bar vacuum to de-agglomerate particles without air entrapment',
+    telemetry: 'Agitator: 2,400 RPM · Cavitation Index: 1.4 · Viscosity: 4,850 mPa·s · Vacuum: -95 kPa',
+    waypoint: { position: new THREE.Vector3(-11.0, 4.8, 7.8), target: new THREE.Vector3(-11.0, 2.1, 0), fov: 34 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'coating',
+    order: 3,
+    label: 'Precision Slot-Die Web Coating',
+    category: 'STAGE 03 · FLUID FILM DEPOSITION',
+    action: 'Sub-micron slot-die extrusion depositing uniform wet slurry ribbon onto continuous copper foil collector',
+    telemetry: 'Web Speed: 0.28 m/min · Die Gap: 145 µm · Wet Thickness: 120 µm · Substrate: 10 µm Cu',
+    waypoint: { position: new THREE.Vector3(-4.8, 3.8, 6.8), target: new THREE.Vector3(-2.5, 2.0, 0), fov: 32 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'drying',
+    order: 4,
+    label: 'Infrared & Convection Drying Tunnel',
+    category: 'STAGE 04 · HEAT & MASS TRANSFER',
+    action: '3-stage graduated thermal drying removing NMP solvent while preventing binder surface migration',
+    telemetry: 'Zone 1: 85 °C · Zone 2: 105 °C · Zone 3: 120 °C · Residual Moisture: <0.02% · Air Flow: 14 m³/min',
+    waypoint: { position: new THREE.Vector3(3.2, 4.8, 8.8), target: new THREE.Vector3(4.0, 2.3, 0), fov: 36 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'calendering',
+    order: 5,
+    label: 'Hardened Precision Roll Calendering',
+    category: 'STAGE 05 · COMPACTION & POROSITY',
+    action: 'High-tonnage heated chrome roll calendering tailoring tortuosity, inter-particle contact, and electronic conductivity',
+    telemetry: 'Roll Surface: 110 °C · Nip Force: 52 kN/cm · Density: 1.55 g/cm³ · Final Porosity: 33.5%',
+    waypoint: { position: new THREE.Vector3(8.5, 4.2, 7.2), target: new THREE.Vector3(11.0, 2.1, 0), fov: 30 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'characterization',
+    order: 6,
+    label: 'Electrochemical Half-Cell Metrology',
+    category: 'STAGE 06 · QUALITY GATE VALIDATION',
+    action: 'Automated 4-wire Kelvin probe cycling protocol measuring delithiation capacity and rate capability',
+    telemetry: 'Protocol: C/10, C/2, 1C, 5C · Capacity: 358.4 mAh/g · Coulombic Efficiency: 99.85%',
+    waypoint: { position: new THREE.Vector3(15.2, 4.6, 7.5), target: new THREE.Vector3(17.5, 2.2, 0), fov: 34 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'overview',
+    order: 7,
+    label: 'Connected Pilot Plant Overview',
+    category: 'EXHIBITION · DIGITAL TWIN REPLAY',
+    action: 'Fully synchronized multi-stage manufacturing line with verified historical experimental provenance',
+    telemetry: 'Plant Status: RUNNING · Replay Mode: SEED 11 · AI Process Surrogate: ACTIVE',
+    waypoint: { position: new THREE.Vector3(4.0, 10.5, 21.0), target: new THREE.Vector3(3.0, 2.2, 0), fov: 44 },
+    duration: 6.5,
+  },
+];
+
+export const WARWICK_TOUR_STAGES: TourStageData[] = [
+  {
+    stageId: 'slurry_prep',
+    order: 1,
+    label: 'NMC622 Slurry Preparation & Homogenization',
+    category: 'STAGE 01 · SLURRY SYNTHESIS',
+    action: 'High-viscosity dispersion of nickel-rich NMC622 cathode powder, Super P carbon, and PVDF in NMP',
+    telemetry: 'Solid Ratio: 72% · Binder: PVDF 5130 · Impeller Speed: 1,800 RPM · Batch Viscosity: 5,400 mPa·s',
+    waypoint: { position: new THREE.Vector3(-12.5, 5.4, 9.0), target: new THREE.Vector3(-12.0, 2.1, 0), fov: 36 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'pilot_coating',
+    order: 2,
+    label: 'Pilot Roll-to-Roll Doctor Blade Coating',
+    category: 'STAGE 02 · CONTINUOUS WEB DEPOSITION',
+    action: 'Continuous precise slot/knife application onto 15 µm battery-grade aluminum collector foil',
+    telemetry: 'Areal Loading: 28.5 mg/cm² · Speed: 0.50 m/min · Doctor Gap: 190 µm · Tension: 45 N',
+    waypoint: { position: new THREE.Vector3(-4.8, 3.8, 6.8), target: new THREE.Vector3(-2.5, 2.0, 0), fov: 32 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'drying',
+    order: 3,
+    label: 'Convection Flotation Drying Chamber',
+    category: 'STAGE 03 · SOLVENT DESICCATION',
+    action: 'Multi-zone air flotation tunnel preventing electrode cracking and pinholes during NMP evaporation',
+    telemetry: 'Oven Temp: 110 °C · Residence Time: 4.2 min · Counter-Flow Air: 12 m/s · Solvent Recovery: 98.6%',
+    waypoint: { position: new THREE.Vector3(3.2, 4.8, 8.8), target: new THREE.Vector3(4.0, 2.3, 0), fov: 36 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'calendering',
+    order: 4,
+    label: 'Heated Roll Calendering & Density Compaction',
+    category: 'STAGE 04 · WARWICK SIGNATURE ASSET',
+    action: 'Heated mechanical calendering exploring temperature regimes (85 - 145 °C) to maximize 5C rate retention',
+    telemetry: 'Roll Temp: 120 °C · Target Density: 2.95 g/cm³ · Line Load: 65 N/mm · Calender Speed: 1.2 m/min',
+    waypoint: { position: new THREE.Vector3(8.5, 4.2, 7.2), target: new THREE.Vector3(11.0, 2.1, 0), fov: 30 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'cell_assembly',
+    order: 5,
+    label: 'Coin Cell Assembly & Electrolyte Infiltration',
+    category: 'STAGE 05 · PROTOTYPE PACKAGING',
+    action: 'Precision electrode disc punching, Celgard separator stacking, and LP57 electrolyte vacuum wetting',
+    telemetry: 'Electrode Punch: Ø 14.8 mm · Electrolyte: LP57 + 2% VC · Vacuum Seal: 2.5 MPa · Moisture: <0.5 ppm',
+    waypoint: { position: new THREE.Vector3(13.2, 4.8, 8.2), target: new THREE.Vector3(14.5, 2.1, 0), fov: 34 },
+    duration: 5.5,
+  },
+  {
+    stageId: 'rate_characterization',
+    order: 6,
+    label: 'High-Rate Fast Charging Metrology (5C / 0.2C)',
+    category: 'STAGE 06 · EMPIRICAL PERFORMANCE TEST',
+    action: 'High-current galvanostatic cycling verifying rate performance trade-off against calendar life',
+    telemetry: 'Rate Ratio (5C/0.2C): 0.742 · Cutoff: 3.0 - 4.2 V · Polarization: 82 mV · Channels: 48/48',
+    waypoint: { position: new THREE.Vector3(15.2, 4.6, 7.5), target: new THREE.Vector3(17.5, 2.2, 0), fov: 34 },
+    duration: 6.0,
+  },
+  {
+    stageId: 'overview',
+    order: 7,
+    label: 'Calendering Optimization Pilot Plant',
+    category: 'EXHIBITION · DIGITAL TWIN REPLAY',
+    action: 'Validated multi-stage process optimization pipeline connecting calendering controls to rate performance',
+    telemetry: 'Dataset: Warwick NMC622 · 32 Candidates Evaluated · Seed 11 Verified · Accuracy: 96.4%',
+    waypoint: { position: new THREE.Vector3(4.0, 10.5, 21.0), target: new THREE.Vector3(3.0, 2.2, 0), fov: 44 },
+    duration: 6.5,
+  },
+];
+
 export class CameraRig {
   private camera: THREE.PerspectiveCamera;
   private currentTarget: THREE.Vector3;
@@ -156,6 +321,12 @@ export class CameraRig {
   private tweenTimeline: gsap.core.Timeline | null = null;
   private idleTime: number = 0;
   private activeScene: number = 1;
+  private isTourActiveFlag: boolean = false;
+  private isTourPausedFlag: boolean = false;
+  private tourStages: TourStageData[] = [];
+  private currentTourIndex: number = 0;
+  private tourTimer: number = 0;
+  private onTourUpdateCallback?: (info: TourUpdateInfo) => void;
 
   constructor(camera: THREE.PerspectiveCamera) {
     this.camera = camera;
@@ -253,7 +424,91 @@ export class CameraRig {
     }
   }
 
+  public startCinematicTour(scenarioId: string, onUpdate?: (info: TourUpdateInfo) => void) {
+    this.isTourActiveFlag = true;
+    this.isTourPausedFlag = false;
+    this.currentTourIndex = 0;
+    this.tourTimer = 0;
+    this.onTourUpdateCallback = onUpdate;
+    this.tourStages = scenarioId === 'drakopoulos_graphite' ? DRAKOPOULOS_TOUR_STAGES : WARWICK_TOUR_STAGES;
+    this.transitionToTourStage(0);
+  }
+
+  public stopCinematicTour() {
+    this.isTourActiveFlag = false;
+    this.isTourPausedFlag = false;
+    this.onTourUpdateCallback = undefined;
+    this.animateToWaypoint(STAGE_WAYPOINTS.overview, 1.2);
+  }
+
+  public toggleTourPause(): boolean {
+    this.isTourPausedFlag = !this.isTourPausedFlag;
+    this.emitTourUpdate();
+    return this.isTourPausedFlag;
+  }
+
+  public stepTour(direction: 1 | -1) {
+    if (!this.isTourActiveFlag || this.tourStages.length === 0) return;
+    this.tourTimer = 0;
+    this.currentTourIndex = (this.currentTourIndex + direction + this.tourStages.length) % this.tourStages.length;
+    this.transitionToTourStage(this.currentTourIndex);
+  }
+
+  public isTourActive(): boolean {
+    return this.isTourActiveFlag;
+  }
+
+  public isTourPaused(): boolean {
+    return this.isTourPausedFlag;
+  }
+
+  public getTourInfo(): TourUpdateInfo | null {
+    if (!this.isTourActiveFlag || this.tourStages.length === 0) return null;
+    const stage = this.tourStages[this.currentTourIndex];
+    return {
+      stageIndex: this.currentTourIndex,
+      totalStages: this.tourStages.length,
+      stage,
+      progress: Math.min(1, this.tourTimer / stage.duration),
+      isPaused: this.isTourPausedFlag,
+    };
+  }
+
+  private transitionToTourStage(index: number) {
+    const stage = this.tourStages[index];
+    if (!stage) return;
+    this.animateToWaypoint(stage.waypoint, 2.0);
+    this.emitTourUpdate();
+  }
+
+  private emitTourUpdate() {
+    if (this.onTourUpdateCallback) {
+      const info = this.getTourInfo();
+      if (info) this.onTourUpdateCallback(info);
+    }
+  }
+
   public update(delta: number) {
+    if (this.isTourActiveFlag && !this.isTourPausedFlag) {
+      this.tourTimer += delta;
+      const stage = this.tourStages[this.currentTourIndex];
+      if (stage) {
+        // Slow cinematic panning drift
+        const drift = Math.sin(this.tourTimer * 0.5) * 0.12;
+        this.camera.position.x += drift * delta;
+        this.camera.lookAt(this.currentTarget);
+
+        this.emitTourUpdate();
+
+        if (this.tourTimer >= stage.duration) {
+          this.tourTimer = 0;
+          this.currentTourIndex = (this.currentTourIndex + 1) % this.tourStages.length;
+          this.transitionToTourStage(this.currentTourIndex);
+        }
+      }
+      return;
+    }
+
     // Subtle breathing/idle motion when not actively transitioning
     if (!this.isTransitioning) {
       this.idleTime += delta * 0.4;
