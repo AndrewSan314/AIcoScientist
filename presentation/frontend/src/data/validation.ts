@@ -48,7 +48,7 @@ export function validateScenario(scenario: ExhibitionScenario): ValidationResult
   });
 
   // 5. Replay Trajectory Step Validation
-  let prevBestSoFar = -Infinity;
+  let prevBestSoFar = Math.max(...scenario.candidates.filter(c => scenario.replayInitialIds.includes(c.id)).map(c => c.revealedTarget.value));
   const acquiredCandidates = new Set<string>(scenario.replayInitialIds);
 
   scenario.replaySteps.forEach((step, idx) => {
@@ -68,8 +68,17 @@ export function validateScenario(scenario: ExhibitionScenario): ValidationResult
       errors.push(`Step ${step.step} has non-finite revealed/best-so-far values.`);
     }
 
+    const selected = scenario.candidates.find(c => c.id === step.selectedCandidateId);
+    // Candidate CSV rounds graphite means to 2 decimals; replay preserves full precision.
+    if (selected && Math.abs(selected.revealedTarget.value - step.revealedTarget) > 0.01) {
+      errors.push(`Step ${step.step} outcome disagrees with candidate source table.`);
+    }
+    if (Math.abs(step.bestSoFar - Math.max(prevBestSoFar, step.revealedTarget)) > 0.01) {
+      errors.push(`Step ${step.step} best-so-far includes an unavailable or missing observation.`);
+    }
+
     // Monotonic best-so-far invariant for maximization
-    if (step.bestSoFar < prevBestSoFar - 1e-6) {
+    if (step.bestSoFar < prevBestSoFar - 0.01) {
       errors.push(`Step ${step.step} bestSoFar decreased from ${prevBestSoFar} to ${step.bestSoFar}`);
     }
     prevBestSoFar = step.bestSoFar;

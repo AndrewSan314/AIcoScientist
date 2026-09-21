@@ -19,7 +19,7 @@ export const Scene1Hero: React.FC<Scene1HeroProps> = ({
         {/* Badge */}
         <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#E8F4F2] border border-[#087F8C]/20 text-[#087F8C] text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5 text-[#087F8C]" />
-          <span>Intelligent Battery Manufacturing Digital Twin</span>
+          <span>Battery Manufacturing · Scientific Exhibition</span>
         </div>
 
         {/* Headlines */}
@@ -28,7 +28,7 @@ export const Scene1Hero: React.FC<Scene1HeroProps> = ({
             Optimize Battery Manufacturing with Process-Aware AI
           </h1>
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            AIcoScientist bridges multi-stage electrode processing, nanoscale microstructure morphing, and Bayesian optimization to accelerate battery scale-up from weeks of trial-and-error to automated data-driven discovery.
+            Explore electrode manufacturing, an illustrative material cutaway, and recorded AI decisions across two independent historical datasets.
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export const Scene1Hero: React.FC<Scene1HeroProps> = ({
             <CheckCircle2 className="w-4 h-4 text-[#087F8C] shrink-0 mt-0.5" />
             <div>
               <div className="text-xs font-bold text-[#142A35]">100% Hit@5 Rediscovery</div>
-              <div className="text-[11px] text-slate-500 font-medium">Outperforms random search by +66.7%</div>
+              <div className="text-[11px] text-slate-500 font-medium">{scenario.benchmark.seedsEvaluated} evaluated seeds · historical replay</div>
             </div>
           </div>
 
@@ -46,14 +46,14 @@ export const Scene1Hero: React.FC<Scene1HeroProps> = ({
             <Shield className="w-4 h-4 text-[#087F8C] shrink-0 mt-0.5" />
             <div>
               <div className="text-xs font-bold text-[#142A35]">Information Horizon</div>
-              <div className="text-[11px] text-slate-500 font-medium">Zero lookahead leakage firewall</div>
+              <div className="text-[11px] text-slate-500 font-medium">Outcomes appear after reveal</div>
             </div>
           </div>
 
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-start space-x-2.5">
             <Activity className="w-4 h-4 text-[#F59E42] shrink-0 mt-0.5" />
             <div>
-              <div className="text-xs font-bold text-[#142A35]">Pilot-Line Historical</div>
+              <div className="text-xs font-bold text-[#142A35]">{scenario.evidenceKind === 'PILOT_LINE_HISTORICAL' ? 'Pilot-Line Historical' : 'Physical Historical'}</div>
               <div className="text-[11px] text-slate-500 font-medium">Audited physical experiments only</div>
             </div>
           </div>
@@ -62,7 +62,7 @@ export const Scene1Hero: React.FC<Scene1HeroProps> = ({
             <Microscope className="w-4 h-4 text-[#087F8C] shrink-0 mt-0.5" />
             <div>
               <div className="text-xs font-bold text-[#142A35]">3D Microstructure Morph</div>
-              <div className="text-[11px] text-slate-500 font-medium">Dynamic pore compaction physics</div>
+              <div className="text-[11px] text-slate-500 font-medium">Illustrative geometry, not simulation</div>
             </div>
           </div>
         </div>

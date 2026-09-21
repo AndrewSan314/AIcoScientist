@@ -26,12 +26,12 @@ export const Scene5ScientificEvidence: React.FC<Scene5ScientificEvidenceProps> =
     {
       metric: 'Hit@1',
       aicoscientist: bm.hitAt1Pct,
-      randomBaseline: isWarwick ? 5.5 : 11.1
+      randomBaseline: 100 / (scenario.candidates.length - scenario.replayInitialIds.length)
     },
     {
       metric: 'Hit@3',
       aicoscientist: bm.hitAt3Pct,
-      randomBaseline: isWarwick ? 16.7 : 33.3
+      randomBaseline: 300 / (scenario.candidates.length - scenario.replayInitialIds.length)
     },
     {
       metric: 'Hit@5 (Full Budget)',
@@ -104,7 +104,7 @@ export const Scene5ScientificEvidence: React.FC<Scene5ScientificEvidenceProps> =
           <div className="p-4 rounded-2xl bg-[#E8F4F2]/70 border border-[#087F8C]/20 space-y-2">
             <div className="flex items-center space-x-2 text-xs font-bold text-[#087F8C]">
               <Award className="w-4 h-4 text-[#087F8C]" />
-              <span>Formally Verified Claim</span>
+              <span>Artifact-backed Replay Result</span>
             </div>
             <p className="text-xs text-slate-700 leading-relaxed">
               {bm.supportedClaim}
@@ -121,7 +121,7 @@ export const Scene5ScientificEvidence: React.FC<Scene5ScientificEvidenceProps> =
 
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
               <div className="text-slate-400 text-[10px] uppercase font-bold">Verification Scope</div>
-              <div className="font-semibold text-slate-800 mt-0.5">{bm.seedsEvaluated} Independent Seeds</div>
+              <div className="font-semibold text-slate-800 mt-0.5">{bm.seedsEvaluated} Replay Seeds</div>
               <div className="text-[10px] font-mono text-emerald-600 font-bold">Simple Regret: {bm.simpleRegretAt5.toFixed(4)}</div>
             </div>
           </div>
@@ -181,7 +181,7 @@ export const Scene5ScientificEvidence: React.FC<Scene5ScientificEvidenceProps> =
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
               <div className="font-bold text-[#142A35]">Analytical Combinatorial Baseline</div>
               <p className="text-slate-600 text-[11px] leading-relaxed">
-                Baselines are calculated using exact hypergeometric combinatorial probabilities conditioned on the specific initial designs, guaranteeing unbiased evaluation.
+                Baselines are calculated using exact hypergeometric combinatorial probabilities conditioned on the specific initial designs, for the stated finite-pool replay setting.
               </p>
             </div>
           </div>

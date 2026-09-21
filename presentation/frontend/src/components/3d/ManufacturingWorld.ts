@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ScenarioId } from '../../data/types';
 
 export interface StageInteractionCallback {
@@ -97,6 +98,8 @@ export class ManufacturingWorld {
 
     // 3. Stage 3: Precision Slot-Die Coater (X = -2.5)
     const coaterGroup = this.buildSlotDieCoater();
+    coaterGroup.clear();
+    this.loadHeroAsset('/models/coater.glb', coaterGroup);
     coaterGroup.position.set(-2.5, 0, 0);
     this.group.add(coaterGroup);
     this.registerStageHitbox('coating', coaterGroup, new THREE.Vector3(-2.5, 3.5, 0));
@@ -109,6 +112,8 @@ export class ManufacturingWorld {
 
     // 5. Stage 5: Precision Calendering Machine (Signature Asset) (X = 11)
     const calenderGroup = this.buildPrecisionCalender();
+    calenderGroup.clear();
+    this.loadHeroAsset('/models/calender.glb', calenderGroup);
     calenderGroup.position.set(11, 0, 0);
     this.group.add(calenderGroup);
     this.registerStageHitbox('calendering', calenderGroup, new THREE.Vector3(11, 4.2, 0));
@@ -121,6 +126,20 @@ export class ManufacturingWorld {
 
     // 7. Continuous Moving Electrode Foil Web
     this.buildElectrodeWeb();
+  }
+
+  private loadHeroAsset(path: string, parent: THREE.Group) {
+    new GLTFLoader().load(path, ({ scene }) => {
+      scene.traverse((object) => {
+        if (!(object instanceof THREE.Mesh)) return;
+        object.castShadow = true;
+        object.receiveShadow = true;
+        if (object.name.includes('Upper precision roll')) this.calenderRollTop = object;
+        if (object.name.includes('Lower precision roll')) this.calenderRollBottom = object;
+        if (object.name.includes('Backing roll')) this.backingRoll = object;
+      });
+      parent.add(scene);
+    }, undefined, (error) => console.error(`Failed to load ${path}`, error));
   }
 
   private buildFormulationUnit(): THREE.Group {

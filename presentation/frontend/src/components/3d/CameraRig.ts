@@ -68,15 +68,15 @@ export const STAGE_WAYPOINTS: Record<string, CameraWaypoint> = {
   },
   // Drakopoulos: Stage 3 Slot-Die Coating
   coating: {
-    position: new THREE.Vector3(-2.5, 6.5, 12),
-    target: new THREE.Vector3(-2.5, 2.2, 0),
-    fov: 40
+    position: new THREE.Vector3(-6.4, 4.7, 8.2),
+    target: new THREE.Vector3(-2.3, 1.95, 0),
+    fov: 35
   },
   // Warwick: Stage 2 Pilot Roll Coating
   pilot_coating: {
-    position: new THREE.Vector3(-2.5, 6.5, 12),
-    target: new THREE.Vector3(-2.5, 2.2, 0),
-    fov: 40
+    position: new THREE.Vector3(-6.4, 4.7, 8.2),
+    target: new THREE.Vector3(-2.3, 1.95, 0),
+    fov: 35
   },
   // Drakopoulos: Stage 4 Drying Tunnel
   drying: {
@@ -86,9 +86,9 @@ export const STAGE_WAYPOINTS: Record<string, CameraWaypoint> = {
   },
   // Both: Calendering Machine (Signature Asset)
   calendering: {
-    position: new THREE.Vector3(11, 6.5, 11),
-    target: new THREE.Vector3(11, 2.2, 0),
-    fov: 38
+    position: new THREE.Vector3(6.6, 4.9, 8.5),
+    target: new THREE.Vector3(11, 2.1, 0),
+    fov: 34
   },
   // Warwick: Stage 4 Half-Cell Assembly
   cell_assembly: {

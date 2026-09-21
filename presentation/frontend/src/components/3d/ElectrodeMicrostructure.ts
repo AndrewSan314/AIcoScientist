@@ -1,368 +1,177 @@
 import * as THREE from 'three';
-import { MicrostructureSpec } from '../../data/types';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import type { MicrostructureSpec } from '../../data/types';
 
 interface ParticleData {
   mesh: THREE.Mesh;
   initialPos: THREE.Vector3;
   compressedPos: THREE.Vector3;
-  initialRot: THREE.Euler;
-  compressedRot: THREE.Euler;
-  radius: number;
+  initialRot: THREE.Quaternion;
+  compressedRot: THREE.Quaternion;
 }
 
-interface BinderEdge {
-  p1Idx: number;
-  p2Idx: number;
-}
-
+/** Authored illustrative packing, not tomography or a pore-scale simulation. */
 export class ElectrodeMicrostructure {
-  public group: THREE.Group;
-  private substrateMesh!: THREE.Mesh;
-  private substrateMaterial!: THREE.MeshStandardMaterial;
-  private particleMaterial!: THREE.MeshStandardMaterial;
-  private binderMaterial!: THREE.LineBasicMaterial;
-  private binderLines!: THREE.LineSegments;
-  private binderEdges: BinderEdge[] = [];
+  public group = new THREE.Group();
   private particles: ParticleData[] = [];
-  private caliperTopLine!: THREE.Line;
-  private caliperBottomLine!: THREE.Line;
-  private caliperSpine!: THREE.Line;
-  private caliperLabelMesh!: THREE.Group;
-  private currentProgress: number = 0; // 0 = uncalendered, 1 = fully calendered
-  private activeSpec!: MicrostructureSpec;
-  private isAutoMorphing: boolean = false;
-  private morphDirection: number = 1;
-  private morphSpeed: number = 0.4; // cycles per second
+  private binderLines!: THREE.LineSegments;
+  private binderEdges: [number, number][] = [];
+  private currentProgress = 0;
+  private isAutoMorphing = false;
+  private morphDirection = 1;
+  private morphSpeed = 0.25;
 
   constructor(spec: MicrostructureSpec) {
-    this.group = new THREE.Group();
-    this.activeSpec = spec;
     this.buildMicrostructure(spec);
   }
 
   private buildMicrostructure(spec: MicrostructureSpec) {
-    // 1. Current Collector Base Substrate Foil (Bottom plate at Y = 0)
-    const subGeo = new THREE.BoxGeometry(6.4, 0.16, 6.4);
-    this.substrateMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(spec.substrateColorHex),
-      metalness: 0.92,
-      roughness: 0.22
-    });
-    this.substrateMesh = new THREE.Mesh(subGeo, this.substrateMaterial);
-    this.substrateMesh.position.set(0, 0.08, 0);
-    this.substrateMesh.receiveShadow = true;
-    this.group.add(this.substrateMesh);
+    const graphite = spec.particleMorphology === 'FLAKES_OBLATE';
+    const collector = new THREE.Mesh(
+      new THREE.BoxGeometry(6.2, 0.085, 4.1),
+      new THREE.MeshStandardMaterial({ color: spec.substrateColorHex, metalness: 0.8, roughness: 0.32 }),
+    );
+    collector.name = 'Current collector — fixed foil';
+    collector.position.y = 0.0425;
+    collector.receiveShadow = true;
+    collector.castShadow = true;
+    this.group.add(collector);
 
-    // Substrate foil edge border trim
-    const edgeGeo = new THREE.EdgesGeometry(subGeo);
-    const edgeMat = new THREE.LineBasicMaterial({ color: 0x087F8C, transparent: true, opacity: 0.35 });
-    const edgeLines = new THREE.LineSegments(edgeGeo, edgeMat);
-    edgeLines.position.copy(this.substrateMesh.position);
-    this.group.add(edgeLines);
-
-    // 2. Active Material Particles
-    const isGraphite = spec.particleMorphology === 'FLAKES_OBLATE';
-    
-    // Richer PBR material with realistic industrial specular response
-    this.particleMaterial = new THREE.MeshStandardMaterial({
-      color: isGraphite ? new THREE.Color(0x2D3748) : new THREE.Color(0x4A5568),
-      roughness: isGraphite ? 0.55 : 0.42,
-      metalness: isGraphite ? 0.40 : 0.30,
-      flatShading: false
-    });
-
-    const baseGeo = isGraphite
-      ? new THREE.DodecahedronGeometry(0.32, 1)
-      : new THREE.IcosahedronGeometry(0.28, 2);
-
-    // Deterministic pseudo-random seed generator
-    let seed = 12345;
-    const rng = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-
-    this.particles = [];
-
-    // Generate 3 layers of particles with realistic porous packing
-    const layers = [
-      { yMin: 0.35, yMax: 0.85, count: 55 },
-      { yMin: 0.85, yMax: 1.55, count: 60 },
-      { yMin: 1.55, yMax: 2.35, count: 45 }
-    ];
-
-    layers.forEach((layer, layerIdx) => {
-      for (let i = 0; i < layer.count; i++) {
-        const mesh = new THREE.Mesh(baseGeo, this.particleMaterial);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-
-        const radiusScale = 0.75 + rng() * 0.5;
-        if (isGraphite) {
-          // Lamellar flake morphology: flattened along Y, wider along X and Z
-          mesh.scale.set(radiusScale * 1.35, radiusScale * 0.45, radiusScale * 1.15);
-        } else {
-          // Polycrystalline spherical granule with slight irregular facet scaling
-          mesh.scale.set(
-            radiusScale * (0.9 + rng() * 0.2),
-            radiusScale * (0.9 + rng() * 0.2),
-            radiusScale * (0.9 + rng() * 0.2)
-          );
+    // Four thin irregular lamellae make each graphite particle, with real edge relief.
+    const geometries: THREE.BufferGeometry[] = [];
+    for (let variant = 0; variant < 5; variant++) {
+      if (graphite) {
+        const wafers: THREE.BufferGeometry[] = [];
+        for (let wafer = 0; wafer < 4; wafer++) {
+          const shape = new THREE.Shape();
+          for (let edge = 0; edge < 9; edge++) {
+            const a = edge / 9 * Math.PI * 2;
+            const r = 0.88 + 0.09 * Math.sin(edge * 2.3 + variant + wafer * 0.7);
+            const x = Math.cos(a) * 0.34 * r;
+            const z = Math.sin(a) * 0.235 * r;
+            if (edge === 0) shape.moveTo(x, z); else shape.lineTo(x, z);
+          }
+          shape.closePath();
+          const g = new THREE.ExtrudeGeometry(shape, {
+            depth: 0.015, bevelEnabled: true, bevelSegments: 2,
+            steps: 1, bevelSize: 0.006, bevelThickness: 0.004,
+          });
+          g.rotateX(-Math.PI / 2);
+          g.translate((wafer % 2) * 0.008, wafer * 0.022 - 0.039, 0);
+          wafers.push(g);
         }
-
-        // Uncompressed initial coordinate
-        const initX = (rng() - 0.5) * 5.0;
-        const initY = layer.yMin + rng() * (layer.yMax - layer.yMin);
-        const initZ = (rng() - 0.5) * 5.0;
-        const initialPos = new THREE.Vector3(initX, initY, initZ);
-
-        // Calibrated calendered coordinate:
-        // 1. Vertical compression (-35% for upper layers, -15% for bottom layer)
-        const verticalCompressionFactor = 0.65 + (layerIdx === 0 ? 0.20 : 0.0);
-        const compY = initY * verticalCompressionFactor;
-
-        // 2. Lateral void rearrangement (particles slide into surrounding pores)
-        const lateralJitterX = (rng() - 0.5) * 0.35;
-        const lateralJitterZ = (rng() - 0.5) * 0.35;
-        const compX = initX * 1.05 + lateralJitterX;
-        const compZ = initZ * 1.05 + lateralJitterZ;
-        const compressedPos = new THREE.Vector3(compX, compY, compZ);
-
-        // Rotational deformation under nip shear
-        const initRot = new THREE.Euler(rng() * Math.PI, rng() * Math.PI, rng() * Math.PI);
-        const compRot = new THREE.Euler(
-          initRot.x + (rng() - 0.5) * 0.4,
-          initRot.y + (rng() - 0.5) * 0.4,
-          initRot.z + (isGraphite ? -0.2 : (rng() - 0.5) * 0.3)
-        );
-
-        mesh.position.copy(initialPos);
-        mesh.rotation.copy(initRot);
-        this.group.add(mesh);
-
-        this.particles.push({
-          mesh,
-          initialPos,
-          compressedPos,
-          initialRot: initRot,
-          compressedRot: compRot,
-          radius: radiusScale * 0.3
-        });
+        geometries.push(mergeGeometries(wafers));
+        wafers.forEach(g => g.dispose());
+      } else {
+        const g = new THREE.SphereGeometry(0.285, 32, 24);
+        const positions = g.getAttribute('position');
+        for (let v = 0; v < positions.count; v++) {
+          const x = positions.getX(v), y = positions.getY(v), z = positions.getZ(v);
+          // Spatial harmonics are seamless at the UV seam and bounded inside the envelope.
+          const grain = Math.sin(x * 93 + variant) * Math.sin(y * 87) * Math.sin(z * 79);
+          const swell = Math.sin(x * 21 + variant) * Math.cos(z * 19) * Math.sin(y * 17);
+          const r = 0.92 + grain * 0.035 + swell * 0.025;
+          positions.setXYZ(v, x * r, y * r, z * r);
+        }
+        g.computeVertexNormals();
+        geometries.push(g);
       }
-    });
-
-    // 3. Conductive Binder Domain (CBD) Webbing Network
+    }
+    const materials = Array.from({ length: 5 }, (_, i) => new THREE.MeshStandardMaterial({
+      color: graphite ? new THREE.Color().setHSL(0.59, 0.08, 0.16 + i * 0.018) : new THREE.Color().setHSL(0.59, .32, .095 + i * .012),
+      roughness: graphite ? 0.48 : 0.56,
+      metalness: graphite ? 0.24 : 0.1,
+    }));
+    this.particles = [];
+    const layers = graphite ? 5 : 3;
+    for (let layer = 0; layer < layers; layer++) {
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 7; col++) {
+          const id = this.particles.length;
+          const phase = col * 2.13 + row * 3.71 + layer * 1.61;
+          const x = (col - 3) * 0.82 + Math.sin(phase) * 0.025;
+          const z = (row - 2) * 0.74 + Math.cos(phase) * 0.025;
+          const initialPos = new THREE.Vector3(x, graphite ? 0.29 + layer * 0.54 : 0.39 + layer * 0.96, z);
+          const compressedPos = new THREE.Vector3(x + Math.sin(phase) * 0.018,
+            graphite ? 0.22 + layer * 0.28 : 0.375 + layer * 0.59, z + Math.cos(phase) * 0.018);
+          const initialRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(
+            graphite ? Math.sin(phase) * 0.11 : 0, Math.sin(phase) * 0.2, graphite ? Math.cos(phase) * 0.1 : 0,
+          ));
+          const compressedRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.sin(phase) * 0.2, 0));
+          const mesh = new THREE.Mesh(geometries[id % 5], materials[id % 5]);
+          mesh.name = graphite ? 'Graphite lamellar particle' : 'Illustrative NMC secondary granule';
+          mesh.userData.activeParticle = true;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          this.group.add(mesh);
+          this.particles.push({ mesh, initialPos, compressedPos, initialRot, compressedRot });
+        }
+      }
+    }
     this.buildBinderNetwork();
-
-    // 4. Thickness Calipers / Scientific Height Gauge
-    this.buildTechnicalCalipers(spec);
-
     this.setCompressionProgress(this.currentProgress);
   }
 
   private buildBinderNetwork() {
     this.binderEdges = [];
-    // Connect nearest neighbor particle pairs within percolation threshold
-    for (let i = 0; i < this.particles.length; i += 2) {
-      const p1 = this.particles[i].initialPos;
-      for (let j = i + 1; j < Math.min(i + 6, this.particles.length); j++) {
-        const p2 = this.particles[j].initialPos;
-        if (p1.distanceTo(p2) < 1.15) {
-          this.binderEdges.push({ p1Idx: i, p2Idx: j });
-        }
-      }
+    // Sparse dark contact bridges; actual pore space remains open, not a glowing lattice.
+    for (let i = 0; i < this.particles.length; i++) {
+      if (i % 7 < 6 && i % 3 === 0) this.binderEdges.push([i, i + 1]);
+      if (i + 35 < this.particles.length && i % 4 === 0) this.binderEdges.push([i, i + 35]);
     }
-
-    const posArray = new Float32Array(this.binderEdges.length * 6);
-    let ptr = 0;
-    for (const edge of this.binderEdges) {
-      const p1 = this.particles[edge.p1Idx].initialPos;
-      const p2 = this.particles[edge.p2Idx].initialPos;
-      posArray[ptr++] = p1.x;
-      posArray[ptr++] = p1.y;
-      posArray[ptr++] = p1.z;
-      posArray[ptr++] = p2.x;
-      posArray[ptr++] = p2.y;
-      posArray[ptr++] = p2.z;
-    }
-
-    const binderGeo = new THREE.BufferGeometry();
-    const posAttr = new THREE.Float32BufferAttribute(posArray, 3);
-    posAttr.setUsage(THREE.DynamicDrawUsage);
-    binderGeo.setAttribute('position', posAttr);
-
-    this.binderMaterial = new THREE.LineBasicMaterial({
-      color: 0x087F8C,
-      transparent: true,
-      opacity: 0.45,
-      linewidth: 1
-    });
-    this.binderLines = new THREE.LineSegments(binderGeo, this.binderMaterial);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.binderEdges.length * 6), 3).setUsage(THREE.DynamicDrawUsage));
+    this.binderLines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: 0x303b3c, transparent: true, opacity: 0.42 }));
+    this.binderLines.name = 'Illustrative conductive binder bridges';
+    this.binderLines.frustumCulled = false;
     this.group.add(this.binderLines);
   }
 
-  private buildTechnicalCalipers(spec: MicrostructureSpec) {
-    this.caliperLabelMesh = new THREE.Group();
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xF59E42 });
-    const lineDimMat = new THREE.LineBasicMaterial({ color: 0x087F8C, transparent: true, opacity: 0.6 });
-
-    // Place the gauge on the right side of the sample (X = 3.1, Z = 0) where the view is completely open
-    const gaugeX = 3.1;
-    const gaugeZ = 0;
-
-    // Bottom caliper line at substrate foil
-    const botPoints = [
-      new THREE.Vector3(gaugeX - 0.2, 0.16, gaugeZ),
-      new THREE.Vector3(gaugeX + 0.35, 0.16, gaugeZ)
-    ];
-    const botGeo = new THREE.BufferGeometry().setFromPoints(botPoints);
-    this.caliperBottomLine = new THREE.Line(botGeo, lineMat);
-    this.caliperLabelMesh.add(this.caliperBottomLine);
-
-    // Initial reference line (uncalendered 50-52 µm height mark)
-    const initPoints = [
-      new THREE.Vector3(gaugeX, 2.4, gaugeZ),
-      new THREE.Vector3(gaugeX + 0.25, 2.4, gaugeZ)
-    ];
-    const initGeo = new THREE.BufferGeometry().setFromPoints(initPoints);
-    const initLine = new THREE.Line(initGeo, lineDimMat);
-    this.caliperLabelMesh.add(initLine);
-
-    // Calendered target reference line (37-39 µm target height mark)
-    const targetPoints = [
-      new THREE.Vector3(gaugeX, 1.6, gaugeZ),
-      new THREE.Vector3(gaugeX + 0.25, 1.6, gaugeZ)
-    ];
-    const targetGeo = new THREE.BufferGeometry().setFromPoints(targetPoints);
-    const targetLine = new THREE.Line(targetGeo, lineDimMat);
-    this.caliperLabelMesh.add(targetLine);
-
-    // Vertical height caliper spine (from foil Y = 0.16 to current active film top)
-    const spinePoints = [
-      new THREE.Vector3(gaugeX, 0.16, gaugeZ),
-      new THREE.Vector3(gaugeX, 2.4, gaugeZ)
-    ];
-    const spineGeo = new THREE.BufferGeometry().setFromPoints(spinePoints);
-    const spineAttr = spineGeo.attributes.position as THREE.BufferAttribute;
-    spineAttr.setUsage(THREE.DynamicDrawUsage);
-    this.caliperSpine = new THREE.Line(spineGeo, lineMat);
-    this.caliperLabelMesh.add(this.caliperSpine);
-
-    // Dynamic top caliper pointer line indicating active film height
-    const topPoints = [
-      new THREE.Vector3(gaugeX - 0.25, 2.4, gaugeZ),
-      new THREE.Vector3(gaugeX + 0.45, 2.4, gaugeZ)
-    ];
-    const topGeo = new THREE.BufferGeometry().setFromPoints(topPoints);
-    const topAttr = topGeo.attributes.position as THREE.BufferAttribute;
-    topAttr.setUsage(THREE.DynamicDrawUsage);
-    this.caliperTopLine = new THREE.Line(topGeo, lineMat);
-    this.caliperLabelMesh.add(this.caliperTopLine);
-
-    this.group.add(this.caliperLabelMesh);
-  }
-
   public setCompressionProgress(progress: number) {
-    this.currentProgress = Math.max(0, Math.min(1, progress));
-
-    // 1. Lerp each particle position and orientation
+    this.currentProgress = Number.isFinite(progress) ? THREE.MathUtils.clamp(progress, 0, 1) : 0;
+    const t = THREE.MathUtils.smoothstep(this.currentProgress, 0, 1);
+    // Fixed cell envelopes stay disjoint at every intermediate t; no particle is scaled.
     for (const p of this.particles) {
-      p.mesh.position.lerpVectors(p.initialPos, p.compressedPos, this.currentProgress);
-
-      // Lerp rotation angles
-      p.mesh.rotation.x = THREE.MathUtils.lerp(p.initialRot.x, p.compressedRot.x, this.currentProgress);
-      p.mesh.rotation.y = THREE.MathUtils.lerp(p.initialRot.y, p.compressedRot.y, this.currentProgress);
-      p.mesh.rotation.z = THREE.MathUtils.lerp(p.initialRot.z, p.compressedRot.z, this.currentProgress);
+      p.mesh.position.lerpVectors(p.initialPos, p.compressedPos, t);
+      p.mesh.quaternion.slerpQuaternions(p.initialRot, p.compressedRot, t);
     }
-
-    // 2. Synchronously update conductive binder lines with moving particles
-    if (this.binderLines && this.binderEdges.length > 0) {
-      const posAttr = this.binderLines.geometry.attributes.position as THREE.BufferAttribute;
-      const arr = posAttr.array as Float32Array;
-      let ptr = 0;
-      for (const edge of this.binderEdges) {
-        const p1 = this.particles[edge.p1Idx].mesh.position;
-        const p2 = this.particles[edge.p2Idx].mesh.position;
-        arr[ptr++] = p1.x;
-        arr[ptr++] = p1.y;
-        arr[ptr++] = p1.z;
-        arr[ptr++] = p2.x;
-        arr[ptr++] = p2.y;
-        arr[ptr++] = p2.z;
-      }
-      posAttr.needsUpdate = true;
-    }
-
-    // 3. Update thickness caliper top mark and vertical spine
-    const initH = 2.4;
-    const compH = 1.6;
-    const currentH = THREE.MathUtils.lerp(initH, compH, this.currentProgress);
-
-    if (this.caliperTopLine) {
-      const posAttr = this.caliperTopLine.geometry.attributes.position as THREE.BufferAttribute;
-      posAttr.setY(0, currentH);
-      posAttr.setY(1, currentH);
-      posAttr.needsUpdate = true;
-    }
-
-    if (this.caliperSpine) {
-      const spineAttr = this.caliperSpine.geometry.attributes.position as THREE.BufferAttribute;
-      spineAttr.setY(1, currentH);
-      spineAttr.needsUpdate = true;
-    }
+    const positions = this.binderLines.geometry.getAttribute('position') as THREE.BufferAttribute;
+    this.binderEdges.forEach(([a, b], index) => {
+      const p = this.particles[a].mesh.position, q = this.particles[b].mesh.position;
+      positions.setXYZ(index * 2, p.x, p.y, p.z);
+      positions.setXYZ(index * 2 + 1, q.x, q.y, q.z);
+    });
+    positions.needsUpdate = true;
   }
 
-  public setAutoMorph(auto: boolean) {
-    this.isAutoMorphing = auto;
-  }
-
-  public toggleAutoMorph(): boolean {
-    this.isAutoMorphing = !this.isAutoMorphing;
-    return this.isAutoMorphing;
-  }
-
-  public resetOrientation() {
-    this.group.rotation.set(0.1, 0.4, 0);
-  }
+  public setAutoMorph(auto: boolean) { this.isAutoMorphing = auto; }
+  public toggleAutoMorph(): boolean { this.isAutoMorphing = !this.isAutoMorphing; return this.isAutoMorphing; }
+  public resetOrientation() { this.group.rotation.set(0.1, 0.4, 0); }
 
   public updateScenarioSpec(spec: MicrostructureSpec, preservedCompression?: number) {
-    this.activeSpec = spec;
-    if (preservedCompression !== undefined) {
-      this.currentProgress = preservedCompression;
-    }
-
-    // Dispose old geometries and materials to avoid WebGL memory leak
-    while (this.group.children.length > 0) {
-      const obj = this.group.children[0];
-      this.group.remove(obj);
-      if (obj instanceof THREE.Mesh || obj instanceof THREE.Line || obj instanceof THREE.LineSegments) {
-        obj.geometry.dispose();
+    if (preservedCompression !== undefined) this.currentProgress = preservedCompression;
+    const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
+    this.group.traverse(obj => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
+        geometries.add(obj.geometry);
+        (Array.isArray(obj.material) ? obj.material : [obj.material]).forEach(m => materials.add(m));
       }
-    }
-
+    });
+    geometries.forEach(g => g.dispose());
+    materials.forEach(m => m.dispose());
+    this.group.clear();
     this.buildMicrostructure(spec);
-    this.setCompressionProgress(this.currentProgress);
   }
 
   public update(delta: number) {
-    if (this.isAutoMorphing) {
-      let nextProg = this.currentProgress + this.morphDirection * delta * this.morphSpeed;
-      if (nextProg >= 1.0) {
-        nextProg = 1.0;
-        this.morphDirection = -1;
-      } else if (nextProg <= 0.0) {
-        nextProg = 0.0;
-        this.morphDirection = 1;
-      }
-      this.setCompressionProgress(nextProg);
-    }
+    if (!this.isAutoMorphing || !Number.isFinite(delta) || delta <= 0) return;
+    const phase = this.morphDirection === 1 ? this.currentProgress : 2 - this.currentProgress;
+    const next = (phase + delta * this.morphSpeed) % 2;
+    this.morphDirection = next < 1 ? 1 : -1;
+    this.setCompressionProgress(next <= 1 ? next : 2 - next);
   }
 
-  public getProgress(): number {
-    return this.currentProgress;
-  }
-
-  public getAutoMorph(): boolean {
-    return this.isAutoMorphing;
-  }
+  public getProgress(): number { return this.currentProgress; }
+  public getAutoMorph(): boolean { return this.isAutoMorphing; }
 }

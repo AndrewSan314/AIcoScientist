@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import gsap from 'gsap';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CameraRig } from './CameraRig';
 import { ManufacturingWorld } from './ManufacturingWorld';
 import { ElectrodeMicrostructure } from './ElectrodeMicrostructure';
@@ -43,6 +45,11 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
   const optimizationRef = useRef<OptimizationVisualization | null>(null);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const currentSceneRef = useRef(currentScene);
+  const transitionRef = useRef<gsap.core.Tween | null>(null);
+  const callbacksRef = useRef({ onStageSelect, onCandidateSelect, onSceneSelect });
+  currentSceneRef.current = currentScene;
+  callbacksRef.current = { onStageSelect, onCandidateSelect, onSceneSelect };
 
   // Mouse drag orbit controls for Microstructure (Scene 3)
   const isDraggingRef = useRef<boolean>(false);
@@ -73,7 +80,9 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.16;
+    const environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04);
+    scene.environment = environment.texture;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -153,7 +162,7 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
       prevMousePosRef.current = { x: e.clientX, y: e.clientY };
 
       // In Scene 3 (Microstructure), user can drag to rotate the sample!
-      if (currentScene === 3 && microstructureRef.current) {
+      if (currentSceneRef.current === 3 && microstructureRef.current) {
         microstructureRef.current.group.rotation.y += deltaX * 0.008;
         microstructureRef.current.group.rotation.x = Math.max(
           -0.5,
@@ -175,32 +184,29 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
       raycasterRef.current.setFromCamera(mouseRef.current, camera);
 
       // Handle Scene 1 or 2 machine clicks
-      if ((currentScene === 1 || currentScene === 2) && manufacturingWorldRef.current) {
+      const activeScene = currentSceneRef.current;
+      if ((activeScene === 1 || activeScene === 2) && manufacturingWorldRef.current) {
         const hitboxes = manufacturingWorldRef.current.getHitboxes();
         const intersects = raycasterRef.current.intersectObjects(hitboxes);
         if (intersects.length > 0) {
           const rawStageId = intersects[0].object.userData?.stageId;
           if (rawStageId) {
             const resolvedStageId = manufacturingWorldRef.current.resolveStageId(rawStageId);
-            if (currentScene === 1 && onSceneSelect) {
-              onSceneSelect(2);
+            if (activeScene === 1) {
+              callbacksRef.current.onSceneSelect?.(2);
             }
-            if (onStageSelect) {
-              onStageSelect(resolvedStageId);
-            }
+            callbacksRef.current.onStageSelect?.(resolvedStageId);
           }
         }
       }
 
       // Handle Scene 4 candidate clicks
-      if (currentScene === 4 && optimizationRef.current) {
+      if (activeScene === 4 && optimizationRef.current) {
         const hitboxes = optimizationRef.current.getHitboxes();
         const intersects = raycasterRef.current.intersectObjects(hitboxes);
         if (intersects.length > 0) {
           const candidateId = intersects[0].object.userData?.candidateId;
-          if (candidateId && onCandidateSelect) {
-            onCandidateSelect(candidateId);
-          }
+          if (candidateId) callbacksRef.current.onCandidateSelect?.(candidateId);
         }
       }
     };
@@ -214,11 +220,16 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
     // 7. Animation Loop
     let animationFrameId: number;
     const clock = new THREE.Clock();
+    const frameTimes: number[] = [];
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       const delta = clock.getDelta();
       const elapsed = clock.getElapsedTime();
+      if (delta < 0.2) {
+        frameTimes.push(delta * 1000);
+        if (frameTimes.length > 300) frameTimes.shift();
+      }
 
       if (cameraRigRef.current) {
         cameraRigRef.current.update(delta);
@@ -234,6 +245,19 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
       }
 
       renderer.render(scene, camera);
+      {
+        const gl = renderer.getContext();
+        const debug = gl.getExtension('WEBGL_debug_renderer_info');
+        (window as Window & { __exhibitionQA?: unknown }).__exhibitionQA = {
+          scene: currentSceneRef.current,
+          modelVisible: [manufacturingWorldRef.current?.group, microstructureRef.current?.group, optimizationRef.current?.group]
+            .some((group) => group?.visible),
+          renderer: { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles },
+          frameMs: frameTimes.slice(),
+          gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'Unavailable',
+          resolution: `${renderer.domElement.width}x${renderer.domElement.height}`,
+        };
+      }
     };
     animate();
 
@@ -248,27 +272,67 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
         container.removeChild(domElem);
       }
       renderer.dispose();
+      environment.dispose();
+      delete (window as Window & { __exhibitionQA?: unknown }).__exhibitionQA;
     };
   }, []);
 
   // Update scene transitions
   useEffect(() => {
     if (!cameraRigRef.current) return;
-    cameraRigRef.current.transitionToScene(currentScene);
-
-    // Update 3D subsystem visibilities
-    if (manufacturingWorldRef.current) {
-      manufacturingWorldRef.current.group.visible = currentScene === 1 || currentScene === 2 || currentScene === 5;
+    const manufacturing = manufacturingWorldRef.current?.group;
+    const micro = microstructureRef.current?.group;
+    const optimization = optimizationRef.current?.group;
+    if (!manufacturing || !micro || !optimization) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const target = currentScene === 3 ? micro : currentScene === 4 ? optimization : manufacturing;
+    const groups = [manufacturing, micro, optimization];
+    const outgoing = groups.find((group) => group.visible && group !== target);
+    const opacity = (group: THREE.Group, value: number) => group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.LineSegments)) return;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      materials.forEach((material) => {
+        material.transparent = value < 0.999;
+        material.opacity = value;
+        material.depthWrite = value > 0.4;
+      });
+    });
+    transitionRef.current?.kill();
+    groups.forEach((group) => { group.visible = group === target || group === outgoing; });
+    if (reduced) {
+      groups.forEach((group) => { opacity(group, group === target ? 1 : 0); group.visible = group === target; });
+      cameraRigRef.current.transitionToScene(currentScene, 0.01);
+      return;
     }
-    if (microstructureRef.current) {
-      microstructureRef.current.group.visible = currentScene === 3;
-      if (currentScene === 3) {
-        microstructureRef.current.resetOrientation();
-      }
+    if (currentScene === 3) {
+      micro.position.set(0, 0, 0);
+      micro.scale.setScalar(0.04);
+      microstructureRef.current?.resetOrientation();
+    } else if (currentScene === 4) {
+      optimization.scale.setScalar(0.12);
     }
-    if (optimizationRef.current) {
-      optimizationRef.current.group.visible = currentScene === 4;
-    }
+    opacity(target, 0);
+    cameraRigRef.current.transitionToScene(currentScene, 1.65);
+    const state = { progress: 0 };
+    transitionRef.current = gsap.to(state, {
+      progress: 1,
+      duration: 1.65,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        const p = state.progress;
+        opacity(target, THREE.MathUtils.smoothstep(p, .42, .92));
+        if (outgoing) {
+          opacity(outgoing, 1 - THREE.MathUtils.smoothstep(p, 0, .42));
+          if (p >= .42) outgoing.visible = false;
+        }
+        if (currentScene === 3) {
+          micro.scale.setScalar(THREE.MathUtils.lerp(.04, 1, p * p));
+        } else if (currentScene === 4) {
+          optimization.scale.setScalar(THREE.MathUtils.lerp(.12, 1, p));
+        }
+      },
+      onComplete: () => groups.forEach((group) => { group.visible = group === target; opacity(group, 1); })
+    });
   }, [currentScene]);
 
   // Update stage camera focus in Scene 2

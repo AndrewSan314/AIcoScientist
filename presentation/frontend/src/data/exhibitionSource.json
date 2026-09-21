@@ -1,0 +1,850 @@
+{
+  "drakopoulos": {
+    "candidates": [
+      {
+        "id": "protocol-0d38055e23a7",
+        "displayId": "Recipe 0d3805",
+        "controls": {
+          "coating_speed_m_per_min": 0.1,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": true
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 354.54,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-40",
+          "ASC-41",
+          "ASC-42"
+        ]
+      },
+      {
+        "id": "protocol-1839e8c24871",
+        "displayId": "Recipe 1839e8",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": true
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 140.35,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-13",
+          "ASC-14",
+          "ASC-15"
+        ]
+      },
+      {
+        "id": "protocol-23509c88f8bf",
+        "displayId": "Recipe 23509c",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 200.0,
+          "drying_temperature_c": 80.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 111.89,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-79",
+          "ASC-80",
+          "ASC-81"
+        ]
+      },
+      {
+        "id": "protocol-7acc4561b3f7",
+        "displayId": "Recipe 7acc45",
+        "controls": {
+          "coating_speed_m_per_min": 0.1,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 316.39,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-37",
+          "ASC-38",
+          "ASC-39"
+        ]
+      },
+      {
+        "id": "protocol-95a0b3eea94d",
+        "displayId": "Recipe 95a0b3",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 200.0,
+          "drying_temperature_c": 100.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 115.71,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-82",
+          "ASC-83",
+          "ASC-84"
+        ]
+      },
+      {
+        "id": "protocol-9ecd72d3534a",
+        "displayId": "Recipe 9ecd72",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 235.08,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-16",
+          "ASC-17",
+          "ASC-18"
+        ]
+      },
+      {
+        "id": "protocol-a4fcf0522485",
+        "displayId": "Recipe a4fcf0",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 100.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 265.59,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-31",
+          "ASC-32",
+          "ASC-33"
+        ]
+      },
+      {
+        "id": "protocol-c005aa958750",
+        "displayId": "Recipe c005aa",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 200.0,
+          "drying_temperature_c": 90.0,
+          "calendering_applied": true
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 41.54,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-88",
+          "ASC-89",
+          "ASC-90"
+        ]
+      },
+      {
+        "id": "protocol-c1c280b7366f",
+        "displayId": "Recipe c1c280",
+        "controls": {
+          "coating_speed_m_per_min": 0.2,
+          "coating_gap_um": 100.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 402.25,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-52",
+          "ASC-53",
+          "ASC-54"
+        ]
+      },
+      {
+        "id": "protocol-d3602183e567",
+        "displayId": "Recipe d36021",
+        "controls": {
+          "coating_speed_m_per_min": 0.2,
+          "coating_gap_um": 100.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": true
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 263.89,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-49",
+          "ASC-50",
+          "ASC-51"
+        ]
+      },
+      {
+        "id": "protocol-f3ae9bcb49de",
+        "displayId": "Recipe f3ae9b",
+        "controls": {
+          "coating_speed_m_per_min": 0.2,
+          "coating_gap_um": 150.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 241.91,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-46",
+          "ASC-47",
+          "ASC-48"
+        ]
+      },
+      {
+        "id": "protocol-fd150c39c22f",
+        "displayId": "Recipe fd150c",
+        "controls": {
+          "coating_speed_m_per_min": 0.4,
+          "coating_gap_um": 100.0,
+          "drying_temperature_c": 60.0,
+          "calendering_applied": false
+        },
+        "revealedTarget": {
+          "name": "D30 Specific Capacity",
+          "value": 392.51,
+          "unit": "mAh/g"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "ASC-58",
+          "ASC-59",
+          "ASC-60"
+        ]
+      }
+    ],
+    "replayInitialIds": [
+      "protocol-0d38055e23a7",
+      "protocol-95a0b3eea94d",
+      "protocol-23509c88f8bf"
+    ],
+    "replaySteps": [
+      {
+        "step": 1,
+        "selectedCandidateId": "protocol-d3602183e567",
+        "selectedCandidateDisplay": "Recipe d36021",
+        "controlsSummary": {
+          "coating_speed_m_per_min": "0.2",
+          "coating_gap_um": "100.0",
+          "drying_temperature_c": "60.0",
+          "calendering_applied": "True"
+        },
+        "predictedMean": 289.9652740764786,
+        "predictedStd": 107.5147826998778,
+        "acquisitionValue": 18.117758036768382,
+        "revealedTarget": 263.887740480095,
+        "bestSoFar": 354.53634941923684,
+        "simpleRegret": 47.71270073679477,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 2,
+        "selectedCandidateId": "protocol-7acc4561b3f7",
+        "selectedCandidateDisplay": "Recipe 7acc45",
+        "controlsSummary": {
+          "coating_speed_m_per_min": "0.1",
+          "coating_gap_um": "150.0",
+          "drying_temperature_c": "60.0",
+          "calendering_applied": "False"
+        },
+        "predictedMean": 253.41909528633812,
+        "predictedStd": 139.53713632803033,
+        "acquisitionValue": 19.11749318197245,
+        "revealedTarget": 316.38845846496605,
+        "bestSoFar": 354.53634941923684,
+        "simpleRegret": 47.71270073679477,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 3,
+        "selectedCandidateId": "protocol-f3ae9bcb49de",
+        "selectedCandidateDisplay": "Recipe f3ae9b",
+        "controlsSummary": {
+          "coating_speed_m_per_min": "0.2",
+          "coating_gap_um": "150.0",
+          "drying_temperature_c": "60.0",
+          "calendering_applied": "False"
+        },
+        "predictedMean": 286.1057935928538,
+        "predictedStd": 120.22148088027136,
+        "acquisitionValue": 21.31257456869645,
+        "revealedTarget": 241.91474467651884,
+        "bestSoFar": 354.53634941923684,
+        "simpleRegret": 47.71270073679477,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 4,
+        "selectedCandidateId": "protocol-c1c280b7366f",
+        "selectedCandidateDisplay": "Recipe c1c280",
+        "controlsSummary": {
+          "coating_speed_m_per_min": "0.2",
+          "coating_gap_um": "100.0",
+          "drying_temperature_c": "60.0",
+          "calendering_applied": "False"
+        },
+        "predictedMean": 262.0732455689264,
+        "predictedStd": 136.08880375973177,
+        "acquisitionValue": 20.13058527184311,
+        "revealedTarget": 402.2490501560316,
+        "bestSoFar": 402.2490501560316,
+        "simpleRegret": 0.0,
+        "isOptimal": true,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 5,
+        "selectedCandidateId": "protocol-fd150c39c22f",
+        "selectedCandidateDisplay": "Recipe fd150c",
+        "controlsSummary": {
+          "coating_speed_m_per_min": "0.4",
+          "coating_gap_um": "100.0",
+          "drying_temperature_c": "60.0",
+          "calendering_applied": "False"
+        },
+        "predictedMean": 289.9016766508261,
+        "predictedStd": 136.5868740911629,
+        "acquisitionValue": 15.776651656534607,
+        "revealedTarget": 392.50999261021303,
+        "bestSoFar": 402.2490501560316,
+        "simpleRegret": 0.0,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      }
+    ],
+    "sourceArtifact": "outputs/drakopoulos_rediscovery_v4/trajectories/AICOSCIENTIST_PROCESS_SURROGATE_trajectories.json",
+    "hitAt1Pct": 30.0,
+    "hitAt3Pct": 50.0
+  },
+  "warwick": {
+    "candidates": [
+      {
+        "id": "EXP_01",
+        "displayId": "EXP_01",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.766066964582094,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD001",
+          "DD002",
+          "DD056"
+        ]
+      },
+      {
+        "id": "EXP_02",
+        "displayId": "EXP_02",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7775115874242916,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD032",
+          "DD033",
+          "DD034"
+        ]
+      },
+      {
+        "id": "EXP_03",
+        "displayId": "EXP_03",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7947399912874302,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD020",
+          "DD021",
+          "DD022"
+        ]
+      },
+      {
+        "id": "EXP_04",
+        "displayId": "EXP_04",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7388540816692358,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD013",
+          "DD015",
+          "DD057"
+        ]
+      },
+      {
+        "id": "EXP_05",
+        "displayId": "EXP_05",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7677124906140058,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD035",
+          "DD036",
+          "DD037"
+        ]
+      },
+      {
+        "id": "EXP_06",
+        "displayId": "EXP_06",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7884053971541913,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD038",
+          "DD039",
+          "DD040"
+        ]
+      },
+      {
+        "id": "EXP_07",
+        "displayId": "EXP_07",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.6876224052265055,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD004",
+          "DD005",
+          "DD006"
+        ]
+      },
+      {
+        "id": "EXP_08",
+        "displayId": "EXP_08",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7776678060062796,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD041",
+          "DD042",
+          "DD043"
+        ]
+      },
+      {
+        "id": "EXP_09",
+        "displayId": "EXP_09",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 122.48,
+          "loading_regime": "LOW"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.7737090249445218,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD023",
+          "DD024",
+          "DD025"
+        ]
+      },
+      {
+        "id": "EXP_10",
+        "displayId": "EXP_10",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.09878845328641378,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD059",
+          "DD027",
+          "DD028"
+        ]
+      },
+      {
+        "id": "EXP_11",
+        "displayId": "EXP_11",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.4860431398041867,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD053",
+          "DD055",
+          "DD058"
+        ]
+      },
+      {
+        "id": "EXP_12",
+        "displayId": "EXP_12",
+        "controls": {
+          "roll_temperature_c": 85.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.3031475568125145,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD007",
+          "DD008",
+          "DD009"
+        ]
+      },
+      {
+        "id": "EXP_13",
+        "displayId": "EXP_13",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.2818346691284917,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD050",
+          "DD051",
+          "DD052"
+        ]
+      },
+      {
+        "id": "EXP_14",
+        "displayId": "EXP_14",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.4214307888718132,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD047",
+          "DD048",
+          "DD049"
+        ]
+      },
+      {
+        "id": "EXP_15",
+        "displayId": "EXP_15",
+        "controls": {
+          "roll_temperature_c": 120.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.36824000027380155,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD016",
+          "DD017",
+          "DD018"
+        ]
+      },
+      {
+        "id": "EXP_16",
+        "displayId": "EXP_16",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 2.7,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.173783815852789,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD029",
+          "DD030",
+          "DD031"
+        ]
+      },
+      {
+        "id": "EXP_17",
+        "displayId": "EXP_17",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 2.95,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.4201355899774681,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD044",
+          "DD045",
+          "DD046"
+        ]
+      },
+      {
+        "id": "EXP_18",
+        "displayId": "EXP_18",
+        "controls": {
+          "roll_temperature_c": 145.0,
+          "target_density_g_cm3": 3.2,
+          "target_coating_weight_gsm": 182.73,
+          "loading_regime": "HIGH"
+        },
+        "revealedTarget": {
+          "name": "5C/0.2C rate ratio",
+          "value": 0.2816109453285956,
+          "unit": "dimensionless_ratio"
+        },
+        "replicateCount": 3,
+        "cellIds": [
+          "DD010",
+          "DD011",
+          "DD012"
+        ]
+      }
+    ],
+    "replayInitialIds": [
+      "EXP_04",
+      "EXP_10",
+      "EXP_18"
+    ],
+    "replaySteps": [
+      {
+        "step": 1,
+        "selectedCandidateId": "EXP_07",
+        "selectedCandidateDisplay": "EXP_07",
+        "controlsSummary": {
+          "roll_temperature_c": "145.0",
+          "target_density_g_cm3": "2.7",
+          "target_coating_weight_gsm": "122.48",
+          "loading_regime": "LOW"
+        },
+        "predictedMean": 0.37531967315679776,
+        "predictedStd": 0.2716115765461259,
+        "acquisitionValue": 0.011389196512253348,
+        "revealedTarget": 0.6876224052265055,
+        "bestSoFar": 0.7388540816692358,
+        "simpleRegret": 0.055885909618194396,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 2,
+        "selectedCandidateId": "EXP_05",
+        "selectedCandidateDisplay": "EXP_05",
+        "controlsSummary": {
+          "roll_temperature_c": "120.0",
+          "target_density_g_cm3": "2.95",
+          "target_coating_weight_gsm": "122.48",
+          "loading_regime": "LOW"
+        },
+        "predictedMean": 0.5842094460338932,
+        "predictedStd": 0.22094971649722556,
+        "acquisitionValue": 0.03157403750485768,
+        "revealedTarget": 0.7677124906140058,
+        "bestSoFar": 0.7677124906140058,
+        "simpleRegret": 0.02702750067342441,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 3,
+        "selectedCandidateId": "EXP_08",
+        "selectedCandidateDisplay": "EXP_08",
+        "controlsSummary": {
+          "roll_temperature_c": "145.0",
+          "target_density_g_cm3": "2.95",
+          "target_coating_weight_gsm": "122.48",
+          "loading_regime": "LOW"
+        },
+        "predictedMean": 0.6808306819498997,
+        "predictedStd": 0.1610852814171836,
+        "acquisitionValue": 0.02994986451289207,
+        "revealedTarget": 0.7776678060062796,
+        "bestSoFar": 0.7776678060062796,
+        "simpleRegret": 0.01707218528115062,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 4,
+        "selectedCandidateId": "EXP_09",
+        "selectedCandidateDisplay": "EXP_09",
+        "controlsSummary": {
+          "roll_temperature_c": "145.0",
+          "target_density_g_cm3": "3.2",
+          "target_coating_weight_gsm": "122.48",
+          "loading_regime": "LOW"
+        },
+        "predictedMean": 0.7361286754348066,
+        "predictedStd": 0.12810328921944208,
+        "acquisitionValue": 0.03299975143230092,
+        "revealedTarget": 0.7737090249445218,
+        "bestSoFar": 0.7776678060062796,
+        "simpleRegret": 0.01707218528115062,
+        "isOptimal": false,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      },
+      {
+        "step": 5,
+        "selectedCandidateId": "EXP_03",
+        "selectedCandidateDisplay": "EXP_03",
+        "controlsSummary": {
+          "roll_temperature_c": "85.0",
+          "target_density_g_cm3": "3.2",
+          "target_coating_weight_gsm": "122.48",
+          "loading_regime": "LOW"
+        },
+        "predictedMean": 0.6504463781370752,
+        "predictedStd": 0.15032945579317183,
+        "acquisitionValue": 0.016642694494097898,
+        "revealedTarget": 0.7947399912874302,
+        "bestSoFar": 0.7947399912874302,
+        "simpleRegret": 0.0,
+        "isOptimal": true,
+        "explanation": "Recorded seed 11 selection using expected improvement. Prediction and posterior standard deviation were saved before historical outcome reveal."
+      }
+    ],
+    "sourceArtifact": "outputs/warwick_nmc622_calendering/trajectories/aicoscientist_full_process_engine_seed_11.json",
+    "hitAt1Pct": 0.0,
+    "hitAt3Pct": 50.0
+  }
+}

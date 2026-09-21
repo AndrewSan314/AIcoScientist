@@ -38,7 +38,7 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold text-[#087F8C] uppercase tracking-wider">
-                Sequential Replay Cockpit
+                Recorded Replay · Seed 11
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                 OFFLINE_REPLAY
@@ -81,10 +81,10 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
                 <span>Initial Design Cold-Start (3 Historical Observations)</span>
               </div>
               <p className="text-xs text-sky-700 leading-relaxed">
-                Prior to AI optimization, 3 candidate process settings were randomly sampled from the historical dataset to initialize the Gaussian Process surrogate prior.
+                Three recorded seed observations initialize this replay. Gray points have unknown outcomes. Teal/orange heights show revealed measurements only.
               </p>
               <div className="text-xs font-mono font-semibold text-slate-700 pt-1">
-                Initial Best-so-Far: <span className="text-[#087F8C] font-bold">{scenario.replaySteps[0].bestSoFar} {scenario.targetUnit}</span>
+                Initial Best-so-Far: <span className="text-[#087F8C] font-bold">{Math.max(...scenario.candidates.filter(c => scenario.replayInitialIds.includes(c.id)).map(c => c.revealedTarget.value)).toFixed(4)} {scenario.targetUnit}</span>
               </div>
             </div>
           ) : currentStepData && (
@@ -138,7 +138,7 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
 
                 {/* Historical Revealed Evaluation */}
                 <div className="p-3.5 rounded-2xl bg-white border border-[#DCE8EC] shadow-xs space-y-1">
-                  <div className="text-[11px] text-slate-500 font-medium">Revealed Ground Truth</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Revealed Historical Mean</div>
                   <div className={`text-base font-bold font-mono ${currentStepData.isOptimal ? 'text-[#F59E42]' : 'text-[#142A35]'}`}>
                     {currentStepData.revealedTarget.toFixed(4)}
                   </div>
@@ -152,7 +152,7 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
               <div className="p-3.5 rounded-2xl bg-[#E8F4F2]/60 border border-[#087F8C]/20 text-xs text-slate-700 leading-relaxed">
                 <div className="font-semibold text-[#087F8C] mb-1 flex items-center space-x-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-[#087F8C]" />
-                  <span>Bayesian Acquisition Rationale</span>
+                  <span>Recorded Decision Context</span>
                 </div>
                 <p>{currentStepData.explanation}</p>
               </div>
@@ -180,7 +180,7 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
               onClick={() => onStepChange(replayStep + 1)}
               className="flex-1 flex items-center justify-center space-x-1.5 px-5 py-2.5 bg-[#087F8C] hover:bg-[#076a75] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
             >
-              <span>Next AI Recommendation (Step {replayStep + 1})</span>
+              <span>Reveal Recorded Selection (Step {replayStep + 1})</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
@@ -202,7 +202,7 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
             <div>
               <div className="text-xs font-bold text-[#142A35]">Candidate Search Space</div>
               <div className="text-[11px] text-slate-500">
-                {scenario.candidates.length} discrete physical candidates
+                {scenario.candidates.length} candidates · height appears after reveal
               </div>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
@@ -210,6 +210,12 @@ export const Scene4OptimizationStudio: React.FC<Scene4OptimizationStudioProps> =
             </span>
           </div>
 
+          <p className="text-[10px] text-slate-500 py-2">
+            {scenario.id === 'warwick_nmc622_calendering'
+              ? 'X: roll temperature · Z: target density, separated by loading regime · Y: revealed 5C/0.2C ratio'
+              : 'X: coating speed · Z: coating gap, offset by calendering status · Y: revealed D30 (mAh/g)'}
+            {' · Gray: unknown · Blue: initial · Teal: observed · Orange: recorded best. Lines join acquired observations in replay order, not a fitted response.'}
+          </p>
           {/* Candidate Inspector Card (When candidate is selected) */}
           {selectedCandidate && (
             <div className="my-3 p-3.5 rounded-2xl bg-[#F0F7F7] border border-[#087F8C]/30 text-xs space-y-2 shrink-0 animate-in fade-in zoom-in-95 duration-200">

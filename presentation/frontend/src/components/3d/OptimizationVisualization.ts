@@ -10,7 +10,7 @@ export class OptimizationVisualization {
   private scenario: ExhibitionScenario;
   private candidateMeshes: Map<string, THREE.Mesh> = new Map();
   private candidateHitboxes: THREE.Mesh[] = [];
-  private surfaceMesh!: THREE.Mesh;
+  private candidateStems: Map<string, THREE.Line> = new Map();
   private trajectoryLine!: THREE.Line;
   private selectionBeacon!: THREE.Group;
   private inspectBeacon!: THREE.Group;
@@ -30,7 +30,7 @@ export class OptimizationVisualization {
     this.setStep(0);
   }
 
-  private mapCoords(cand: CandidateRecord): THREE.Vector3 {
+  private mapCoords(cand: CandidateRecord, revealed = false): THREE.Vector3 {
     const isWarwick = this.scenario.id === 'warwick_nmc622_calendering';
 
     if (isWarwick) {
@@ -49,9 +49,9 @@ export class OptimizationVisualization {
       const worldZ = densityZ + (isHighLoading ? 1.9 : -1.9);
 
       // Y: Target Rate ratio (0.09 to 0.82)
-      const yVal = cand.revealedTarget.value;
+      const yVal = revealed ? cand.revealedTarget.value : 0;
       const normY = Math.max(0, Math.min(1, (yVal - 0.05) / (0.85 - 0.05)));
-      const worldY = 0.5 + normY * 3.4;
+      const worldY = revealed ? 0.5 + normY * 3.4 : 0.18;
 
       return new THREE.Vector3(worldX, worldY, worldZ);
     } else {
@@ -71,62 +71,16 @@ export class OptimizationVisualization {
       }
 
       // Y: D30 Specific capacity (40 to 415 mAh/g)
-      const yVal = cand.revealedTarget.value;
+      const yVal = revealed ? cand.revealedTarget.value : 0;
       const normY = Math.max(0, Math.min(1, (yVal - 30) / (420 - 30)));
-      const worldY = 0.5 + normY * 3.4;
+      const worldY = revealed ? 0.5 + normY * 3.4 : 0.18;
 
       return new THREE.Vector3(worldX, worldY, worldZ);
     }
   }
 
   private buildResponseSurface() {
-    // 3D Parametric Response Surface / Gaussian Process Mean Landscape
-    const res = 28;
-    const geo = new THREE.PlaneGeometry(8, 8, res, res);
-    geo.rotateX(-Math.PI / 2);
-
-    const posAttr = geo.attributes.position as THREE.BufferAttribute;
-    for (let i = 0; i < posAttr.count; i++) {
-      const x = posAttr.getX(i);
-      const z = posAttr.getZ(i);
-
-      let y = 1.0;
-      if (this.scenario.id === 'warwick_nmc622_calendering') {
-        // Peak is at Low Temp (85C, x ~ -2.6), High Density (z ~ -0.8) in Low loading regime
-        const distFromOpt = Math.hypot(x - (-2.6), z - (-0.8));
-        y = 3.6 * Math.exp(-distFromOpt * 0.35) + 0.6;
-      } else {
-        // Drakopoulos: optimal is at 100 um gap (z ~ -2.4) and 0.2 m/min speed (x ~ 0.0)
-        const distFromOpt = Math.hypot(x - 0.0, z - (-2.4));
-        y = 3.7 * Math.exp(-distFromOpt * 0.38) + 0.5;
-      }
-      posAttr.setY(i, y);
-    }
-    geo.computeVertexNormals();
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: 0x087F8C,
-      roughness: 0.35,
-      metalness: 0.25,
-      transparent: true,
-      opacity: 0.42,
-      wireframe: false,
-      side: THREE.DoubleSide
-    });
-    this.surfaceMesh = new THREE.Mesh(geo, mat);
-    this.surfaceMesh.receiveShadow = true;
-    this.group.add(this.surfaceMesh);
-
-    // Grid wireframe contour overlay
-    const wireMat = new THREE.MeshBasicMaterial({
-      color: 0x087F8C,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.25
-    });
-    const wireMesh = new THREE.Mesh(geo, wireMat);
-    this.group.add(wireMesh);
-
+    // Legal control-space reference plane. No unsupported prediction surface.
     // Reference Ground Grid
     const baseGrid = new THREE.GridHelper(8, 8, 0x142A35, 0xDCE8EC);
     baseGrid.position.y = 0.02;
@@ -156,6 +110,7 @@ export class OptimizationVisualization {
       const stemMat = new THREE.LineBasicMaterial({ color: 0xCBD5E1, transparent: true, opacity: 0.45 });
       const stem = new THREE.Line(stemGeo, stemMat);
       this.group.add(stem);
+      this.candidateStems.set(cand.id, stem);
 
       this.group.add(mesh);
       this.candidateMeshes.set(cand.id, mesh);
@@ -217,11 +172,24 @@ export class OptimizationVisualization {
   }
 
   public setStep(stepIndex: number) {
+    stepIndex = Math.max(0, Math.min(this.scenario.replaySteps.length, Math.floor(stepIndex)));
     this.currentStepIndex = stepIndex;
+    const revealedIds = new Set([
+      ...this.scenario.replayInitialIds,
+      ...this.scenario.replaySteps.slice(0, stepIndex).map(s => s.selectedCandidateId),
+    ]);
+    this.scenario.candidates.forEach(cand => {
+      const mesh = this.candidateMeshes.get(cand.id)!;
+      mesh.position.copy(this.mapCoords(cand, revealedIds.has(cand.id)));
+      const stem = this.candidateStems.get(cand.id)!;
+      stem.geometry.setFromPoints([new THREE.Vector3(mesh.position.x, 0.05, mesh.position.z), mesh.position]);
+      stem.visible = revealedIds.has(cand.id);
+    });
 
     // Reset all candidate point colors
     this.candidateMeshes.forEach((mesh, id) => {
       const mat = mesh.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity = 0;
       if (this.scenario.replayInitialIds.includes(id)) {
         mat.color.setHex(0x38BDF8); // Cyan for initial design seeds
         mat.emissive.setHex(0x000000);
@@ -235,12 +203,6 @@ export class OptimizationVisualization {
 
     // Color revealed steps up to current
     const trajectoryPoints: THREE.Vector3[] = [];
-
-    // Add initial points to trajectory
-    this.scenario.replayInitialIds.forEach((id) => {
-      const m = this.candidateMeshes.get(id);
-      if (m) trajectoryPoints.push(m.position.clone());
-    });
 
     const activeSteps = this.scenario.replaySteps.slice(0, stepIndex);
     activeSteps.forEach((st) => {
@@ -280,9 +242,12 @@ export class OptimizationVisualization {
       this.selectionBeacon.visible = false;
     }
 
+    this.setSelectedCandidate(this.selectedCandidateId);
+
     // Update trajectory line geometry
+    this.trajectoryLine.geometry.dispose();
+    this.trajectoryLine.geometry = new THREE.BufferGeometry().setFromPoints(trajectoryPoints);
     if (trajectoryPoints.length > 1) {
-      this.trajectoryLine.geometry.setFromPoints(trajectoryPoints);
       this.trajectoryLine.visible = true;
     } else {
       this.trajectoryLine.visible = false;
@@ -305,6 +270,16 @@ export class OptimizationVisualization {
   public setScenario(newScenario: ExhibitionScenario) {
     this.scenario = newScenario;
 
+    // Release replaced GPU resources; scenario transitions can repeat indefinitely.
+    this.group.traverse(obj => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.Line) {
+        obj.geometry.dispose();
+        const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+        materials.forEach(material => material.dispose());
+      }
+    });
+    this.candidateStems.clear();
+    this.selectedCandidateId = undefined;
     // Remove existing children
     while (this.group.children.length > 0) {
       const obj = this.group.children[0];
