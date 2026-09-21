@@ -110,6 +110,45 @@ export const STAGE_WAYPOINTS: Record<string, CameraWaypoint> = {
   }
 };
 
+const PROCESS_WAYPOINTS: Record<string, { explore: CameraWaypoint; run: CameraWaypoint }> = {
+  coating: {
+    explore: { position: new THREE.Vector3(-5.4, 3.8, 7.0), target: new THREE.Vector3(-2.45, 2.05, 0), fov: 32 },
+    run: { position: new THREE.Vector3(0.8, 5.0, 10.0), target: new THREE.Vector3(1.0, 2.15, 0), fov: 38 },
+  },
+  pilot_coating: {
+    explore: { position: new THREE.Vector3(-5.2, 3.45, 5.4), target: new THREE.Vector3(-2.45, 2.05, 0), fov: 31 },
+    run: { position: new THREE.Vector3(-4.5, 3.2, 4.8), target: new THREE.Vector3(-2.3, 2.0, 0), fov: 30 },
+  },
+  calendering: {
+    explore: { position: new THREE.Vector3(8.0, 4.0, 7.5), target: new THREE.Vector3(11, 2.02, 0), fov: 31 },
+    run: { position: new THREE.Vector3(9.0, 3.35, 6.2), target: new THREE.Vector3(11.35, 1.98, 0), fov: 29 },
+  },
+  formulation: {
+    explore: { position: new THREE.Vector3(-16.5, 4.7, 7.2), target: new THREE.Vector3(-15.2, 1.8, 0), fov: 35 },
+    run: STAGE_WAYPOINTS.formulation,
+  },
+  slurry_prep: {
+    explore: { position: new THREE.Vector3(-15.2, 5.2, 8), target: new THREE.Vector3(-13.5, 2, 0), fov: 36 },
+    run: STAGE_WAYPOINTS.slurry_prep,
+  },
+  mixing: {
+    explore: { position: new THREE.Vector3(-12.9, 4.5, 6.1), target: new THREE.Vector3(-11, 2, 0), fov: 33 },
+    run: STAGE_WAYPOINTS.mixing,
+  },
+  drying: {
+    explore: { position: new THREE.Vector3(1.0, 4.4, 7.1), target: new THREE.Vector3(4.1, 2.35, 0), fov: 34 },
+    run: { position: new THREE.Vector3(4, 3.8, 5.3), target: new THREE.Vector3(5.2, 2.2, 0), fov: 31 },
+  },
+  characterization: {
+    explore: { position: new THREE.Vector3(15.1, 4.5, 6.2), target: new THREE.Vector3(17.5, 2.3, 0), fov: 33 },
+    run: STAGE_WAYPOINTS.characterization,
+  },
+  rate_characterization: {
+    explore: { position: new THREE.Vector3(15.1, 4.5, 6.2), target: new THREE.Vector3(17.5, 2.3, 0), fov: 33 },
+    run: STAGE_WAYPOINTS.rate_characterization,
+  },
+};
+
 export class CameraRig {
   private camera: THREE.PerspectiveCamera;
   private currentTarget: THREE.Vector3;
@@ -148,6 +187,22 @@ export class CameraRig {
       else wp = STAGE_WAYPOINTS['overview'];
     }
     this.animateToWaypoint(wp, duration, onComplete);
+  }
+
+  public transitionToProcess(stageId: string, phase: string) {
+    if (phase === 'PROCESS_EXIT' || stageId === 'overview') {
+      this.animateToWaypoint(STAGE_WAYPOINTS.overview, 0.85);
+      return;
+    }
+    const waypoints = PROCESS_WAYPOINTS[stageId];
+    if (!waypoints) {
+      this.transitionToStage(stageId, 1.1);
+      return;
+    }
+    this.animateToWaypoint(
+      phase === 'ILLUSTRATED_PROCESS_RUN' ? waypoints.run : waypoints.explore,
+      phase === 'ILLUSTRATED_PROCESS_RUN' ? 3.1 : 1.15,
+    );
   }
 
   public animateToWaypoint(wp: CameraWaypoint, duration: number = 1.4, onComplete?: () => void) {

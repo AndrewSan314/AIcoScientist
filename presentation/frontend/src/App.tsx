@@ -11,6 +11,7 @@ import { Scene3MicrostructureInspector } from './components/ui/Scene3Microstruct
 import { Scene4OptimizationStudio } from './components/ui/Scene4OptimizationStudio';
 import { Scene5ScientificEvidence } from './components/ui/Scene5ScientificEvidence';
 import { EvidenceLimitationsDrawer } from './components/ui/EvidenceLimitationsDrawer';
+import { pendingDecision, revealNextDecision, type ProcessExperiencePhase } from './data/processExperience';
 
 const SCENARIOS: Record<ScenarioId, ExhibitionScenario> = {
   warwick_nmc622_calendering: WARWICK_SCENARIO,
@@ -28,6 +29,7 @@ export const App: React.FC = () => {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | undefined>(undefined);
   const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState<boolean>(false);
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
+  const [processPhase, setProcessPhase] = useState<ProcessExperiencePhase>('OVERVIEW');
 
   const activeScenario = SCENARIOS[activeScenarioId];
 
@@ -48,15 +50,13 @@ export const App: React.FC = () => {
     setSelectedStageId('overview');
     setMicrostructureCompression(0.25);
     setAutoMorphMicrostructure(false);
+    setProcessPhase('OVERVIEW');
   }, []);
 
   // 4. Scene Transition Handlers
   const handleSceneSelect = useCallback((sceneNumber: number) => {
     setCurrentScene(sceneNumber);
-    if (sceneNumber === 2) {
-      // Show full connected production line overview first
-      setSelectedStageId('overview');
-    } else if (sceneNumber === 3) {
+    if (sceneNumber === 3) {
       // Focus calendering when entering microstructure
       setSelectedStageId('calendering');
     }
@@ -65,7 +65,35 @@ export const App: React.FC = () => {
   // 5. Stage Exploration Handler
   const handleStageSelect = useCallback((stageId: string) => {
     setSelectedStageId(stageId);
+    setProcessPhase(stageId === 'overview' ? 'OVERVIEW' : 'PROCESS_ENTERING');
   }, []);
+
+  useEffect(() => {
+    if (processPhase !== 'PROCESS_ENTERING') return;
+    const timer = window.setTimeout(() => setProcessPhase('PROCESS_EXPLORE'), 900);
+    return () => window.clearTimeout(timer);
+  }, [processPhase, selectedStageId]);
+
+  useEffect(() => {
+    if (processPhase !== 'ILLUSTRATED_PROCESS_RUN') return;
+    const decision = pendingDecision(activeScenario, replayStep);
+    if (!decision) return;
+    setSelectedCandidateId(decision.selectedCandidateId);
+    const timer = window.setTimeout(() => {
+      setReplayStep((step) => revealNextDecision(activeScenario, step));
+      setProcessPhase('RESULT_REVEAL');
+    }, activeScenario.id === 'drakopoulos_graphite' ? 4200 : 3400);
+    return () => window.clearTimeout(timer);
+  }, [activeScenario, processPhase, replayStep]);
+
+  useEffect(() => {
+    if (processPhase !== 'PROCESS_EXIT') return;
+    const timer = window.setTimeout(() => {
+      setSelectedStageId('overview');
+      setProcessPhase('OVERVIEW');
+    }, 850);
+    return () => window.clearTimeout(timer);
+  }, [processPhase]);
 
   // 6. Keyboard Shortcuts for Exhibition Presentation
   useEffect(() => {
@@ -107,6 +135,7 @@ export const App: React.FC = () => {
         activeScenario={activeScenario}
         selectedStageId={selectedStageId}
         replayStep={replayStep}
+        processPhase={processPhase}
         microstructureCompression={microstructureCompression}
         autoMorphMicrostructure={autoMorphMicrostructure}
         cameraResetTrigger={cameraResetCounter}
@@ -141,7 +170,26 @@ export const App: React.FC = () => {
           <Scene2ProcessExplorer
             scenario={activeScenario}
             selectedStageId={selectedStageId}
+            processPhase={processPhase}
+            replayStep={replayStep}
             onSelectStage={handleStageSelect}
+            onBeginDecision={() => {
+              const decision = pendingDecision(activeScenario, replayStep);
+              setSelectedCandidateId(decision?.selectedCandidateId);
+              setProcessPhase('AI_DECISION');
+            }}
+            onRunProcess={() => setProcessPhase('ILLUSTRATED_PROCESS_RUN')}
+            onNextDecision={() => {
+              setSelectedCandidateId(pendingDecision(activeScenario, replayStep)?.selectedCandidateId);
+              setProcessPhase('AI_DECISION');
+            }}
+            onRepeatDecision={() => {
+              const previous = Math.max(0, replayStep - 1);
+              setReplayStep(previous);
+              setSelectedCandidateId(pendingDecision(activeScenario, previous)?.selectedCandidateId);
+              setProcessPhase('AI_DECISION');
+            }}
+            onReturnOverview={() => setProcessPhase('PROCESS_EXIT')}
             onNavigateMicrostructure={() => handleSceneSelect(3)}
             onNavigateOptimization={() => handleSceneSelect(4)}
           />

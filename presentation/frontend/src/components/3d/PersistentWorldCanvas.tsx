@@ -6,13 +6,15 @@ import { CameraRig } from './CameraRig';
 import { ManufacturingWorld } from './ManufacturingWorld';
 import { ElectrodeMicrostructure } from './ElectrodeMicrostructure';
 import { OptimizationVisualization } from './OptimizationVisualization';
-import { ExhibitionScenario, ScenarioId } from '../../data/types';
+import { ExhibitionScenario } from '../../data/types';
+import { visibleDecision, type ProcessExperiencePhase } from '../../data/processExperience';
 
 interface PersistentWorldCanvasProps {
   currentScene: number;
   activeScenario: ExhibitionScenario;
   selectedStageId?: string;
   replayStep: number;
+  processPhase: ProcessExperiencePhase;
   microstructureCompression: number;
   autoMorphMicrostructure: boolean;
   cameraResetTrigger?: number;
@@ -27,6 +29,7 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
   activeScenario,
   selectedStageId,
   replayStep,
+  processPhase,
   microstructureCompression,
   autoMorphMicrostructure,
   cameraResetTrigger,
@@ -46,9 +49,11 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const currentSceneRef = useRef(currentScene);
+  const processStateRef = useRef({ stage: selectedStageId, phase: processPhase, replayStep });
   const transitionRef = useRef<gsap.core.Tween | null>(null);
   const callbacksRef = useRef({ onStageSelect, onCandidateSelect, onSceneSelect });
   currentSceneRef.current = currentScene;
+  processStateRef.current = { stage: selectedStageId, phase: processPhase, replayStep };
   callbacksRef.current = { onStageSelect, onCandidateSelect, onSceneSelect };
 
   // Mouse drag orbit controls for Microstructure (Scene 3)
@@ -110,10 +115,10 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
     frontFill.position.set(0, 16, 26);
     scene.add(frontFill);
 
-    // Accent tech teal rim light
-    const tealRim = new THREE.DirectionalLight(0x087F8C, 0.85);
-    tealRim.position.set(-18, 14, -15);
-    scene.add(tealRim);
+    // Subtle cleanroom studio rim light for clean mechanical edge highlights
+    const coolRim = new THREE.DirectionalLight(0xDCE8EC, 0.45);
+    coolRim.position.set(-18, 14, -15);
+    scene.add(coolRim);
 
     // 5. 3D Subsystems
     const manufacturingWorld = new ManufacturingWorld((stageId) => {
@@ -256,6 +261,7 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
           frameMs: frameTimes.slice(),
           gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : 'Unavailable',
           resolution: `${renderer.domElement.width}x${renderer.domElement.height}`,
+          process: processStateRef.current,
         };
       }
     };
@@ -335,12 +341,14 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
     });
   }, [currentScene]);
 
-  // Update stage camera focus in Scene 2
+  // Keep camera, machine choreography and source-backed decision on one process state.
   useEffect(() => {
     if (currentScene === 2 && selectedStageId && cameraRigRef.current) {
-      cameraRigRef.current.transitionToStage(selectedStageId);
+      const decision = visibleDecision(activeScenario, replayStep, processPhase);
+      manufacturingWorldRef.current?.setProcessExperience(selectedStageId, processPhase, decision);
+      cameraRigRef.current.transitionToProcess(selectedStageId, processPhase);
     }
-  }, [currentScene, selectedStageId]);
+  }, [activeScenario, currentScene, processPhase, replayStep, selectedStageId]);
 
   // Update active scenario
   useEffect(() => {

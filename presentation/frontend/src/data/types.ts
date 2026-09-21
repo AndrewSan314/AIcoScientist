@@ -63,7 +63,7 @@ export interface ReplayStep {
   step: number;
   selectedCandidateId: string;
   selectedCandidateDisplay: string;
-  controlsSummary: Record<string, string | number>;
+  controlsSummary: Record<string, string | number | boolean>;
   predictedMean: number;
   predictedStd: number;
   acquisitionValue: number;

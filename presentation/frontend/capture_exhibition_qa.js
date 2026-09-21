@@ -3,12 +3,28 @@ import fs from 'fs';
 import path from 'path';
 
 const BROWSER_PATH = process.env.SCREENSHOT_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-const SCREENSHOT_DIR = path.resolve('../screenshots/exhibition-final');
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:5173';
+const SCREENSHOT_DIR = path.resolve(import.meta.dirname, '../screenshots/exhibition-final');
+const ROOT_SCREENSHOT_DIR = path.resolve(import.meta.dirname, '../../screenshots');
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
 
 if (!fs.existsSync(SCREENSHOT_DIR)) {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
+if (!fs.existsSync(ROOT_SCREENSHOT_DIR)) {
+  fs.mkdirSync(ROOT_SCREENSHOT_DIR, { recursive: true });
+}
+async function writeWithRetry(targetPath, buffer, retries = 5) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      fs.writeFileSync(targetPath, buffer);
+      return;
+    } catch (e) {
+      if (i === retries - 1) throw e;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+}
+
 async function saveScreenshot(page, filename) {
   const qa = await page.evaluate(() => window.__exhibitionQA);
   if (!qa?.modelVisible || qa.renderer.calls < 1 || qa.renderer.triangles < 1) {
@@ -16,10 +32,10 @@ async function saveScreenshot(page, filename) {
   }
   const p1 = path.join(SCREENSHOT_DIR, filename);
   const image = await page.screenshot();
-  const temp = path.join(SCREENSHOT_DIR, `.${filename}.${process.pid}.tmp`);
-  fs.writeFileSync(temp, image);
-  fs.copyFileSync(temp, p1);
-  fs.unlinkSync(temp);
+  await writeWithRetry(p1, image);
+  if (fs.existsSync(ROOT_SCREENSHOT_DIR)) {
+    await writeWithRetry(path.join(ROOT_SCREENSHOT_DIR, filename), image);
+  }
   console.log(`[Captured] ${filename} -> ${p1}`);
 }
 
@@ -82,7 +98,7 @@ async function run() {
   try {
     // 1. Initial Hero Scene (Scene 1)
     console.log('Navigating to exhibition root...');
-    await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle0', timeout: 20000 });
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     await new Promise((r) => setTimeout(r, 2000)); // Allow Three.js persistent canvas to render initial frames
     await assertScene(page, 1, 'Battery Manufacturing · Scientific Exhibition');
     await saveScreenshot(page, '01_initial_hero.png');
@@ -228,7 +244,7 @@ async function run() {
       medianFps: 1000 / sorted[Math.floor(sorted.length * .5)],
       conditions: '1920x1080 viewport, deviceScaleFactor 1, headless Edge, WebGL enabled',
     };
-    fs.writeFileSync(path.resolve('../../docs/exhibition/PERFORMANCE_QA.json'), JSON.stringify(performance, null, 2));
+    fs.writeFileSync(path.resolve(import.meta.dirname, '../../docs/exhibition/PERFORMANCE_QA.json'), JSON.stringify(performance, null, 2));
   } catch (err) {
     console.error('Visual QA Failure:', err);
     throw err;
