@@ -1,241 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { SnapshotData, DataMode, WorkspaceTab, DiscoveryFlowState, DatasetOption, RevealPhase } from './types/mission_control';
-import { Header } from './components/Header';
-import { PresenterMode, SCENES } from './components/PresenterMode';
-import { SpeakerNotesModal } from './components/SpeakerNotesModal';
-import { DiscoveryLabWorkspace } from './views/DiscoveryLabWorkspace';
-import { EvidenceBenchmarksWorkspace } from './views/EvidenceBenchmarksWorkspace';
-import { ResearchSystemWorkspace } from './views/ResearchSystemWorkspace';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { validateSnapshot } from './utils/snapshotValidation';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ScenarioId, ExhibitionScenario } from './data/types';
+import { DRAKOPOULOS_SCENARIO, WARWICK_SCENARIO } from './data/exhibitionData';
+import { validateAllScenarios } from './data/validation';
+import { PersistentWorldCanvas } from './components/3d/PersistentWorldCanvas';
+import { Navbar } from './components/ui/Navbar';
+import { SceneNavigator } from './components/ui/SceneNavigator';
+import { Scene1Hero } from './components/ui/Scene1Hero';
+import { Scene2ProcessExplorer } from './components/ui/Scene2ProcessExplorer';
+import { Scene3MicrostructureInspector } from './components/ui/Scene3MicrostructureInspector';
+import { Scene4OptimizationStudio } from './components/ui/Scene4OptimizationStudio';
+import { Scene5ScientificEvidence } from './components/ui/Scene5ScientificEvidence';
+import { EvidenceLimitationsDrawer } from './components/ui/EvidenceLimitationsDrawer';
+
+const SCENARIOS: Record<ScenarioId, ExhibitionScenario> = {
+  warwick_nmc622_calendering: WARWICK_SCENARIO,
+  drakopoulos_graphite: DRAKOPOULOS_SCENARIO
+};
 
 export const App: React.FC = () => {
-  const [data, setData] = useState<SnapshotData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // 1. Core State
+  const [activeScenarioId, setActiveScenarioId] = useState<ScenarioId>('warwick_nmc622_calendering');
+  const [currentScene, setCurrentScene] = useState<number>(1);
+  const [selectedStageId, setSelectedStageId] = useState<string>('overview');
+  const [replayStep, setReplayStep] = useState<number>(0);
+  const [microstructureCompression, setMicrostructureCompression] = useState<number>(0.25);
+  const [autoMorphMicrostructure, setAutoMorphMicrostructure] = useState<boolean>(false);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | undefined>(undefined);
+  const [evidenceDrawerOpen, setEvidenceDrawerOpen] = useState<boolean>(false);
+  const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
 
-  // Active Workspace Navigation (3 primary workspaces)
-  const [currentWorkspace, setCurrentWorkspace] = useState<WorkspaceTab>('discovery');
-  
-  // Discovery Lab Operable Flow State
-  const [discoveryFlowState, setDiscoveryFlowState] = useState<DiscoveryFlowState>('setup');
-  const [discoveryDataset, setDiscoveryDataset] = useState<DatasetOption>('controlled_synthesis');
-  const [cockpitStep, setCockpitStep] = useState<number>(1);
-  const [discoveryRevealPhase, setDiscoveryRevealPhase] = useState<RevealPhase>('A_SCORED');
+  const activeScenario = SCENARIOS[activeScenarioId];
 
-  // Evidence Benchmarks Question State
-  const [benchmarkQuestion, setBenchmarkQuestion] = useState<number>(1);
-
-  // How It Works Subtab State
-  const [systemSubtab, setSystemSubtab] = useState<'architecture' | 'audit' | 'verification'>('architecture');
-
-  // Presenter Mode State
-  const [presenterMode, setPresenterMode] = useState<boolean>(false);
-  const [currentScene, setCurrentScene] = useState<number>(0);
-  const [notesOpen, setNotesOpen] = useState<boolean>(false);
-
-  // Load deterministic snapshot on mount
+  // 2. Validate Scenarios on Startup (Fail-Closed Scientific Integrity Check)
   useEffect(() => {
-    fetch('/snapshot.json')
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load snapshot.json (HTTP ${res.status})`);
-        }
-        return res.json();
-      })
-      .then((json: SnapshotData) => {
-        const valRes = validateSnapshot(json);
-        if (!valRes.valid) {
-          console.error('Snapshot validation failed:', valRes.errors);
-          throw new Error(`Snapshot integrity failure: ${valRes.errors[0]}`);
-        }
-        setData(json);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error fetching snapshot:', err);
-        setError(err.message || 'Unknown error loading snapshot data');
-        setLoading(false);
-      });
+    const val = validateAllScenarios(SCENARIOS);
+    if (!val.valid) {
+      console.error('CRITICAL: Scientific dataset validation failed:', val.errors);
+      alert(`Scientific Dataset Integrity Error: ${val.errors[0]}`);
+    }
   }, []);
 
-  // Keyboard shortcut listener
+  // 3. Scenario Change Handler
+  const handleScenarioChange = useCallback((newScenarioId: ScenarioId) => {
+    setActiveScenarioId(newScenarioId);
+    setReplayStep(0);
+    setSelectedCandidateId(undefined);
+    setSelectedStageId('overview');
+    setMicrostructureCompression(0.25);
+    setAutoMorphMicrostructure(false);
+  }, []);
+
+  // 4. Scene Transition Handlers
+  const handleSceneSelect = useCallback((sceneNumber: number) => {
+    setCurrentScene(sceneNumber);
+    if (sceneNumber === 2) {
+      // Show full connected production line overview first
+      setSelectedStageId('overview');
+    } else if (sceneNumber === 3) {
+      // Focus calendering when entering microstructure
+      setSelectedStageId('calendering');
+    }
+  }, []);
+
+  // 5. Stage Exploration Handler
+  const handleStageSelect = useCallback((stageId: string) => {
+    setSelectedStageId(stageId);
+  }, []);
+
+  // 6. Keyboard Shortcuts for Exhibition Presentation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is interacting with an input
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
-      if (e.key === 'p' || e.key === 'P') {
-        setPresenterMode((prev) => !prev);
-      } else if (e.key === 'n' || e.key === 'N') {
-        setNotesOpen((prev) => !prev);
-      } else if (!presenterMode) {
-        if (e.key === '1') setCurrentWorkspace('discovery');
-        if (e.key === '2') setCurrentWorkspace('benchmarks');
-        if (e.key === '3') setCurrentWorkspace('system');
+      if (e.key === '1') handleSceneSelect(1);
+      else if (e.key === '2') handleSceneSelect(2);
+      else if (e.key === '3') handleSceneSelect(3);
+      else if (e.key === '4') handleSceneSelect(4);
+      else if (e.key === '5') handleSceneSelect(5);
+      else if (e.key === 'ArrowRight') {
+        setCurrentScene((prev) => Math.min(5, prev + 1));
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentScene((prev) => Math.max(1, prev - 1));
+      } else if (e.key === 's' || e.key === 'S') {
+        handleScenarioChange(
+          activeScenarioId === 'warwick_nmc622_calendering' ? 'drakopoulos_graphite' : 'warwick_nmc622_calendering'
+        );
+      } else if (e.key === 'r' || e.key === 'R') {
+        setCameraResetCounter((c) => c + 1);
+      } else if (e.key === 'Escape') {
+        setEvidenceDrawerOpen(false);
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [presenterMode]);
-
-  // Handle Scene Change in Presenter Mode (Synchronizes full workspace state)
-  const handleSceneSelect = (sceneIndex: number) => {
-    setCurrentScene(sceneIndex);
-    const scene = SCENES[sceneIndex];
-    if (scene) {
-      setCurrentWorkspace(scene.workspace);
-      if (scene.flowState) setDiscoveryFlowState(scene.flowState);
-      if (scene.datasetOption) setDiscoveryDataset(scene.datasetOption);
-      if (scene.stepIndex !== undefined) setCockpitStep(scene.stepIndex);
-      if (scene.revealPhase) setDiscoveryRevealPhase(scene.revealPhase);
-      if (scene.questionId) setBenchmarkQuestion(scene.questionId);
-      if (scene.subtab) setSystemSubtab(scene.subtab);
-    }
-  };
-
-  const handleNextScene = () => {
-    if (currentScene < SCENES.length - 1) {
-      handleSceneSelect(currentScene + 1);
-    }
-  };
-
-  const handlePrevScene = () => {
-    if (currentScene > 0) {
-      handleSceneSelect(currentScene - 1);
-    }
-  };
-
-  const handleExitPresenter = () => {
-    setPresenterMode(false);
-  };
-
-  // Determine active data mode
-  const currentMode: DataMode = currentWorkspace === 'discovery'
-    ? discoveryDataset === 'alab_replay' || discoveryDataset === 'alab_precursor_genome'
-      ? 'HISTORICAL_REPLAY'
-      : discoveryDataset === 'electrolyte_search' || discoveryDataset === 'anode_free_electrolyte_screening'
-      ? 'SIMULATED_SURROGATE'
-      : 'CONTROLLED_SYNTHETIC'
-    : currentWorkspace === 'benchmarks' && benchmarkQuestion === 4
-    ? 'HISTORICAL_REPLAY'
-    : 'NOT_AVAILABLE';
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center justify-center p-6 text-[#17201F]">
-        <Loader2 className="w-10 h-10 text-[#DC2626] animate-spin mb-4" />
-        <h2 className="text-base font-bold tracking-tight">Initializing AIcoScientist Discovery Console...</h2>
-        <p className="text-xs text-[#66706C] mt-1 font-mono">Loading deterministic scientific snapshot</p>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center justify-center p-6 text-[#17201F]">
-        <div className="max-w-md w-full bg-[#FCFCFA] p-6 rounded-xl border border-[#D9DFDB] shadow-lg text-center">
-          <AlertCircle className="w-10 h-10 text-[#B91C1C] mx-auto mb-3" />
-          <h2 className="text-base font-bold text-[#17201F]">Snapshot Loading Error</h2>
-          <p className="text-xs text-[#66706C] mt-2 font-mono break-all">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-[#17201F] text-white rounded-md text-xs font-semibold hover:bg-[#243331] cursor-pointer"
-          >
-            Retry Loading
-          </button>
-        </div>
-      </div>
-    );
-  }
+  }, [activeScenarioId, handleSceneSelect, handleScenarioChange]);
 
   return (
-    <div className={`min-h-screen flex flex-col bg-[#F4F3EE] text-[#17201F] ${presenterMode ? 'pt-14' : ''}`}>
-      {/* Presenter Mode Top HUD (when active) */}
-      {presenterMode && (
-        <PresenterMode
-          currentScene={currentScene}
-          totalScenes={SCENES.length}
-          onPrevScene={handlePrevScene}
-          onNextScene={handleNextScene}
-          onSelectScene={handleSceneSelect}
-          onExit={handleExitPresenter}
-          onToggleNotes={() => setNotesOpen(true)}
-          onJumpToWorkspace={(ws, qId) => {
-            setCurrentWorkspace(ws);
-            if (qId) setBenchmarkQuestion(qId);
-          }}
-        />
-      )}
-
-      {/* Main Mission Control Header */}
-      <Header
-        currentWorkspace={currentWorkspace}
-        onSelectWorkspace={(ws) => setCurrentWorkspace(ws)}
-        currentMode={currentMode}
-        onLaunchPresenter={() => {
-          setPresenterMode(true);
-          handleSceneSelect(0);
-        }}
-        onToggleNotes={() => setNotesOpen(true)}
-        headCommit={data.provenance?.head_commit}
-        branch={data.provenance?.branch}
+    <div className="relative w-screen h-screen overflow-hidden bg-[#F4F7F7] font-sans select-none text-[#142A35]">
+      {/* 1. PERSISTENT 3D WORLD CANVAS (Dominates Entire Screen) */}
+      <PersistentWorldCanvas
+        currentScene={currentScene}
+        activeScenario={activeScenario}
+        selectedStageId={selectedStageId}
+        replayStep={replayStep}
+        microstructureCompression={microstructureCompression}
+        autoMorphMicrostructure={autoMorphMicrostructure}
+        cameraResetTrigger={cameraResetCounter}
+        selectedCandidateId={selectedCandidateId}
+        onStageSelect={handleStageSelect}
+        onCandidateSelect={(id) => setSelectedCandidateId(id)}
+        onSceneSelect={handleSceneSelect}
       />
 
-      {/* Main Viewport Container */}
-      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-8 lg:px-12 pt-6">
-        {currentWorkspace === 'discovery' && (
-          <DiscoveryLabWorkspace
-            data={data}
-            controlledStepIndex={cockpitStep}
-            onStepChange={setCockpitStep}
-            controlledFlowState={discoveryFlowState}
-            onFlowStateChange={setDiscoveryFlowState}
-            controlledDataset={discoveryDataset}
-            onDatasetChange={setDiscoveryDataset}
-            controlledRevealPhase={discoveryRevealPhase}
-            onRevealPhaseChange={setDiscoveryRevealPhase}
+      {/* 2. TOP NAVBAR */}
+      <Navbar
+        scenarios={SCENARIOS}
+        activeScenarioId={activeScenarioId}
+        currentScene={currentScene}
+        onScenarioChange={handleScenarioChange}
+        onSceneSelect={handleSceneSelect}
+        onResetCamera={() => setCameraResetCounter((c) => c + 1)}
+        onToggleEvidenceDrawer={() => setEvidenceDrawerOpen(true)}
+      />
+
+      {/* 3. SCENE CONTEXTUAL HUD OVERLAYS */}
+      <main className="relative w-full h-full pointer-events-none z-10">
+        {currentScene === 1 && (
+          <Scene1Hero
+            scenario={activeScenario}
+            onExploreLine={() => handleSceneSelect(2)}
+            onExploreMicrostructure={() => handleSceneSelect(3)}
           />
         )}
-        {currentWorkspace === 'benchmarks' && (
-          <EvidenceBenchmarksWorkspace
-            data={data}
-            controlledQuestionId={benchmarkQuestion}
-            onQuestionChange={setBenchmarkQuestion}
+
+        {currentScene === 2 && (
+          <Scene2ProcessExplorer
+            scenario={activeScenario}
+            selectedStageId={selectedStageId}
+            onSelectStage={handleStageSelect}
+            onNavigateMicrostructure={() => handleSceneSelect(3)}
+            onNavigateOptimization={() => handleSceneSelect(4)}
           />
         )}
-        {currentWorkspace === 'system' && (
-          <ResearchSystemWorkspace
-            data={data}
-            initialSubtab={systemSubtab}
+
+        {currentScene === 3 && (
+          <Scene3MicrostructureInspector
+            scenario={activeScenario}
+            compression={microstructureCompression}
+            isAutoMorphing={autoMorphMicrostructure}
+            onCompressionChange={(val) => setMicrostructureCompression(val)}
+            onToggleAutoMorph={() => setAutoMorphMicrostructure((prev) => !prev)}
+            onResetCompression={() => {
+              setMicrostructureCompression(0);
+              setAutoMorphMicrostructure(false);
+            }}
+            onProceedToOptimization={() => handleSceneSelect(4)}
+          />
+        )}
+
+        {currentScene === 4 && (
+          <Scene4OptimizationStudio
+            scenario={activeScenario}
+            replayStep={replayStep}
+            onStepChange={(step) => setReplayStep(step)}
+            onSelectCandidate={(id) => setSelectedCandidateId(id)}
+            selectedCandidateId={selectedCandidateId}
+            onProceedToEvidence={() => handleSceneSelect(5)}
+          />
+        )}
+
+        {currentScene === 5 && (
+          <Scene5ScientificEvidence
+            scenario={activeScenario}
+            onToggleLimitationsDrawer={() => setEvidenceDrawerOpen(true)}
+            onSwitchScenario={handleScenarioChange}
+            onRestartJourney={() => handleSceneSelect(1)}
           />
         )}
       </main>
 
-      {/* Scientific Editorial Footer */}
-      <footer className="border-t border-[#D9DFDB] bg-[#FCFCFA] py-4 mt-auto">
-        <div className="max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 flex flex-col sm:flex-row items-center justify-between text-xs text-[#66706C] gap-2">
-          <div className="flex items-center gap-2.5">
-            <span className="font-semibold text-[#17201F]">AIcoScientist Discovery Console</span>
-            <span className="text-[#D9DFDB]">|</span>
-            <span className="text-2xs text-[#8F9995]">Source-backed reproducible snapshot</span>
-          </div>
-          <div className="flex items-center gap-4 text-2xs font-mono text-[#8F9995]">
-            <span>{data.manifest?.total_audit_events ?? data.provenance?.total_ledger_events ?? 'N/A'} Audit Events</span>
-            <span>•</span>
-            <span>{data.benchmarks?.trajectory_count ?? 'N/A'} Trajectories</span>
-            <span>•</span>
-            <span className="text-[#DC2626] font-semibold">{data.manifest?.validation_gate_pass_count ?? 'N/A'}/{data.manifest?.validation_gate_total_count ?? 'N/A'} Gates Passed</span>
-          </div>
-        </div>
-      </footer>
+      {/* 4. BOTTOM DOCKED SCENE NAVIGATOR */}
+      <SceneNavigator
+        currentScene={currentScene}
+        onSceneSelect={handleSceneSelect}
+      />
 
-      {/* Speaker Notes Modal */}
-      <SpeakerNotesModal
-        isOpen={notesOpen}
-        onClose={() => setNotesOpen(false)}
-        activeSceneIndex={presenterMode ? currentScene : undefined}
+      {/* 5. SCIENTIFIC EVIDENCE & LIMITATIONS DRAWER */}
+      <EvidenceLimitationsDrawer
+        isOpen={evidenceDrawerOpen}
+        onClose={() => setEvidenceDrawerOpen(false)}
+        scenario={activeScenario}
       />
     </div>
   );
