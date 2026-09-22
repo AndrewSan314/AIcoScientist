@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { ReplayStep, ScenarioId } from '../../data/types';
 import type { ProcessExperiencePhase } from '../../data/processExperience';
@@ -50,6 +51,10 @@ export class ManufacturingWorld {
   private vaporParticleGroup = new THREE.Group();
   private vaporParticles: THREE.Mesh[] = [];
   private nipFlareMesh?: THREE.Mesh;
+  private activeChoreographyTimeline: gsap.core.Timeline | null = null;
+  private slotDieUpper?: THREE.Mesh;
+  private calenderPistons: THREE.Mesh[] = [];
+  private bridgeTrajectoryGroup = new THREE.Group();
 
   constructor(onStageClick?: StageInteractionCallback) {
     this.group = new THREE.Group();
@@ -57,6 +62,7 @@ export class ManufacturingWorld {
     this.buildCleanroomEnvironment();
     this.buildManufacturingLine();
     this.group.add(this.annotationGroup);
+    this.group.add(this.bridgeTrajectoryGroup);
   }
 
   private buildCleanroomEnvironment() {
@@ -225,6 +231,10 @@ export class ManufacturingWorld {
     const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 12, 32), rimMat);
     group.add(rim);
 
+    if (typeof document === 'undefined') {
+      return group;
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
@@ -292,6 +302,10 @@ export class ManufacturingWorld {
   }
 
   private createDigitalDisplayMesh(width: number, height: number, title: string, valStr: string, subStr: string): THREE.Mesh {
+    if (typeof document === 'undefined') {
+      return new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ color: 0x0E1720 }));
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 256;
@@ -338,6 +352,10 @@ export class ManufacturingWorld {
   }
 
   private createWarningLabelMesh(width: number, height: number, caution: string, sub: string): THREE.Mesh {
+    if (typeof document === 'undefined') {
+      return new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ color: 0xFCD34D }));
+    }
+
     const canvas = document.createElement('canvas');
     canvas.width = 384;
     canvas.height = 160;
@@ -702,6 +720,7 @@ export class ManufacturingWorld {
     dieUpper.position.set(-0.25, 2.68, 0);
     dieUpper.castShadow = true;
     group.add(dieUpper);
+    this.slotDieUpper = dieUpper;
 
     // Precision Ground Mirror Chrome Die Lips
     const dieLipUpper = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.10, 2.38), chromeMat);
@@ -969,6 +988,7 @@ export class ManufacturingWorld {
       piston.name = `Chrome loading piston ${z}`;
       piston.position.set(0, 4.05, z);
       group.add(piston);
+      this.calenderPistons.push(piston);
 
       // Bearing Chocks
       for (const [y, chockName] of [[2.5, 'top'], [1.5, 'bottom']] as const) {
@@ -1540,23 +1560,195 @@ export class ManufacturingWorld {
     this.processPhase = phase;
     this.interactiveBeacons.forEach((beacon) => { beacon.visible = stageId === 'overview'; });
     this.clearAnnotations();
-    if (!decision || !['AI_DECISION', 'ILLUSTRATED_PROCESS_RUN', 'RESULT_REVEAL'].includes(phase)) return;
+    if (!decision || !['AI_DECISION', 'ILLUSTRATED_PROCESS_RUN', 'RESULT_REVEAL'].includes(phase)) {
+      this.cancelProcessChoreography();
+      return;
+    }
 
     const control = (key: string) => decision.controlsSummary[key];
     if (stageId === 'coating') {
-      this.addAnnotation(`Web speed · ${control('coating_speed_m_per_min')} m/min`, new THREE.Vector3(-3.2, 3.65, 1.7));
-      this.addAnnotation(`Coating gap · ${control('coating_gap_um')} µm`, new THREE.Vector3(-1.5, 3.15, 1.7), '#F59E42');
-      this.addAnnotation(`Same recipe · dryer ${control('drying_temperature_c')} °C`, new THREE.Vector3(4, 4.45, 1.75));
+      this.addAnnotation(`Web line speed · ${control('coating_speed_m_per_min')} m/min`, new THREE.Vector3(-2.8, 2.3, 1.7));
+      this.addAnnotation(`Slot-die gap · ${control('coating_gap_um')} µm`, new THREE.Vector3(-1.6, 2.9, 1.7), '#F59E42');
+      this.addAnnotation(`Drying oven · ${control('drying_temperature_c')} °C`, new THREE.Vector3(4.0, 3.8, 1.8));
+      this.addAnnotation(`Calendering · ${control('calendering_applied') ? 'Applied' : 'Bypassed'}`, new THREE.Vector3(9.5, 3.2, 1.8));
     } else if (stageId === 'calendering') {
-      this.addAnnotation(`Roll surface · ${control('roll_temperature_c')} °C`, new THREE.Vector3(10.2, 4.45, 1.85), '#F59E42');
-      this.addAnnotation(`Target density · ${control('target_density_g_cm3')} g/cm³`, new THREE.Vector3(12.2, 3.35, 1.85));
-      this.addAnnotation(`Loading · ${control('target_coating_weight_gsm')} g/m²`, new THREE.Vector3(11.2, 5.25, 1.6));
+      this.addAnnotation(`Roll surface · ${control('roll_temperature_c')} °C`, new THREE.Vector3(10.2, 2.8, 1.85), '#F59E42');
+      this.addAnnotation(`Nip target density · ${control('target_density_g_cm3')} g/cm³`, new THREE.Vector3(11.0, 4.3, 1.85));
+      this.addAnnotation(`Mass load · ${control('target_coating_weight_gsm')} g/m² (${control('loading_regime')})`, new THREE.Vector3(9.2, 2.3, 1.85));
     }
+
     if (phase === 'RESULT_REVEAL') {
-      const decimals = this.activeScenario === 'drakopoulos_graphite' ? 2 : 4;
-      const unit = this.activeScenario === 'drakopoulos_graphite' ? 'mAh/g D30' : '5C/0.2C ratio';
-      const x = stageId === 'coating' ? 1.8 : 13.1;
-      this.addAnnotation(`Recorded · ${decision.revealedTarget.toFixed(decimals)} ${unit}`, new THREE.Vector3(x, 5.15, 1.9), '#F59E42');
+      this.buildBridgeTrajectory(stageId);
+      if (this.activeScenario === 'drakopoulos_graphite') {
+        this.addAnnotation(`Recorded Target · ${decision.revealedTarget.toFixed(2)} mAh/g D30`, new THREE.Vector3(17.5, 4.4, 1.85), '#F59E42');
+        this.addAnnotation('Half-Cell Delithiation Protocol · Station 06', new THREE.Vector3(17.5, 3.7, 1.85));
+      } else {
+        this.addAnnotation(`Recorded Target · ${decision.revealedTarget.toFixed(4)} (5C/0.2C)`, new THREE.Vector3(17.5, 4.4, 1.85), '#F59E42');
+        this.addAnnotation('Galvanostatic Fast-Charging Rate · Station 06', new THREE.Vector3(17.5, 3.7, 1.85));
+      }
+    }
+  }
+
+  public runProcessChoreography(
+    scenarioId: ScenarioId,
+    stageId: string,
+    decision: ReplayStep,
+    callbacks?: {
+      onProgress?: (progress: number) => void;
+      onComplete?: () => void;
+      onCancel?: () => void;
+    }
+  ) {
+    this.cancelProcessChoreography();
+    this.buildBridgeTrajectory(stageId);
+
+    const tl = gsap.timeline({
+      onUpdate: () => {
+        callbacks?.onProgress?.(tl.progress());
+      },
+      onComplete: () => {
+        this.activeChoreographyTimeline = null;
+        callbacks?.onComplete?.();
+      }
+    });
+    this.activeChoreographyTimeline = tl;
+
+    if (scenarioId === 'warwick_nmc622_calendering') {
+      const rollTemp = Number(decision.controlsSummary.roll_temperature_c) || 120;
+      const targetDensity = Number(decision.controlsSummary.target_density_g_cm3) || 2.95;
+      const densityNorm = Math.max(0, Math.min(1, (targetDensity - 2.7) / (3.2 - 2.7)));
+      const tempNorm = Math.max(0, Math.min(1, (rollTemp - 85) / (145 - 85)));
+
+      const topRollTargetY = 2.50 - (0.04 + 0.08 * densityNorm);
+      const pistonTargetY = 4.05 - (0.04 + 0.08 * densityNorm);
+
+      const rollTopMat = this.calenderRollTop?.material as THREE.MeshStandardMaterial;
+      const rollBottomMat = this.calenderRollBottom?.material as THREE.MeshStandardMaterial;
+      if (rollTopMat && rollTopMat.emissive) {
+        rollTopMat.emissive.setHex(0xF59E42);
+      }
+      if (rollBottomMat && rollBottomMat.emissive) {
+        rollBottomMat.emissive.setHex(0xF59E42);
+      }
+
+      // Phase 1 (0.0 -> 0.7s): Hydraulic ram strokes down & roll surfaces heat up
+      if (this.calenderRollTop) {
+        tl.to(this.calenderRollTop.position, { y: topRollTargetY, duration: 0.7, ease: 'power2.out' }, 0);
+      }
+      this.calenderPistons.forEach((p) => {
+        tl.to(p.position, { y: pistonTargetY, duration: 0.7, ease: 'power2.out' }, 0);
+      });
+      if (rollTopMat) {
+        tl.to(rollTopMat, { emissiveIntensity: 0.3 + 0.8 * tempNorm, duration: 0.7, ease: 'power1.inOut' }, 0);
+      }
+      if (rollBottomMat) {
+        tl.to(rollBottomMat, { emissiveIntensity: 0.3 + 0.8 * tempNorm, duration: 0.7, ease: 'power1.inOut' }, 0);
+      }
+
+      // Phase 2 (0.7 -> 2.6s): Continuous roll rotation & nip compression flare
+      if (this.nipFlareMesh) {
+        this.nipFlareMesh.visible = true;
+        tl.fromTo(this.nipFlareMesh.scale, { x: 0.4, z: 0.4 }, { x: 1.2, z: 1.2, repeat: 5, yoyo: true, duration: 0.35, ease: 'sine.inOut' }, 0.7);
+      }
+
+      // Phase 3 (2.6 -> 3.2s): Finished specimen moves to characterization bridge
+      tl.to({}, { duration: 0.6 }, 2.6);
+
+    } else {
+      // Drakopoulos Graphite Coating
+      const speed = Number(decision.controlsSummary.coating_speed_m_per_min) || 0.2;
+      const gap = Number(decision.controlsSummary.coating_gap_um) || 150;
+      const dryTemp = Number(decision.controlsSummary.drying_temperature_c) || 80;
+      const gapNorm = Math.max(0, Math.min(1, (gap - 100) / (200 - 100)));
+      const tempNorm = Math.max(0, Math.min(1, (dryTemp - 60) / (100 - 60)));
+
+      const dieTargetY = 2.60 + 0.12 * gapNorm;
+
+      // Phase 1 (0.0 -> 0.7s): Slot die moves to commanded gap & IR lamps heat up
+      if (this.slotDieUpper) {
+        tl.to(this.slotDieUpper.position, { y: dieTargetY, duration: 0.7, ease: 'power2.out' }, 0);
+      }
+      if (this.coatingBead) {
+        tl.to(this.coatingBead.scale, { y: 0.6 + 0.5 * gapNorm, duration: 0.7, ease: 'power2.out' }, 0);
+      }
+      this.irLamps.forEach((lamp) => {
+        tl.to(lamp, { intensity: 1.8 + 2.4 * tempNorm, duration: 0.7, ease: 'power1.inOut' }, 0);
+      });
+
+      // Phase 2 (0.7 -> 2.6s): Web feeds at speed, slurry extrudes, solvent evaporates
+      tl.to({}, { duration: 1.9 }, 0.7);
+
+      // Phase 3 (2.6 -> 3.2s): Coupon emerges from drying oven along bridge
+      tl.to({}, { duration: 0.6 }, 2.6);
+    }
+  }
+
+  private buildBridgeTrajectory(stageId: string) {
+    while (this.bridgeTrajectoryGroup.children.length > 0) {
+      const c = this.bridgeTrajectoryGroup.children[0];
+      this.bridgeTrajectoryGroup.remove(c);
+    }
+    const isWarwick = stageId === 'calendering' || this.activeScenario === 'warwick_nmc622_calendering';
+    const startX = isWarwick ? 11.0 : -2.5;
+    const midX = (startX + 17.5) / 2;
+
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(startX, 1.95, 1.35),
+      new THREE.Vector3(midX, 2.3, 1.45),
+      new THREE.Vector3(17.5, 2.05, 1.35)
+    ]);
+    const points = curve.getPoints(50);
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineDashedMaterial({
+      color: 0x38BDF8,
+      dashSize: 0.4,
+      gapSize: 0.2,
+      transparent: true,
+      opacity: 0.85
+    });
+    const line = new THREE.Line(geo, mat);
+    line.computeLineDistances();
+    this.bridgeTrajectoryGroup.add(line);
+  }
+
+  public cancelProcessChoreography() {
+    if (this.activeChoreographyTimeline) {
+      this.activeChoreographyTimeline.kill();
+      this.activeChoreographyTimeline = null;
+    }
+    if (this.calenderRollTop) {
+      this.calenderRollTop.position.y = 2.5;
+      const mat = this.calenderRollTop.material as THREE.MeshStandardMaterial;
+      if (mat && mat.emissive) {
+        mat.emissive.setHex(0x000000);
+        mat.emissiveIntensity = 0;
+      }
+    }
+    if (this.calenderRollBottom) {
+      const mat = this.calenderRollBottom.material as THREE.MeshStandardMaterial;
+      if (mat && mat.emissive) {
+        mat.emissive.setHex(0x000000);
+        mat.emissiveIntensity = 0;
+      }
+    }
+    this.calenderPistons.forEach((p) => {
+      p.position.y = 4.05;
+    });
+    if (this.slotDieUpper) {
+      this.slotDieUpper.position.y = 2.68;
+    }
+    if (this.coatingBead) {
+      this.coatingBead.scale.y = 0.7;
+    }
+    this.irLamps.forEach((lamp) => {
+      lamp.intensity = 2.4;
+    });
+    if (this.nipFlareMesh) {
+      this.nipFlareMesh.visible = false;
+    }
+    while (this.bridgeTrajectoryGroup.children.length > 0) {
+      const c = this.bridgeTrajectoryGroup.children[0];
+      this.bridgeTrajectoryGroup.remove(c);
     }
   }
 

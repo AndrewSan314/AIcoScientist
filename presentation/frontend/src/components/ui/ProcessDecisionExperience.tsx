@@ -12,6 +12,7 @@ interface ProcessDecisionExperienceProps {
   onNextDecision: () => void;
   onRepeatDecision: () => void;
   onOpenAdvanced: () => void;
+  onInspectMeasurement?: () => void;
 }
 
 const LABELS: Record<string, string> = {
@@ -44,6 +45,7 @@ export const ProcessDecisionExperience: React.FC<ProcessDecisionExperienceProps>
   onNextDecision,
   onRepeatDecision,
   onOpenAdvanced,
+  onInspectMeasurement,
 }) => {
   const proposal = pendingDecision(scenario, revealedSteps);
   const decision = visibleDecision(scenario, revealedSteps, phase);
@@ -118,6 +120,16 @@ export const ProcessDecisionExperience: React.FC<ProcessDecisionExperienceProps>
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-700"><CheckCircle className="h-3.5 w-3.5" />Historical measurement revealed</div>
             <div className="mt-1 font-mono text-xl font-bold text-[#142A35]">{decision.revealedTarget.toFixed(scenario.id === 'drakopoulos_graphite' ? 2 : 4)} <span className="text-xs font-medium">{unitLabel}</span></div>
             <div className="mt-1 text-[11px] text-slate-600">Best so far: <span className="font-mono font-semibold">{decision.bestSoFar.toFixed(scenario.id === 'drakopoulos_graphite' ? 2 : 4)}</span></div>
+            {onInspectMeasurement && (
+              <button
+                data-testid="inspect-measurement-bridge"
+                onClick={onInspectMeasurement}
+                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-white/90 py-1.5 text-[11px] font-semibold text-amber-900 shadow-sm hover:bg-white hover:border-amber-400 transition"
+              >
+                <span>Bridge to Measurement Station (Station 06)</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button onClick={onRepeatDecision} className="rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"><span className="flex items-center justify-center gap-1.5"><RotateCcw className="h-3.5 w-3.5" />Repeat</span></button>

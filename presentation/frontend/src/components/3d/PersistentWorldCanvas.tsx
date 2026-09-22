@@ -26,6 +26,7 @@ interface PersistentWorldCanvasProps {
   onStageSelect?: (stageId: string) => void;
   onCandidateSelect?: (candidateId: string) => void;
   onSceneSelect?: (sceneNumber: number) => void;
+  onProcessChoreographyComplete?: () => void;
 }
 
 export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
@@ -44,7 +45,8 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
   tourActionTrigger,
   onStageSelect,
   onCandidateSelect,
-  onSceneSelect
+  onSceneSelect,
+  onProcessChoreographyComplete,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -355,8 +357,33 @@ export const PersistentWorldCanvas: React.FC<PersistentWorldCanvasProps> = ({
       const decision = visibleDecision(activeScenario, replayStep, processPhase);
       manufacturingWorldRef.current?.setProcessExperience(selectedStageId, processPhase, decision);
       cameraRigRef.current.transitionToProcess(selectedStageId, processPhase);
+
+      if (processPhase === 'ILLUSTRATED_PROCESS_RUN') {
+        if (decision) {
+          manufacturingWorldRef.current?.runProcessChoreography(
+            activeScenario.id,
+            selectedStageId,
+            decision,
+            {
+              onComplete: () => {
+                onProcessChoreographyComplete?.();
+              }
+            }
+          );
+        } else {
+          onProcessChoreographyComplete?.();
+        }
+      } else {
+        manufacturingWorldRef.current?.cancelProcessChoreography();
+      }
+    } else {
+      manufacturingWorldRef.current?.cancelProcessChoreography();
     }
-  }, [activeScenario, currentScene, processPhase, replayStep, selectedStageId]);
+
+    return () => {
+      manufacturingWorldRef.current?.cancelProcessChoreography();
+    };
+  }, [activeScenario, currentScene, onProcessChoreographyComplete, processPhase, replayStep, selectedStageId]);
 
   // Update active scenario
   useEffect(() => {

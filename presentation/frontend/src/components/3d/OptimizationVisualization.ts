@@ -111,6 +111,7 @@ export class OptimizationVisualization {
       const mat = new THREE.SpriteMaterial({ transparent: true, opacity: 0 });
       const sprite = new THREE.Sprite(mat);
       sprite.scale.set(1.8, 0.56, 1);
+      sprite.userData.rawText = `${text} ${subtext || ''}`;
       return sprite;
     }
     const canvas = document.createElement('canvas');
@@ -146,6 +147,7 @@ export class OptimizationVisualization {
     const sprite = new THREE.Sprite(mat);
     sprite.scale.set(1.8, 0.56, 1);
     sprite.renderOrder = 30;
+    sprite.userData.rawText = `${text} ${subtext || ''}`;
     return sprite;
   }
 
@@ -205,8 +207,8 @@ export class OptimizationVisualization {
 
     // 6. Scientific Boundary Header Placard
     const headerSprite = this.createTextSprite(
-      'BAYESIAN SURROGATE LANDSCAPE',
-      'Objective GP Manifold · Historical Replay Ground Truth',
+      'ILLUSTRATIVE PARAMETER LANDSCAPE',
+      'RBF Surface Interpolation · Non-Quantitative Illustration',
       '#087F8C',
       'rgba(244, 247, 247, 0.95)'
     );
@@ -218,7 +220,7 @@ export class OptimizationVisualization {
   }
 
   private buildResponseSurface() {
-    // 1. Floor Heatmap Canvas Texture (Acquisition Function Landscape)
+    // 1. Floor Field Canvas Texture (Illustrative Evaluation Field - Non-Quantitative)
     if (typeof document !== 'undefined') {
       const heatCanvas = document.createElement('canvas');
       heatCanvas.width = 512;

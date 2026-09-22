@@ -88,16 +88,16 @@ export const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [processPhase, selectedStageId]);
 
+  const handleProcessChoreographyComplete = useCallback(() => {
+    setReplayStep((step) => revealNextDecision(activeScenario, step));
+    setProcessPhase('RESULT_REVEAL');
+  }, [activeScenario]);
+
   useEffect(() => {
     if (processPhase !== 'ILLUSTRATED_PROCESS_RUN') return;
     const decision = pendingDecision(activeScenario, replayStep);
     if (!decision) return;
     setSelectedCandidateId(decision.selectedCandidateId);
-    const timer = window.setTimeout(() => {
-      setReplayStep((step) => revealNextDecision(activeScenario, step));
-      setProcessPhase('RESULT_REVEAL');
-    }, activeScenario.id === 'drakopoulos_graphite' ? 4200 : 3400);
-    return () => window.clearTimeout(timer);
   }, [activeScenario, processPhase, replayStep]);
 
   useEffect(() => {
@@ -164,6 +164,7 @@ export const App: React.FC = () => {
         onStageSelect={handleStageSelect}
         onCandidateSelect={(id) => setSelectedCandidateId(id)}
         onSceneSelect={handleSceneSelect}
+        onProcessChoreographyComplete={handleProcessChoreographyComplete}
       />
 
       {/* Floating Exit Button when Clean Screen Mode is enabled */}

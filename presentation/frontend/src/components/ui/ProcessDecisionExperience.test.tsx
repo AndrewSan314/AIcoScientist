@@ -48,4 +48,22 @@ describe('ProcessDecisionExperience reveal boundary', () => {
     expect(html).toContain('0.6876');
     expect(html).not.toContain('263.89');
   });
+
+  it('renders bridge to measurement station button when revealed', () => {
+    const html = renderToStaticMarkup(
+      <ProcessDecisionExperience
+        scenario={WARWICK_SCENARIO}
+        phase="RESULT_REVEAL"
+        revealedSteps={1}
+        onBeginDecision={() => undefined}
+        onRunProcess={() => undefined}
+        onNextDecision={() => undefined}
+        onRepeatDecision={() => undefined}
+        onOpenAdvanced={() => undefined}
+        onInspectMeasurement={() => undefined}
+      />,
+    );
+    expect(html).toContain('Bridge to Measurement Station (Station 06)');
+  });
 });
+

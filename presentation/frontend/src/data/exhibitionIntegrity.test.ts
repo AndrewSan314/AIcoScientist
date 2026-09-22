@@ -51,4 +51,108 @@ describe('Exhibition scientific integrity', () => {
       });
     }
   });
+
+  it('enforces tour stage scientific constraints and candidate counts', async () => {
+    const { DRAKOPOULOS_TOUR_STAGES, WARWICK_TOUR_STAGES } = await import('../components/3d/CameraRig');
+    
+    // Check Drakopoulos tour stages
+    for (const stage of DRAKOPOULOS_TOUR_STAGES) {
+      expect(stage.contextDescription).not.toMatch(/Live Process Telemetry/i);
+      expect(stage.contextDescription).not.toMatch(/accuracy:\s*\d+(\.\d+)?%/i);
+      if (stage.telemetry) {
+        expect(stage.telemetry).not.toMatch(/accuracy:\s*\d+(\.\d+)?%/i);
+      }
+    }
+    const drakOverview = DRAKOPOULOS_TOUR_STAGES.find(s => s.stageId === 'overview');
+    expect(drakOverview?.contextDescription).toContain(`${DRAKOPOULOS_SCENARIO.candidates.length} complete recipes`);
+
+    // Check Warwick tour stages
+    for (const stage of WARWICK_TOUR_STAGES) {
+      expect(stage.contextDescription).not.toMatch(/Live Process Telemetry/i);
+      expect(stage.contextDescription).not.toMatch(/accuracy:\s*\d+(\.\d+)?%/i);
+      if (stage.telemetry) {
+        expect(stage.telemetry).not.toMatch(/accuracy:\s*\d+(\.\d+)?%/i);
+      }
+    }
+    const warwickOverview = WARWICK_TOUR_STAGES.find(s => s.stageId === 'overview');
+    expect(warwickOverview?.contextDescription).toContain(`${WARWICK_SCENARIO.candidates.length} candidates evaluated`);
+    expect(warwickOverview?.contextDescription).not.toContain('32 Candidates');
+    expect(warwickOverview?.contextDescription).not.toMatch(/accuracy/i);
+  });
+
+  it('enforces non-quantitative illustrative labeling in OptimizationVisualization', () => {
+    const view = new OptimizationVisualization(WARWICK_SCENARIO);
+    let foundIllustrativePlacard = false;
+    let foundBayesianSurrogate = false;
+    let foundAcquisitionFunction = false;
+
+    view.group.traverse(obj => {
+      if (obj instanceof THREE.Sprite) {
+        const textData = obj.userData?.rawText || '';
+        if (textData.includes('ILLUSTRATIVE PARAMETER LANDSCAPE')) {
+          foundIllustrativePlacard = true;
+        }
+        if (textData.includes('BAYESIAN SURROGATE') || textData.includes('GP posterior')) {
+          foundBayesianSurrogate = true;
+        }
+        if (textData.includes('acquisition function')) {
+          foundAcquisitionFunction = true;
+        }
+      }
+    });
+
+    expect(foundIllustrativePlacard).toBe(true);
+    expect(foundBayesianSurrogate).toBe(false);
+    expect(foundAcquisitionFunction).toBe(false);
+  });
+
+  it('runs and cleanly cancels machine choreography without state leakage', async () => {
+    const { ManufacturingWorld } = await import('../components/3d/ManufacturingWorld');
+    const world = new ManufacturingWorld();
+
+    // 1. Warwick Calendering Choreography
+    const warwickDecision = WARWICK_SCENARIO.replaySteps[0];
+    let completedWarwick = false;
+    world.runProcessChoreography(
+      'warwick_nmc622_calendering',
+      'calendering',
+      warwickDecision,
+      { onComplete: () => { completedWarwick = true; } }
+    );
+
+    // Cancel mid-flight
+    world.cancelProcessChoreography();
+    expect(completedWarwick).toBe(false);
+
+    // Verify baseline reset
+    // @ts-expect-error - internal check for testing
+    expect(world.calenderRollTop.position.y).toBe(2.5);
+    // @ts-expect-error - internal check for testing
+    expect(world.calenderRollTop.material.emissiveIntensity).toBe(0);
+    // @ts-expect-error - internal check for testing
+    expect(world.bridgeTrajectoryGroup.children.length).toBe(0);
+
+    // 2. Drakopoulos Coating Choreography
+    const drakDecision = DRAKOPOULOS_SCENARIO.replaySteps[0];
+    let completedDrak = false;
+    world.runProcessChoreography(
+      'drakopoulos_graphite',
+      'coating',
+      drakDecision,
+      { onComplete: () => { completedDrak = true; } }
+    );
+
+    // Cancel mid-flight
+    world.cancelProcessChoreography();
+    expect(completedDrak).toBe(false);
+
+    // Verify baseline reset
+    // @ts-expect-error - internal check for testing
+    expect(world.slotDieUpper.position.y).toBe(2.68);
+    // @ts-expect-error - internal check for testing
+    expect(world.coatingBead.scale.y).toBe(0.7);
+    // @ts-expect-error - internal check for testing
+    expect(world.bridgeTrajectoryGroup.children.length).toBe(0);
+  });
 });
+

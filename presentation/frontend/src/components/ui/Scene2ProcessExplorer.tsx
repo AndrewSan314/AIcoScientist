@@ -183,13 +183,19 @@ export const Scene2ProcessExplorer: React.FC<Scene2ProcessExplorerProps> = ({
               <p className="mt-1.5 text-xs leading-relaxed text-slate-300">{tourInfo.stage.action}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/35 p-3 flex flex-col justify-center">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-[#38BDF8]">Live Process Telemetry</div>
-              <div className="mt-1 font-mono text-[11px] leading-relaxed text-emerald-300">{tourInfo.stage.telemetry}</div>
+              <div className="text-[9px] font-bold uppercase tracking-widest text-[#38BDF8]">Process Context & Verified Controls</div>
+              <div className="mt-1 font-mono text-[11px] leading-relaxed text-emerald-300">{tourInfo.stage.contextDescription || tourInfo.stage.telemetry}</div>
             </div>
           </div>
 
+          {/* Explicit Scientific Provenance Disclosure */}
+          <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400 border-t border-white/10 pt-2">
+            <span>Illustrative Process Journey · Independent Historical Datasets (Not a single continuous batch or live plant)</span>
+            <span className="font-mono text-[#38BDF8]">STATION {tourInfo.stageIndex + 1}/{tourInfo.totalStages}</span>
+          </div>
+
           {/* Station Progress Bar */}
-          <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full bg-gradient-to-r from-[#087F8C] via-[#38BDF8] to-[#F59E42] transition-all duration-150"
               style={{ width: `${Math.round(tourInfo.progress * 100)}%` }}
@@ -263,6 +269,9 @@ export const Scene2ProcessExplorer: React.FC<Scene2ProcessExplorerProps> = ({
               onNextDecision={onNextDecision}
               onRepeatDecision={onRepeatDecision}
               onOpenAdvanced={onNavigateOptimization}
+              onInspectMeasurement={() => {
+                selectStage(scenario.id === 'warwick_nmc622_calendering' ? 'rate_characterization' : 'characterization');
+              }}
             />
           )}
         </section>
