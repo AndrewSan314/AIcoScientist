@@ -60,3 +60,5 @@ outputs/**/cache/
 outputs/artistic_runs/
 scratch/
 *.pdf
+*.mp4
+temp_video_frames/
